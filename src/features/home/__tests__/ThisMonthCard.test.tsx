@@ -182,10 +182,48 @@ describe('ThisMonthCard', () => {
   it('lays figures in a row at 1x and a column above 1.3x, capped at 1.3x', async () => {
     const one = await draw();
     expect(style(one.getByLabelText('In, £2,500.00').parent as never).flexDirection).toBe('row');
-    one.unmount();
+    await one.unmount();
     const big = await draw({}, 2);
     expect(style(big.getByLabelText('In, £2,500.00').parent as never).flexDirection).toBe('column');
     const fig = style(big.getByText('£2,500.00'));
     expect(fig.fontSize as number).toBeCloseTo(16 * 1.3);
+  });
+
+  describe('05.5-14 afterPlans line', () => {
+    const nb = ' ';
+    it('shows the left-after-plans line under the headline, muted, figure and caption unchanged', async () => {
+      const { getByTestId, getByText, getByLabelText } = await draw({ afterPlans: { left: 15000 } });
+      const line = getByTestId('home-after-plans');
+      expect(line.props.children).toBe(`£150.00${nb}left after the month’s plans`);
+      expect(style(line).color).toBe(colors.inkMuted);
+      expect(getByText('+£850.00')).toBeTruthy();
+      expect(getByText('left after everything')).toBeTruthy();
+      expect(getByLabelText('+£850.00 left after everything. £150.00 left after the month’s plans.')).toBeTruthy();
+    });
+
+    it('says short below zero, still muted', async () => {
+      const { getByTestId, getByLabelText } = await draw({ afterPlans: { left: -4000 } });
+      expect(getByTestId('home-after-plans').props.children).toBe(`£40.00${nb}short after the month’s plans`);
+      expect(style(getByTestId('home-after-plans')).color).toBe(colors.inkMuted);
+      expect(getByLabelText('+£850.00 left after everything. £40.00 short after the month’s plans.')).toBeTruthy();
+    });
+
+    it('is hidden for a past month, an empty month, loading, error and offline', async () => {
+      const a = { left: 15000 };
+      expect((await draw({ afterPlans: a, month: '2026-08' })).queryByTestId('home-after-plans')).toBeNull();
+      const empty = await draw({
+        afterPlans: a,
+        totals: { ...totals, count: 0, paidIn: 0, paidOut: 0 },
+        position: { ...position, paidIn: 0, paidOut: 0, unpaid: 0, unpaidCount: 0, left: 0, paidPct: 0, pendingPct: 0 },
+      });
+      expect(empty.queryByTestId('home-after-plans')).toBeNull();
+      for (const state of ['loading', 'error', 'offline'] as const) {
+        expect((await draw({ afterPlans: a, state })).queryByTestId('home-after-plans')).toBeNull();
+      }
+    });
+
+    it('shows nothing when no line is given', async () => {
+      expect((await draw()).queryByTestId('home-after-plans')).toBeNull();
+    });
   });
 });

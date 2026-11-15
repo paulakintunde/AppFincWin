@@ -1,8 +1,8 @@
-// 06.1-55 (A-HOME-1, DS-11): the Your month card labels its two figures. The headline is left after this month's plans (monthEnd);
+// 06.1-55 (A-HOME-1, DS-11): the Your month card labels its two figures. The headline is left after this month's plans (leftAfterPlans);
 // the tiles are a usual month, or the low month. A short headline over a positive LEFT tile reads as two labelled figures.
 import React from 'react';
 import { fireEvent, screen, within } from '@testing-library/react-native';
-import type { MonthBar, MonthPicture } from '@/engine/decide/v3';
+import type { MonthBar, MonthPicture } from '@/engine/month';
 import { minorUnits } from '@/engine/money';
 import { wrap } from '@/test/stepProps';
 import { YourMonthCard } from '../YourMonthCard';
@@ -18,7 +18,7 @@ const picture = {
   asOf: '2026-11-12',
   balanceOn: mu(300000),
   afterBillsBeforePayday: mu(100000),
-  monthEnd: mu(-219095),
+  leftAfterPlans: mu(-219095),
   unusedOverdraft: mu(0),
   payday: '2026-12-01',
   usual: { comesIn: mu(500000), goesOut: mu(410738), left: mu(89262) },
@@ -79,7 +79,7 @@ describe('YourMonthCard labels (A-HOME-1)', () => {
     const lead = screen.getByTestId('month-lead');
     expect(within(lead).getByText('$2,191')).toBeTruthy();
     expect(within(lead).getByText('short in November')).toBeTruthy();
-    expect(within(lead).getByText('after this month’s plans')).toBeTruthy();
+    expect(within(lead).getByText('left after the month’s plans')).toBeTruthy();
     expect(screen.getByTestId('month-tiles-label').props.children).toBe('A usual month');
     expect(screen.getByTestId('month-bars').props.accessibilityLabel).toContain('$893');
   });
@@ -90,7 +90,7 @@ describe('YourMonthCard labels (A-HOME-1)', () => {
     const tiles = screen.getByTestId('month-bars');
     expect(lead.props.accessible).toBe(true);
     expect(tiles.props.accessible).toBe(true);
-    expect(lead.props.accessibilityLabel).toBe('$2,191 short in November, after this month’s plans');
+    expect(lead.props.accessibilityLabel).toBe('$2,191 short in November, left after the month’s plans');
     expect(lead.props.accessibilityLabel).not.toContain('$893');
     expect(tiles.props.accessibilityLabel).toBe('A usual month: Comes in $5,000, goes out $4,107, left $893');
     expect(tiles.props.accessibilityLabel).not.toContain('$2,191');

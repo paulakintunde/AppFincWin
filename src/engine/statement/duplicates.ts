@@ -8,6 +8,7 @@
  * to already be scoped to the target account and a sensible date window.
  */
 import { normaliseDescription } from '../categorize/guessCategory';
+import { daysBetween } from '../time/calendar';
 import type { ImportSource } from './types';
 
 export interface DuplicateCandidate {
@@ -84,19 +85,6 @@ export function fitidReliable(candidates: readonly DuplicateCandidate[]): boolea
     if (prior.amount !== c.amount || prior.localDate !== c.localDate) return false;
   }
   return true;
-}
-
-function parseLocalDateParts(s: string): { year: number; month: number; day: number } {
-  const [year, month, day] = s.split('-').map(Number) as [number, number, number];
-  return { year, month, day };
-}
-
-function daysBetween(a: string, b: string): number {
-  const pa = parseLocalDateParts(a);
-  const pb = parseLocalDateParts(b);
-  const ta = Date.UTC(pa.year, pa.month - 1, pa.day);
-  const tb = Date.UTC(pb.year, pb.month - 1, pb.day);
-  return Math.round((tb - ta) / 86_400_000);
 }
 
 interface ScoredCandidate {

@@ -37,10 +37,12 @@ import { useAccountUsage } from './useAccountUsage';
 
 export interface AccountDetailScreenProps {
   accountId: string;
+  /** 05.5-17 (D-10): Decide setup sends a person here (?edit=1) to say what the account is for; the account sheet opens at once. */
+  openEditor?: boolean;
   onImport: (accountId: string) => void;
 }
 
-export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreenProps) {
+export function AccountDetailScreen({ accountId, onImport, openEditor = false }: AccountDetailScreenProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
@@ -61,7 +63,7 @@ export function AccountDetailScreen({ accountId, onImport }: AccountDetailScreen
   const routeOf = useGoalLineRoute(rc.userId, rc.householdId);
   const seriesData = useRecurringSeries(rc.householdId ?? undefined).data;
   const seriesById = useMemo(() => new Map((seriesData ?? []).map((x) => [x.id, x])), [seriesData]);
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(openEditor);
   const [sheetMode, setSheetMode] = useState<EntryMode | null>(null);
 
   const lines = useMemo(

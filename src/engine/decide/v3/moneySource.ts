@@ -13,7 +13,7 @@
 import { minorUnits, type MinorUnits } from '../../money/types';
 import { applyPurchaseFlows, type CashPathV3, type DatedFlow, type OpenCashPath } from './cash/path';
 import { addDays, daysInYearMonth, dayOfMonth, yearMonthOf } from './dates';
-import { liveSeriesOf, seriesOccurrences } from './month/series';
+import { liveSeriesOf, seriesOccurrences } from '../../month/model/series';
 import type { FundingSegment, Funds, LocalDate, V3Series } from './types';
 
 const FN = 'moneySource';

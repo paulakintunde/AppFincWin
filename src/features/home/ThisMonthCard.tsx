@@ -41,6 +41,8 @@ export interface ThisMonthCardProps {
   homeCurrency: string;
   currentMonth: string;
   state: MonthDataState;
+  /** 05.5-14 (D-19): the shared left-after-plans figure, current month only. */
+  afterPlans?: { left: number | bigint } | null;
 }
 
 function Segment({ pct, color, opacity, testID }: { pct: number; color: string; opacity?: number; testID: string }) {
@@ -67,6 +69,7 @@ export function ThisMonthCard({
   homeCurrency,
   currentMonth,
   state,
+  afterPlans = null,
 }: ThisMonthCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -139,6 +142,14 @@ export function ThisMonthCard({
   const headlineColor = empty ? colors.inkMuted : position.left >= 0 ? colors.accent : colors.danger;
   const figure = empty ? fmt(0) : leftText;
 
+  const plansLeft = afterPlans === null || empty || !isCurrent ? null : Number(afterPlans.left);
+  const plansShort = plansLeft !== null && plansLeft < 0;
+  const plansAmount = plansLeft === null ? '' : fmt(Math.abs(plansLeft));
+  const headlineLabel =
+    plansLeft === null
+      ? t('home.month.headlineA11y', { figure })
+      : t(plansShort ? 'home.month.headlineWithPlansShortA11y' : 'home.month.headlineWithPlansA11y', { figure, afterPlans: plansAmount });
+
   const cells: { key: string; label: string; value: string; color: string }[] = [
     { key: 'in', label: t('activity.totals.in'), value: fmt(position.paidIn), color: colors.ink },
     { key: 'out', label: t('activity.totals.out'), value: paidOutText(position.paidOut, fmt), color: colors.ink },
@@ -151,7 +162,7 @@ export function ThisMonthCard({
       <View
         style={styles.headline}
         accessible
-        accessibilityLabel={t('home.month.headlineA11y', { figure })}
+        accessibilityLabel={headlineLabel}
       >
         <Text
           scale="capped"
@@ -165,6 +176,11 @@ export function ThisMonthCard({
         </Text>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('home.month.caption')}</Text>
       </View>
+      {plansLeft === null ? null : (
+        <Text testID="home-after-plans" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, marginTop: space.gapSm }}>
+          {t(plansShort ? 'home.month.afterPlansShort' : 'home.month.afterPlans', { amount: plansAmount })}
+        </Text>
+      )}
       {empty ? (
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, marginTop: space.gapSm }}>
           {t(month < currentMonth ? 'home.month.emptyPast' : 'home.month.empty', { month: monthName })}

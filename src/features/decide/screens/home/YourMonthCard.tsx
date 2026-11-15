@@ -1,5 +1,5 @@
 /**
- * 06.1-21 (D01, CO-D-57, UX-30, UX-29): the "Your month" card on Decide home. It leads with the month-picture figure (monthEnd,
+ * 06.1-21 (D01, CO-D-57, UX-30, UX-29): the "Your month" card on Decide home. It leads with the month-picture figure (leftAfterPlans,
  * which is homeFigure, so the home and every answer start from the same number), then COMES IN / GOES OUT / LEFT for a usual month or
  * the low month, and the Records row. The back arrows step to earlier months from the records; those months show what the records
  * say and have no usual/low switch. A month below zero grows its bar downward and says "short" in words, never colour alone.
@@ -14,7 +14,7 @@
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import type { MonthBar, MonthPicture } from '@/engine/decide/v3';
+import type { MonthBar, MonthPicture } from '@/engine/month';
 import { useT } from '@/i18n';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -105,7 +105,7 @@ export function YourMonthCard(props: YourMonthCardProps) {
   const name = props.monthName(month);
 
   // The lead is the month picture's figure for this month, or the records' own figure for a past month (its rounded tiles' left).
-  const lead = past === null ? (picture === null ? null : Number(picture.monthEnd)) : tiles(past).left;
+  const lead = past === null ? (picture === null ? null : Number(picture.leftAfterPlans)) : tiles(past).left;
   const shown =
     past !== null
       ? tiles(past)

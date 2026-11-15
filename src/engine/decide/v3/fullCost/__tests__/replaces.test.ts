@@ -6,7 +6,7 @@ import { minorUnits as mu } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import type { DebtFlow } from '../../debts';
 import { evaluate } from '../../evaluate';
-import { dueDrops } from '../../month/dueDrops';
+import { dueDrops } from '../../../../month/model/dueDrops';
 import { judgeCheck, prepare } from '../../prepare';
 import { checkOnce, v3Series } from '../../__tests__/helpers/fixtures';
 import { toEngineInputs } from '../../__tests__/rightAnswers/fixture';

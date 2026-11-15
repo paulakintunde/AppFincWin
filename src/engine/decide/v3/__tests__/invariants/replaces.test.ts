@@ -15,7 +15,7 @@ import { evaluate } from '../../evaluate';
 import { judgeBoth } from '../../fullCost/cashAndPlan';
 import { stoppedCostFlows } from '../../fullCost/replaces';
 import { saveForItReadyDate } from '../../fullCost/saveForIt';
-import { seriesOccurrences } from '../../month/series';
+import { seriesOccurrences } from '../../../../month/model/series';
 import { prepare } from '../../prepare';
 import type { StoppedCost, V3Inputs } from '../../types';
 import { fcRuns, isFullRun } from '../helpers/fcRuns';

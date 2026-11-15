@@ -6,7 +6,8 @@ import * as Crypto from 'expo-crypto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { myShareOf } from '@/engine/decide/v3';
-import type { Cadence, Purchase, Result } from '@/engine/decide/v3';
+import type { Cadence, Purchase, Result, StoppedCost } from '@/engine/decide/v3';
+import { addDays } from '@/engine/time/calendar';
 import type { MinorUnits } from '@/engine/money/types';
 import { occurrenceDate } from '@/engine/recurring/schedule';
 import type { RecurringFreq } from '@/engine/recurring/schedule';
@@ -24,7 +25,7 @@ import {
 } from '@/db/decideOutcomes';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { NewRecurringSeries } from '@/db/recurringSeries';
-import type { NewTransaction } from '@/db/rows';
+import type { NewTransaction, RecurringSeriesRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import {
@@ -90,12 +91,45 @@ function freqOf(c: Cadence): RecurringFreq {
   throw refuse(new RangeError('buildBoughtWrite: this payment cadence cannot be written as a recurring series'));
 }
 
+/** The part of a recorded bill the stop needs. */
+export type StoppableSeries = Pick<RecurringSeriesRow, 'id' | 'version' | 'anchor_date' | 'end_date'>;
+
+/**
+ * 05.5-13 (ARC-23): the recorded bills a purchase's costs-that-stop end. One entry per bill, ending the day before the stop date
+ * (the same end_date the Activity Stopped action writes, seriesStatusPatch) with end_reason 'stopped'. An everyday stop names no bill
+ * and writes nothing (it lowers usual spending through the check's replaces). A bill that is not recorded, or already ended on or
+ * before that day, is left alone.
+ */
+export function endSeriesOf(
+  stops: readonly StoppedCost[] | undefined,
+  recorded: readonly StoppableSeries[] | undefined
+): DecideGoEndSeries[] {
+  const out: DecideGoEndSeries[] = [];
+  const seen = new Set<string>();
+  for (const stop of stops ?? []) {
+    if (stop.source.kind !== 'bill') continue;
+    const id = stop.source.seriesId;
+    if (seen.has(id)) continue;
+    const series = recorded?.find((r) => r.id === id);
+    if (series === undefined) continue;
+    seen.add(id);
+    let endDate = addDays(stop.stopDate, -1);
+    if (endDate < series.anchor_date) endDate = series.anchor_date;
+    if (series.end_date !== null && series.end_date <= endDate) continue;
+    out.push({ id, expected_version: series.version, end_date: endDate, end_reason: 'stopped' });
+  }
+  return out;
+}
+
 /** Pure: exactly the rows, series, debt and decision that Record as bought writes. */
 export function buildBoughtWrite(args: {
   purchase: Purchase | null;
   result: Pick<Result, 'legacyState' | 'facts'>;
   ctx: BoughtContext;
   mint: () => string;
+  /** The check's costs that stop (replaces.stops) and the recorded bills they may name; both absent = nothing ends. */
+  stops?: readonly StoppedCost[];
+  recorded?: readonly StoppableSeries[];
 }): BoughtWrite {
   const { purchase, result, ctx, mint } = args;
   if (purchase === null) throw refuse(new TypeError('buildBoughtWrite: a purchase is required'));
@@ -221,6 +255,10 @@ export function buildBoughtWrite(args: {
   if (series.length > DECIDE_GO_MAX_SERIES) {
     throw refuse(new RangeError(`buildBoughtWrite: more than ${DECIDE_GO_MAX_SERIES} series`));
   }
+  const endSeries = endSeriesOf(args.stops, args.recorded);
+  if (endSeries.length > DECIDE_GO_MAX_SERIES) {
+    throw refuse(new RangeError(`buildBoughtWrite: more than ${DECIDE_GO_MAX_SERIES} ended series`));
+  }
 
   const decision: DecideGoDecision = {
     verdict: result.legacyState,
@@ -233,7 +271,7 @@ export function buildBoughtWrite(args: {
     row_roles: rowRoles,
     series_roles: seriesRoles,
   };
-  return { rows, series, endSeries: [], debt, decision };
+  return { rows, series, endSeries, debt, decision };
 }
 
 /** The persisted variables of a Record as bought (JSON only). */
@@ -337,6 +375,9 @@ export interface RecordBoughtArgs {
   purchase: Purchase;
   result: Result;
   ctx: BoughtContext;
+  /** 05.5-13: the check's replaces.stops and the recorded bills (from the series read); absent = no bill ends. */
+  stops?: readonly StoppedCost[];
+  recorded?: readonly StoppableSeries[];
 }
 
 let dryRunId = 0;
@@ -345,7 +386,13 @@ const dryMint = (): string => `dry-run-${++dryRunId}`;
 export function useRecordBought(): {
   /** Returns the undo step id (minted once so a paused-mutation replay reuses it), or null when nothing was sent. */
   record(args: RecordBoughtArgs): { stepId: string } | null;
-  canRecord(args: { purchase: Purchase | null; result: Result; ctx: BoughtContext }): boolean;
+  canRecord(args: {
+    purchase: Purchase | null;
+    result: Result;
+    ctx: BoughtContext;
+    stops?: readonly StoppedCost[];
+    recorded?: readonly StoppableSeries[];
+  }): boolean;
 } {
   const qc = useQueryClient();
   const mutation = useMutation<unknown, unknown, BoughtVars>({
@@ -370,6 +417,8 @@ export function useRecordBought(): {
           result: args.result,
           ctx: args.ctx,
           mint: () => Crypto.randomUUID(),
+          stops: args.stops,
+          recorded: args.recorded,
         });
       } catch (error) {
         if (isBoughtRefusal(error)) return null;
@@ -394,7 +443,7 @@ export function useRecordBought(): {
     },
     canRecord(args) {
       try {
-        buildBoughtWrite({ purchase: args.purchase, result: args.result, ctx: args.ctx, mint: dryMint });
+        buildBoughtWrite({ purchase: args.purchase, result: args.result, ctx: args.ctx, mint: dryMint, stops: args.stops, recorded: args.recorded });
         return true;
       } catch (error) {
         if (!isBoughtRefusal(error)) captureError(error, { area: 'ui' });

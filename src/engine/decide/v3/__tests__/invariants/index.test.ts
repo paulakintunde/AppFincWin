@@ -11,6 +11,7 @@ import { join, resolve } from 'path';
 
 const ROOT = resolve(__dirname, '../../../../../..');
 const V3 = join(ROOT, 'src/engine/decide/v3');
+const MONTH = join(ROOT, 'src/engine/month'); // 05.5-08: the month model's tests moved here
 const SNAPSHOT_V3 = join(ROOT, 'src/features/decide/snapshot/v3');
 const COPY_TEST = join(ROOT, 'src/i18n/__tests__/decideCopy.test.ts');
 
@@ -37,7 +38,7 @@ function testFilesUnder(dir: string): string[] {
 }
 
 function coveredIds(): ReadonlySet<number> {
-  const files = [...testFilesUnder(V3), ...testFilesUnder(SNAPSHOT_V3), ...(existsSync(COPY_TEST) ? [COPY_TEST] : [])];
+  const files = [...testFilesUnder(V3), ...testFilesUnder(MONTH), ...testFilesUnder(SNAPSHOT_V3), ...(existsSync(COPY_TEST) ? [COPY_TEST] : [])];
   const seen = new Set<number>();
   for (const f of files) {
     const text = readFileSync(f, 'utf8');
@@ -47,7 +48,7 @@ function coveredIds(): ReadonlySet<number> {
 }
 
 function coveredNames(): ReadonlySet<string> {
-  const files = [...testFilesUnder(V3), ...testFilesUnder(SNAPSHOT_V3), ...(existsSync(COPY_TEST) ? [COPY_TEST] : [])];
+  const files = [...testFilesUnder(V3), ...testFilesUnder(MONTH), ...testFilesUnder(SNAPSHOT_V3), ...(existsSync(COPY_TEST) ? [COPY_TEST] : [])];
   const seen = new Set<string>();
   for (const f of files) for (const m of readFileSync(f, 'utf8').matchAll(NAMED_TITLE)) seen.add(m[3]!);
   return seen;

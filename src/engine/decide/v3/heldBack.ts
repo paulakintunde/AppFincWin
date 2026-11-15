@@ -21,7 +21,7 @@ import { divideHalfUp } from '../../money/rounding';
 import { minorFromBigInt } from '../../payoff/types';
 import { monthlyEquivalentOf } from './plan/cadence';
 import { addMonthsClamped, cadenceDate, yearMonthOf } from './dates';
-import { liveSeriesOf } from './month/series';
+import { liveSeriesOf } from '../../month/model/series';
 import type { BillHeldBack, BillsHeldBack, LocalDate, V3Line, V3Series } from './types';
 
 const FN = 'heldBackForBills';

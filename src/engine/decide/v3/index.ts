@@ -7,17 +7,17 @@
 export type * from './types';
 export * from './constants';
 
-export { buildMonthModel } from './month/model';
-export { detectCandidates } from './month/recurring';
-export { everydayByMonth } from './month/typical';
-export type { EverydayMonth } from './month/typical';
-export type { DetectContext, DetectRow } from './month/recurring';
-export { seriesDrift } from './month/series';
-export type { SeriesDrift } from './month/series';
-export { refine, refineNoise } from './month/refine';
-export { cardPaidInFullHistory } from './month/cardStatements';
-export type { CardLedgerInput } from './month/cardStatements';
-export type { RefineCard, RefineCardKind, RefineInput, RefineResult, RefineTrigger } from './month/refine';
+export { buildMonthModel } from '../../month/model/model';
+export { detectCandidates } from '../../month/model/recurring';
+export { everydayByMonth } from '../../month/model/typical';
+export type { EverydayMonth } from '../../month/model/typical';
+export type { DetectContext, DetectRow } from '../../month/model/recurring';
+export { seriesDrift } from '../../month/model/series';
+export type { SeriesDrift } from '../../month/model/series';
+export { refine, refineNoise } from '../../month/model/refine';
+export { cardPaidInFullHistory } from '../../month/model/cardStatements';
+export type { CardLedgerInput } from '../../month/model/cardStatements';
+export type { RefineCard, RefineCardKind, RefineInput, RefineResult, RefineTrigger } from '../../month/model/refine';
 export { homeThresholds, maxCheckPrice } from './bandEdges';
 export type { UsdRate } from './bandEdges';
 export { bandOf, layersFor, insteadLinkFor, stagedRequired, layerOfAnswerKey, visibleLayerAnswers } from './judge/bands';
@@ -50,8 +50,6 @@ export { stoppedCostFlows, saleFlows } from './fullCost/replaces';
 // 05.4 FIN-09 (05.4-24, D-22..D-24): Decide Home's month figure, the same one every answer's afterBuy starts from (screens in 08.1).
 export { homeFigure, monthAfterPlans } from './afterBuy';
 // 06.1 CO-D-57: built by 06.1 to the 05.5 month-picture contract
-export { monthPicture, pastMonthBars } from './month/picture';
-export type { MonthPicture, MonthBar } from './month/picture';
 // 06.1 UX-38 (D55)
 export { cashTimeline } from './cash/timeline';
 export type { CashTimeline, TimelineRow } from './cash/timeline';

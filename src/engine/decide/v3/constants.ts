@@ -11,23 +11,8 @@ export const V3_HISTORY_MONTHS = 6; // v3 §4.4
 // Cite: v3 §4.3 "second-lowest real month" (REBUILD-PLAN-v3). FincWin choice: one bad month is not the plan, two is a pattern.
 export const LOW_MONTH_RANK = 2; // v3 §4.3
 
-// Cite: v3 §4.1 recurring windows in days between payments (REBUILD-PLAN-v3), D-02. FincWin choice, no outside source.
-export const RECURRING_WINDOWS: Readonly<Record<'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'yearly', readonly [number, number]>> = {
-  weekly: [5, 9],
-  fortnightly: [11, 17],
-  monthly: [28, 33],
-  quarterly: [85, 95],
-  yearly: [360, 370],
-}; // v3 §4.1, D-02
-
-// Cite: v3 §4.1 step 4 minimum repeats before a series is offered (REBUILD-PLAN-v3), D-02. FincWin choice, no outside source.
-export const RECURRING_MIN_REPEATS = { weekly: 3, fortnightly: 3, monthly: 3, quarterly: 2, yearly: 2 } as const; // v3 §4.1, D-02
-
 // Cite: C2, v3 §4.1 (REBUILD-PLAN-v3): a two-date series matches within 3 days. FincWin choice.
 export const TWO_DATE_TOLERANCE_DAYS = 3; // C2
-
-// Cite: v3 §4.1 step 3 (REBUILD-PLAN-v3): amounts within 10% of the median, tested as |a-m|*10 <= |m| so no division. FincWin choice.
-export const AMOUNT_TOLERANCE_DIVISOR = 10; // v3 §4.1
 
 // Cite: UP §4.2 (00-UPGRADE-PLAN): a series drifts when the last 2 payments differ by more than 5% (divisor 20). FincWin choice.
 export const SERIES_DRIFT_DIVISOR = 20; // UP §4.2

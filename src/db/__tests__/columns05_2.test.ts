@@ -32,7 +32,8 @@ describe('patch keys mirror the SQL update grants', () => {
   // user_id is granted on decide_settings only so ON CONFLICT DO UPDATE works (20261021000100); the client
   // builds its payload with user_id separately and never lists it as a patch key.
   const cases: [string, readonly string[], string[]][] = [
-    ['decide_settings', DECIDE_SETTINGS_PATCH_KEYS, ['user_id']],
+    // 05.5-21: the app stopped using four columns; their SQL grants stay until the post-release drop (05.5-24).
+    ['decide_settings', DECIDE_SETTINGS_PATCH_KEYS, ['user_id', 'share_pct', 'safety_net_protect', 'safety_net_size', 'safety_net_locked']],
     ['accounts', ACCOUNT_PATCH_KEYS, []],
     ['debts', DEBT_PATCH_KEYS, []],
     ['savings_goals', SAVINGS_GOAL_PATCH_KEYS, []],

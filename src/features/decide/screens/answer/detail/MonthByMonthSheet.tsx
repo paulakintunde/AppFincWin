@@ -3,7 +3,8 @@
 // variant, from Futures.buyLater.monthlyAmount. One kind of figure only: what is left each month. A month below zero grows downward
 // and reads "short" in words.
 import React from 'react';
-import type { AfterBuy, Futures, MonthBar } from '@/engine/decide/v3';
+import type { AfterBuy, Futures } from '@/engine/decide/v3';
+import type { MonthBar } from '@/engine/month';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
