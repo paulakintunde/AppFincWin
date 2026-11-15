@@ -34,7 +34,7 @@ export function splitLine(
 
   if (rule.kind === 'amount') {
     const amounts = participants.map((x, i) => (x.included ? rule.amounts[i]! : 0));
-    const sum = amounts.reduce((s, v) => s + v, 0);
+    const sum = amounts.reduce<number>((s, v) => s + v, 0);
     const abs = Math.abs(total);
     if (sum !== abs) {
       return { ok: false, reason: 'amounts_not_total', leftToAssign: minorUnits(abs - sum) };
