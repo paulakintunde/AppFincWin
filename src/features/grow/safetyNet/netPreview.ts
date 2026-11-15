@@ -82,8 +82,8 @@ export function previewNetSize({ source, v3, checks, newSize }: PreviewArgs): Ne
     id: c.id,
     name: c.name,
     price: priceOf(c.inputs),
-    before: netStateOf(computeV3(source, v3, c.inputs, undefined, c.id).result),
-    after: netStateOf(computeV3(changed, v3, c.inputs, undefined, c.id).result),
+    before: netStateOf(computeV3(source, v3, c.inputs, c.id).result),
+    after: netStateOf(computeV3(changed, v3, c.inputs, c.id).result),
   }));
 }
 

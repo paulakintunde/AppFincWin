@@ -166,6 +166,8 @@ export interface SnapshotSource {
   changes: readonly ChangeSource[];
   paymentLinks: readonly { check_id: string; target_id: string; check_kind: 'buy' | 'invest' }[];
   writtenRowLinks: readonly { check_id: string; target_id: string }[];
+  /** 05.5-16 (D-11, OFO-4): category id to its Activity cap (categories.monthly_cap, home minor units); buildInputs reads it. Absent = none. */
+  categoryCaps?: Readonly<Record<string, number | null>>;
   judgeOn?: Basis | null; // D-107: the user's Judge-on choice (device view). Absent or null = the stored settings basis_override applies
   // 05.4-33 (Decide v3 only; the old builder ignores both). D-126: the local day of the oldest real server fetch among the record
   // reads used; absent/null = unknown. D-127: writes still waiting to send; absent = 0. Notes only, never the sums (APP-02).
