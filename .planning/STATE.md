@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "05.5 wave 4 (plans 15, 18, 26) built on phase/05.5-wave4 with main (06.2, PR #122) merged in; wave 5 (05.5-16) next"
+stopped_at: "05.5 wave 4 (plans 15, 18, 26) built, PR #126 with main merged in (06.2 complete: PR #122, cache v11); wave 5 (05.5-16) next. 06.2 next step: one preview APK with Lottie, device checks in the post-05.5 test audit"
 last_updated: "2026-11-14T20:00:00.000Z"
 last_activity: 2026-11-14 -- 05.5-11 Band A pushed to production; main (PR #118) merged into phase/05.5-wave2
 progress:
