@@ -27,8 +27,8 @@ jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/data/queries/decide', () => ({
   useDebts: () => ({ data: mockRows, isError: false, refetch: jest.fn() }),
   useDecideSettings: () => ({ data: { dsr_line: mockRule } }),
-  useDecideSnapshot: () => ({ status: 'ready', result: { currency: 'USD' } }),
 }));
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ prepared: { inputs: { currency: 'USD' } } }) }));
 jest.mock('@/features/grow/lines/monthBreakdown', () => ({ monthBreakdown: () => ({ income: 320000, result: 42500 }) }));
 jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({ userId: 'u1', householdId: 'h1', today: '2026-11-05', ctx: {} }),
