@@ -16,6 +16,7 @@ import { AccTile } from '@/features/grow/ui/AccTile';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -289,7 +290,8 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         <View style={styles.flex}>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{d.name}</Text>
           <Text style={line}>{sub}</Text>
-          {d.minimumEstimated ? <StateBadge tone="slate" shape="sQuestion" label={t('grow.debts.minimumEstimated')} /> : null}
+          {/* 06.2-21 (D-12): the row's state reads from the shared status map (slate, clock, word); the word stays. */}
+          {d.minimumEstimated ? <StatusBadge status="notYet" label={t('grow.debts.minimumEstimated')} testID={`debt-row-estimated-${d.id}`} /> : null}
         </View>
         <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{fmt.money(d.point.balance, d.currency)}</Text>
       </View>
