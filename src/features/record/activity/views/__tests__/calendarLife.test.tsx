@@ -220,8 +220,7 @@ describe('CalendarView (L03)', () => {
   });
 
   it('opens a day sheet with the long date and the day rows instead of an inline list', async () => {
-    const onDetailLayout = jest.fn();
-    await renderCal({ onDetailLayout });
+    await renderCal();
     expect(screen.queryByTestId('calendar-day-sheet')).toBeNull();
     expect(screen.queryByText('Rent')).toBeNull();
     await fireEvent.press(screen.getByLabelText(/^Oct 9,/));
@@ -231,7 +230,6 @@ describe('CalendarView (L03)', () => {
     expect(screen.getByText('Rent')).toBeTruthy();
     expect(screen.getByText('Market')).toBeTruthy();
     expect(screen.getByLabelText(/^Oct 9,/).props.accessibilityState.selected).toBe(true);
-    expect(onDetailLayout).not.toHaveBeenCalled();
   });
 
   it('lists the rows through renderRow and a row press reaches onRowPress', async () => {

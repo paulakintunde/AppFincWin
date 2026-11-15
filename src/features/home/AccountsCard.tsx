@@ -48,7 +48,7 @@ function AccountTile({
   const { colors, pairing } = useTheme();
   const kind = t(`accounts.kind.${account.kind}`);
   const compact = useCompactBalance(account, balance, homeCurrency);
-  const label = [account.name, kind, compact.label]
+  const label = [account.name, kind, compact.spokenLabel]
     .filter((p): p is string => p !== null && p !== "")
     .join(", ");
   const sub =

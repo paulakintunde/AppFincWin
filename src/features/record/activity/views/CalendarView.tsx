@@ -43,12 +43,6 @@ export interface CalendarViewProps {
   today: string;
   onRowPress: (row: ActivityRowView) => void;
   renderRow?: (row: ActivityRowView) => React.ReactNode;
-  /**
-   * Reported the y of the selected-day detail so the caller could scroll to it. Kept for compatibility but no longer
-   * called: the L03 day sheet (06.2-12) replaced the inline list, so ActivityScreen's scroll helper is a no-op now
-   * (plan 24 removes the prop if it stays unused).
-   */
-  onDetailLayout?: (y: number) => void;
 }
 
 const COLUMNS = 7;

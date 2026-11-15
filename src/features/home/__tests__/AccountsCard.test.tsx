@@ -95,7 +95,7 @@ describe('AccountsCard', () => {
 
   it('D-39: a foreign row label is name, kind, figure and the short line', async () => {
     const { getAllByRole } = await draw([account({ id: 'u', name: 'Main', currency: 'USD' })], false, { balance: -74000 });
-    expect(getAllByRole('button')[0]?.props.accessibilityLabel).toBe('Main, Current account, −$740.00, Waiting for a rate');
+    expect(getAllByRole('button')[0]?.props.accessibilityLabel).toBe('Main, Current account, minus $740.00, Waiting for a rate'); // 06.2-24: spoken form, as on Accounts
   });
 
   it('H7: two quick presses push once, for a row and for See all', async () => {

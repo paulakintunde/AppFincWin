@@ -123,18 +123,6 @@ describe('CalendarView', () => {
     expect(StyleSheet.flatten(empty.props.style).backgroundColor).toBe('transparent');
   });
 
-  // 06.2-12 (L03): the day sheet replaced the inline list, so the detail y is no longer reported.
-  it('no longer reports a detail y when a day is selected', async () => {
-    const onDetailLayout = jest.fn();
-    const screen = await render(
-      <ThemeProvider>
-        <CalendarView month="2026-10" weekStart={1} rows={ROWS} today="2026-10-25" onRowPress={jest.fn()} onDetailLayout={onDetailLayout} />
-      </ThemeProvider>
-    );
-    await fireEvent.press(screen.getByLabelText(/^Oct 14, 2 lines/));
-    expect(onDetailLayout).not.toHaveBeenCalled();
-  });
-
   it('selects a day, lists its lines, and deselects on a second tap', async () => {
     const screen = await renderCal(1);
     await fireEvent.press(screen.getByLabelText(/^Oct 14, 2 lines/));

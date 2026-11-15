@@ -7,7 +7,7 @@
 // 03.1 D-43: the header is four bands (title row, month row with Search/Filter/More, summary card,
 // Display row) rendered by ActivityHeaderBands; Display and More live in their own sheets.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, type ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { FadeOut, ReduceMotion } from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
@@ -496,9 +496,6 @@ export function ActivityScreen({
           {listHeader}
           <View style={styles.pad}>
           <CalendarView
-            onDetailLayout={(y) =>
-              (chrome.scrollRef.current as unknown as ScrollView | null)?.scrollTo({ y, animated: true })
-            }
             month={month}
             weekStart={rc.weekStart ?? 1}
             rows={vm.itemRows}

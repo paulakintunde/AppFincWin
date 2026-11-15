@@ -816,7 +816,6 @@ const en = {
     },
     calendar: {
       empty: 'Nothing on this day.',
-      dayHeading: '{{date}}',
       cellA11y_one: '{{date}}, {{count}} line, net {{amount}}',
       cellA11y_other: '{{date}}, {{count}} lines, net {{amount}}',
       cellEmptyA11y: '{{date}}, no lines',
@@ -1015,10 +1014,8 @@ const en = {
     compact: { overdrawn: 'Overdrawn', overLimit: 'Over limit' },
     title: 'Accounts',
     add: 'Add account',
-    emptyHeading: 'No accounts yet.',
     notFoundHeading: 'This account can’t be shown.',
     notFoundBody: 'It may not have loaded yet, or it may have been removed on another device.',
-    emptyBody: 'Add one to start logging money in and out.',
     balanceNow: 'Balance now',
     otherCurrency: 'Also {{amount}} in {{code}}',
     stillToCome: '{{amount}} still to come',
@@ -1438,7 +1435,6 @@ const en = {
     suggestion: 'Looks like {{name}}, {{amount}} {{frequency}}. Make it recurring?',
     suggestionAccept: 'Make recurring',
     suggestionDismiss: 'Not now',
-    doneHeading: 'Import finished',
     done: 'Done',
     paste: {
       entry: 'Paste a list',
