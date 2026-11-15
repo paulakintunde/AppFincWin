@@ -26,7 +26,7 @@ import {
   type LocalDate,
   type PayV2,
 } from '@/engine/decide/v3';
-import { percent, type Percent } from '@/engine/decide';
+import { percent, type Percent } from '@/engine/payoff';
 import { minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';

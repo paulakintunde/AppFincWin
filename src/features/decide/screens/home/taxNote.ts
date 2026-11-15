@@ -3,7 +3,7 @@
  * engine knows a rate for says the estimate; no region says tax is not included (decide.v3.notice.tax_not_included). The estimate is
  * never stored: the stepper and the engine work the real figure out.
  */
-import type { Percent } from '@/engine/decide';
+import type { Percent } from '@/engine/payoff';
 import { INCLUDED_COUNTRIES, lookupTaxDefault, salesTaxOf } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
 
