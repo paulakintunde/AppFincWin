@@ -1,0 +1,23 @@
+/** 08-12: in-app notices, keyed by event kind (UI-SPEC Notices table). Names go through the resolver. */
+export const notices = {
+  title: 'Notices',
+  empty: 'No notices',
+  joined: '{{name}} joined {{household}}',
+  removed: 'You’re no longer in {{household}}',
+  left: '{{name}} left {{household}}',
+  made_private: '{{name}} made a line private',
+  split_changed: '{{name}} changed the split on {{line}}',
+  split_changed_category: '{{name}} changed {{category}} to {{rule}}',
+  default_changed: '{{name}} changed the default to {{rule}}',
+  weights_changed: '{{name}} changed the weights',
+  settle_request: '{{name}} says they paid you {{amount}}',
+  settle_waiting: 'Waiting on {{name}} to confirm {{amount}}',
+  settle_lapsed: 'The {{amount}} settle-up with {{name}} lapsed. The lines are owed again.',
+  settle_not_yet: '{{name}} hasn’t received it yet',
+  settled: 'Settled {{amount}} with {{name}}',
+  settle_ask: '{{name}} asked you to settle up {{amount}}',
+  owner_change: 'You’re now the owner of {{household}}',
+  yesGotIt: 'Yes, I got {{amount}}',
+  notYet: 'Not yet',
+  undo: 'Undo',
+} as const;
