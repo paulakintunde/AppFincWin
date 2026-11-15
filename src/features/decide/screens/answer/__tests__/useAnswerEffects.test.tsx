@@ -8,7 +8,7 @@ import { ledgerRun } from './fixtures';
 
 const mockTrack = jest.fn();
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
-jest.mock('@/ui/haptics', () => ({ hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 
 const ROW = { id: 'c1' } as unknown as DecideCheckRow;
 /** A new-but-equal copy of a result, as a fresh judge gives on each render. */
