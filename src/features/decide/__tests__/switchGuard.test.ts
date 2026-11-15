@@ -1,11 +1,8 @@
-import { DECIDE_V3 } from '../availability';
+import * as availability from '../availability';
 
-// test-to-test import is fine; depcruise excludes tests, and availability.test.ts skips __tests__ when it counts DECIDE_V3 readers.
- 
-const approved = require('../../../engine/decide/v3/__tests__/shadow/approved-changes.json') as { reviewed: boolean };
-
-describe('switch-on guard', () => {
-  it('D-14 before D-15: DECIDE_V3 cannot be true until the shadow review is marked reviewed', () => {
-    expect(DECIDE_V3 === false || approved.reviewed === true).toBe(true);
+describe('switch guard', () => {
+  it('APP-17: DECIDE_OPEN is the only store-build switch left, and it is a boolean', () => {
+    expect(typeof availability.DECIDE_OPEN).toBe('boolean');
+    expect(Object.keys(availability).filter((k) => /^DECIDE_(OPEN|V\d)/.test(k))).toEqual(['DECIDE_OPEN']);
   });
 });

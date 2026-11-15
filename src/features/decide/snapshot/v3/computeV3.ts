@@ -1,7 +1,7 @@
 // PURE. The single v3 compute function (S9: one Result). Home, the check screen and saved plans all call computeV3 through the
 // three one-line delegates below; there is no second path. Since 05.4-33 the inputs are prepared once per data change
-// (preparedV3) and each check is judged on the held Prepared. Nothing in the app calls this in 05.1: DECIDE_OPEN and DECIDE_V3
-// stay false and the switch is read only in decideEngine() (D-15). Barrel imports only (the v3 engine barrel).
+// (preparedV3) and each check is judged on the held Prepared. DECIDE_OPEN is the one store-build
+// switch (05.5 APP-17). Barrel imports only (the v3 engine barrel).
 import {
   changeSinceLooked,
   judgeCheck,
