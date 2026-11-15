@@ -16,8 +16,6 @@ import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
 import { goalPercent } from '@/features/grow/home/GoalRow';
 import { useGoalMoney } from '@/features/grow/home/useGoalMoney';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
-import { ProgressBar } from '@/features/grow/ui/ProgressBar';
-import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { radii, space } from '@/theme/layout';
@@ -27,6 +25,8 @@ import { fontSize, textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { hapticLight } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
+import { ProgressRing } from '@/ui/ProgressRing';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
@@ -208,11 +208,25 @@ export function GoalDetailScreen({ id }: { id: string }) {
               <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>{t('grow.goals.detail.of', { target: money.amount(target) })}</Text>
             ) : null}
           </View>
-          {target !== null ? <ProgressBar percent={percent} variant="thick" accessibilityLabel={`${percent}%`} /> : null}
+          {/* 06.2-20 (Specifics: Grow, D-15, D-19): the 124 ring with the percent in its centre, filling on its first view in a
+              session only. At 100% it simply closes; the reached moment below is the only milestone. */}
+          {target !== null ? (
+            <ProgressRing
+              testID="goal-ring"
+              percent={percent}
+              size={124}
+              color={colors.accent}
+              sessionKey={`grow.goalDetail.${id}`}
+              accessibilityLabel={t('appLife.grow.ringA11y', { percent, target: money.amount(target) })}
+            >
+              <Text numberOfLines={1} adjustsFontSizeToFit style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>{`${percent}%`}</Text>
+            </ProgressRing>
+          ) : null}
           <View style={styles.badges}>
-            {/* P4-WR-04: the moment and the badge show only while the goal is reached (an Undo of the deposit takes both away). */}
-            {justReached && reached ? <ReachedMoment /> : reached ? <StateBadge tone="accent" shape="sCheck" label={t('grow.goals.detail.reached')} /> : null}
-            {locked ? <StateBadge tone="slate" shape="lock" label={t('grow.goals.detail.locked')} accessibilityLabel={t('grow.goals.detail.lockedA11y')} /> : null}
+            {/* P4-WR-04: the moment and the badge show only while the goal is reached (an Undo of the deposit takes both away).
+                06.2-20 (D-12, D-20): the moment plays the goal-reached icon and the one Success haptic; a revisit shows the badge only. */}
+            {justReached && reached ? <ReachedMoment /> : reached ? <StatusBadge status="reached" label={t('grow.goals.detail.reached')} /> : null}
+            {locked ? <StatusBadge status="safetyNet" label={t('grow.goals.detail.locked')} accessibilityLabel={t('grow.goals.detail.lockedA11y')} /> : null}
           </View>
           {locked ? (
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('grow.goals.detail.lockedLine', { amount: money.amount(saved) })}</Text>

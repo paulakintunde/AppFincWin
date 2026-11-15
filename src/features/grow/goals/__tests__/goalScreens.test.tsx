@@ -124,6 +124,8 @@ jest.mock('@/ui/haptics', () => ({
   hapticLight: () => mockHapticLight(),
   hapticWarning: jest.fn(),
   hapticSuccess: () => mockHapticSuccess(),
+  // 06.2-20: the reached moment's Success haptic, by meaning (D-20)
+  hapticMilestone: () => mockHapticSuccess(),
   hapticMedium: jest.fn(),
 }));
 
@@ -217,6 +219,32 @@ describe('goal detail', () => {
     expect(screen.getByText('Take some out')).toBeTruthy();
     expect(screen.getByText('Kept in')).toBeTruthy();
     expect(screen.getByText('Savings account')).toBeTruthy();
+  });
+
+  it('06.2-20: the 124 ring replaces the thick bar, with the percent in its centre and a spoken label', async () => {
+    await wrap(<GoalDetailScreen id="g1" />);
+    const ring = screen.getByTestId('goal-ring');
+    expect(ring.props.accessibilityRole).toBe('progressbar');
+    expect(ring.props.accessibilityValue).toEqual({ min: 0, max: 100, now: 36 });
+    expect(ring.props.accessibilityLabel).toBe('36% of $1,800');
+    expect(screen.getByText('36%', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByTestId('grow-progress', { includeHiddenElements: true })).toBeNull();
+  });
+
+  it('06.2-20 (D-20, T-06.2-20-01): opening a goal already reached shows the Reached badge only: no icon play, no haptic', async () => {
+    mockRead = readWith(180_000);
+    await wrap(<GoalDetailScreen id="g1" />);
+    expect(screen.getByTestId('status-badge-reached')).toBeTruthy();
+    expect(screen.queryByTestId('goal-reached')).toBeNull();
+    expect(mockHapticSuccess).not.toHaveBeenCalled();
+  });
+
+  it('06.2-20 (D-12): a locked goal shows the shared safety-net badge with the Locked words', async () => {
+    mockRows = [lisbon({ locked: true })];
+    mockRead = readWith(64_000, { locked: true });
+    await wrap(<GoalDetailScreen id="g1" />);
+    const badge = screen.getByTestId('status-badge-safetyNet');
+    expect(badge.props.accessibilityLabel).toBe('Locked, no Decide answer spends it');
   });
 
   it('editing Each month to $75 previews the new reach date', async () => {
