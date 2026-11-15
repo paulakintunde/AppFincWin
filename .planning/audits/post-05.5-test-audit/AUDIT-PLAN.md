@@ -327,3 +327,9 @@ Or, if the owner picks P-12b, delete the whole test account in-app (the in-app d
 2. The descriptions of G-PD-1 and G-PD-3 (no file on main defines them).
 3. Answers to P-07, P-08, P-10, P-10c, P-11, P-12, P-12b (and P-09, P-14 only if triggered).
 4. A 45-minute slot with the Pixel 6 connected.
+
+## Owner decisions (2026-11-15)
+
+- **P-09:** the G-PD-2 root fix and the three other engine items (same-day roll-forward, SN-18, `sayLine` `_one` forms) go into **a new 05.5 plan**. The request was posted on PR #115. Stage A checks that they landed.
+- **P-11:** the audit's fix plans go into **a new small phase, "05.6 audit fixes"**. After inserting it, check ROADMAP and STATE (known gsd-sdk phase.insert bug).
+- **P-07:** **one combined Pixel 6 sitting** for 05.5-23's device session and this audit's Stage B, about an hour in total.
