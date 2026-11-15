@@ -3,7 +3,8 @@
 import { currencyCode, minorUnits } from '@/engine/money';
 import { ZERO_PERCENT, percent } from '@/engine/decide';
 import type { CardRecord, DecideSnapshot, MonthRecord, RecordLine } from '@/engine/decide';
-import type { CardChoice, SnapshotMeta, SnapshotResult } from '../../types';
+import type { SnapshotMeta } from '../../types';
+import type { CardChoice, SnapshotResult } from '../../buildSnapshot';
 
 export const USD = currencyCode('USD');
 export const TODAY = '2026-10-15';

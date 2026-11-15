@@ -7,7 +7,6 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import type { Assessment, PaymentStep, RunningCostCategory, RunningCosts } from '@/engine/decide'; // 06.1-36 removes the Assessment path
 import { myShareOf, type Cadence, type CheckV2, type Evaluation } from '@/engine/decide/v3';
 import type { MinorUnits } from '@/engine/money/types';
 import { buildTransferLegs } from '@/engine/transfer';

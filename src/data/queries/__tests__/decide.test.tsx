@@ -18,7 +18,6 @@ import {
   clearSharedSnapshots,
   useLinkedLines,
   useOpenChecks,
-  useOtherChecks,
   useSavingsGoals,
   usePots,
   selectPots,
@@ -457,31 +456,6 @@ describe('useOpenChecks', () => {
     const [b1, a1] = hook.result.current.data as object[];
     expect(b1).toBe(b0);
     expect(a1).not.toBe(a0);
-  });
-});
-
-describe('useOtherChecks', () => {
-  it('is empty until the snapshot and checks load, then selects the other open checks', async () => {
-    const complete = { v: 1, kind: 'buy', name: 'Laptop', advertised: 150_000, method: 'cash', currency: 'USD' };
-    const row = (id: string) => ({
-      id,
-      kind: 'buy',
-      status: 'open',
-      deleted_at: null,
-      created_at: '2026-10-01T00:00:00Z',
-      inputs: complete,
-    });
-    // Hold the checks read until the empty state is asserted: a resolved mock can
-    // settle inside the awaited render under full-suite load (wave-3 gate flake).
-    let release: (rows: ReturnType<typeof row>[]) => void = () => undefined;
-    mockFetch.checks.mockImplementation(
-      () => new Promise((resolve) => { release = resolve; }),
-    );
-    const hook = await renderHook(() => useOtherChecks('a'), { wrapper: wrapper(newClient()) });
-    expect(hook.result.current.openCount).toBe(0);
-    await act(async () => { release([row('a'), row('b')]); });
-    await waitFor(() => expect(hook.result.current.openCount).toBe(1));
-    expect(hook.result.current.otherChecks).toHaveLength(1);
   });
 });
 

@@ -15,6 +15,7 @@ import { ChangedChips, SomethingChanged, SomethingChangedSheet } from '../Someth
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+jest.mock('@/data/mutations/categories', () => ({ useEditCategory: () => ({ edit: jest.fn(() => 'step-cap') }) }));
 jest.mock('@/features/record/entry/pickers/DateField', () => ({ DateField: () => null }));
 
 const mockAdd = jest.fn(() => ({ id: 'c1', stepId: 'step-1' }));
@@ -131,6 +132,8 @@ const rulesProps = {
   netLocked: true,
   dsrLine: '30',
   rules: [],
+  caps: [] as { categoryId: string; amount: number }[],
+  onOpenCategory: jest.fn(),
   saving: null,
   investing: 20_000,
   formatMoney: money,
@@ -160,10 +163,9 @@ describe('MoneyRulesCard', () => {
     const rules = [
       { id: 'own_keep', kind: 'keep' as const, on: true, value: 30_000, categoryId: null },
       { id: 'own_largest', kind: 'largest' as const, on: false, value: 50_000, categoryId: null },
-      { id: 'own_cap', kind: 'category_cap' as const, on: true, value: 20_000, categoryId: 'Dining' },
       { id: 'own_share', kind: 'category_share' as const, on: true, value: 10, categoryId: 'Dining' },
     ];
-    await wrap(<MoneyRulesCard {...rulesProps} saving={15_000} rules={rules} />);
+    await wrap(<MoneyRulesCard {...rulesProps} saving={15_000} rules={rules} caps={[{ categoryId: 'Dining', amount: 20_000 }]} />);
     expect(screen.getByText('Debt payments at most')).toBeTruthy();
     expect(screen.getByText('Share of pay, all debts counted.')).toBeTruthy();
     expect(screen.getByTestId('money-rule-value-debt')).toHaveTextContent('30%');
@@ -171,7 +173,7 @@ describe('MoneyRulesCard', () => {
     expect(screen.getByTestId('money-rule-value-saving')).toHaveTextContent('$150');
     expect(screen.getByTestId('money-rule-value-own_keep')).toHaveTextContent('$300');
     expect(screen.getByTestId('money-rule-value-own_largest')).toHaveTextContent('$500');
-    expect(screen.getByTestId('money-rule-value-own_cap')).toHaveTextContent('$200');
+    expect(screen.getByTestId('money-rule-value-cap_Dining')).toHaveTextContent('$200');
     expect(screen.getByTestId('money-rule-value-own_share')).toHaveTextContent('10%');
     expect(screen.getAllByText('Dining at most')).toHaveLength(2);
     expect(screen.queryByText('On')).toBeNull();
@@ -271,7 +273,7 @@ describe('RuleEditSheet', () => {
 describe('AddRuleSheet', () => {
   const five: RulesDoc = {
     v: 1,
-    rules: [1, 2, 3, 4, 5].map((n) => ({ id: `own_category_cap_${n}`, kind: 'category_cap' as const, on: true, value: 1000 * n, categoryId: 'c' })),
+    rules: [1, 2, 3, 4, 5].map((n) => ({ id: `own_category_cap_${n}`, kind: 'category_share' as const, on: true, value: n, categoryId: 'c' })),
   };
 
   it('disables the 6th own rule', async () => {

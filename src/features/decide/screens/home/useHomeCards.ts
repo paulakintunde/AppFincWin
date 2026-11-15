@@ -16,18 +16,14 @@ import {
   readStoredCheck,
   seenOf,
   type Evaluation,
-  type LimitLine,
-  type Limits,
   type SeenV3,
   type V3Inputs,
 } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';
-import { percent } from '@/engine/payoff';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { stateForVerdict } from '../logic/stateForVerdict';
 import {
   newlyCrossing,
-  ownLinesOf,
   readRulesDoc,
   tightLineOf,
   withRulesDoc,
@@ -36,6 +32,7 @@ import {
   type OpenCheckRowModel,
   type RulesDoc,
 } from './homeCardsModel';
+import { limitsWith, type RulesPatch } from './ruleLimits';
 
 const minorOrNull = (n: number | null) => (n === null ? null : minorUnits(n));
 
@@ -98,12 +95,7 @@ export function toneOfRow(row: OpenCheckRowModel): ReturnType<typeof stateForVer
 
 // ── rules ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
-export interface RulesPatch {
-  /** The new debt share as stored text ("30"), null = off. Undefined = untouched. */
-  dsrLine?: string | null;
-  /** The new rules document. Undefined = untouched. */
-  doc?: RulesDoc;
-}
+export type { RulesPatch };
 
 export interface MoneyRulesState {
   dsrLine: string | null;
@@ -130,24 +122,6 @@ export function useMoneyRules(): MoneyRulesState {
     [userId, setup, settings?.custom_options],
   );
   return { dsrLine: settings?.dsr_line ?? null, doc, save };
-}
-
-function limitsWith(base: Limits, patch: RulesPatch): Limits {
-  let lines: LimitLine[] = [...base.lines];
-  if (patch.dsrLine !== undefined) {
-    // The legacy debt line: off keeps its place with on = false; on writes the typed share.
-    const text = patch.dsrLine;
-    lines = lines.map((l) =>
-      l.id === 'debt_share' && l.spec.kind === 'debt_share'
-        ? { ...l, on: text !== null, spec: text === null ? l.spec : { kind: 'debt_share' as const, pct: percent(text) } }
-        : l,
-    );
-  }
-  if (patch.doc !== undefined) {
-    lines = lines.filter((l) => l.source !== 'own');
-    for (const raw of ownLinesOf(patch.doc)) lines.push(raw as LimitLine);
-  }
-  return { lines };
 }
 
 function judgedOf(checks: readonly DecideCheckRow[], run: (c: DecideCheckRow) => Evaluation | null): JudgedCheck[] {

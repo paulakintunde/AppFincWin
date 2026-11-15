@@ -37,15 +37,13 @@ jest.mock('@/data/mutations/decideSettings', () => ({
   inverseSettingsPatch: jest.requireActual('@/data/mutations/decideSettings').inverseSettingsPatch,
 }));
 let mockSettings: Record<string, unknown> | null = null;
-let mockResult: unknown = null;
+let mockPlans = { saving: 0, investing: 0 };
 jest.mock('@/data/queries/decide', () => ({
   useDecideSettings: () => ({ data: mockSettings }),
-  useDecideSnapshot: () => ({ result: mockResult, status: 'ready' }),
 }));
-jest.mock('@/engine/decide', () => ({
-  ...jest.requireActual('@/engine/decide'),
-  prepareContext: () => ({ ok: true, context: { limits: { dsrLine: 36n * 10n ** 10n, investingFloor: 15_000, savingFloor: 10_000 } } }),
-}));
+// 05.5-26: the screen reads the v3 Prepared (its currency) and the standing plans from the engine's month module.
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ prepared: { inputs: { currency: 'USD' } } }) }));
+jest.mock('@/engine/month', () => ({ standingPlans: () => mockPlans }));
 jest.mock('@/features/grow/lines/monthBreakdown', () => ({ monthBreakdown: () => ({ income: 500_000, debts: 50_000 }) }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
@@ -70,18 +68,14 @@ const LEDGER_READ: GoalsRead = {
   },
 };
 
-const logged = (monthlyInvesting: number, monthlySaving: number) => ({
-  kind: 'logged',
-  currency: 'USD',
-  snapshot: { monthlyInvesting, monthlySaving },
-});
+const plans = (investing: number, saving: number) => ({ investing, saving });
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockRead = LEDGER_READ;
   mockNetRows = [];
   mockSettings = { currency: 'USD', dsr_line: '36', investing_floor: 20_000, saving_floor: 15_000 };
-  mockResult = logged(20_000, 15_000);
+  mockPlans = plans(20_000, 15_000);
 });
 
 describe('Your money rules (G10)', () => {
@@ -105,7 +99,7 @@ describe('Your money rules (G10)', () => {
   });
 
   it('a rule that is not met says so with what is set up', async () => {
-    mockResult = logged(10_000, 15_000);
+    mockPlans = plans(10_000, 15_000);
     await wrap(<GrowLinesScreen />);
     expect(screen.getByText('Not yet · $100 set up')).toBeTruthy();
     expect(screen.getByText('Met · $150 set up')).toBeTruthy();
@@ -121,7 +115,7 @@ describe('Your money rules (G10)', () => {
 
   it('a $0 rule shows no Met badge and a cents amount keeps its cents (R1)', async () => {
     mockSettings = { currency: 'USD', dsr_line: '36', investing_floor: 0, saving_floor: 55_687 };
-    mockResult = logged(0, 60_000);
+    mockPlans = plans(0, 60_000);
     await wrap(<GrowLinesScreen />);
     expect(screen.queryByText(/Met · \$0/)).toBeNull();
     expect(screen.queryByText(/Not yet · \$0/)).toBeNull();

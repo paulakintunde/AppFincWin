@@ -11,6 +11,7 @@ import { SomethingChanged, SomethingChangedSheet } from '../SomethingChanged';
 jest.setTimeout(30000);
 jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+jest.mock('@/data/mutations/categories', () => ({ useEditCategory: () => ({ edit: jest.fn(() => 'step-cap') }) }));
 jest.mock('@/features/record/entry/pickers/DateField', () => ({ DateField: () => null }));
 jest.mock('@/data/mutations/decideChanges', () => ({
   useAddChange: () => ({ add: jest.fn(() => ({ id: 'c1', stepId: 'step-1' })) }),
@@ -173,7 +174,7 @@ describe('Add rule and Something changed (D50, D53, A-SH-3)', () => {
   });
 
   it('Add rule (DB-13): when off, a NeedLine under it says why, and goes once the rule is ready', async () => {
-    await wrap(<AddRuleSheet visible doc={EMPTY_RULES} currency="USD" categories={[{ id: 'food', name: 'Food' }]} crossings={() => []} save={jest.fn()} onDismiss={jest.fn()} />);
+    await wrap(<AddRuleSheet visible doc={EMPTY_RULES} currency="USD" categories={[{ id: 'food', name: 'Food', row: { id: 'food', monthly_cap: null } as never }]} crossings={() => []} save={jest.fn()} onDismiss={jest.fn()} />);
     expect(screen.getByLabelText('Add rule').props.accessibilityState.disabled).toBe(true);
     expect(screen.getByTestId('add-rule-need')).toHaveTextContent('A kind and a value are needed.');
     await fireEvent.press(screen.getByLabelText('Spending in one category at most'));
@@ -188,7 +189,7 @@ describe('Add rule and Something changed (D50, D53, A-SH-3)', () => {
   });
 
   it('Add rule (DB-13): at the cap the cap line is the reason, with no NeedLine', async () => {
-    const five = { v: 1 as const, rules: [1, 2, 3, 4, 5].map((n) => ({ id: `own_category_cap_${n}`, kind: 'category_cap' as const, on: true, value: n, categoryId: 'c' })) };
+    const five = { v: 1 as const, rules: [1, 2, 3, 4, 5].map((n) => ({ id: `own_category_cap_${n}`, kind: 'category_share' as const, on: true, value: n, categoryId: 'c' })) };
     await wrap(<AddRuleSheet visible doc={five} currency="USD" categories={[]} crossings={() => []} save={jest.fn()} onDismiss={jest.fn()} />);
     expect(screen.getByText('Up to 5 of your own rules.')).toBeTruthy();
     expect(screen.queryByTestId('add-rule-need')).toBeNull();

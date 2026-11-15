@@ -4,6 +4,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { goals, autoLoan, LEDGER_TODAY } from '@/engine/grow/__tests__/fixtures/ledger';
 import { RECURRING_SERIES_COLUMNS } from '@/db/rows';
+import { household } from '@/features/decide/snapshot/__tests__/helpers/sourceFixtures';
+import { buildInputs } from '@/features/decide/snapshot/v3/buildInputs';
+import { v3s } from '@/features/decide/snapshot/v3/__tests__/v3Fixtures';
 import { debtPointOf, goalPointsOf, safetyNetPointOf } from '@/features/grow/connect';
 import type { DebtPoint, DebtSourceRow, GoalPoint, GoalSourceRow, SafetyNetPoint } from '@/features/grow/connect';
 
@@ -125,5 +128,27 @@ describe('BO-07 point 5: bills (owner Activity)', () => {
     expect(files.length).toBeGreaterThan(0);
     const offenders = files.filter((f) => /\.from\(\s*['"`]recurring_series['"`]\s*\)/.test(fs.readFileSync(f, 'utf8')));
     expect(offenders.map((f) => path.relative(SRC, f))).toEqual([]);
+  });
+});
+
+describe('BO-07 category cap (owner 05.5-15)', () => {
+  const read = (rel: string): string => fs.readFileSync(path.join(SRC, rel), 'utf8');
+
+  it('the builder reads one cap line per category from categories.monthly_cap and ignores rules-document caps', () => {
+    const hh = household();
+    const rules = v3s({ own_lines: [{ id: 'own_cap', on: true, spec: { kind: 'category_monthly_cap', categoryId: 'c-food', cap: 1 } }] });
+    const lines = buildInputs({ ...hh, categoryCaps: { 'c-food': 20_000 } }, rules).limits.lines.filter((l) => l.spec.kind === 'category_monthly_cap');
+    expect(lines).toEqual([{ id: 'cap_c-food', on: true, source: 'own', spec: { kind: 'category_monthly_cap', categoryId: 'c-food', cap: 20_000 } }]);
+  });
+
+  it('Decide and Activity write the cap the same way: through useEditCategory as monthlyCap, never into the rules document', () => {
+    for (const rel of ['features/decide/screens/home/AddRuleSheet.tsx', 'features/record/categories/CategorySheet.tsx']) {
+      const text = read(rel);
+      expect(text).toMatch(/useEditCategory/);
+      expect(text).toMatch(/monthlyCap/);
+    }
+    const doc = read('features/decide/snapshot/v3/rulesDoc.ts');
+    expect(doc).not.toMatch(/kind:\s*'category_monthly_cap'/);
+    expect(doc).not.toMatch(/\|\s*'category_cap'/);
   });
 });
