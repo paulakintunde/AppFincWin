@@ -4,7 +4,7 @@ import { decide, type BuyCheck } from '@/engine/decide';
 import { currencyCode, minorUnits } from '@/engine/money';
 import * as conversion from '../conversion';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
-import type { SnapshotResult } from '../types';
+import type { SnapshotResult } from '../buildSnapshot';
 import { CATEGORIES, USD_RATE, account, customCurrency, household, row, series, sourceOf, type SourceRow } from './helpers/sourceFixtures';
 
 function logged(source: SnapshotSource): Extract<SnapshotResult, { kind: 'logged' }> {

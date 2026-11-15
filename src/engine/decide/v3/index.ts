@@ -27,12 +27,14 @@ export type { OptionsProblem, ResolvedItemType } from './judge/options';
 export { PRESET_QUESTIONS, QUESTION_LIBRARY, V3_ITEM_TYPES, questionSpec } from './judge/presetQuestions';
 export type { QuestionSpec } from './judge/presetQuestions';
 // 05.3-44: the card-eligibility rule is shared with the old engine; v3 screens reach it here so they never import the old barrel (P-01).
-export { cardEligibility } from '../cardRule';
+export { cardEligibility, ITEM_TYPES, suggestItemType } from '../cardRule';
 export type { ItemType, CardRule } from '../cardRule';
 export { buildSchedule } from './plan/schedule';
 export type { ScheduleInput, ScheduleOutcome } from './plan/schedule';
 export { monthlyEquivalentOf } from './plan/cadence';
 export { planCard, salesTaxOf } from './plan/planCard';
+export { priceAfterLines } from './plan/priceLines';
+export type { PriceLine } from './plan/priceLines';
 // 05.4 FIN-27 (D-19, ARC-25): the one owner of region tax defaults; the check sheet pre-fills the rate from it (screens in 08.1).
 export { lookupTaxDefault, INCLUDED_COUNTRIES } from './tax/lookup';
 export type { TaxDefaultLookup } from './tax/lookup';
