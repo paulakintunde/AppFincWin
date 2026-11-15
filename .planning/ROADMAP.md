@@ -1432,7 +1432,7 @@ Plans:
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
   8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Phase 8 delivers only the "off by default" part: 08-25 proves a partner's personal line counts nothing through 05.5's `countsForMe`. The opt-in itself and the two-partners rule moved to 08.1 with former 08-28 on 2026-11-11.)
   9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (Phase 8: 08-25 my-share adapter on 05.5's `countsForMe`, 08-30 settlement exclusion. Removing the old `decide_settings.share_pct` column is 05.5's work, 05.5 D-09; the Decide screen parts are 08.1's.)
-**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`. The revision round against main ran on 2026-11-15 (quick 261114-x0q); waves unchanged.
+**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`. The revision round against main ran on 2026-11-15 (quick 261114-x0q), with a second pass the same day after 05.5 waves 1-3 and 06.2 merged (migrations re-dated to `20261122000100..000900`; 05.5 gate met); waves unchanged.
 
 Plans:
 **Wave 1**
@@ -1485,7 +1485,7 @@ Plans:
 - [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 08-25-PLAN.md — [gated on 05.5] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
+- [ ] 08-25-PLAN.md — [05.5 gate met 2026-11-15] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
 
 **Moved to Phase 08.1** *(2026-11-11, owner decision; re-plan on the 06.1 screens)*
 - 08-28 — Partner opt-in, shared safety net, caveat, couples note -> `08.1-CARRY-OVER-08-28.md`
