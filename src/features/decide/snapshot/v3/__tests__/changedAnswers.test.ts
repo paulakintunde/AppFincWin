@@ -26,7 +26,7 @@ import { EXPECTED_DIFFS } from './expectedDiffs';
 const FILE = path.join(__dirname, 'changedAnswers.json');
 const WRITE = process.env.CHANGED_ANSWERS_WRITE === '1';
 /** Flipped to true by the owner approval step of 05.5-16 (Task 3): from then on an unapproved row fails the build. */
-const REQUIRE_APPROVAL = false;
+const REQUIRE_APPROVAL = true;
 const MIN_REASON = 20;
 
 type Section = 'answer' | 'grow' | 'detector' | 'input';

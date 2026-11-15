@@ -9,8 +9,8 @@
       "reason": "The category limit now comes from the cap set on Activity (categories.monthly_cap), so a purchase in that category is checked against it and the answer now says when it crosses the limit. The verdict itself did not change. The old path read caps only from the rules document.",
       "source": "D-11 cap store",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "answer:demo, settings answered, Activity caps on Dining and Groceries:600 cash in the Groceries category (demo)",
@@ -21,8 +21,8 @@
       "reason": "The category limit now comes from the cap set on Activity (categories.monthly_cap), so a purchase in that category is checked against it and the answer now says when it crosses the limit. The verdict itself did not change. The old path read caps only from the rules document.",
       "source": "D-11 cap store",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "input:0:D-11 cap store",
@@ -33,8 +33,8 @@
       "reason": "Category limits now come from the category cap set on Activity; caps typed into the rules document no longer count.",
       "source": "D-11 cap store",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "input:1:gap: seriesId",
@@ -45,8 +45,8 @@
       "reason": "A debt now says which regular payment covers it, so the same payment is not counted a second time.",
       "source": "gap: seriesId",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "grow:demo:left",
@@ -57,8 +57,8 @@
       "source": "05.5-26 Grow on v3",
       "reason": "The new usual month does not subtract saving that was only logged as lines (the old path subtracted 900.00 of logged saving and investing). Saving counts only when it is a standing plan (a repeating series).",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "grow:demo:saving",
@@ -69,8 +69,8 @@
       "source": "05.5-26 Grow on v3",
       "reason": "Same cause: hand-logged saving no longer counts; only standing saving plans do, and the demo account has none.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "grow:demo:badges",
@@ -81,8 +81,8 @@
       "source": "05.5-26 Grow on v3",
       "reason": "The badge and an unset floor now read standing plans only. A rule with a figure of its own, and logged-only saving, can flip from \"Met\" to \"Not yet\".",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "grow:typed:left",
@@ -93,8 +93,8 @@
       "source": "05.5-26 Grow on v3",
       "reason": "Typed saving, debt and investing figures now count; the old rough path ignored them.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "grow:typed:saving",
@@ -105,8 +105,8 @@
       "source": "05.5-26 Grow on v3",
       "reason": "Typed saving now shows as the saving row; the old rough path showed none.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "grow:income",
@@ -117,8 +117,8 @@
       "source": "05.5-26 Grow on v3",
       "reason": "Decide and Grow now read one usual-month income (typicalIncome). Equal on the fixtures; it can differ for a variable earner. Rounding: none, this is a different statistic, not a rounding step.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "grow:unchanged",
@@ -129,8 +129,8 @@
       "source": "05.5-26 Grow on v3",
       "reason": "Listed so the owner sees the cases that did not move: income, spending and left are identical to the old path on these fixtures.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "detector:weekly",
@@ -141,8 +141,8 @@
       "source": "05.5-10 one detector",
       "reason": "Decide and Activity now share one detector and Activity's windows win; gaps of exactly 5 or 9 days are no longer offered as weekly.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "detector:fortnightly",
@@ -153,8 +153,8 @@
       "source": "05.5-10 one detector",
       "reason": "Activity's windows win; gaps of 11 or 17 days are no longer offered. This includes a pay on the 3rd and 17th seen in only two months.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "detector:monthly",
@@ -165,8 +165,8 @@
       "source": "05.5-10 one detector",
       "reason": "Activity's window starts a day earlier, so a 27-day gap is now offered as monthly (also in two-date clusters).",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "detector:quarterly",
@@ -177,8 +177,8 @@
       "source": "05.5-10 one detector",
       "reason": "Activity's window runs two days longer, so gaps of 96 or 97 days are now offered.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     },
     {
       "id": "detector:yearly",
@@ -189,8 +189,8 @@
       "source": "05.5-10 one detector",
       "reason": "No change; listed so the owner sees every cadence. Minimum repeats and the 10 percent amount tolerance were already identical.",
       "rounding": false,
-      "approved": false,
-      "approvedAt": null
+      "approved": true,
+      "approvedAt": "2026-11-15"
     }
   ]
 }
