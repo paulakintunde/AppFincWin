@@ -2,9 +2,10 @@
 // sentence, every line with its tick, duplicate and can't-verify tags and issues, editable
 // categories, the statement's limit offer, and the commit action.
 //
-// UI-SPEC colour rule: nothing here is colour-coded. Reconciliation, "Can't verify" and
-// "Possible duplicate" are words on a fill1 chip, and a negative balance is never shown as a
-// problem. The accent belongs to the commit action alone.
+// UI-SPEC colour rule: reconciliation and "Can't verify" are words on a fill1 chip, and a negative
+// balance is never shown as a problem. The accent belongs to the commit action alone. 06.2 D-12: a
+// line's state ("Possible duplicate", missing, already recorded) is a StatusBadge from the shared
+// map, so its colour always comes with its icon and word.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
@@ -15,6 +16,7 @@ import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { Pill } from '@/ui/Pill';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { Actions, Heading, SuggestionCard, T, Tag, useDynamicT, useFormatAmount } from './importUi';
@@ -245,9 +247,10 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
           >
             <T role="label">{label}</T>
           </Pressable>
-          {entry.tag === 'duplicate' ? <Tag label={t('importCsv.duplicate')} /> : null}
-          {entry.tag === 'missing' ? <Tag label={t('importCsv.missing.tag')} /> : null}
-          {entry.tag === 'recorded' ? <Tag label={t('importCsv.missing.recordedTag')} /> : null}
+          {/* 06.2 D-12: the row's state reads from the shared status map, with its existing words. */}
+          {entry.tag === 'duplicate' ? <StatusBadge status="tight" label={t('importCsv.duplicate')} /> : null}
+          {entry.tag === 'missing' ? <StatusBadge status="pending" label={t('importCsv.missing.tag')} /> : null}
+          {entry.tag === 'recorded' ? <StatusBadge status="paid" label={t('importCsv.missing.recordedTag')} /> : null}
           {item.check === 'cannot-verify' ? (
             <Tag label={t('importCsv.reconcile.rowTag')} accessibilityLabel={t('importCsv.reconcile.rowTagA11y')} />
           ) : null}
