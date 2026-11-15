@@ -103,7 +103,7 @@ jobs:
       # Written by the merge only when every part arrived (below the bar too), so the per-push check can start
       - name: Save the baseline for the per-push check
         if: always() && hashFiles('.stryker-cache/incremental.json') != ''
-        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0 (v4)
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4.3.0 (v4)
         with:
           path: .stryker-cache/incremental.json
           key: stryker-baseline-${{ github.event.pull_request.head.sha || github.sha }}
