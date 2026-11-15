@@ -251,7 +251,7 @@ describe('ActivityScreen', () => {
   it('shows the empty state for a month with nothing in it', async () => {
     const screen = await renderScreen();
     expect(screen.getByText('Nothing in September 2026 yet.')).toBeTruthy();
-    expect(screen.getByText('Add the first one with the Add button, clone August’s lines that aren’t already repeating, or paste a list.')).toBeTruthy();
+    expect(screen.getByText('Add the first one, or bring in a month from your bank statement.')).toBeTruthy();
   });
 
   it('CR-01: a failed series read with rows on screen shows the Home error copy, never a figure', async () => {

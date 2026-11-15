@@ -7,8 +7,8 @@
 // 03.1 D-43: the header is four bands (title row, month row with Search/Filter/More, summary card,
 // Display row) rendered by ActivityHeaderBands; Display and More live in their own sheets.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { type ScrollView, StyleSheet, View } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { Pressable, type ScrollView, StyleSheet, View } from 'react-native';
+import Animated, { FadeOut, ReduceMotion } from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { FlashList } from '@shopify/flash-list';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
@@ -33,11 +33,14 @@ import { monthOf } from '@/engine/time';
 import { money } from '@/engine/money';
 import { categoryName } from '@/features/record/categoryName';
 import { focusAccessibility } from '@/shell/a11yFocus';
-import { space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space, tile } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { EmptyState } from '@/ui/EmptyState';
-import { Pill } from '@/ui/Pill';
+import { EmptyState, accentTintOver } from '@/ui/EmptyState';
+import { MilestoneIcon } from '@/ui/icons/MilestoneIcon';
+import { EMPTY_FILTER } from '@/engine/activity';
+import { openEntry } from '@/features/record/entry/entryHost';
+import { DURATION, EASING, useMotion } from '@/theme/motion';
 import { ActivityRow, ProjectionRow, type CardPosition } from './ActivityRow';
 import { getActivityItemType, type ActivityItem } from './activitySections';
 import { BulkBar } from './BulkBar';
@@ -202,6 +205,18 @@ export function ActivityScreen({
     vm.setScope('month');
     vm.setSearchOpen(false);
   };
+  // 06.2-18 (D-24): the no-match empty state's one button clears the search term and sets every filter back to All,
+  // the same setters the search field and the filter chips use (the debt chip clears through its route).
+  const clearSearchAndFilters = () => {
+    vm.setTerm('');
+    vm.setFilter(EMPTY_FILTER);
+    if (vm.debt !== null) onClearDebt?.();
+  };
+  // 06.2-18 (L05): the empty month's card leaves with a 0.15 s fade when the first row arrives; Reduce Motion: at once.
+  const motion = useMotion();
+  const emptyExit = motion.reduced
+    ? undefined
+    : FadeOut.duration(DURATION.toastOut).easing(EASING).reduceMotion(ReduceMotion.Never);
   const wasSearchOpen = useRef(vm.searchOpen);
   useEffect(() => {
     if (wasSearchOpen.current && !vm.searchOpen && focusIconOnClose.current) {
@@ -531,28 +546,50 @@ export function ActivityScreen({
                 </Text>
               ) : null
             ) : searching || filtering ? (
-              <EmptyState heading={t('activity.noMatchHeading')} body={t('activity.noMatchBody')} />
+              <EmptyState
+                testID="activity-no-match"
+                icon="search"
+                heading={t('appLife.empty.search.heading')}
+                body={t('appLife.empty.search.body')}
+                actionLabel={t('appLife.empty.search.action')}
+                onAction={clearSearchAndFilters}
+              />
             ) : (
-              <View style={styles.emptyBlock}>
+              // 06.2-18 (D-24, L05): the first-entry tile plays once, one heading, one sentence and one button: clone
+              // last month when the screen offers it, otherwise Add a transaction. Paste stays as a quiet link.
+              <Animated.View testID="activity-empty-month" style={styles.emptyBlock} exiting={emptyExit}>
                 <EmptyState
-                  heading={t('activity.emptyHeading', { month: formatMonthLabel(month, formatter.locale) })}
-                  body={
-                    vm.monthTools.hasEarlier
-                      ? t('activity.empty.withClone', { month: vm.monthTools.prevMonthName })
-                      : t('activity.empty.noClone')
+                  iconSlot={
+                    <View
+                      testID="activity-empty-tile"
+                      accessible={false}
+                      importantForAccessibility="no-hide-descendants"
+                      accessibilityElementsHidden
+                      style={[styles.emptyTile, { backgroundColor: accentTintOver(colors.fill1, colors.accent) }]}
+                    >
+                      <MilestoneIcon name="firstEntry" color={colors.accent} size={24} testID="activity-empty-first-entry" />
+                    </View>
                   }
+                  heading={t('activity.emptyHeading', { month: formatMonthLabel(month, formatter.locale) })}
+                  body={t('appLife.empty.activity.body')}
+                  actionLabel={
+                    vm.monthTools.hasEarlier
+                      ? t('activity.empty.cloneAction', { month: vm.monthTools.prevMonthName })
+                      : t('appLife.empty.activity.action')
+                  }
+                  onAction={vm.monthTools.hasEarlier ? vm.monthTools.openClone : () => openEntry({ kind: 'new', direction: 'out' })}
                 />
-                <View style={styles.links}>
-                  {vm.monthTools.hasEarlier ? (
-                    <Pill
-                      label={t('activity.empty.cloneAction', { month: vm.monthTools.prevMonthName })}
-                      variant="secondary"
-                      onPress={vm.monthTools.openClone}
-                    />
-                  ) : null}
-                  <Pill label={t('activity.empty.pasteAction')} variant="secondary" onPress={vm.monthTools.openPaste} />
-                </View>
-              </View>
+                <Pressable
+                  testID="activity-empty-paste"
+                  accessibilityRole="link"
+                  onPress={vm.monthTools.openPaste}
+                  style={({ pressed }) => [styles.quietLink, pressed ? { opacity: PRESSED_OPACITY } : null]}
+                >
+                  <Text style={{ ...textRole(pairing, 'label'), color: colors.accent, textAlign: 'center' }}>
+                    {t('activity.empty.pasteAction')}
+                  </Text>
+                </Pressable>
+              </Animated.View>
             )}</View>
           }
         />
@@ -713,10 +750,19 @@ function JustSavedRow({ rowId, children }: { rowId: string; children: React.Reac
 const styles = StyleSheet.create({
   fill: { flex: 1 },
   pad: { paddingHorizontal: space.screenH },
-  links: {
-    flexDirection: 'row',
+  emptyTile: {
+    width: tile.big,
+    height: tile.big,
+    borderRadius: radii.glyphTile,
     alignItems: 'center',
-    gap: space.gapSm,
+    justifyContent: 'center',
+  },
+  quietLink: {
+    minHeight: space.touchMin,
+    minWidth: space.touchMin,
+    paddingHorizontal: space.gapSm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     flex: 1,
