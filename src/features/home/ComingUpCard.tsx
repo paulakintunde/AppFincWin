@@ -16,7 +16,7 @@ import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useFontScale } from '@/theme/FontScaleProvider';
 import { FONT_PAIRINGS } from '@/theme/fonts';
-import { PRESSED_OPACITY, radii, size, space, step } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space, step, tile } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -153,7 +153,7 @@ export function ComingUpCard({
         {wrap(
           [0, 1, 2].map((i) => (
             <View key={i} style={[styles.row, i === 0 ? null : { borderTopWidth: 1, borderTopColor: colors.fill2 }]}>
-              <View style={[styles.dateBlock, { backgroundColor: colors.line4, height: size.homeDateBlock }]} />
+              <View style={[styles.dateBlock, { backgroundColor: colors.line4, height: tile.row }]} />
               <View style={[styles.placeholderLine, { backgroundColor: colors.line4 }]} />
             </View>
           )),
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
     minHeight: space.touchMin,
     minWidth: 0,
   },
-  dateBlock: { width: size.homeDateBlock, alignItems: 'center' },
+  dateBlock: { width: tile.row, alignItems: 'center' },
   text: { flex: 1, minWidth: 0 },
   badge: { marginTop: step.hair },
   pay: {

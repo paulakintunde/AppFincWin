@@ -102,13 +102,13 @@ describe('UndoToastHost layers (D-16)', () => {
     expect(overlayHost).toBeTruthy();
   });
 
-  it('sheet placement sits at insets.bottom + 30 with sides 18', async () => {
+  it('sheet placement sits at insets.bottom + 30 with sides at the screen edge (22)', async () => {
     await mount(true);
     await show(ORDINARY);
     const style = hostStyle('Added · Coffee');
     expect(style.bottom).toBe(12 + 30);
-    expect(style.left).toBe(18);
-    expect(style.right).toBe(18);
+    expect(style.left).toBe(22);
+    expect(style.right).toBe(22);
   });
 
   it('app placement on a tab: tab bar height + 12; on an outer location: insets.bottom + 30', async () => {

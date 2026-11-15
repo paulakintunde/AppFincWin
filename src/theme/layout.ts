@@ -12,29 +12,38 @@ export const radii = {
 } as const;
 
 /**
- * BUILD-PROMPT.md §2 / 00-UI-SPEC.md Spacing Scale, exact prototype pixel values —
- * not a generic 4-point/8-point scale. Do not round these.
+ * 06.2 D-08: the six named spacing steps. Gaps between groups are at least twice the gaps inside them.
  */
+export const step = {
+  // hair: icon to its word; tight: chips in a row, tiles in a grid; row: inside a card, icon to text;
+  // card: card padding; edge: screen edge; section: between cards and groups.
+  hair: 4, tight: 8, row: 12, card: 16, edge: 22, section: 28,
+} as const;
+
 /** Pressed-state opacity for tappable rows and tiles (prototype :active), one value app-wide (UI review L13). */
 export const PRESSED_OPACITY = 0.72;
 
+/**
+ * BUILD-PROMPT.md §2 / 00-UI-SPEC.md Spacing Scale, exact prototype pixel values —
+ * not a generic 4-point/8-point scale. Do not round these.
+ */
 export const space = {
-  screenH: 22,
-  cardPad: 16,
+  screenH: step.edge,
+  cardPad: step.card,
   headerExtra: 21,
   sheetPadBottom: 30,
   sheetCornerPad: 22,
-  groupGap: 18,
-  rowPad: 15,
-  gapSm: 8,
-  gapMd: 12,
+  groupGap: step.section,
+  rowPad: step.row,
+  gapSm: step.tight,
+  gapMd: step.row,
   pillPadV: 15,
   /** Prototype 44 px target rule. Text links reach 52 dp tall through LINK_HIT_SLOP (src/ui/pressFeedback.ts, 06.1-62 CB-6). */
   touchMin: 44,
   /** Entry-sheet field rows (dense variant). */
-  rowPadDense: 13,
-  /** Home card inner padding, prototype L112/L127/L160; UI-SPEC home-card-pad. */
-  cardPadLg: 20,
+  rowPadDense: step.row,
+  /** Home card inner padding (06.2: now the card step). */
+  cardPadLg: step.card,
   /** FAB placement and padding (prototype html 1880-1888). */
   fabInset: 16,
   fabPadL: 16,
@@ -57,7 +66,7 @@ export const space = {
   chevronNudge: 3,
 } as const;
 
-/** Phase 3 shell and Home element sizes, verbatim from the prototype (03-UI-SPEC Spacing Scale). */
+/** Shell element sizes (03-UI-SPEC). Header buttons and the avatar are tap targets, not icon tiles. */
 export const size = {
   tabIcon: 22,
   avatar: 42,
@@ -73,19 +82,7 @@ export const size = {
   sheetHandleHit: 44,
   chevronCompact: 8,
   chevronDetail: 9,
-  homeQuickCircle: 52,
   homeBarHeight: 8,
-  homeDateBlock: 38,
-  homeAccountTile: 34,
-} as const;
-
-/**
- * 06.2 D-08: the six named spacing steps. Gaps between groups are at least twice the gaps inside them.
- */
-export const step = {
-  // hair: icon to its word; tight: chips in a row, tiles in a grid; row: inside a card, icon to text;
-  // card: card padding; edge: screen edge; section: between cards and groups.
-  hair: 4, tight: 8, row: 12, card: 16, edge: 22, section: 28,
 } as const;
 
 /** 06.2 D-09: rows have two heights only, one line and two lines. */

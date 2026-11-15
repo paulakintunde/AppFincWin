@@ -276,8 +276,9 @@ export function UndoToastHost({ placement = 'app' }: { placement?: 'app' | 'shee
 const styles = StyleSheet.create({
   host: {
     position: 'absolute',
-    left: space.groupGap,
-    right: space.groupGap,
+    // 06.2-24: the toast lines up with the screen edge (step.edge) now that groupGap is the 28 section step.
+    left: space.screenH,
+    right: space.screenH,
   },
 });
 
