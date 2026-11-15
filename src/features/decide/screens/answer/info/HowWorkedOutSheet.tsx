@@ -4,7 +4,7 @@
 // 06.1-59 (G-10): Decide home's footer row opens this same sheet; the footer's sources sentence comes in as `note`.
 import React from 'react';
 import { useT } from '@/i18n';
-import type { MonthPicture } from '@/engine/decide/v3';
+import type { MonthPicture } from '@/engine/month';
 import { money as makeMoney } from '@/engine/money';
 import { LabelValueRow } from '@/ui/LabelValueRow';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -47,7 +47,7 @@ export function HowWorkedOutSheet({ picture, currency, sources, recordsUpTo = nu
       <Block>
         <LabelValueRow label={t('decide.screens.answer.worked.balanceOn', { date: formatDate(picture.asOf) })} value={m(picture.balanceOn)} />
         <LabelValueRow label={t('decide.screens.answer.worked.afterBills')} value={m(picture.afterBillsBeforePayday)} />
-        <LabelValueRow label={t('decide.screens.answer.worked.expectedEnd')} value={m(picture.monthEnd)} />
+        <LabelValueRow label={t('decide.screens.answer.worked.expectedEnd')} value={m(picture.leftAfterPlans)} />
         {picture.unusedOverdraft > 0 ? (
           <LabelValueRow label={t('decide.screens.answer.worked.unusedOverdraft')} sub={t('decide.screens.answer.worked.notCountedAbove')} value={m(picture.unusedOverdraft)} />
         ) : null}

@@ -1,8 +1,8 @@
-// 06.1-55 (A-HOME-1, DS-11): the Your month card labels its two figures. The headline is left after this month's plans (monthEnd);
+// 06.1-55 (A-HOME-1, DS-11): the Your month card labels its two figures. The headline is left after this month's plans (leftAfterPlans);
 // the tiles are a usual month, or the low month. A short headline over a positive LEFT tile reads as two labelled figures.
 import React from 'react';
 import { fireEvent, screen, within } from '@testing-library/react-native';
-import type { MonthBar, MonthPicture } from '@/engine/decide/v3';
+import type { MonthBar, MonthPicture } from '@/engine/month';
 import { minorUnits } from '@/engine/money';
 import { wrap } from '@/test/stepProps';
 import { YourMonthCard } from '../YourMonthCard';
@@ -18,7 +18,7 @@ const picture = {
   asOf: '2026-11-12',
   balanceOn: mu(300000),
   afterBillsBeforePayday: mu(100000),
-  monthEnd: mu(-219095),
+  leftAfterPlans: mu(-219095),
   unusedOverdraft: mu(0),
   payday: '2026-12-01',
   usual: { comesIn: mu(500000), goesOut: mu(410738), left: mu(89262) },

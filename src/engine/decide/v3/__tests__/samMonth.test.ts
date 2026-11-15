@@ -1,4 +1,4 @@
-import { buildMonthModel } from '../month/model';
+import { buildMonthModel } from '../../../month/model/model';
 import { personById, toV3Inputs } from './golden/adapter';
 
 describe('C15 Sam month (golden)', () => {

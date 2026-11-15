@@ -106,6 +106,8 @@ module.exports = [
       ],
     },
   },
+  // ENG-16 (05.5-04): no clock, randomness or locale in engine production code.
+  ...require('./eslint/enginePurity.cjs'),
   {
     // QA-03 (05.4-09): the cross-check calculator shares no code with the engine. Only the table's types may be imported.
     // This replaces the engine block's rule for these files, so the React and app-layer bans are repeated here.
@@ -163,5 +165,11 @@ module.exports = [
     rules: {
       'no-restricted-imports': ['error', { paths: [{ name: 'react-native', importNames: ['Text', 'TextInput'], message: "DSG-07: import { Text } from '@/ui/Text' / { TextInput } from '@/ui/TextInput' so OS text scaling is capped (D-19)." }] }],
     },
+  },
+  {
+    // CMP-F09 (05.5-03): per-sentence copy guard over the locale catalogue. Existing hits are dated allowlist entries.
+    files: ['src/i18n/locales/**/*.ts'],
+    plugins: { fincwin: { rules: { 'copy-guard': require('./src/i18n/copyGuard/eslintRule.cjs') } } },
+    rules: { 'fincwin/copy-guard': ['error', { allowlist: './src/i18n/copyGuard/allowlist.json' }] },
   },
 ];

@@ -1,6 +1,7 @@
 import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { homeFigure, monthPicture, pastMonthBars, prepare, type MonthPicture } from '@/engine/decide/v3';
+import { homeFigure, prepare } from '@/engine/decide/v3';
+import { monthPicture, pastMonthBars, type MonthPicture } from '@/engine/month';
 import { inputsOf, monthOf, v3Line, v3Series } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { minorUnits } from '@/engine/money';
 import { QUICK_LINE_KINDS } from '../../sheets/quickLineKinds';
@@ -388,7 +389,7 @@ describe('Your month (CO-D-57, UX-30, UX-29)', () => {
   it('leads with the month-picture figure, which is the home figure', async () => {
     const { prepared } = engineFixture();
     const home = Number(homeFigure(prepared));
-    expect(Number(mockPicture!.monthEnd)).toBe(home);
+    expect(Number(mockPicture!.leftAfterPlans)).toBe(home);
     await wrap(<DecideHome />);
     const lead = screen.getByTestId('month-lead');
     const dollars = Math.round(Math.abs(home) / 100).toLocaleString('en-US');
@@ -414,7 +415,7 @@ describe('Your month (CO-D-57, UX-30, UX-29)', () => {
   });
 
   it('a negative month grows down and says short in words', async () => {
-    mockPicture = { ...mockPicture!, monthEnd: minorUnits(-12_000), usual: { comesIn: minorUnits(300_000), goesOut: minorUnits(312_000), left: minorUnits(-12_000) } };
+    mockPicture = { ...mockPicture!, leftAfterPlans: minorUnits(-12_000), usual: { comesIn: minorUnits(300_000), goesOut: minorUnits(312_000), left: minorUnits(-12_000) } };
     await wrap(<DecideHome />);
     expect(screen.getByTestId('month-lead').props.accessibilityLabel).toBe('$120 short in October, after this month’s plans');
     expect(screen.getByTestId('stacked-seg-short', { includeHiddenElements: true })).toBeTruthy();

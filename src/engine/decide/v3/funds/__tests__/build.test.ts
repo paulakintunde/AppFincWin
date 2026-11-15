@@ -2,7 +2,7 @@ import { array, assert as fcAssert, integer, property, record } from 'fast-check
 import { minorUnits as mu } from '../../../../money/types';
 import { inputsOf, monthOf, v3Line } from '../../__tests__/helpers/fixtures';
 import { personById, toV3Inputs } from '../../__tests__/golden/adapter';
-import { buildMonthModel } from '../../month/model';
+import { buildMonthModel } from '../../../../month/model/model';
 import type { Envelope, V3Account, V3Inputs } from '../../types';
 import { buildFunds } from '../build';
 

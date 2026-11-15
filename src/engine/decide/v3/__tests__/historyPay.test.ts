@@ -4,7 +4,7 @@
  */
 import { minorUnits } from '../../../money/types';
 import { evaluate } from '../evaluate';
-import { historyPay } from '../month/historyPay';
+import { historyPay } from '../../../month/model/historyPay';
 import { prepare } from '../prepare';
 import type { IncomeProfile, V3Inputs } from '../types';
 import { corpus } from './reviewed/corpus';
