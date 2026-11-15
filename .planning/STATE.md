@@ -213,6 +213,7 @@ Recent decisions affecting current work:
 | 261101-vmi | Engine test pins the unspent roll-forward clamp (unspent.ts:104); fixes the flaky 100% engine coverage gate that failed main and PR #90 | 2026-11-02 | 3416e419 | [261101-vmi-pin-unspent-clamp-coverage](./quick/261101-vmi-pin-unspent-clamp-coverage/) |
 | 261106-bf2 | Switch Decide on for testers: DECIDE_OPEN and DECIDE_V3 true, v3 for every account (owner 2026-11-06) | 2026-11-06 | 8096e25a | [261106-bf2-switch-decide-on-for-testers-decide-open](./quick/261106-bf2-switch-decide-on-for-testers-decide-open/) |
 | 261111-o0p | Phase 8 integration conflicts written into plans (08-28/29 to 08.1, 08-GATES.md, 05.5 notes) | 2026-11-11 | 3df07119 | [261111-o0p-write-phase-8-integration-conflict-decis](./quick/261111-o0p-write-phase-8-integration-conflict-decis/) |
+| 261114-e9v | Decide audit fixes: one-off/future quick income left out of the usual month; answer parts read quick lines; Undo of answered choices (migration 20261114000100) | 2026-11-14 | f4a040c5 | [261114-e9v-decide-audit-fixes](./quick/261114-e9v-decide-audit-fixes/) |
 
 ## Deferred Items
 

@@ -163,15 +163,29 @@ export function withQuickFacts(facts: readonly Fact[], counted: number, savings:
   return at < 0 ? [...kept, ...own] : [...kept.slice(0, at), ...own, ...kept.slice(at)];
 }
 
-/** judgeCheck for this check with its quick lines counted; with none, exactly judgeCheck. */
-export function judgeWithQuickLines(prepared: Prepared, check: CheckV2): Evaluation {
-  if ((check.quickLines ?? []).length === 0) return judgeCheck(prepared, check);
+/**
+ * The prepared inputs and the check with this check's quick lines folded in (the same objects back when it has none).
+ * Every engine read for one check (the answer, both ways to pay, the ready date, the cash path) starts from this.
+ */
+export function withQuickLinesPrepared(
+  prepared: Prepared,
+  check: CheckV2,
+): { readonly prepared: Prepared; readonly check: CheckV2; readonly counted: number; readonly savings: MinorUnits } {
+  if ((check.quickLines ?? []).length === 0) return { prepared, check, counted: 0, savings: minorUnits(0) };
   const overlay = withQuickLines(prepared.inputs, check);
-  if (overlay.counted === 0) return judgeCheck(prepared, overlay.check);
+  if (overlay.counted === 0) return { prepared, check: overlay.check, counted: 0, savings: overlay.savings };
   // The accounts with no exchange rate were taken out by the first prepare; they stay named in the notices.
   // 06.1 FIN-20: the first prepare already cut the freelance pay (and cleared the share), so its fact is carried over.
   const folded: Prepared = { ...prepare(overlay.inputs), unrated: prepared.unrated, taxSetAside: prepared.taxSetAside ?? null };
-  const ev = judgeCheck(folded, overlay.check);
+  return { prepared: folded, check: overlay.check, counted: overlay.counted, savings: overlay.savings };
+}
+
+/** judgeCheck for this check with its quick lines counted; with none, exactly judgeCheck. */
+export function judgeWithQuickLines(prepared: Prepared, check: CheckV2): Evaluation {
+  if ((check.quickLines ?? []).length === 0) return judgeCheck(prepared, check);
+  const overlay = withQuickLinesPrepared(prepared, check);
+  if (overlay.counted === 0) return judgeCheck(prepared, overlay.check);
+  const ev = judgeCheck(overlay.prepared, overlay.check);
   if (ev.result.code === 'needs_input') return ev;
   return { ...ev, result: { ...ev.result, facts: withQuickFacts(ev.result.facts, overlay.counted, overlay.savings) } };
 }
