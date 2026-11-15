@@ -1,6 +1,6 @@
 import * as fc from 'fast-check';
 import { addDays, addMonthsClamped } from '../../../decide/v3/dates';
-import { detectCandidates, twoDateClusters, type DetectContext, type DetectRow } from '../recurring';
+import { detectCandidates, type DetectContext, type DetectRow } from '../recurring';
 
 const EMPTY: DetectContext = { dismissedKeys: new Set(), linkedRowIds: new Set() };
 
@@ -141,27 +141,5 @@ describe('detectCandidates edge cases', () => {
       row('2025-01-03', -1500, { id: 'c' }),
     ];
     expect(detectCandidates(rows, EMPTY)).toEqual([]);
-  });
-});
-
-describe('twoDateClusters', () => {
-  it('returns null when a cluster is not monthly', () => {
-    const dates = ['2026-01-01', '2026-02-01', '2026-04-01', '2026-01-15', '2026-02-15', '2026-03-15'];
-    expect(twoDateClusters(dates)).toBeNull();
-  });
-
-  it('splits 1st and 15th', () => {
-    const dates = ['2026-01-01', '2026-01-15', '2026-02-01', '2026-02-15', '2026-03-01', '2026-03-15'];
-    const c = twoDateClusters(dates);
-    expect(c?.days).toEqual([1, 15]);
-    expect(c?.members[0]).toHaveLength(3);
-  });
-
-  it('returns null for a single day', () => {
-    expect(twoDateClusters(['2026-01-05', '2026-02-05', '2026-03-05', '2026-04-05'])).toBeNull();
-  });
-
-  it('returns null when the centres are under 10 days apart', () => {
-    expect(twoDateClusters(['2026-01-01', '2026-01-07', '2026-02-01', '2026-02-07', '2026-03-01', '2026-03-07'])).toBeNull();
   });
 });

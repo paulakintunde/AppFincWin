@@ -55,7 +55,6 @@ export const RESET_COLUMNS: readonly string[] = [
   'steady_amount',
   'spread_months',
   'hold_months',
-  'share_pct',
   'detail',
   'remind_plan',
   'remind_unspent',

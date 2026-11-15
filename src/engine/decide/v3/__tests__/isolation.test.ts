@@ -50,7 +50,7 @@ const ALLOWED_EXACT = [
   'decide/lineDefaults',
   'decide/bisectCore',
 ];
-const RECURRING_ONLY = ['recurring/detect', 'recurring/offer', 'categorize/guessCategory'];
+const RECURRING_ONLY = ['recurring/detect', 'recurring/offer', 'recurring/twoDate', 'categorize/guessCategory'];
 const RECURRING_FILE = 'month/model/recurring';
 
 function isAllowed(fileRel: string, resolvedRel: string): boolean {

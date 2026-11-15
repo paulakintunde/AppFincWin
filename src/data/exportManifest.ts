@@ -95,12 +95,11 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'investing_floor', 'saving_floor', 'basis_override', 'updated_at',
     // 05.2
     'income_types', 'income_pattern', 'income_pattern_confirmed', 'variable_method', 'steady_amount', 'spread_months',
-    'hold_months', 'share_pct', 'detail', 'remind_plan', 'remind_unspent', 'setup_done_at', 'everyday_override',
+    'hold_months', 'detail', 'remind_plan', 'remind_unspent', 'setup_done_at', 'everyday_override',
     'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'reserve_account_id', 'reserve_goal',
     'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
     'refine_last_at', 'refine_snooze_until',
     'custom_options', // 05.3-81
-    'safety_net_protect', 'safety_net_size', 'safety_net_locked', // 05.4 D-33 / D-61 interim, removed in 05.5
     // 06.1 (D-23, FIN-20)
     'answered_no_debts_at', 'answered_net_not_set_at', 'answered_no_rules_at', 'answered_bills_right_at', 'tax_set_aside_bp',
   ],

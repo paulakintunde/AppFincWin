@@ -73,14 +73,14 @@ describe('06-10 safety net comes from the flagged goal only (criterion 7)', () =
 
   it('the interim settings columns and the typed reserve are ignored entirely', () => {
     const source = withGoals([net()]);
-    const loud = { ...SETTINGS, safety_net_size: 999, safety_net_protect: false, safety_net_locked: false, reserve_account_id: 'demo-acct-cash' } as V3SettingsSource;
+    const loud = { ...SETTINGS, reserve_account_id: 'demo-acct-cash' } as V3SettingsSource;
     const withReserve: SnapshotSource = { ...source, settings: { ...source.settings!, reserve: 5000 } };
     expect(plain(build(withReserve, loud))).toEqual(plain(build(source)));
   });
 
   it('no flagged goal: no net and no emergency fund, whatever the old columns hold', () => {
     const source = demoSource(TODAY);
-    const loud = { ...SETTINGS, safety_net_size: 999 } as V3SettingsSource;
+    const loud = { ...SETTINGS } as V3SettingsSource;
     const withReserve: SnapshotSource = { ...source, settings: { ...source.settings!, reserve: 5000 } };
     const i = build(withReserve, loud);
     expect(i.safetyNet).toBeNull();

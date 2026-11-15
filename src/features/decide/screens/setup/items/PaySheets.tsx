@@ -1,25 +1,23 @@
 // 06.1-24 (D32E, D32I): the two sheets on the Pay and payday item. "Change your pay" and "Add other income". Both hand the figures
 // back through a callback and write nothing; the item screen saves them to Activity.
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useT } from '@/i18n';
 import type { RecurringFreq } from '@/engine/recurring';
 import type { AccountRow } from '@/db/rows';
-import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { space } from '@/theme/layout';
-import { Chip } from '@/ui/Chip';
-import { hapticLight, hapticSelection } from '@/ui/haptics';
+import { hapticLight } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Field, FieldLabel, Note } from '@/features/decide/screens/sheets/sheetUi';
-import { DayGrid, FreqChips } from './itemFields';
+import { PayForm, payFormDirty, payFormReady, usePayFormCopy } from '@/features/record/forms/PayForm';
+import { OTHER_INCOME_NAME_MAX, validAmount } from '@/features/record/forms/limits';
+import { FreqChips } from './itemFields';
 
-export const OTHER_INCOME_NAME_MAX = 40;
-
-const validAmount = (minor: number | null): minor is number => minor !== null && minor > 0 && minor <= MAX_INPUT_MINOR;
+export { OTHER_INCOME_NAME_MAX };
 
 export interface PayEditValues {
   amount: number;
@@ -44,53 +42,37 @@ export function PayEditSheet(props: PayEditSheetProps) {
 
 function PayEditForm({ amount, day, accountId, accounts, currency, onSave, onDismiss }: PayEditSheetProps) {
   const t = useT();
+  const copy = usePayFormCopy();
+  const startAccount = accountId ?? accounts[0]?.id ?? null;
   const [amountMinor, setAmountMinor] = useState<number | null>(amount);
   // 06.1-54 (A-SU-4): the payday is picked from 1 to 31, never typed.
   const [parsedDay, setParsedDay] = useState<number | null>(day);
-  const [account, setAccount] = useState<string | null>(accountId ?? accounts[0]?.id ?? null);
-  const ready = validAmount(amountMinor) && parsedDay !== null && account !== null;
+  const [account, setAccount] = useState<string | null>(startAccount);
+  const values = { amount: amountMinor, day: parsedDay, accountId: account };
+  const ready = payFormReady(values, { day: true, account: true });
   const title = t('decide.screens.setupPayBills.payEdit.title');
-  const dirty = amountMinor !== amount || parsedDay !== day || account !== (accountId ?? accounts[0]?.id ?? null);
+  const dirty = payFormDirty(values, { amount, day, accountId: startAccount });
   return (
     <Sheet visible onDismiss={onDismiss} accessibilityLabel={title} dirty={dirty}>
       <SheetHeader title={title} cancelLabel={t('decide.screens.common.cancel')} onCancel={onDismiss} />
       <SheetScroll contentContainerStyle={styles.column}>
-        <Note>{t('decide.screens.setupPayBills.payEdit.sub')}</Note>
-        <MoneyInput
-          value={amountMinor}
+        <PayForm
           currency={currency}
-          onChange={(minor) => setAmountMinor(validAmount(minor) ? minor : null)}
-          label={t('decide.screens.setupPayBills.payEdit.amount')}
-          accessibilityLabel={t('decide.screens.setupPayBills.payEdit.amount')}
-          boxed
-        />
-        <FieldLabel>{t('decide.screens.setupPayBills.payEdit.day')}</FieldLabel>
-        <DayGrid label={t('decide.screens.setupPayBills.payEdit.day')} day={parsedDay} onPick={setParsedDay} />
-        {accounts.length > 1 ? (
-          <View style={styles.column}>
-            <FieldLabel>{t('decide.screens.setupPayBills.payEdit.account')}</FieldLabel>
-            <View accessibilityRole="radiogroup" accessibilityLabel={t('decide.screens.setupPayBills.payEdit.account')} style={styles.chips}>
-              {accounts.map((a) => (
-                <Chip
-                  key={a.id}
-                  label={a.name}
-                  selected={account === a.id}
-                  onPress={() => {
-                    hapticSelection();
-                    setAccount(a.id);
-                  }}
-                />
-              ))}
-            </View>
-          </View>
-        ) : null}
-        <Pill
-          variant="primary"
-          label={t('decide.screens.setupPayBills.payEdit.save')}
-          disabled={!ready}
-          onPress={() => {
+          note={copy.note}
+          amount={amountMinor}
+          onAmount={setAmountMinor}
+          amountLabel={copy.amount}
+          day={parsedDay}
+          onDay={setParsedDay}
+          dayLabel={copy.day}
+          accounts={accounts}
+          accountId={account}
+          onAccount={setAccount}
+          accountLabel={copy.account}
+          primaryLabel={copy.save}
+          primaryDisabled={!ready}
+          onPrimary={() => {
             if (!validAmount(amountMinor) || parsedDay === null || account === null) return;
-            hapticLight();
             onSave({ amount: amountMinor, day: parsedDay, accountId: account });
           }}
         />
@@ -168,5 +150,4 @@ function OtherIncomeForm({ currency, onAdd, onDismiss }: OtherIncomeSheetProps) 
 
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
 });

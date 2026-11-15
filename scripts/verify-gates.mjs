@@ -168,6 +168,14 @@ try {
     expect('eslint fails on a banned sentence', eslint.status !== 0);
     expect('eslint output names fincwin/copy-guard', eslint.output.includes('fincwin/copy-guard'));
   }
+
+  console.log('Probe 10: Decide writing an account (D-10, BO-07 point 7)');
+  writeProbe('src/features/decide/__gate_probe__/writesAccount.ts', "import '@/data/mutations/accountUse';\n");
+  {
+    const depcruise = run('npx depcruise src --config .dependency-cruiser.cjs');
+    expect('depcruise fails on Decide importing the account-use writer', depcruise.status !== 0);
+    expect('depcruise output names decide-never-writes-accounts', depcruise.output.includes('decide-never-writes-accounts'));
+  }
 } finally {
   cleanup();
 }

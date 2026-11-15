@@ -57,6 +57,8 @@ export interface DecideGoEndSeries {
   id: string;
   expected_version: number;
   end_date: string;
+  /** 05.5-13 (ARC-23): 'stopped' for a bill a cost-that-stops ends. The server must set it with end_date (see the 05.5-13 summary). */
+  end_reason?: 'stopped';
 }
 
 export type DecideLinkRole = 'day_one' | 'payment' | 'running_cost';
