@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 06.2 App life wave 4 closed (17/24): 11 save moment, 14 toasts, 15 You, 16 Accounts, 17 categories.icon_key (migration 20261115000100 not yet in prod, owner-gated); wave 5 (18-23) running"
+stopped_at: "Phase 06.2 App life wave 5 closed (23/24): 18 empty states, 19 category icons + picker, 20 goals rings, 21 debts/investing, 22 Decide open checks, 23 import done; next wave 6: 24 phase close (full suite, doc edits for owner review); then owner-gated prod push of 20261115000100 before merge"
 last_updated: "2026-11-12T00:23:59.282Z"
 last_activity: 2026-11-11
 progress:
