@@ -788,11 +788,11 @@ describe('TransactionSheet: keypad, toggles, notes and wording (REC-20)', () => 
       mockV3 = false;
       let r = await open({ kind: 'edit', row: incomeRow() });
       expect(r.queryByText('Income type')).toBeNull();
-      r.unmount();
+      await r.unmount();
       mockV3 = true;
       r = await open({ kind: 'edit', row: row({ recurring_series_id: 's1' } as Partial<TransactionRow>) });
       expect(r.queryByText('Income type')).toBeNull();
-      r.unmount();
+      await r.unmount();
       r = await open({ kind: 'edit', row: row({ original_amount: 100 }) });
       expect(r.queryByText('Income type')).toBeNull();
     });
