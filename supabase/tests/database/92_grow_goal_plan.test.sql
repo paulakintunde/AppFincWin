@@ -44,8 +44,8 @@ create function public.t92_series(i uuid, acc uuid, amt integer, anchor date) re
 $$;
 
 -- Fixtures, written as the table owner. B is a second member of A's household.
-insert into public.household_members (household_id, user_id, role, weight)
-  values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+  values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
   ('ca920000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 500000),
   ('ca920000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Savings', 'savings', 'USD', 0);

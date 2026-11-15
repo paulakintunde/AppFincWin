@@ -19,8 +19,8 @@ create temp table a_hh as select id from hh where owner_id = '11111111-1111-1111
 grant select on a_hh to authenticated;
 
 -- B joins A's household as a member.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', false, 1);
 
 create function public.t91_ver(e text, i uuid) returns integer language plpgsql as $$
 declare v integer;

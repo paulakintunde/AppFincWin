@@ -8,7 +8,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(23);
+select extensions.plan(24);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -20,8 +20,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 -- Fixtures written as the table owner (the client has no insert grant on goals or decision columns).
 insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
@@ -78,11 +78,12 @@ select extensions.throws_ok(
   $$select public.apply_patches('[{"entity":"decide_checks","id":"c4000000-0000-0000-0000-000000000003","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb)$$,
   '42501', null, 'A cannot patch C''s check');
 
--- 7. Debts are household-scoped: B (member) edits A's household debt.
+-- 7. Debts are the creator's alone (Phase 8 D-12, 08-01/08-05; was household-scoped): B (member) cannot edit A's debt,
+-- and the refusal is the not-found one a missing id gets. A, the creator, still can.
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 select extensions.is(
   (public.apply_patches('[{"entity":"debts","id":"de000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"balance":80000}}]'::jsonb)) ->> 'status',
-  'applied', 'a household member patches a household debt');
+  'conflict', 'a household member cannot patch another member''s debt (refused like a missing id)');
 
 -- 17-18 (part 2, run as B here): owner-private change and goal.
 select extensions.throws_ok(
@@ -93,6 +94,9 @@ select extensions.throws_ok(
   '42501', null, 'a member cannot patch another user''s savings goal');
 
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select extensions.is(
+  (public.apply_patches('[{"entity":"debts","id":"de000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"balance":80000}}]'::jsonb)) ->> 'status',
+  'applied', 'the creator patches their own debt (version untouched by B''s refused patch)');
 
 -- 8-9. Links: only deleted_at.
 select extensions.is(

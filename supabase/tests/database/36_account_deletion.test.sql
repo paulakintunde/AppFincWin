@@ -31,8 +31,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household, so B's later deletion is a non-owner member leaving.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
@@ -94,6 +94,9 @@ values ('b1000000-0000-0000-0000-0000000000b1', (select id from hh where owner_i
 insert into public.debts (id, household_id, created_by, name, kind, currency, is_housing)
 values ('d1000000-0000-0000-0000-0000000000d1', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
         '11111111-1111-1111-1111-111111111111', 'Mortgage', 'loan', 'USD', true);
+
+-- Phase 8 (D-13, 08-05): B may only use own or joint accounts, so A's Savings account is made joint for B's series below.
+update public.accounts set is_shared = true where id = 'a1000000-0000-0000-0000-000000000002';
 
 -- B (a non-owner member) also authors a series and a row in A's household.
 set local role authenticated;
