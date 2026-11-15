@@ -13,7 +13,10 @@ import { pendingFixIds } from './pendingRules';
 import { PLAIN_PRICE_LIMIT, plainAnswer } from './plain';
 
 const RUNS = Number(process.env.CROSSCHECK_RUNS ?? 1000);
-const SEED = process.env.CROSSCHECK_SEED ? Number(process.env.CROSSCHECK_SEED) : Date.now() % 2_000_000_000;
+// A fixed default seed keeps the PR gate and the mutation run repeatable; CROSSCHECK_SEED=random draws from the clock (nightly), a number pins one.
+const DEFAULT_SEED = 20_261_115;
+const SEED_ENV = process.env.CROSSCHECK_SEED;
+const SEED = SEED_ENV === 'random' ? Date.now() % 2_000_000_000 : SEED_ENV ? Number(SEED_ENV) : DEFAULT_SEED;
 
 describe('cross-check calculator vs engine', () => {
   it(`agrees on ${RUNS} random fixtures`, () => {

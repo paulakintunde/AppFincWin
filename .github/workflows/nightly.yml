@@ -24,6 +24,7 @@ jobs:
         run: npm run test:crosscheck
         env:
           CROSSCHECK_RUNS: 20000
+          CROSSCHECK_SEED: random
       # 05.4-43: the end-to-end properties at full strength (2,000 cases each). The nightly mutation run is
       # mutation-full.yml's schedule (sharded; a single job cannot finish 13,949 mutants).
       - name: Engine properties (2,000 cases each)
