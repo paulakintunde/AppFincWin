@@ -13,7 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { applyKey, type KeypadKey } from '@/engine/money/keypad';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 
 export interface KeypadProps {
   value: string;
@@ -41,7 +41,7 @@ export function Keypad({ value, onChange, exponent, decimalSeparator, maxMinor, 
     onKeyPress?.(key);
     const next = applyKey(value, key, { exponent, decimalSeparator, maxMinor });
     if (next !== value) {
-      hapticSelection();
+      hapticTick();
       onChange(next);
     }
   };

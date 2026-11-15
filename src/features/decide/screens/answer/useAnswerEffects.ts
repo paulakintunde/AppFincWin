@@ -2,11 +2,15 @@
 // one warning haptic when a rule was crossed, the seen state remembered (so Home can say "Changed since you looked"), the per-day
 // history row (the whole Result, as JSON), and the analytics event with the code and variant only. The history table may not exist in production yet, so that
 // write is allowed to fail without the answer noticing.
+// 06.2-22 (D-20, D-23): every answer shown gives one light tap (hapticTap); an answer that is short, or that crosses a money rule,
+// also gives a warning (hapticWarn). An ask (needs_input) is a question, not an answer: no tap. A fit never gives the Success
+// haptic (D-20: Success is for goal reached, debt cleared and import done only).
 import { useEffect, useRef } from 'react';
 import { seenOf, type Result } from '@/engine/decide/v3';
 import type { DecideCheckRow, StoredSeenV3 } from '@/db/decideChecks';
 import { getAnalytics } from '@/services/analytics';
-import { hapticWarning } from '@/ui/haptics';
+import { hapticTap, hapticWarn } from '@/ui/haptics';
+import { stateForVerdict } from '../logic/stateForVerdict';
 
 export interface AnswerEffectWrites {
   /** useMarkCheckSeen().markSeen */
@@ -53,7 +57,11 @@ export function useAnswerEffects({ row, result, writes, inputsKey }: UseAnswerEf
     const key = `${id}|${code}|${variant ?? 'none'}`;
     if (done.current === key) return;
     done.current = key;
-    if (result.facts.some((f) => f.code === 'line_crossed')) hapticWarning();
+    if (code !== 'needs_input') {
+      hapticTap();
+      const short = stateForVerdict(code, variant).tone === 'short';
+      if (short || result.facts.some((f) => f.code === 'line_crossed')) hapticWarn();
+    }
     // An ask (needs_input) is shown and counted, but it is not something Decide said about the purchase: no seen state, no history.
     if (code !== 'needs_input') {
       try {

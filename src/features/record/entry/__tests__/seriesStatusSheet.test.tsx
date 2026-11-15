@@ -13,7 +13,7 @@ jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => ({ width: mockWidth, height: 874, scale: 2, fontScale: mockScale }),
 }));
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn(), hapticSuccess: jest.fn(), hapticMedium: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn(), hapticMilestone: jest.fn() }));
 
 const mockStop = jest.fn((_s: unknown, _d: string, _o: string) => 'step-stop');
 const mockPause = jest.fn((_s: unknown, _d: string, _o: string) => 'step-pause');

@@ -16,7 +16,7 @@ const mockByIds = jest.fn();
 const mockWritten = jest.fn();
 
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 jest.mock('@/data/mutations/refundLinks', () => ({
   useLinkRefund: () => ({ link: (r: unknown, p: unknown) => mockLink(r, p) }),
   useUnlinkRefund: () => ({ unlink: (r: unknown) => mockUnlink(r) }),

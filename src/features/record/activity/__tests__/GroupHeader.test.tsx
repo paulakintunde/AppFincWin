@@ -28,7 +28,8 @@ describe('GroupHeader', () => {
   it('shows the count and the net when the group counts lines', async () => {
     const screen = await renderHeader(group({ count: 2, net: -35000 }));
     expect(screen.getByText('2 transactions')).toBeTruthy();
-    expect(screen.getByText('-$350.00')).toBeTruthy();
+    // 06.2 D-14: shown with a true minus; spoken with the formatter's own sign.
+    expect(screen.getByText('−$350.00')).toBeTruthy();
     expect(screen.getByLabelText('2026-11-16, 2 transactions, net -$350.00')).toBeTruthy();
   });
 

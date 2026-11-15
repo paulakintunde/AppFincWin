@@ -17,7 +17,7 @@ import { useGoalToast } from '@/features/grow/goals/useGoalToast';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
@@ -135,7 +135,7 @@ function SizeForm({ net, saved, onClose, onSaved }: NetSizeSheetProps) {
       stepId = edit(net, protect !== (net.protect !== false) ? { target: size, protect } : { target: size }, userId, saved);
       name = net.name;
     }
-    hapticLight();
+    hapticTap();
     onSaved?.();
     onClose();
     toast({ key: 'grow.safetyNet.sizeSheet.savedToast', params: { amount: money.amount(size) }, stepId, undoLabel: 'safetyNetSizeSaved', name, userId, householdId });

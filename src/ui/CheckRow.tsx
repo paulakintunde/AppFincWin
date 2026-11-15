@@ -6,7 +6,7 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 
 const BOX_SIZE = 22; // UI-SPEC check box
 const BOX_BORDER = 1.5; // UI-SPEC check box outline
@@ -38,7 +38,7 @@ export function CheckRow({ checked, onToggle, name, source, amount, onRemove, re
         accessibilityLabel={[name, source, amount].filter((part) => part !== undefined && part !== '').join(', ')}
         disabled={inert}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           onToggle();
         }}
         style={({ pressed }) => [styles.main, { opacity: pressed ? PRESSED_OPACITY : 1 }]}

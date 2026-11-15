@@ -407,24 +407,29 @@ export function registerTransferMutations(qc: QueryClient): void {
   });
 }
 
-export function useAddTransfer(): { add(input: AddTransferInput): { transferId: string; stepId: string } } {
+/** `legIds`: the two new rows (out, in), client-minted, so the caller can point at them (06.2 L02 save moment). */
+export function useAddTransfer(): {
+  add(input: AddTransferInput): { transferId: string; stepId: string; legIds: readonly [string, string] };
+} {
   const mutation = useMutation<InsertedLeg[], unknown, AddTransferVars>({
     mutationKey: mutationKeys.addTransfer,
     scope: WRITE_SCOPE,
   });
 
   return {
-    add(input: AddTransferInput): { transferId: string; stepId: string } {
+    add(input: AddTransferInput): { transferId: string; stepId: string; legIds: readonly [string, string] } {
       if (!input.transferCategoryId) {
         throw new TypeError('useAddTransfer: transferCategoryId is required (the system Transfer category)');
       }
       const timeZone = input.timeZone ?? getDeviceTimeZone();
       const localDate = input.localDate ?? localDateIn(new Date(), timeZone);
       const transferId = Crypto.randomUUID();
+      const outId = Crypto.randomUUID();
+      const inId = Crypto.randomUUID();
       const built = buildTransferLegs({
         transferId,
-        outId: Crypto.randomUUID(),
-        inId: Crypto.randomUUID(),
+        outId,
+        inId,
         from: input.from,
         to: input.to,
         amountOut: input.amountOut as never,
@@ -461,7 +466,7 @@ export function useAddTransfer(): { add(input: AddTransferInput): { transferId: 
         labelName: input.toName,
         homeCurrency: input.homeCurrency,
       });
-      return { transferId, stepId };
+      return { transferId, stepId, legIds: [outId, inId] as const };
     },
   };
 }

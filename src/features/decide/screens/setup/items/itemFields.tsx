@@ -10,7 +10,7 @@ import { RadioDot } from '@/ui/RadioDot';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { DayGrid, FieldLabel, useSetupFormat } from '@/features/record/forms/formFields';
 
 // 05.5-17: these pieces moved to the shared forms folder; re-exported so the other Decide setup files import them as before.
@@ -35,7 +35,7 @@ export function DayPicker({ label, day, emptyText, onChange }: { label: string; 
         accessibilityRole="button"
         accessibilityLabel={`${label} ${shown}`}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           setOpen(true);
         }}
         style={[styles.box, { backgroundColor: colors.fill6 }]}
@@ -79,7 +79,7 @@ export function RadioRow({ label, selected, onPress }: { label: string; selected
       accessibilityLabel={label}
       accessibilityState={{ selected, checked: selected }}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={styles.radio}

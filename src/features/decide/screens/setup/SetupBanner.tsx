@@ -14,7 +14,7 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { DURATION, EASING, useReduceMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
@@ -90,7 +90,7 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
   const [collapsed, setCollapsed0] = useState(collapsedThisSession);
   const setCollapsed = (next: boolean): void => {
     collapsedThisSession = next;
-    hapticLight();
+    hapticTap();
     setCollapsed0(next);
   };
 
@@ -104,7 +104,7 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
           variant="secondary"
           label={t('decide.screens.setup.banner.doneLink')}
           onPress={() => {
-            hapticLight();
+            hapticTap();
             if (userId) void markSetupDoneSeen(userId);
             setMarkedSeen(true);
             onSeeUses?.();
@@ -133,7 +133,7 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
             variant="primary"
             label={t('decide.screens.setup.banner.start')}
             onPress={() => {
-              hapticLight();
+              hapticTap();
               onStart(progress.next);
             }}
           />
@@ -169,7 +169,7 @@ export function SetupBanner({ progress, onStart, onCheckFirst, onSeeUses, setupD
         accessibilityRole="button"
         accessibilityLabel={rowLabel}
         onPress={() => {
-          hapticLight();
+          hapticTap();
           onStart(progress.next);
         }}
         style={({ pressed }) => [styles.row, { opacity: pressed ? PRESSED_OPACITY : 1 }]}

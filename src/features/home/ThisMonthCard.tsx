@@ -3,7 +3,7 @@
 // rate are counted and labelled, never estimated. The card never replaces position.left while
 // anything is due, and read failures are disclosed, never shown as an empty month (T-03-22-01). Figures cap at 1.3x text size and
 // stack to one column above it (D-19).
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
@@ -13,13 +13,14 @@ import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { FONT_PAIRINGS } from '@/theme/fonts';
 import { radii, size, space } from '@/theme/layout';
-import { DURATION, EASING } from '@/theme/motion';
+import { DURATION, EASING, useMotion } from '@/theme/motion';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import type { MonthDataState } from '@/data/queries/monthDataState';
 import { isMonthEmpty, paidOutText } from '@/features/record/activity/monthFigureInputs';
 import { useShouldStack } from '@/ui/textFit';
+import { useOncePerSession } from '@/ui/motion/useOncePerSession';
 import { MonthChips } from './MonthChips';
 
 // UI-SPEC Spacing "prototype-literal exceptions (Home)": the 12 / 14 / 16 px gaps between the
@@ -45,17 +46,53 @@ export interface ThisMonthCardProps {
   afterPlans?: { left: number | bigint } | null;
 }
 
-function Segment({ pct, color, opacity, testID }: { pct: number; color: string; opacity?: number; testID: string }) {
-  const width = useSharedValue(pct);
+// 06.2 D-18: a segment is a full-width bar stretched by scaleX from its left edge, never a width animation. On the
+// first view this session it stretches from 0 over DURATION.fill; on later views and under Reduce Motion it is drawn
+// at its length at once; a changed figure later moves from the old length over DURATION.swap. No count-up anywhere.
+function Segment({
+  pct,
+  stretchIn,
+  color,
+  opacity,
+  testID,
+}: {
+  pct: number;
+  stretchIn: boolean;
+  color: string;
+  opacity?: number;
+  testID: string;
+}) {
+  const { reduced } = useMotion();
+  const target = Math.min(100, Math.max(0, pct)) / 100;
+  const scale = useSharedValue(stretchIn && !reduced ? 0 : target);
+  const settled = useRef(false);
   useEffect(() => {
-    width.value = withTiming(pct, { duration: DURATION.progress, easing: EASING });
-  }, [pct, width]);
-  const style = useAnimatedStyle(() => ({ width: `${width.value}%` }));
+    if (reduced) {
+      scale.value = target;
+    } else {
+      scale.value = withTiming(target, { duration: settled.current ? DURATION.swap : DURATION.fill, easing: EASING });
+    }
+    settled.current = true;
+  }, [target, reduced, scale]);
+  const style = useAnimatedStyle(() => ({ transform: [{ scaleX: scale.value }] }));
   return (
     <Animated.View
       testID={testID}
       style={[styles.segment, { backgroundColor: color }, opacity === undefined ? null : { opacity }, style]}
     />
+  );
+}
+
+// The bar reads its once-per-session key only when it is drawn, so a first view that starts on the loading
+// placeholder still stretches when the figures arrive. Pending is drawn under paid, as long as paid + pending, so the
+// two read as one bar with a lighter tail.
+function MonthBar({ paidPct, pendingPct, color }: { paidPct: number; pendingPct: number; color: string }) {
+  const stretchIn = useOncePerSession('home.thisMonth.bar');
+  return (
+    <>
+      <Segment testID="home-bar-pending" pct={paidPct + pendingPct} stretchIn={stretchIn} color={color} opacity={0.3} />
+      <Segment testID="home-bar-paid" pct={paidPct} stretchIn={stretchIn} color={color} />
+    </>
   );
 }
 
@@ -195,8 +232,7 @@ export function ThisMonthCard({
           pending: fmt(position.unpaid),
         })}
       >
-        <Segment testID="home-bar-paid" pct={position.paidPct} color={colors.accent} />
-        <Segment testID="home-bar-pending" pct={position.pendingPct} color={colors.accent} opacity={0.3} />
+        <MonthBar paidPct={position.paidPct} pendingPct={position.pendingPct} color={colors.accent} />
       </View>
       <View style={[styles.figures, { flexDirection: stacked ? 'column' : 'row' }]}>
         {cells.map((c) => (
@@ -266,7 +302,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     flexDirection: 'row',
   },
-  segment: { height: size.homeBarHeight },
+  // Full width, stretched from the left edge (D-18).
+  segment: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, transformOrigin: 'left' },
   figures: { marginTop: FIGURES_GAP, gap: space.groupGap },
   cell: { flex: 1 },
   headlinePlaceholder: { marginTop: HEADLINE_GAP, height: 30, width: 160 },

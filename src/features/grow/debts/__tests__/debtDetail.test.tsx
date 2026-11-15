@@ -56,9 +56,9 @@ jest.mock('@/data/mutations/growDebts', () => ({
 jest.mock('@/state/undoToast', () => ({ showToast: (t: unknown) => mockToast(t) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPush(h) }));
 jest.mock('@/ui/haptics', () => ({
-  hapticLight: () => mockLight(),
-  hapticWarning: () => mockWarn(),
-  hapticSelection: jest.fn(),
+  hapticTap: () => mockLight(),
+  hapticWarn: () => mockWarn(),
+  hapticTick: jest.fn(),
 }));
 
 let mockPayments: { next: unknown; paid: unknown[] } | undefined;

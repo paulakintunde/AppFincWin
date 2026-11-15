@@ -21,6 +21,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { iconForCategory } from '@/ui/icons/iconFor';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
@@ -148,7 +149,7 @@ function SheetBody({ mode, onClose }: { mode: RuleSheetMode; onClose: () => void
           label={t('categories.rules.sheet.category')}
           value={chosen ? categoryName(chosen, t) : t('categories.rules.sheet.choose')}
           leading={
-            chosen ? <CategoryGlyph colorKey={chosen.color_key} letter={categoryName(chosen, t).charAt(0).toUpperCase()} /> : undefined
+            chosen ? <CategoryGlyph colorKey={chosen.color_key} icon={iconForCategory(chosen)} letter={categoryName(chosen, t).charAt(0).toUpperCase()} /> : undefined
           }
           chevron
           onPress={() => setPicking(true)}

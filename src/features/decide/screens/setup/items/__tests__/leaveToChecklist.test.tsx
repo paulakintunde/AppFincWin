@@ -19,7 +19,7 @@ jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, dismissTo: mockDismissTo, push: mockPush, back: mockBack, canGoBack: () => mockCanGoBack }),
 }));
 const mockWarning = jest.fn();
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: () => mockWarning() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn(), hapticWarn: () => mockWarning() }));
 
 beforeEach(() => {
   jest.clearAllMocks();

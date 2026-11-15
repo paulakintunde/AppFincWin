@@ -11,7 +11,7 @@ import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { space } from '@/theme/layout';
 import { Chip } from '@/ui/Chip';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
@@ -59,7 +59,7 @@ export function SeriesIncomeRows({ series, householdId, ownerId }: SeriesIncomeR
                   label={t(k.key)}
                   selected={kind === k.kind}
                   onPress={() => {
-                    hapticSelection();
+                    hapticTick();
                     write({ income_kind: k.kind });
                     setOpen(false);
                   }}

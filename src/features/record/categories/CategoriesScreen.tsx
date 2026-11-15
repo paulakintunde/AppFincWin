@@ -21,6 +21,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { iconForCategory } from '@/ui/icons/iconFor';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
@@ -43,7 +44,7 @@ export function CategoriesScreen() {
   const archived = lookup.all.filter((c) => c.archived_at !== null && !c.is_system);
 
   const glyph = (c: CategoryRow) => (
-    <CategoryGlyph colorKey={c.color_key} letter={categoryName(c, t).charAt(0).toUpperCase()} />
+    <CategoryGlyph colorKey={c.color_key} icon={iconForCategory(c)} letter={categoryName(c, t).charAt(0).toUpperCase()} />
   );
 
   const doRestore = (c: CategoryRow) => {

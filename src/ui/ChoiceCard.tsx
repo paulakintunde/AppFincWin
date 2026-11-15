@@ -6,7 +6,7 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 
 export interface ChoiceCardProps {
   selected: boolean;
@@ -31,7 +31,7 @@ export function ChoiceCard({ selected, onPress, title, flag, accessibilityLabel,
       accessibilityLabel={accessibilityLabel}
       disabled={readOnly}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={({ pressed }) => [

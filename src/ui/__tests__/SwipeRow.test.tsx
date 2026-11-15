@@ -4,9 +4,9 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { StyleSheet } from 'react-native';
 import { SwipeRow, SWIPE_ACTION_WIDTH, zoneWidthFor } from '../SwipeRow';
-import { hapticLight } from '../haptics';
+import { hapticTap } from '../haptics';
 
-jest.mock('../haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('../haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 
 const mockCaptured: { props: Record<string, any>; close: jest.Mock } = { props: {}, close: jest.fn() };
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
@@ -123,7 +123,7 @@ describe('SwipeRow', () => {
     await act(async () => mockCaptured.props.onSwipeableOpen('right'));
     expect(left.onCommit).toHaveBeenCalledTimes(1);
     expect(right.onCommit).not.toHaveBeenCalled();
-    expect(hapticLight).toHaveBeenCalledTimes(1);
+    expect(hapticTap).toHaveBeenCalledTimes(1);
     expect(mockCaptured.close).toHaveBeenCalledTimes(1);
   });
 

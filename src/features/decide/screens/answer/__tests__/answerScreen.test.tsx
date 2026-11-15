@@ -15,7 +15,7 @@ jest.mock('expo-crypto', () => ({ randomUUID: () => '00000000-0000-4000-8000-000
 const mockTrack = jest.fn();
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
 const mockHaptic = jest.fn();
-jest.mock('@/ui/haptics', () => ({ ...jest.requireActual('@/ui/haptics'), hapticWarning: () => mockHaptic() }));
+jest.mock('@/ui/haptics', () => ({ ...jest.requireActual('@/ui/haptics'), hapticWarn: () => mockHaptic() }));
 const mockPush = jest.fn();
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (...a: unknown[]) => mockPush(...a) }));
 const mockRouter = { push: jest.fn(), replace: jest.fn(), back: jest.fn(), canGoBack: () => true, dismissTo: jest.fn() };

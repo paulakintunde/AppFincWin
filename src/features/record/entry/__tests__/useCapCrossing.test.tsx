@@ -6,7 +6,7 @@ import { useCapCrossing } from '../useCapCrossing';
 const mockWarning = jest.fn();
 let mockUsage = new Map<string, CategoryUsageResult>();
 
-jest.mock('@/ui/haptics', () => ({ hapticWarning: () => mockWarning() }));
+jest.mock('@/ui/haptics', () => ({ hapticWarn: () => mockWarning() }));
 jest.mock('@/features/record/categories/useCategoryMonthUsage', () => ({
   useCategoryMonthUsage: () => ({ usage: mockUsage, isLoading: false }),
 }));

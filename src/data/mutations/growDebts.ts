@@ -27,6 +27,7 @@ import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { dueDateOf } from '@/features/grow/connect/debtPoint';
 import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
+import { markDebtCleared } from '@/state/debtCleared';
 import { writeClient } from './writeClient';
 import { acceptIfAlreadyApplied, upsertRow } from './cacheRows';
 import { invalidateDerivedReads } from './transactionCache';
@@ -496,6 +497,9 @@ function registerRecordDebtSale(qc: QueryClient): void {
           rows.map((r) => (r.id === vars.debtId ? { ...r, balance: owed, paid_off_on: null } : r))
         );
       }
+      // 06.2-21 (D-20): the final payment carried the balance to zero (integer minor units) and the server did not keep the
+      // debt open, so the debt detail may play its one "Debt cleared" moment.
+      if (vars.payment !== null && vars.balanceBefore - vars.payment.amount <= 0 && res.paidOff !== false) markDebtCleared(vars.debtId);
       refreshDebtReads(qc, vars.cache);
     },
     onError: async (err: unknown, vars: RecordDebtSaleVars) => {

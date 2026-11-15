@@ -18,7 +18,7 @@ import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { Text } from '@/ui/Text';
@@ -59,7 +59,7 @@ function EnvelopeAccountForm({ goalId, onClose, setAccount }: EnvelopeAccountShe
 
   const pick = (accountId: string, accountName: string): void => {
     if (goal === null || userId === undefined) return;
-    hapticLight();
+    hapticTap();
     // D-54: the patch names account_id only.
     const stepId = setAccount(goal, accountId, userId);
     showToast({ kind: 'ordinary', text: { key: 'grow.goals.detail.accountSavedToast', params: { account: accountName } }, stepId });

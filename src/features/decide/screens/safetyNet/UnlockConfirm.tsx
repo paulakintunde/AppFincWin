@@ -4,7 +4,7 @@ import React from 'react';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { useT } from '@/i18n';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { hapticWarning } from '@/ui/haptics';
+import { hapticWarn } from '@/ui/haptics';
 import type { NetUsePort } from './ports';
 
 type Translate = (key: string, params?: Record<string, string | number>) => string;
@@ -26,7 +26,7 @@ export function UnlockConfirm({ visible, goal, ownerId, net, amountText, onClose
   const unlock = (): void => {
     onClose();
     if (goal === null || ownerId === null) return;
-    hapticWarning();
+    hapticWarn();
     net.mutate({ goal, on: true, ownerId });
   };
   return (

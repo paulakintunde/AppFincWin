@@ -15,7 +15,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { QUICK_LINE_KINDS, type QuickLineKind } from '../sheets/quickLineKinds';
 
 export type PayChoice = 'once' | 'plan';
@@ -83,7 +83,7 @@ export function MoreDetails(props: MoreDetailsProps) {
         accessibilityState={{ expanded: props.open }}
         accessibilityLabel={`${t('decide.screens.home.check.moreDetails')}. ${sub}`}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           props.onToggle();
         }}
         style={[styles.row, { backgroundColor: colors.fill6 }]}
@@ -113,7 +113,7 @@ export function MoreDetails(props: MoreDetailsProps) {
                     accessibilityLabel={label}
                     onPress={() => {
                       if (selected) return;
-                      hapticSelection();
+                      hapticTick();
                       props.onPay(mode);
                     }}
                     style={[styles.segment, selected ? { backgroundColor: colors.surface } : null]}
@@ -172,7 +172,7 @@ export function MoreDetails(props: MoreDetailsProps) {
                   accessibilityLabel={t(`decide.screens.home.moreDetails.${TILE_A11Y[kind]}`)}
                   disabled={props.quickFull}
                   onPress={() => {
-                    hapticSelection();
+                    hapticTick();
                     props.onAddQuick(kind);
                   }}
                   style={[styles.tile, { borderColor: colors.line4, backgroundColor: colors.surface, opacity: props.quickFull ? 0.5 : 1 }]}

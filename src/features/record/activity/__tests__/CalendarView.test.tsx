@@ -5,6 +5,9 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { colors as tokenColors } from '@/theme/tokens';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { CalendarView } from '../views/CalendarView';
+import { layOutSheets } from '@/test/sheetLayout';
+
+jest.setTimeout(30000);
 
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 jest.mock('react-native-safe-area-context', () => ({
@@ -120,23 +123,11 @@ describe('CalendarView', () => {
     expect(StyleSheet.flatten(empty.props.style).backgroundColor).toBe('transparent');
   });
 
-  it('reports the detail y when a day is selected', async () => {
-    const onDetailLayout = jest.fn();
-    const screen = await render(
-      <ThemeProvider>
-        <CalendarView month="2026-10" weekStart={1} rows={ROWS} today="2026-10-25" onRowPress={jest.fn()} onDetailLayout={onDetailLayout} />
-      </ThemeProvider>
-    );
-    await fireEvent.press(screen.getByLabelText(/^Oct 14, 2 lines/));
-    const detail = screen.getByText('Oct 14, 2026').parent!.parent!;
-    detail.props.onLayout({ nativeEvent: { layout: { x: 0, y: 240, width: 300, height: 100 } } });
-    expect(onDetailLayout).toHaveBeenCalledWith(240);
-  });
-
   it('selects a day, lists its lines, and deselects on a second tap', async () => {
     const screen = await renderCal(1);
     await fireEvent.press(screen.getByLabelText(/^Oct 14, 2 lines/));
-    expect(screen.getByText('Oct 14, 2026')).toBeTruthy();
+    await layOutSheets();
+    expect(screen.getByText('Wednesday, Oct 14')).toBeTruthy();
     expect(screen.getByText('Coffee')).toBeTruthy();
     expect(screen.getByLabelText(/^Oct 14, 2 lines/).props.accessibilityState.selected).toBe(true);
     await fireEvent.press(screen.getByLabelText(/^Oct 14, 2 lines/));
@@ -147,6 +138,7 @@ describe('CalendarView', () => {
     const screen = await renderCal(1, [ROWS[0]!]);
     expect(screen.getAllByTestId('calendar-dot').length).toBe(1);
     await fireEvent.press(screen.getByLabelText(/^Oct 15, no lines/));
+    await layOutSheets();
     expect(screen.getByText('Nothing on this day.')).toBeTruthy();
   });
 });

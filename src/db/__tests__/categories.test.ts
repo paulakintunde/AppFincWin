@@ -74,7 +74,7 @@ describe('insertCategory', () => {
 
     await insertCategory(client, NEW_CATEGORY);
 
-    expect(CATEGORY_INSERT_KEYS).toEqual(['id', 'name', 'color_key', 'monthly_cap']);
+    expect(CATEGORY_INSERT_KEYS).toEqual(['id', 'name', 'color_key', 'monthly_cap', 'icon_key']);
     expect(client.calls.find((c) => c.method === 'insert')?.args[0]).toEqual({
       id: 'cat-1',
       name: 'Groceries',
@@ -144,7 +144,7 @@ describe('updateCategory', () => {
 
     expect(result.version).toBe(2);
     expect(client.calls.find((c) => c.method === 'eq' && c.args[0] === 'version')?.args).toEqual(['version', 1]);
-    expect(CATEGORY_PATCH_KEYS).toEqual(['name', 'color_key', 'archived_at', 'monthly_cap']);
+    expect(CATEGORY_PATCH_KEYS).toEqual(['name', 'color_key', 'archived_at', 'monthly_cap', 'icon_key']);
   });
 
   it('zero rows back with the row still present throws VersionConflictError carrying the server row', async () => {

@@ -84,11 +84,10 @@ let mockInvesting: { model: { holdings: unknown[]; totals: { value: number }; mo
 jest.mock('@/features/grow/investing/useInvestingRead', () => ({ useInvestingRead: () => mockInvesting }));
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockShowToast(...a) }));
 jest.mock('@/ui/haptics', () => ({
-  hapticSelection: jest.fn(),
-  hapticLight: () => mockHapticLight(),
-  hapticWarning: jest.fn(),
-  hapticSuccess: jest.fn(),
-  hapticMedium: jest.fn(),
+  hapticTick: jest.fn(),
+  hapticTap: () => mockHapticLight(),
+  hapticWarn: jest.fn(),
+  hapticMilestone: jest.fn(),
 }));
 
 const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 300)); });

@@ -10,7 +10,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
@@ -129,7 +129,7 @@ export function DayGrid({ label, day, onPick }: { label: string; day: number | n
             accessibilityLabel={fmt.ordinal(d)}
             selected={day === d}
             onPress={() => {
-              hapticSelection();
+              hapticTick();
               onPick(d);
             }}
           />
@@ -165,7 +165,7 @@ export function FreqChips({ label, value, onChange }: { label: string; value: Re
             label={word(f.value)}
             selected={value === f.value}
             onPress={() => {
-              hapticSelection();
+              hapticTick();
               onChange(f.value);
             }}
           />

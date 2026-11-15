@@ -12,7 +12,7 @@ jest.mock('@/theme/motion', () => ({ ...jest.requireActual('@/theme/motion'), us
 const mockMarkSeen = jest.fn(() => Promise.resolve());
 jest.mock('@/features/decide/hints/decideHints', () => ({ markSetupDoneSeen: (...a: unknown[]) => (mockMarkSeen as (...x: unknown[]) => unknown)(...a) }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 
 const TODAY = '2026-11-20';
 const NONE: SetupFacts = {

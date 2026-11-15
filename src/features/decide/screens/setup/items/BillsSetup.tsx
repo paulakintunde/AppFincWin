@@ -29,7 +29,7 @@ import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { useShouldStack } from '@/ui/textFit';
 import { Text } from '@/ui/Text';
@@ -322,7 +322,7 @@ function MarkChip({ testID, label, a11y, selected, off, hint, fill, onPress }: M
       accessibilityState={{ selected, disabled: inert }}
       disabled={inert}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={({ pressed }) => [styles.mark, fill ? styles.markFill : styles.markFull, { backgroundColor: colors.fill1, opacity: off ? OFF_OPACITY : pressed ? PRESSED_OPACITY : 1 }]}

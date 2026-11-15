@@ -15,7 +15,7 @@ const mockDismissTo = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn(), dismissTo: mockDismissTo, back: jest.fn(), push: jest.fn(), canGoBack: () => false }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-id' }));
 const mockWarning = jest.fn();
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: () => mockWarning() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn(), hapticWarn: () => mockWarning() }));
 // setupFactsFrom is pure; its module's read hooks are not used here.
 jest.mock('@/data/queries/decide', () => ({}));
 jest.mock('@/data/queries/decideV3', () => ({}));

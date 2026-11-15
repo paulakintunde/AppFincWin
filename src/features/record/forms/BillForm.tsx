@@ -3,7 +3,7 @@
 import React from 'react';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import type { RecurringFreq } from '@/engine/recurring';
 import { DayField, Field, FieldLabel, FreqChips, Note, dayFromText } from './formFields';
 import { BILL_NAME_MAX, validAmount } from './limits';
@@ -65,7 +65,7 @@ export function BillForm({ adding, currency, values, onChange, copy, primaryLabe
         disabled={!billFormReady(values)}
         onPress={() => {
           if (!billFormReady(values)) return;
-          hapticLight();
+          hapticTap();
           onPrimary();
         }}
       />

@@ -260,8 +260,11 @@ export function registerBulkAddMutations(qc: QueryClient): void {
 }
 
 export function useBulkAdd(): {
-  /** Returns the undo step id, minted once so a paused-mutation replay reuses it. */
-  save(items: readonly ListItem[], ctx: BulkAddContext): string;
+  /**
+   * Returns the undo step id, minted once so a paused-mutation replay reuses it. `onRowIds` hears the new rows' ids
+   * (client-minted, before the write is sent) so the caller can point at them (06.2 L02 save moment).
+   */
+  save(items: readonly ListItem[], ctx: BulkAddContext, onRowIds?: (ids: readonly string[]) => void): string;
 } {
   const mutation = useMutation<BulkAddResult, unknown, BulkAddVars>({
     mutationKey: mutationKeys.bulkAdd,
@@ -269,7 +272,7 @@ export function useBulkAdd(): {
   });
 
   return {
-    save(items, ctx): string {
+    save(items, ctx, onRowIds): string {
       const n = items.length;
       if (n === 0) throw new RangeError('useBulkAdd: nothing to save');
       const write = buildEntryListWrite(items, ctx, () => Crypto.randomUUID());
@@ -283,6 +286,7 @@ export function useBulkAdd(): {
         stepId,
         n,
       });
+      onRowIds?.(write.rows.map((r) => r.id));
       return stepId;
     },
   };

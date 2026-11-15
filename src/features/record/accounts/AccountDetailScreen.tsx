@@ -1,5 +1,7 @@
 // One account (REC-08, D-22, D-39): balance block with standing line, Import statement for this
 // account, Edit account, and this month's lines for the account.
+// 06.2 (D-10, ranked change 9): the header leads with a 48 IconTile carrying the account-type icon. D-24: the
+// not-found state gains the accounts icon only (this screen has no add action of its own).
 import React, { useCallback, useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
@@ -22,10 +24,12 @@ import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space } from '@/theme/layout';
+import { space, step, tile } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
-import { EmptyState } from '@/ui/EmptyState';
+import { EmptyState, accentTintOver } from '@/ui/EmptyState';
+import { IconTile } from '@/ui/icons/IconTile';
+import { iconForAccountKind } from '@/ui/icons/iconFor';
 import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
 import { Screen } from '@/ui/Screen';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
@@ -94,7 +98,7 @@ export function AccountDetailScreen({ accountId, onImport, openEditor = false }:
     return (
       <Screen>
         {accountsData === undefined ? null : (
-          <EmptyState heading={t('accounts.notFoundHeading')} body={t('accounts.notFoundBody')} />
+          <EmptyState icon="accounts" heading={t('accounts.notFoundHeading')} body={t('accounts.notFoundBody')} />
         )}
       </Screen>
     );
@@ -104,9 +108,18 @@ export function AccountDetailScreen({ accountId, onImport, openEditor = false }:
     <Screen>
       <SyncProblemLine inset={false} />
       <ScrollView contentContainerStyle={styles.column}>
-        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
-          {account.name}
-        </Text>
+        <View style={styles.header}>
+          <IconTile
+            icon={iconForAccountKind(account.kind)}
+            size={tile.big}
+            color={colors.accent}
+            tint={accentTintOver(colors.fill1, colors.accent)}
+            testID="account-detail-tile"
+          />
+          <Text accessibilityRole="header" style={[styles.headerText, { ...textRole(pairing, 'heading'), color: colors.ink }]}>
+            {account.name}
+          </Text>
+        </View>
         <AccountBalanceBlock account={account} balance={balances.get(account.id)} homeCurrency={rc.homeCurrency} />
         <AccountDetailRows
           account={account}
@@ -149,6 +162,12 @@ const styles = StyleSheet.create({
     gap: space.gapMd,
     paddingBottom: space.gapMd,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: step.row,
+  },
+  headerText: { flex: 1, minWidth: 0 },
   actions: {
     flexDirection: 'row',
     gap: space.gapSm,

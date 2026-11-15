@@ -8,7 +8,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { RadioDot } from '@/ui/RadioDot';
 import { useShouldStack } from './textFit';
 
@@ -49,7 +49,7 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
               disabled={readOnly ? true : undefined}
               onPress={() => {
                 if (selected) return;
-                hapticSelection();
+                hapticTick();
                 onChange(option.key);
               }}
               style={styles.listRow}
@@ -84,7 +84,7 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
             disabled={readOnly ? true : undefined}
             onPress={() => {
               if (selected) return;
-              hapticSelection();
+              hapticTick();
               onChange(option.key);
             }}
             style={[styles.segment, { backgroundColor: selected ? selectedBg : 'transparent' }]}

@@ -4,7 +4,7 @@ import { summarise, type ListItem } from '@/engine/entryList';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { EntryList } from '../EntryList';
 
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 
 const mockCaptured: { props: Record<string, any> } = { props: {} };
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {

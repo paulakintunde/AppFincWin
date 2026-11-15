@@ -21,7 +21,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { stateColors } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { StackedBar } from '@/ui/StackedBar';
 import { Text } from '@/ui/Text';
 import { MoreRow } from '../ui/MoreRow';
@@ -65,7 +65,7 @@ function BasisOption({ label, sub, selected, onPress }: { label: string; sub: st
       accessibilityLabel={sub === null ? label : `${label}, ${sub}`}
       onPress={() => {
         if (selected) return;
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={[styles.basis, selected ? { backgroundColor: colors.surface } : null]}
@@ -135,7 +135,7 @@ export function YourMonthCard(props: YourMonthCardProps) {
   const hasMore = (past === null && picture !== null) || props.recordsUpTo !== null;
 
   const step = (to: number): void => {
-    hapticSelection();
+    hapticTick();
     setBack(to);
   };
 
@@ -249,7 +249,7 @@ export function YourMonthCard(props: YourMonthCardProps) {
               accessibilityRole="button"
               accessibilityLabel={`${recordsDate}. ${recordsComplete}`}
               onPress={() => {
-                hapticSelection();
+                hapticTick();
                 props.onRecords();
               }}
               style={[styles.records, { borderTopColor: colors.line1 }]}

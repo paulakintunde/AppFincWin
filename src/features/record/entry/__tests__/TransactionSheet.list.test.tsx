@@ -5,7 +5,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { serialiseDraft, type ListItem } from '@/engine/entryList';
 import { getToast, resetToastForTests } from '@/state/undoToast';
-import { hapticLight, hapticSuccess } from '@/ui/haptics';
+import { hapticMilestone, hapticTap } from '@/ui/haptics';
 import { entryDraftKey } from '../useEntryDraft';
 import { TransactionSheet } from '../TransactionSheet';
 
@@ -18,10 +18,10 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('@/ui/haptics', () => ({
-  hapticLight: jest.fn(),
-  hapticSuccess: jest.fn(),
-  hapticWarning: jest.fn(),
-  hapticSelection: jest.fn(),
+  hapticTap: jest.fn(),
+  hapticMilestone: jest.fn(),
+  hapticWarn: jest.fn(),
+  hapticTick: jest.fn(),
   hapticHeavy: jest.fn(),
 }));
 
@@ -228,7 +228,7 @@ describe('Add to list', () => {
     expect(getByText('Save 1 entry')).toBeTruthy();
     expect(getByLabelText('What is it for?').props.value).toBe('');
     expect(getByText('Current')).toBeTruthy();
-    expect(hapticLight).toHaveBeenCalled();
+    expect(hapticTap).toHaveBeenCalled();
     expect(announce).toHaveBeenCalledWith('Tesco added to the list. 1 in list · £12.50');
   });
 
@@ -271,6 +271,8 @@ describe('Save with a list', () => {
     const { getByText, onClose } = await open();
     await addEntry('3', 'Bus');
     await addEntry('4', 'Tram');
+    // Each Add to list is its own light tap; count only the save's tap below.
+    (hapticTap as jest.Mock).mockClear();
     await fireEvent.press(getByText('Save 2 entries'));
     expect(mockAdd).not.toHaveBeenCalled();
     expect(mockBulkSave).toHaveBeenCalledTimes(1);
@@ -279,7 +281,11 @@ describe('Save with a list', () => {
     expect(items.map((i) => i.amountMinor)).toEqual([300, 400]);
     expect(ctx).toMatchObject({ householdId: 'h1', ownerId: 'u1', homeCurrency: 'GBP', transferCategoryId: 'tc' });
     expect(getToast()).toMatchObject({ stepId: 'bulk-step', text: { key: 'undo.label.addedMany', params: { count: 2 } } });
-    expect(hapticSuccess).toHaveBeenCalled();
+    // 06.2 D-20: saving a list is a light tap, never Success.
+    expect(hapticTap).toHaveBeenCalledTimes(1);
+    expect(hapticMilestone).not.toHaveBeenCalled();
+    // 06.2-11 L02: the new rows' ids go to the Activity wash
+    expect(typeof (mockBulkSave.mock.calls[0] as unknown[])[2]).toBe('function');
     expect(onClose).toHaveBeenCalled();
     await waitFor(async () => expect(await AsyncStorage.getItem(entryDraftKey('u1', 'h1'))).toBeNull());
   });

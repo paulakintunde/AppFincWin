@@ -15,11 +15,10 @@ jest.setTimeout(60000);
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a) } }));
 jest.mock('@/ui/haptics', () => ({
-  hapticSelection: jest.fn(),
-  hapticLight: jest.fn(),
-  hapticWarning: jest.fn(),
-  hapticSuccess: jest.fn(),
-  hapticMedium: jest.fn(),
+  hapticTick: jest.fn(),
+  hapticTap: jest.fn(),
+  hapticWarn: jest.fn(),
+  hapticMilestone: jest.fn(),
 }));
 // No records, no account: the calculators read only the home currency and today's date, both from cached preferences.
 jest.mock('@/features/record/useRecordContext', () => ({

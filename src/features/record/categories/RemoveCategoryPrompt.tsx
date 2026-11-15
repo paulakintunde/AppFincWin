@@ -19,6 +19,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { iconForCategory } from '@/ui/icons/iconFor';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -135,7 +136,7 @@ function PromptBody({ category, onDone, onCancel }: Omit<RemoveCategoryPromptPro
             <Row
               key={target.id}
               label={categoryName(target, t)}
-              leading={<CategoryGlyph colorKey={target.color_key} letter={categoryName(target, t).charAt(0).toUpperCase()} />}
+              leading={<CategoryGlyph colorKey={target.color_key} icon={iconForCategory(target)} letter={categoryName(target, t).charAt(0).toUpperCase()} />}
               onPress={() => doMerge(target)}
             />
           ))}

@@ -13,7 +13,7 @@ const mockShowToast = jest.fn();
 const mockSearch = jest.fn();
 
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 jest.mock('@/data/mutations/incomeTags', () => ({ useTagIncome: () => ({ tag: (i: unknown) => mockTag(i) }) }));
 jest.mock('@/db/transactions', () => ({ fetchTransactionsSearch: (...a: unknown[]) => mockSearch(...a) }));
 jest.mock('@/state/undoToast', () => ({ showToast: (t: unknown) => mockShowToast(t) }));

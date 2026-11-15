@@ -5,6 +5,7 @@ import type { AccountRow } from '@/db/rows';
 import type { AccountBalanceView } from '@/data/queries/activity';
 import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
 import { ACCENT_TINT_OPACITY, colors as tokenColors } from '@/theme/tokens';
+import { accentTintOver } from '@/ui/EmptyState';
 import { AccountsCard } from '../AccountsCard';
 
 jest.setTimeout(30000);
@@ -94,7 +95,7 @@ describe('AccountsCard', () => {
 
   it('D-39: a foreign row label is name, kind, figure and the short line', async () => {
     const { getAllByRole } = await draw([account({ id: 'u', name: 'Main', currency: 'USD' })], false, { balance: -74000 });
-    expect(getAllByRole('button')[0]?.props.accessibilityLabel).toBe('Main, Current account, −$740.00, Waiting for a rate');
+    expect(getAllByRole('button')[0]?.props.accessibilityLabel).toBe('Main, Current account, minus $740.00, Waiting for a rate'); // 06.2-24: spoken form, as on Accounts
   });
 
   it('H7: two quick presses push once, for a row and for See all', async () => {
@@ -111,21 +112,12 @@ describe('AccountsCard', () => {
     expect(mockPush).toHaveBeenCalledTimes(1);
   });
 
-  it('M4: the cash tile is fill1 plus an accent overlay, never accentTint1', async () => {
+  it('06.2 D-10: the cash tile is the account-type icon on the flattened accent tint, never accentTint1', async () => {
     const { getByTestId, toJSON } = await draw([account({ id: 'c', name: 'Cash', kind: 'cash' })]);
-    const style = Object.assign({}, ...[getByTestId('accent-tint', { includeHiddenElements: true }).props.style].flat(2));
-    expect(style.opacity).toBe(ACCENT_TINT_OPACITY);
-    expect(style.backgroundColor).toBe('#1B4D3E');
+    expect(getByTestId('glyph-acctCash', { includeHiddenElements: true })).toBeTruthy();
+    const style = Object.assign({}, ...[getByTestId('account-tile-c', { includeHiddenElements: true }).props.style].flat(2));
+    expect(style.backgroundColor).toBe(accentTintOver(tokenColors.fill1, '#1B4D3E', ACCENT_TINT_OPACITY));
     expect(JSON.stringify(toJSON())).not.toContain(tokenColors.accentTint1);
-  });
-
-  it('L3: the tile initial keeps an emoji whole and upper-cases for the locale', async () => {
-    const { getByText } = await draw([
-      account({ id: 'e', name: '🏦 Savings' }),
-      account({ id: 'f', name: 'émile' }),
-    ]);
-    expect(getByText('🏦', { includeHiddenElements: true })).toBeTruthy();
-    expect(getByText('É', { includeHiddenElements: true })).toBeTruthy();
   });
 
   it('L12 / M2: the heading is a header, and no 28px spacer sits in the card', async () => {

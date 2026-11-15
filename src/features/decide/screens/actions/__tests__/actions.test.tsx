@@ -16,7 +16,7 @@ import { RunningCostOffers } from '../RunningCostOffers';
 import { SaveForItScreen } from '../SaveForItScreen';
 
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'uuid-1' }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 // 06.1-63: the frame is DetailScreen (its own tests cover the header, Back and insets); here it shows its title.
