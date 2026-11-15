@@ -21,13 +21,13 @@ create temp table cat as
   select builtin_key as k, id from public.categories where owner_id = '11111111-1111-1111-1111-111111111111';
 
 insert into public.decide_settings (user_id, currency, custom_options)
-values ('11111111-1111-1111-1111-111111111111', 'USD', jsonb_build_object('v', 1, 'rules', jsonb_build_object('v', 1, 'rules', jsonb_build_array(
+values ('11111111-1111-1111-1111-111111111111', (select home_currency from public.profiles where id = '11111111-1111-1111-1111-111111111111'), jsonb_build_object('v', 1, 'rules', jsonb_build_object('v', 1, 'rules', jsonb_build_array(
   jsonb_build_object('id', 'ra', 'kind', 'category_cap', 'on', true,  'value', 15000, 'categoryId', (select id from cat where k = 'Housing')),
   jsonb_build_object('id', 'rb', 'kind', 'category_cap', 'on', true,  'value', 30000, 'categoryId', (select id from cat where k = 'Groceries')),
   jsonb_build_object('id', 'rc', 'kind', 'category_cap', 'on', true,  'value', 10000, 'categoryId', (select id from cat where k = 'Transfer')),
   jsonb_build_object('id', 'rd', 'kind', 'category_cap', 'on', true,  'value', 10000, 'categoryId', (select id from cat where k = 'Dining')),
   jsonb_build_object('id', 're', 'kind', 'category_cap', 'on', false, 'value', 12000, 'categoryId', (select id from cat where k = 'Transport'))
-)))));
+))));
 
 create temp table run1 as select * from public.decide_copy_rule_caps();
 
