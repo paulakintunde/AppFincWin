@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "06.2 App life merging (PR #122): main (05.5 waves 1-3, PRs #116/#120/#121) merged into feat/06.2-app-life, cache version 11; 06.2 built 24/24, icon_key migration in production. 05.5 wave 1 (PR #116), wave 2 (PR #120), wave 3 (PR #121) on main"
+stopped_at: "Phase 06.2 App life complete (24/24, PR #122 merged 2026-11-15; categories.icon_key in production; cache v11); next: one preview APK with Lottie (owner go-ahead), device checks in the post-05.5 test audit"
 last_updated: "2026-11-14T20:00:00.000Z"
 last_activity: 2026-11-14 -- 05.5-11 Band A pushed to production; main (PR #118) merged into phase/05.5-wave2
 progress:
