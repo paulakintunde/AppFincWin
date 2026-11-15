@@ -2,6 +2,10 @@
 
 Only named tester accounts may have Decide v3 (`profiles.decide_v3`) or shadow runs (`profiles.decide_shadow`) on. Demo and App Store reviewer accounts are never on.
 
+## The store-build switch
+
+05.5 deleted the old engine. `DECIDE_V3=false` is no longer a fallback: the switch no longer exists and there is no older Decide to fall back to. A store build is gated by `DECIDE_OPEN` alone, with the 05.4 safety patch in the build. `npm run check:decide-switch` fails if the old switch name comes back in `src`.
+
 ## The two lists
 
 - `docs/ops/decide-testers.json`: the owner's accounts and each named tester. Account IDs (UUIDs) only, with role `owner` or `tester`. No names, no emails.
