@@ -14,6 +14,8 @@ created: 2026-11-10
 
 Sources: 08-CONTEXT D-01..D-37 and `<specifics>`, REQUIREMENTS HH-01..HH-15, 05-UI-SPEC "Who pays what", 06-UI-SPEC conventions, CLAUDE.md design-fidelity and compliance rules.
 
+> **Revised 2026-11-15 (second pass, after 06.2 App life merged as #122).** Where this file names older parts, the 06.2 kit wins: icons from `src/ui/icons` (`Glyph`, `IconTile`, names in `iconData.ts`; no new drawings, so `people` = `household`, `swap` = `transfer`), status cues with `StatusBadge` (colour + shape + word) instead of `StateChip` or bare `sOver` / `sClock` / `sCheck`, spacing steps from `src/theme/layout.ts`, rows 52/64. Haptics follow 06.2 D-20 and the names in `src/ui/haptics.ts`: `hapticTap` replaces `hapticLight` (saves, send, join, tick), `hapticWarn` replaces `hapticWarning`, and the two `hapticSuccess` uses below (a confirmed "Yes, I got $84" and a successful join) become `hapticTap`, because Success is kept for goal reached, debt cleared and import done only (pinned by `src/ui/__tests__/hapticNames.test.ts`). The plans carry these changes.
+
 ---
 
 ## Design System
