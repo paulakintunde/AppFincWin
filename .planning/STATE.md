@@ -216,6 +216,7 @@ Recent decisions affecting current work:
 | 261111-o0p | Phase 8 integration conflicts written into plans (08-28/29 to 08.1, 08-GATES.md, 05.5 notes) | 2026-11-11 | 3df07119 | [261111-o0p-write-phase-8-integration-conflict-decis](./quick/261111-o0p-write-phase-8-integration-conflict-decis/) |
 | 261114-e9v | Decide audit fixes: one-off/future quick income left out of the usual month; answer parts read quick lines; Undo of answered choices (migration 20261114000100) | 2026-11-14 | f4a040c5 | [261114-e9v-decide-audit-fixes](./quick/261114-e9v-decide-audit-fixes/) |
 | 261114-x0q | Phase 8 revision round against main 318d6799 (Grow/06.1/05.5 functions + tables, cache bump, gates, open-PR overlaps; owner answers on Home switch and personal debt/goal lines) | 2026-11-15 | 103fea0d | [261114-x0q-phase-8-household-plan-revision-round](./quick/261114-x0q-phase-8-household-plan-revision-round/) |
+| 261115-hdd | CI fixes: fixed csv test pins tokenize.ts:145 (engine/csv 100% branch bar no longer random); full mutation run weekly (Sun 04:41 UTC), 40 parts, max 10 at once (owner 2026-11-15). Full run still blocked by Decide crosscheck borrowing-on-plans failure (seed 745051798, /gsd-debug next) | 2026-11-15 | 3170b1b6 | [261115-hdd-fix-ci-engine-csv-coverage-flake-and-wee](./quick/261115-hdd-fix-ci-engine-csv-coverage-flake-and-wee/) |
 
 ## Deferred Items
 

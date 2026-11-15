@@ -61,7 +61,7 @@ Revised 2026-11-15 (quick 261114-x0q): the pre-planning test names 89_..95_ now 
 | HH-13 | Leave/remove/transfer; open balance kept "(left)" | pgTAP | 109_household_leave_remove; 110_household_account_deletion | ❌ W0 | ⬜ pending |
 | HH-14 | Account delete: owner handoff, personal erased, shared kept, balances unchanged | pgTAP (extend 36) | `supabase test db` | extend | ⬜ pending |
 | SC8 | Partner opt-in off by default; partners' Fits never exceed shared money | fast-check | moved to 08.1 (former 08-28); Phase 8 only asserts "off by default" in 08-25's point-6 contract | n/a | moved to 08.1 |
-| SC9 | One my-share source; settlements excluded; owed-to-you not spendable | Jest property | `npm run test:engine` (src/engine/household bo07.point6 / bo07.phase8 contracts, 08-25 and 08-30) | ❌ W0 | ⬜ pending |
+| SC9 | One my-share source; settlements excluded; owed-to-you not spendable | Jest property | `npm run test:engine` (`src/engine/month/__tests__/bo07.point6` / `bo07.phase8` contracts, switched on in place by 08-25 and 08-30; manifest `npx jest src/test/contracts`) | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -71,9 +71,9 @@ Revised 2026-11-15 (quick 261114-x0q): the pre-planning test names 89_..95_ now 
 
 - [ ] `supabase/tests/database/101_household_privacy_two_user.test.sql` + meta-test `102_household_table_coverage.test.sql` enumerating every `household_id` table
 - [ ] `src/data/realtime/` module, `reconcile.test.ts` (fast-check), `test:realtime` script and Jest config
-- [ ] `src/engine/household/` (balances, my-share picture, countsForMe interface, memberLabel)
+- [ ] `src/engine/household/` (balances, my-share function, countsForMe input adapter, memberLabel; `countsForMe` itself is 05.5's `src/engine/month/countsForMe.ts`)
 - [ ] Extended `allocate` tests for zero weights
-- [ ] Gate task confirming 05.5 (`countsForMe`, BO-07 contract tests) landed
+- [ ] Gate task confirming 05.5 (`countsForMe`, BO-07 contract tests) landed (gate (c) met 2026-11-15; 08-25 Task 1 re-confirms)
 - [ ] `exportManifest` entries for new tables
 
 ---
