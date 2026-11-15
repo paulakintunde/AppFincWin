@@ -4,13 +4,13 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { CheckRow } from '../CheckRow';
 import { SegmentedToggle } from '../SegmentedToggle';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 
 jest.setTimeout(30000);
 
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 
-const haptic = hapticSelection as jest.Mock;
+const haptic = hapticTick as jest.Mock;
 
 function wrap(ui: React.ReactElement) {
   return render(<ThemeProvider>{ui}</ThemeProvider>);

@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
-import { hapticLight, hapticMedium } from '@/ui/haptics';
+import { hapticTap, hapticTick } from '@/ui/haptics';
 import { pushSheet } from '@/state/sheetStack';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
 import { useShellLayout } from '@/shell/layout/ShellLayoutProvider';
@@ -81,22 +81,22 @@ describe('Fab', () => {
   it('press fires a light haptic then the action', async () => {
     const { onDefault } = await mount();
     await fireEvent.press(screen.getByRole('button'));
-    expect(hapticLight).toHaveBeenCalledTimes(1);
-    expect(hapticMedium).not.toHaveBeenCalled();
+    expect(hapticTap).toHaveBeenCalledTimes(1);
+    expect(hapticTick).not.toHaveBeenCalled();
     expect(onDefault).toHaveBeenCalledTimes(1);
   });
 
   it('long press with quick actions fires a medium haptic and opens the menu', async () => {
     await mount(jest.fn(), jest.fn());
     await fireEvent(screen.getByRole('button'), 'longPress');
-    expect(hapticMedium).toHaveBeenCalledTimes(1);
+    expect(hapticTick).toHaveBeenCalledTimes(1);
     expect(holder.fab?.quickMenuOpen).toBe(true);
   });
 
   it('long press with no quick actions does nothing', async () => {
     await mount();
     await fireEvent(screen.getByRole('button'), 'longPress');
-    expect(hapticMedium).not.toHaveBeenCalled();
+    expect(hapticTick).not.toHaveBeenCalled();
     expect(holder.fab?.quickMenuOpen).toBe(false);
   });
 

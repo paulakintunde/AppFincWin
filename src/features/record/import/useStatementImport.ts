@@ -64,6 +64,7 @@ import { getAnalytics, type EventName, type EventProps } from '@/services/analyt
 import { useDeviceLocale } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
+import { hapticMilestone } from '@/ui/haptics';
 import { importExponentLookup, type ExponentLookup } from './currencyLookup';
 import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap';
 import { periodFullyImported } from './periodCoverage';
@@ -176,6 +177,10 @@ interface Machine {
   // after commit
   suggestions: RecurringSuggestion[];
   committedRows: { id: string; localDate: string; categoryId: string | null }[];
+  /** 06.2-23: the finished step's count (rows written plus bills marked paid) and the commit's step id, which keys the
+   * import-done icon so it plays once per commit. */
+  committedCount: number;
+  committedStepId: string | null;
 }
 
 const NONE = new Map<never, never>();
@@ -240,6 +245,8 @@ function initialMachine(accountId: string | null): Machine {
     rowsCheckedKey: null,
     suggestions: [],
     committedRows: [],
+    committedCount: 0,
+    committedStepId: null,
   };
 }
 
@@ -1418,6 +1425,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
 
     const count = built.rows.length + built.finalize.markPaid.length;
     showToast({ kind: 'destructive', text: { key: 'undo.label.imported', params: { count, n: count } }, stepId });
+    // 06.2 D-20: import done is a Success. Only here, after the commit was queued; a refused commit returned above.
+    hapticMilestone();
     track('import_committed', {
       entry,
       size: sizeBand(count),
@@ -1458,6 +1467,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       stage: 'done',
       suggestions,
       committedRows: ordinary.map((r) => ({ id: r.id, localDate: r.local_date, categoryId: r.category_id ?? null })),
+      committedCount: count,
+      committedStepId: stepId,
     });
   }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, recordPeriod, rowsChecked, transfersUnavailable]);
 
@@ -1663,6 +1674,8 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     commit,
     commitProblem,
     suggestions: m.suggestions,
+    committedCount: m.committedCount,
+    committedStepId: m.committedStepId,
     acceptSuggestion,
     dismissSuggestion,
   };

@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import { colors, shadows } from '@/theme/tokens';
+import { colors, shadows, stateColors } from '@/theme/tokens';
 import { radii, space } from '@/theme/layout';
 import type { ActivityRowView } from '@/data/queries/activity';
 import type { CategoryLookup } from '@/data/queries/categories';
@@ -11,7 +11,7 @@ import { ACCENTS } from '@/theme/accents';
 import { ActivityRow, ProjectionRow, type CardPosition } from '../ActivityRow';
 
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 const mockSwipe: { props: Record<string, any> } = { props: {} };
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
   const R = require('react');
@@ -192,11 +192,12 @@ describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)',
     expect(colourOf(amount)).toBe(colors.inkDim);
   });
 
-  it('colours Due and Overdue tags in danger, with their words intact', async () => {
+  // 06.2 D-12 / D-14: Due is a calm not-yet badge (never red); Overdue is the red short badge. Words intact.
+  it('shows Due as a not-yet badge and Overdue as a short badge, with their words intact', async () => {
     const due = await renderRow(row({ status: 'pending', local_date: '2026-09-30' }), 'only');
-    expect(colourOf(due.screen.getByText('Due'))).toBe(colors.danger);
+    expect(colourOf(due.screen.getByText('Due'))).toBe(stateColors.notYet.color);
     const overdue = await renderRow(row({ id: 'r2', status: 'pending', overdue: true, local_date: '2026-09-29' }), 'only');
-    expect(colourOf(overdue.screen.getByText('Overdue'))).toBe(colors.danger);
+    expect(colourOf(overdue.screen.getByText('Overdue'))).toBe(stateColors.short.color);
   });
 
   it('keeps the queued sync tag neutral', async () => {
@@ -204,7 +205,8 @@ describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)',
     expect(colourOf(screen.getByText('queued'))).toBe(colors.inkMuted);
   });
 
-  it('colours the Expected tag of a projection in danger', async () => {
+  // 06.2 D-14: red is only over cap, overdue and short; a projection's Expected tag is muted.
+  it('colours the Expected tag of a projection muted, not red', async () => {
     const screen = await render(
       <ThemeProvider>
         <ProjectionRow
@@ -216,7 +218,7 @@ describe('ActivityRow colours (02-polish item 5, UI-SPEC amendment 2026-10-07)',
         />
       </ThemeProvider>
     );
-    expect(flat(screen.getByText('Expected')).color).toBe(colors.danger);
+    expect(flat(screen.getByText('Expected')).color).toBe(colors.inkMuted);
   });
 });
 
@@ -260,15 +262,20 @@ describe('ActivityRow tags, refunds, swipe and balance note (02.2-21)', () => {
     expect(colourOf(b.screen.getByText('Received'))).toBe(ACCENTS.green);
   });
 
-  it('tags a pending expense dated yesterday Overdue, and pending income today Expected, in danger', async () => {
+  it('badges a pending expense dated yesterday Overdue (short), and pending income today Expected (not yet)', async () => {
     const a = await renderRow(row({ status: 'pending', local_date: '2026-09-29' }), 'only');
-    expect(colourOf(a.screen.getByText('Overdue'))).toBe(colors.danger);
+    expect(colourOf(a.screen.getByText('Overdue'))).toBe(stateColors.short.color);
     const b = await renderRow(row({ id: 'r2', status: 'pending', original_amount: 5000, local_date: '2026-09-30' }), 'only');
-    expect(colourOf(b.screen.getByText('Expected'))).toBe(colors.danger);
+    expect(colourOf(b.screen.getByText('Expected'))).toBe(stateColors.notYet.color);
   });
 
-  it('tags a future line Scheduled in inkMuted on fill1', async () => {
+  it('badges a pending bill dated later "Due <date>" (06.2 L02)', async () => {
     const { screen } = await renderRow(row({ status: 'pending', local_date: '2026-10-05' }), 'only');
+    expect(screen.getByText('Due 2026-10-05')).toBeTruthy();
+  });
+
+  it('tags a future paid line Scheduled in inkMuted on fill1', async () => {
+    const { screen } = await renderRow(row({ status: 'paid', local_date: '2026-10-05' }), 'only');
     const word = screen.getByText('Scheduled');
     expect(colourOf(word)).toBe(colors.inkMuted);
     expect(flat(word.parent as never).backgroundColor).toBe(colors.fill1);

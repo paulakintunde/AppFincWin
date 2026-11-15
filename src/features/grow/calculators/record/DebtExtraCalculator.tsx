@@ -20,7 +20,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { CalcPage, Card, FooterNote, ValueRow } from '../typed/CalcFields';
@@ -121,7 +121,7 @@ export function DebtExtraCalculator({ id }: { id: string }) {
         seriesName: fitLineName(t, 'grow.debts.extraSeriesName', row.name),
       });
       saved.current = true;
-      hapticLight();
+      hapticTap();
       setConfirming(false);
       showToast({
         kind: 'ordinary',

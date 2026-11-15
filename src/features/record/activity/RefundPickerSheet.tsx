@@ -22,7 +22,7 @@ import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
@@ -218,7 +218,7 @@ function RefundPickerForm({ direction, anchor, formatter, onClose }: RefundPicke
                   accessibilityState={{ checked: isSel }}
                   accessibilityLabel={[r.name ?? '', sub, amount].filter((p) => p !== '').join(', ')}
                   onPress={() => {
-                    hapticSelection();
+                    hapticTick();
                     setSelectedId(r.id);
                   }}
                   style={({ pressed }) => [styles.row, { opacity: pressed ? PRESSED_OPACITY : 1 }]}

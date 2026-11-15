@@ -9,7 +9,7 @@ import { MethodStep } from '../steps/MethodStep';
 let mockDecideV3 = true;
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 
 const mockSave = jest.fn((_input: { patch: Record<string, unknown>; stepTitle?: string }): { stepId: string } | null => ({ stepId: 'step-1' }));
 let mockSettings: Record<string, unknown> | null = null;

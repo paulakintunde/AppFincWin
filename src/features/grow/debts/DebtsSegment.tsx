@@ -16,13 +16,14 @@ import { AccTile } from '@/features/grow/ui/AccTile';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
@@ -201,7 +202,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         seriesName: fitLineName(t, 'grow.debts.extraSeriesName', extraRow.name),
       });
       extraDone.current = extraKey;
-      hapticLight();
+      hapticTap();
       showToast({
         kind: 'ordinary',
         text: { key: 'grow.debts.planSavedToastFrom', params: { amount: fmt.money(extra, currency), date: fmt.dayMonth(extraFrom) } },
@@ -220,7 +221,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
       stopOtherCarriers(carrierRow.id);
       const { stepId } = planSave.save({ ownerId: userId, debt: carrierRow, extra: 0, order, paidFromAccountId: null });
       extraDone.current = stopKey;
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'grow.debts.stopToast', params: { date: fmt.dayMonth(stopFrom) } }, stepId });
     } catch {
       showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
@@ -242,7 +243,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
       });
       onceDone.current = onceKey;
       setOnceKeyDone(onceKey);
-      hapticLight();
+      hapticTap();
       showToast({
         kind: 'ordinary',
         text: { key: 'grow.debts.onceToast', params: { amount: fmt.money(lump, currency), name: onceRow.name, date: fmt.dayMonth(onceOn) } },
@@ -262,7 +263,7 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
     if (userId === null) return;
     try {
       const stepId = removeDebt(debt, userId);
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: debt.name } }, stepId });
     } catch {
       showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
@@ -289,7 +290,8 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         <View style={styles.flex}>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{d.name}</Text>
           <Text style={line}>{sub}</Text>
-          {d.minimumEstimated ? <StateBadge tone="slate" shape="sQuestion" label={t('grow.debts.minimumEstimated')} /> : null}
+          {/* 06.2-21 (D-12): the row's state reads from the shared status map (slate, clock, word); the word stays. */}
+          {d.minimumEstimated ? <StatusBadge status="notYet" label={t('grow.debts.minimumEstimated')} testID={`debt-row-estimated-${d.id}`} /> : null}
         </View>
         <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{fmt.money(d.point.balance, d.currency)}</Text>
       </View>

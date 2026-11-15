@@ -13,7 +13,7 @@ import { radii, space } from '@/theme/layout';
 import { BACKDROP_OPACITY } from '@/ui/sheetDrag';
 import { useReduceMotion } from '@/theme/motion';
 import { textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { useReadOnlyScope } from '@/ui/ReadOnlyScope';
 
 export interface DropdownOption<K extends string> {
@@ -130,7 +130,7 @@ export function Dropdown<K extends string>({
                   accessibilityLabel={o.subLabel ? `${o.label}, ${o.subLabel}` : o.label}
                   accessibilityState={actionMenu ? undefined : { selected }}
                   onPress={() => {
-                    hapticSelection();
+                    hapticTick();
                     setOpen(false);
                     onSelect(o.key);
                   }}

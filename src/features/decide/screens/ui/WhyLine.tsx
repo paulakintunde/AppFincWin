@@ -8,7 +8,7 @@ import { useT } from '@/i18n';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
 import { Text } from '@/ui/Text';
 
@@ -47,7 +47,7 @@ export function WhyLine({ children, testID = 'why-line' }: WhyLineProps) {
         accessibilityHint={open ? undefined : t('decide.screens.common.a11y.whyHint')}
         hitSlop={LINK_HIT_SLOP}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           setOpen((o) => !o);
         }}
         style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}

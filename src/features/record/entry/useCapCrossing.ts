@@ -14,7 +14,7 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { showToast } from '@/state/undoToast';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
-import { hapticWarning } from '@/ui/haptics';
+import { hapticWarn } from '@/ui/haptics';
 
 export interface CapCheckInput {
   categoryId: string | null;
@@ -71,7 +71,7 @@ export function useCapCrossing(): { check(input: CapCheckInput): boolean } {
     if (!crossesCap(spentBefore, spentAfter, current.cap)) return false;
 
     const category = lookup.all.find((c) => c.id === input.categoryId);
-    hapticWarning();
+    hapticWarn();
     showToast({
       kind: input.stepId ? 'ordinary' : 'info',
       tone: 'warning',

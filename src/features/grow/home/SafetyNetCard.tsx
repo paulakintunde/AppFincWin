@@ -1,18 +1,22 @@
 // 06-15 (G01, D-07): the safety net card, always first. Blue swatch tile with a lock, the Locked badge (shape plus word),
-// "saved of size", a blue bar, and the line that Decide never spends it. No size yet: the invitation to set one.
+// "saved of size", its progress, and the line that Decide never spends it. No size yet: the invitation to set one.
+// 06.2-20 (Specifics: Grow, D-12, D-20): the padlock is a 36 IconTile in the net tone, the progress is a 36 ProgressRing
+// (first view per session only, sessionKey 'grow.safetyNet'), and the Locked badge is the shared StatusBadge safetyNet with
+// the Grow words. No Success haptic here: D-20 keeps Success for goal reached, debt cleared and import done.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import { useT } from '@/i18n';
 import type { SafetyNetPoint } from '@/features/grow/connect';
 import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
-import { ProgressBar } from '@/features/grow/ui/ProgressBar';
-import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
-import { categorySwatch } from '@/theme/tokens';
+import { categorySwatch, stateColors } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
+import { IconTile } from '@/ui/icons/IconTile';
+import { ProgressRing } from '@/ui/ProgressRing';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { Text } from '@/ui/Text';
 import { goalPercent, type GoalRowMoney } from './GoalRow';
 
@@ -54,23 +58,30 @@ export function SafetyNetCard({ net, money, animate = true, pending = 0, monthly
       style={[styles.card, { backgroundColor: categorySwatch.blue.tint, borderColor: categorySwatch.blue.color }]}
     >
       <View style={styles.top}>
-        <View style={[styles.tile, { backgroundColor: categorySwatch.blue.tint }]}>
-          <GrowGlyph name="lock" color={categorySwatch.blue.color} size={30} />
-        </View>
+        <IconTile icon="stateSafetyNet" color={stateColors.net.color} tint={stateColors.net.tint} testID="grow-safety-net-tile" />
         <View style={styles.text}>
           <View style={styles.titleRow}>
             <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('grow.safetyNet.title')}</Text>
-            <StateBadge tone="blue" shape="lock" label={t('grow.safetyNet.locked')} accessibilityLabel={t('grow.safetyNet.lockedA11y')} />
+            <StatusBadge status="safetyNet" label={t('grow.safetyNet.locked')} accessibilityLabel={t('grow.safetyNet.lockedA11y')} />
           </View>
           <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
             {money.amount(saved)}
             {ofText === null ? null : <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{` ${ofText}`}</Text>}
           </Text>
-          {pending > 0 ? <StateBadge tone="slate" shape="sClock" label={t('grow.home.toConfirm', { count: pending })} /> : null}
+          {pending > 0 ? <StatusBadge status="pending" label={t('grow.home.toConfirm', { count: pending })} /> : null}
         </View>
+        {hasSize ? (
+          <ProgressRing
+            testID="grow-safety-net-ring"
+            percent={percent}
+            size={36}
+            color={stateColors.net.color}
+            sessionKey={animate ? 'grow.safetyNet' : undefined}
+            accessibilityLabel={t('appLife.grow.ringA11y', { percent, target: money.amount(net.size!) })}
+          />
+        ) : null}
         <GrowGlyph name="chev" color={colors.inkFaint} size={16} />
       </View>
-      {hasSize ? <ProgressBar percent={percent} variant="thin" tone="blue" animate={animate} /> : null}
       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{line}</Text>
     </Pressable>
   );
@@ -79,7 +90,6 @@ export function SafetyNetCard({ net, money, animate = true, pending = 0, monthly
 const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: radii.card, padding: space.cardPad, gap: space.gapMd },
   top: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd },
-  tile: { width: 64, height: 64, borderRadius: radii.glyphTile, alignItems: 'center', justifyContent: 'center' },
   text: { flex: 1, gap: 4 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: space.gapSm },
 });

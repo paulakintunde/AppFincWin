@@ -9,7 +9,7 @@ jest.setTimeout(60000);
 
 const mockBack = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ replace: jest.fn(), dismissTo: jest.fn(), push: jest.fn(), back: mockBack, canGoBack: () => true }) }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/features/record/useRecordContext', () => ({

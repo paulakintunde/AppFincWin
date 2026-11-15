@@ -19,7 +19,7 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { TextInput, type TextInput as TextInputInstance } from '@/ui/TextInput';
 import { ACCENT_TINT_OPACITY } from '@/theme/tokens';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { NeedLine } from '../ui/NeedLine';
 import { WhyLine } from '../ui/WhyLine';
 import type { WhenChoice } from './useNewCheck';
@@ -80,7 +80,7 @@ function WhenChip({ label, sub, selected, onPress, testID }: { label: string; su
       accessibilityState={{ checked: selected }}
       accessibilityLabel={`${label}. ${sub}`}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={[styles.when, { backgroundColor: colors.fill1, borderColor: selected ? colors.accent : 'transparent' }]}

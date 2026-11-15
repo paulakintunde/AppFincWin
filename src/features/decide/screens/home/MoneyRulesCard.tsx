@@ -15,7 +15,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { stateColors } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { Text } from '@/ui/Text';
 import { rulesShown } from '../logic/rulesShown';
 import { WhyLine } from '../ui/WhyLine';
@@ -63,7 +63,7 @@ function RuleRow({ row, last, onPress }: { row: RuleRowModel; last: boolean; onP
       accessibilityRole="button"
       accessibilityLabel={t('decide.screens.sheetsHome.rulesCard.ruleA11y', { rule: spokenRule, state })}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.fill6 : 'transparent', borderBottomColor: colors.line1, borderBottomWidth: last ? 0 : 1 }]}
@@ -136,7 +136,7 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
         accessibilityRole="button"
         accessibilityLabel={t('decide.screens.sheetsHome.rulesCard.netRowA11y', { state: netText })}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           props.onOpenNet();
         }}
         style={({ pressed }) => [styles.row, { backgroundColor: pressed ? colors.fill6 : 'transparent', borderBottomColor: colors.line1, borderBottomWidth: 1 }]}
@@ -156,7 +156,7 @@ export function MoneyRulesCard(props: MoneyRulesCardProps) {
         accessibilityRole="button"
         accessibilityLabel={t('decide.screens.sheetsHome.rulesCard.addOwn')}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           props.onAdd();
         }}
         style={styles.add}

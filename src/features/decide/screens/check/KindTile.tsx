@@ -3,7 +3,7 @@
 // No clamp: at 2.0x a name or sub-line wraps and the tile grows. No glyph slot (icons wait for the app-life phase).
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
@@ -27,7 +27,7 @@ export function KindTile({ title, sub, selected = false, dashed = false, onPress
       accessibilityState={dashed ? undefined : { checked: selected }}
       accessibilityLabel={`${title}. ${sub}`}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={[

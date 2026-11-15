@@ -4,6 +4,10 @@
 // 06-36 (D-30, D-32): "If you pay more" is the plan's reveal in small (+$25 / +$50 / +$100 / $1,000 once, each with its date and
 // interest against the minimum). Payments list the next expected line and the last paid lines, each opening Activity's detail.
 // "Change in the payoff plan" opens Grow on the Debts segment.
+// 06.2-21 (D-12, D-19, D-20): a cleared debt (paid off, or nothing left owed) shows the shared "Debt cleared" badge. When a
+// payment just cleared it (the one-shot mark in src/state/debtCleared.ts), the debt-cleared icon plays once with one Success
+// tap; later visits show the badge only. A paid-off debt is left out of the plan model, so it gets its own quiet view here
+// instead of "not found".
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
@@ -30,11 +34,12 @@ import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
+import { DebtClearedBadge, DebtClearedMoment, useDebtClearedMoment } from './DebtClearedMoment';
 import { aboutTens, paidPercent, soonerSpan } from './debtLineModel';
 import { useDebtFormat, useDebtRows } from './debtScreenData';
 import { SaleSheet } from './SaleSheet';
@@ -80,6 +85,11 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
     [payments]
   );
   const record = useRecordLineDetail({ householdId: read.householdId, ownerId: read.userId, today: read.today, lines: paymentLines });
+  // 06.2-21: paid off on or before today (left out of the plan model), or a debt with nothing left owed. A card paid in full
+  // each month is not "cleared": it still carries a balance between statements.
+  const paidOff = row !== undefined && row.paid_off_on != null && row.paid_off_on <= read.today;
+  const cleared = paidOff || (line !== null && !line.point.paidInFull && line.point.balance <= 0);
+  const clearedNow = useDebtClearedMoment(id, cleared);
 
   // D-30: the open chip's what-if against minimum only, from the engine (debtWhatIf -> fixedPayoff). The card shows only when
   // the minimum alone clears the debt; otherwise there is no "sooner" or "less" to compare against.
@@ -101,11 +111,57 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   const link = { ...textRole(pairing, 'body'), color: colors.accent };
   const card = [styles.card, { backgroundColor: colors.surface, ...shadows.card }];
 
+  const remove = (): void => {
+    if (read.userId === null || row === undefined) return;
+    setRemoveOpen(false);
+    try {
+      const stepId = removeDebt(row, read.userId);
+      hapticTap();
+      showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: row.name } }, stepId });
+    } catch {
+      // P3-IN-03: refused, so the debt is still here; stay on it.
+      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
+      return;
+    }
+    router.back();
+  };
+
+  const removeSheet =
+    row === undefined ? null : (
+      <ConfirmSheet
+        visible={removeOpen}
+        title={t('grow.debts.detail.removeTitle', { name: row.name })}
+        body={t('grow.debts.detail.removeBody')}
+        cancelLabel={t('grow.debts.detail.removeKeep')}
+        confirmLabel={t('grow.debts.detail.removeConfirm')}
+        destructive
+        onConfirm={remove}
+        onCancel={() => setRemoveOpen(false)}
+      />
+    );
+  const clearedMark = clearedNow ? <DebtClearedMoment /> : <DebtClearedBadge />;
+
   // Device check 2026-11-11: a debt that is still saving, or a list that is refetching, is not yet "not found".
   if (read.status === 'loading' || ((row === undefined || line === null) && settling)) {
     return (
       <DetailScreen title="">
         <View testID="grow-debt-loading" accessibilityLabel={t('grow.home.loading')} style={[styles.block, { height: 120, backgroundColor: colors.fill1 }]} />
+      </DetailScreen>
+    );
+  }
+  if (row !== undefined && line === null && paidOff) {
+    return (
+      <DetailScreen title={row.name}>
+        <View testID="grow-debt-cleared" style={styles.stack}>
+          <View style={styles.hero}>{clearedMark}</View>
+          <View style={[...card, styles.paymentsCard]}>
+            <Row label={t('grow.debts.detail.seeAllInActivity')} chevron dense onPress={() => router.navigate({ pathname: '/activity', params: { debt: row.id } } as Href)} />
+          </View>
+          <Pressable testID="debt-remove" accessibilityRole="button" accessibilityLabel={t('grow.debts.detail.remove')} onPress={() => setRemoveOpen(true)} style={styles.action}>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.debts.detail.remove')}</Text>
+          </Pressable>
+        </View>
+        {removeSheet}
       </DetailScreen>
     );
   }
@@ -199,21 +255,6 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   const noPayments = nextLine === null && fallbackNext === null && paidLines.length === 0;
   const expectedLabel = t('grow.goals.detail.expected');
 
-  const remove = (): void => {
-    if (read.userId === null) return;
-    setRemoveOpen(false);
-    try {
-      const stepId = removeDebt(row, read.userId);
-      hapticLight();
-      showToast({ kind: 'destructive', text: { key: 'grow.debts.detail.removedToast', params: { name: row.name } }, stepId });
-    } catch {
-      // P3-IN-03: refused, so the debt is still here; stay on it.
-      showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
-      return;
-    }
-    router.back();
-  };
-
   return (
     <DetailScreen
       title={row.name}
@@ -255,6 +296,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
             </>
           )}
           {line.minimumEstimated ? <StateBadge tone="slate" shape="sQuestion" label={t('grow.debts.minimumEstimated')} /> : null}
+          {cleared ? clearedMark : null}
         </View>
 
         {facts.length === 0 && !line.minimumEstimated ? null : (
@@ -374,16 +416,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
       {record.element}
       {editOpen ? <AddDebtSheet visible debt={row} onClose={() => setEditOpen(false)} /> : null}
       {saleOpen ? <SaleSheet visible debt={row} onClose={() => setSaleOpen(false)} /> : null}
-      <ConfirmSheet
-        visible={removeOpen}
-        title={t('grow.debts.detail.removeTitle', { name: row.name })}
-        body={t('grow.debts.detail.removeBody')}
-        cancelLabel={t('grow.debts.detail.removeKeep')}
-        confirmLabel={t('grow.debts.detail.removeConfirm')}
-        destructive
-        onConfirm={remove}
-        onCancel={() => setRemoveOpen(false)}
-      />
+      {removeSheet}
     </DetailScreen>
   );
 }

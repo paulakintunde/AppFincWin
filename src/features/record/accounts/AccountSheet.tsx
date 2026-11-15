@@ -2,6 +2,7 @@
 // sign comes from an explicit, defaulted control per account kind, so the strict amount parser
 // never has to accept a minus sign. Limits are optional and per kind. Archive / Restore is an
 // edit with undo. Copy is declarative, never advice.
+// 06.2 (ranked change 9): the kind picker shows each kind's icon (Glyph 20) beside its word.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -13,7 +14,6 @@ import { useSetAccountRate } from '@/data/mutations/growHoldings';
 import { kindHasRate, rateToStore, validRateInput } from '@/features/record/accounts/accountRate';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
-import { OptionPicker } from '@/features/record/entry/pickers/OptionPicker';
 import { CurrencyPicker } from '@/features/record/entry/pickers/CurrencyPicker';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -21,7 +21,7 @@ import { undoLabelText } from '@/i18n/undoLabel';
 import { getAnalytics } from '@/services/analytics';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radii, space } from '@/theme/layout';
+import { iconSize, radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { Pill } from '@/ui/Pill';
@@ -29,6 +29,8 @@ import { Row } from '@/ui/Row';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
+import { Glyph } from '@/ui/icons/Glyph';
+import { iconForAccountKind } from '@/ui/icons/iconFor';
 import { useAmountParser, type AmountParseFailure } from '@/ui/money/useAmountParser';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { AccountUseSheet } from '@/features/record/accounts/AccountUseSheet';
@@ -377,10 +379,10 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           />
         ) : null}
       </SheetScroll>
-      <OptionPicker<AccountKind>
+      <KindPicker
         visible={picker === 'kind'}
         title={t('accounts.sheet.kind')}
-        options={KINDS.map((k) => ({ value: k, label: kindLabel(k) }))}
+        kindLabel={kindLabel}
         selected={kind}
         onSelect={(k) => {
           // S-WR-12: on an existing account keep what its balance means (owed stays owed); a new
@@ -405,6 +407,49 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
         }}
         onClose={() => setPicker(null)}
       />
+    </Sheet>
+  );
+}
+
+/**
+ * The account kind choice: OptionPicker's single-choice sheet, with each kind's icon (Glyph 20, accent) beside its
+ * word. The icon is decorative; the word is the row's spoken label and the choice is announced as selected.
+ */
+function KindPicker({
+  visible,
+  title,
+  kindLabel,
+  selected,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  title: string;
+  kindLabel: (k: AccountKind) => string;
+  selected: AccountKind;
+  onSelect: (k: AccountKind) => void;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const { colors } = useTheme();
+  return (
+    <Sheet visible={visible} onDismiss={onClose} accessibilityLabel={title}>
+      <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
+      <SheetScroll>
+        {KINDS.map((k) => (
+          <Row
+            key={k}
+            label={kindLabel(k)}
+            leading={<Glyph name={iconForAccountKind(k)} size={iconSize.row} color={colors.accent} />}
+            dense
+            chevron={false}
+            value={k === selected ? '✓' : undefined}
+            selected={k === selected}
+            accessibilityLabel={kindLabel(k)}
+            onPress={() => onSelect(k)}
+          />
+        ))}
+      </SheetScroll>
     </Sheet>
   );
 }

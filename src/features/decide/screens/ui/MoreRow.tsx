@@ -9,7 +9,7 @@ import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { Text } from '@/ui/Text';
 import { DisclosureBody } from './WhyLine';
 
@@ -35,7 +35,7 @@ export function MoreRow({ children, label, testID = 'more-row' }: MoreRowProps) 
         accessibilityLabel={words}
         accessibilityHint={open ? undefined : t('decide.screens.common.a11y.moreHint')}
         onPress={() => {
-          hapticSelection();
+          hapticTick();
           setOpen((o) => !o);
         }}
         style={({ pressed }) => [styles.row, { opacity: pressed ? PRESSED_OPACITY : 1 }]}

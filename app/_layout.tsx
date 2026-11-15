@@ -17,8 +17,12 @@ import { captureError } from '@/services/errors';
 import { QueryProvider } from '@/data/QueryProvider';
 import { setFailureReporter } from '@/data/sync/failedWrites';
 import { AppStatusBar } from '@/ui/AppStatusBar';
+import { hydrateHapticsSetting } from '@/ui/hapticsSetting';
 
 SplashScreen.preventAutoHideAsync();
+
+// 06.2 D-21/D-28: read the device's Haptics switch (default ON) before the first haptic can fire.
+void hydrateHapticsSetting();
 
 // T-01-15-01: every permanently failed or conflicting write is reported as a scrubbed
 // entity/kind/code event only -- no amounts, ids or notes ever leave the device via this

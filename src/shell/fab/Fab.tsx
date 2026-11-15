@@ -11,7 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
-import { hapticLight, hapticMedium } from '@/ui/haptics';
+import { hapticTap, hapticTick } from '@/ui/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadows } from '@/theme/tokens';
 import { fontSize } from '@/theme/typography';
@@ -73,13 +73,13 @@ function FabButton({
           quickActions.find((a) => a.id === e.nativeEvent.actionName)?.run()
         }
         onPress={() => {
-          hapticLight();
+          hapticTap();
           config.onPress();
         }}
         onLongPress={
           quickActions.length
             ? () => {
-                hapticMedium();
+                hapticTick();
                 openQuickMenu();
               }
             : undefined

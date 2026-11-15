@@ -11,8 +11,10 @@ import { focusAccessibility } from '@/shell/a11yFocus';
 import { ActivityScreen } from '../ActivityScreen';
 import { ACTIVITY_VIEW_KEY } from '../activityViewPrefs';
 import { getSelectedMonth, requestActivityFocus, resetActivityFocusForTests } from '@/state/activityFocus';
+import { markJustSaved, peekJustSaved, resetJustSavedForTests } from '@/state/justSaved';
 import { EMPTY_FILTER } from '@/engine/activity';
 import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
@@ -33,6 +35,8 @@ let mockSearchRows: ActivityRowView[] = [];
 let mockSearchLoading = false;
 let mockSearchPaused = false;
 let mockSearchError = false;
+// 06.2-11: the Groceries cap (null = no cap), for the over-cap cue.
+let mockCap: number | null = null;
 const mockRemove = jest.fn((): string => 'del-step');
 const mockSingleRemove = jest.fn((): string | null => 'single-del-step');
 const mockBulkPaid = jest.fn((): string => 'bp-step');
@@ -96,7 +100,7 @@ jest.mock('@/data/queries/accounts', () => ({
 }));
 jest.mock('@/data/queries/categories', () => ({
   useCategoryLookup: () => {
-    const groceries = { id: 'c1', builtin_key: null, name: 'Groceries', color_key: 'teal', is_system: false, archived_at: null };
+    const groceries = { id: 'c1', builtin_key: null, name: 'Groceries', color_key: 'teal', is_system: false, archived_at: null, monthly_cap: mockCap };
     const transfer = { id: 'tc', builtin_key: 'Transfer', name: null, color_key: 'slate', is_system: true, archived_at: null };
     return {
       all: [groceries, transfer],
@@ -176,6 +180,8 @@ beforeEach(() => {
   mockSearchError = false;
   mockDebts = [{ id: DEBT_ID, name: 'Auto loan', series_id: 'pay-series', extra_series_id: 'extra-series', deleted_at: null }];
   mockDebtPayments = undefined;
+  mockCap = null;
+  resetJustSavedForTests();
 });
 
 type Screen = Awaited<ReturnType<typeof renderScreen>>;
@@ -225,7 +231,8 @@ describe('ActivityScreen sync line at rest (G5, D-15)', () => {
 });
 
 describe('ActivityScreen', () => {
-  it('calendar view scrolls the selected day detail into view', async () => {
+  // 06.2-12 (L03): a tapped day opens the day sheet in place of the inline list, so the screen no longer scrolls to it.
+  it('calendar view opens the day sheet for a tapped day and does not scroll', async () => {
     await AsyncStorage.setItem(ACTIVITY_VIEW_KEY, JSON.stringify({ view: 'calendar', sort: 'newest' }));
     mockRows = [row({ id: 'g', name: 'Coffee' })];
     const screen = await renderScreen();
@@ -233,11 +240,10 @@ describe('ActivityScreen', () => {
     const scrollTo = jest.fn();
     const spy = jest.spyOn(ScrollView.prototype, 'scrollTo').mockImplementation(scrollTo);
     await fireEvent.press(screen.getByLabelText(/^Sep 20, 1 line/));
-    const detail = screen.getByText('Sep 20, 2026').parent!.parent!;
-    await act(async () => {
-      detail.props.onLayout({ nativeEvent: { layout: { x: 0, y: 321, width: 100, height: 50 } } });
-    });
-    expect(scrollTo).toHaveBeenCalledWith({ y: 321, animated: true });
+    await layOutSheets();
+    expect(screen.getByTestId('calendar-day-sheet')).toBeTruthy();
+    expect(screen.getByText('Sunday, Sep 20')).toBeTruthy();
+    expect(scrollTo).not.toHaveBeenCalledWith(expect.objectContaining({ y: expect.any(Number), animated: true }));
     spy.mockRestore();
     await AsyncStorage.removeItem(ACTIVITY_VIEW_KEY);
   });
@@ -245,7 +251,7 @@ describe('ActivityScreen', () => {
   it('shows the empty state for a month with nothing in it', async () => {
     const screen = await renderScreen();
     expect(screen.getByText('Nothing in September 2026 yet.')).toBeTruthy();
-    expect(screen.getByText('Add the first one with the Add button, clone August’s lines that aren’t already repeating, or paste a list.')).toBeTruthy();
+    expect(screen.getByText('Add the first one, or bring in a month from your bank statement.')).toBeTruthy();
   });
 
   it('CR-01: a failed series read with rows on screen shows the Home error copy, never a figure', async () => {
@@ -954,5 +960,52 @@ describe('06.1-71 (FQ10, CN-9): Activity opened from Decide on a month', () => {
   it('without the parameters there is no banner', async () => {
     const screen = await renderScreen();
     expect(screen.queryByTestId('activity-decide-banner')).toBeNull();
+  });
+});
+
+describe('06.2-11 L02: the save moment and the over-cap cue in the list', () => {
+  it('a row saved a moment ago washes once; other rows and a fresh load never do', async () => {
+    mockRows = [row({ id: 'old', name: 'Bread' }), row({ id: 'new', name: 'Milk' })];
+    markJustSaved(['new']);
+    const screen = await renderScreen();
+    expect(screen.getByTestId('new-row-wash-new')).toBeTruthy();
+    expect(screen.queryByTestId('new-row-wash-old')).toBeNull();
+    expect(within(screen.getByTestId('new-row-wash-new')).getByTestId('new-row-wash-tint', { includeHiddenElements: true })).toBeTruthy();
+    // the mark is used up after the first show
+    expect(peekJustSaved('new')).toBe(false);
+  });
+
+  it('a list that loads with no marks shows no wash at all', async () => {
+    mockRows = [row({ id: 'a', name: 'Bread' }), row({ id: 'b', name: 'Milk' })];
+    const screen = await renderScreen();
+    expect(screen.queryByTestId('new-row-wash-tint', { includeHiddenElements: true })).toBeNull();
+    expect(screen.queryByTestId(/^new-row-wash-/)).toBeNull();
+  });
+
+  it('a washing row can be pressed at once (nothing waits for the wash)', async () => {
+    mockRows = [row({ id: 'new', name: 'Milk' })];
+    markJustSaved(['new']);
+    const screen = await renderScreen();
+    expect(screen.getByTestId('new-row-wash-tint', { includeHiddenElements: true }).props.pointerEvents).toBe('none');
+    // the press opens the detail at once (its Edit action is there)
+    await fireEvent.press(screen.getByTestId('activity-row-new'));
+    expect(screen.getByText('Edit transaction')).toBeTruthy();
+  });
+
+  it('passes the over-cap amount to the row that took the category past its cap', async () => {
+    mockCap = 2000;
+    mockRows = [
+      row({ id: 'first', name: 'Bread', local_date: '2026-09-10', created_at: '2026-09-10T10:00:00Z', original_amount: -1500, amountHome: -1500 }),
+      row({ id: 'second', name: 'Milk', local_date: '2026-09-12', created_at: '2026-09-12T10:00:00Z', original_amount: -1000, amountHome: -1000 }),
+    ];
+    const screen = await renderScreen();
+    expect(screen.getByTestId('activity-badge-second').props.accessibilityLabel).toBe('£5.00 over cap');
+    expect(screen.queryByTestId('activity-badge-first')).toBeNull();
+  });
+
+  it('shows no over-cap cue when the category has no cap', async () => {
+    mockRows = [row({ id: 'only', name: 'Bread', original_amount: -900000, amountHome: -900000 })];
+    const screen = await renderScreen();
+    expect(screen.queryByTestId('activity-badge-only')).toBeNull();
   });
 });

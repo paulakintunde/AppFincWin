@@ -106,7 +106,8 @@ describe('Sheet with content taller than the screen (S-CR-05)', () => {
       </Sheet>
     );
     const style = Object.assign({}, ...flatStyle(getByTestId('sheet-container').props));
-    expect(style.maxHeight).toBe(Dimensions.get('window').height - 47 - 18);
+    // 06.2-24: the gap above a full-height sheet is the section step (28).
+    expect(style.maxHeight).toBe(Dimensions.get('window').height - 47 - 28);
     expect(style.flexShrink).toBe(1);
   });
 

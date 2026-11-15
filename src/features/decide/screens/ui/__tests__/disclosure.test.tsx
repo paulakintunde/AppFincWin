@@ -8,7 +8,7 @@ import { space } from '@/theme/layout';
 import { MoreRow } from '../MoreRow';
 import { WhyLine } from '../WhyLine';
 
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 
 function wrap(ui: React.ReactElement) {
   return render(<ThemeProvider>{ui}</ThemeProvider>);

@@ -36,7 +36,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { ChoiceCard } from '@/ui/ChoiceCard';
 import { Chip } from '@/ui/Chip';
-import { hapticLight, hapticSelection } from '@/ui/haptics';
+import { hapticTap, hapticTick } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
@@ -361,7 +361,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
             label={t(o.labelKey)}
             selected={types.includes(o.value)}
             onPress={() => {
-              hapticSelection();
+              hapticTick();
               setPickedTypes(toggledTypes(types, o.value));
             }}
           />
@@ -382,7 +382,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
               label={t('decide.screens.setupPayBills.pay.right')}
               selected={agreed || salary !== null}
               onPress={() => {
-                hapticSelection();
+                hapticTick();
                 setAgreed(true);
               }}
             />
@@ -434,7 +434,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
                     <FieldLabel>{t('income.method.spreadQuestion')}</FieldLabel>
                     <View accessibilityRole="radiogroup" accessibilityLabel={t('income.method.spreadQuestion')} style={styles.row}>
                       {SPREAD_CHOICES.map((n) => (
-                        <Chip key={n} label={t('income.method.months', { count: n })} selected={spread === n} onPress={() => { hapticSelection(); setSpread(n); }} />
+                        <Chip key={n} label={t('income.method.months', { count: n })} selected={spread === n} onPress={() => { hapticTick(); setSpread(n); }} />
                       ))}
                     </View>
                   </View>
@@ -454,7 +454,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
                     <FieldLabel>{t('income.method.balanceQuestion')}</FieldLabel>
                     <View accessibilityRole="radiogroup" accessibilityLabel={t('income.method.balanceQuestion')} style={styles.row}>
                       {HOLD_CHOICES.map((n) => (
-                        <Chip key={n} label={t('income.method.months', { count: n })} selected={hold === n} onPress={() => { hapticSelection(); setHold(n); }} />
+                        <Chip key={n} label={t('income.method.months', { count: n })} selected={hold === n} onPress={() => { hapticTick(); setHold(n); }} />
                       ))}
                     </View>
                   </View>
@@ -510,7 +510,7 @@ export function PaySetup({ editSeriesFrom }: { editSeriesFrom: EditSeriesFrom })
         label={t('decide.screens.setupPayBills.pay.addOther')}
         disabled={!canWrite || accounts.length === 0}
         onPress={() => {
-          hapticLight();
+          hapticTap();
           setOtherOpen(true);
         }}
       />

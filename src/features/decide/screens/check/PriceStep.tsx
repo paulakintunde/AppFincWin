@@ -21,7 +21,7 @@ import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { ChoiceCard } from '@/ui/ChoiceCard';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Text } from '@/ui/Text';
 import { ToggleRow } from '@/ui/ToggleRow';
@@ -293,7 +293,7 @@ export function PriceStep({ id }: { id: string }) {
             label={dealerLabel}
             value={dealer.on}
             onChange={(v) => {
-              hapticLight();
+              hapticTap();
               step.update((c) => withDealerFees(c, { on: v, amount: dealerFeesOf(c).amount }));
             }}
           />

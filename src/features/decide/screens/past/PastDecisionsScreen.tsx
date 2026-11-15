@@ -164,7 +164,7 @@ export function PastDecisionsScreen() {
         ) : null}
         {decisions.length === 0 ? (
           <View style={styles.empty}>
-            <EmptyState heading={t('decide.screens.past.list.emptyTitle')} body={t('decide.screens.past.list.emptyBody')} />
+            <EmptyState icon="checkBuy" heading={t('decide.screens.past.list.emptyTitle')} body={t('decide.screens.past.list.emptyBody')} />
             <Pill variant="secondary" label={t('decide.screens.common.backToDecide')} onPress={() => goDecideHome(router)} />
           </View>
         ) : (

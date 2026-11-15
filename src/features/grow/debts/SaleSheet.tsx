@@ -14,7 +14,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
-import { hapticLight, hapticSelection } from '@/ui/haptics';
+import { hapticTap, hapticTick } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
@@ -78,7 +78,7 @@ export function SaleSheet({ visible, debt, onClose }: SaleSheetProps) {
       });
       // P3-WR-02: one sale per sheet; a second tap before it closes does nothing.
       saving.current = true;
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'grow.debts.sale.toast' }, stepId });
       onClose();
     } catch {
@@ -135,7 +135,7 @@ export function SaleSheet({ visible, debt, onClose }: SaleSheetProps) {
                 label={a.name}
                 selected={account?.id === a.id}
                 onPress={() => {
-                  hapticSelection();
+                  hapticTick();
                   set({ accountId: a.id });
                 }}
               />

@@ -31,7 +31,7 @@ import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { stateColors } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { StateBadge } from '@/ui/StateBadge';
@@ -102,7 +102,7 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
   // 06.1-78 (DN-2, T-06.1-78-01): a second tap while the first route opens (the sheet is still closing) is dropped by pushOnce, so
   // Edit the check never stacks two copies of a step. The href is a full outer-stack route.
   const go = (href: Href) => {
-    hapticLight();
+    hapticTap();
     onDismiss();
     pushOnce(href);
   };
@@ -125,13 +125,13 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
 
   const doNotBuying = () => {
     if (evaluation === null) return;
-    hapticLight();
+    hapticTap();
     onDismiss();
     pass({ check: row, evaluation });
   };
 
   const doDelete = () => {
-    hapticLight();
+    hapticTap();
     const stepId = remove(row);
     onDismiss();
     showToast({

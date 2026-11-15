@@ -1,5 +1,5 @@
 import { ACCENTS } from '../accents';
-import { colors, stateColors, stateMuted } from '../tokens';
+import { colors, pageTint, pageTintBar, stateColors, stateMuted } from '../tokens';
 import { contrastRatio } from '../contrast';
 
 describe('contrastRatio (WCAG 2.x relative luminance)', () => {
@@ -97,4 +97,50 @@ describe('06.1 D-16 state colours', () => {
     const all = [stateMuted, ...tones.flatMap(([, p]) => [p.color, p.stroke, p.tint])];
     for (const hex of all) expect(hex).toMatch(/^#[0-9A-F]{6}$/);
   });
+});
+
+describe('06.2 D-27 page tints', () => {
+  it('has exactly the four theme-colour keys, each an upper-case hex', () => {
+    expect(Object.keys(pageTint).sort()).toEqual(Object.keys(ACCENTS).sort());
+    for (const hex of Object.values(pageTint)) expect(hex).toMatch(/^#[0-9A-F]{6}$/);
+  });
+
+  it('the tab bar tint is the same colour at 0.94', () => {
+    for (const [key, hex] of Object.entries(pageTint)) {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      expect(pageTintBar[key as keyof typeof pageTintBar]).toBe(`rgba(${r},${g},${b},.94)`);
+    }
+  });
+
+  const textTokens: Record<string, string> = {
+    ink: colors.ink,
+    inkDim: colors.inkDim,
+    inkMuted: colors.inkMuted,
+    danger: colors.danger,
+    warn1: colors.warn1,
+    warn2: colors.warn2,
+    ...Object.fromEntries(Object.entries(ACCENTS).map(([k, v]) => [`accent.${k}`, v])),
+    ...Object.fromEntries(Object.entries(stateColors).map(([k, v]) => [`state.${k}`, v.color])),
+  };
+
+  for (const [tintKey, tint] of Object.entries(pageTint)) {
+    describe(`${tintKey} tint ${tint}`, () => {
+      for (const [name, hex] of Object.entries(textTokens)) {
+        it(`${name} reaches 4.5 on the page`, () => {
+          expect(contrastRatio(hex, tint)).toBeGreaterThanOrEqual(4.5);
+        });
+      }
+
+      it('white cards stand off the page while the page stays very pale (1.08 to 1.20)', () => {
+        const r = contrastRatio(colors.surface, tint);
+        expect(r).toBeGreaterThanOrEqual(1.08);
+        expect(r).toBeLessThanOrEqual(1.2);
+      });
+
+      it('documents inkFaint below 4.5 on the page (never on the page), but 4.5 on cards', () => {
+        expect(contrastRatio(colors.inkFaint, tint)).toBeLessThan(4.5);
+        expect(contrastRatio(colors.inkFaint, colors.surface)).toBeGreaterThanOrEqual(4.5);
+      });
+    });
+  }
 });

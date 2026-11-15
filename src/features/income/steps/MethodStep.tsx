@@ -14,7 +14,7 @@ import { useSaveSetupStep } from '@/data/mutations/decideSetup';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { Caption, ChipRow, Intro, Meta, CHOOSE_ONE_REASON_KEY, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
@@ -104,7 +104,7 @@ export const MethodStep = forwardRef<SetupStepHandle, SetupStepBodyProps>(functi
       label={label}
       selected={selected}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
     />

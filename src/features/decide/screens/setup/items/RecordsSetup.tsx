@@ -45,7 +45,7 @@ import { SheetHeader } from '@/ui/SheetHeader';
 import { StateBadge } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { ReadinessFixList } from '../../answer/ReadinessFixList';
 import { monthNameOf } from '../../home/YourMonthCard';
 import { readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../../logic/readinessFixes';
@@ -169,7 +169,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const saveWaiver = (waiver: ReadinessWaiver): void => {
     const saved = answers.save({ kind: 'readiness_waiver', waiver, at: today as LocalDate });
     if (saved === null) return;
-    hapticLight();
+    hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId: saved.stepId });
   };
   const onReadinessChoice = (fixRow: ReadinessFixRow, choice: WaiverChoice): void => {
@@ -182,7 +182,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
     if (line !== null && rc.userId !== null) {
       const stepId = writes.skipLine(line, rc.userId);
       if (stepId === null) return;
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId });
       return;
     }
@@ -214,7 +214,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const clearRough = (): void => {
     const saved = setupSaver.save({ stepTitle: t('decide.screens.setup.quick.stepName'), patch: { rough_income: null, rough_spending: null, rough_as_of: null } });
     if (saved === null) return;
-    hapticLight();
+    hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.roughCleared' }, stepId: saved.stepId });
   };
   const roughRow =
@@ -282,7 +282,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
   const removeGiven = (line: GivenLine): void => {
     if (rc.userId === null) return;
     const stepId = line.kind === 'waiver' ? remover.remove(line.row).stepId : writes.clearEnvelopeAccount(line.goal, rc.userId);
-    hapticLight();
+    hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.setupOthers.records.answerRemoved' }, stepId });
   };
   const changeLabel = t('decide.screens.common.change');
@@ -436,7 +436,7 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
           variant="secondary"
           label={t('decide.screens.setupOthers.records.checkAgain')}
           onPress={() => {
-            hapticLight();
+            hapticTap();
             retry();
           }}
         />

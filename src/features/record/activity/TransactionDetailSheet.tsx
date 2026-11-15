@@ -21,6 +21,7 @@ import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import type { CategorySwatchKey } from '@/theme/tokens';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { iconForCategory } from '@/ui/icons/iconFor';
 import { DetailRow, DetailSheet } from '@/ui/DetailSheet';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
@@ -135,7 +136,7 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
       visible={visible}
       onDismiss={onDismiss}
       accessibilityLabel={name}
-      leading={<CategoryGlyph colorKey={swatchKey} letter={(name.trim().charAt(0) || '?').toUpperCase()} />}
+      leading={<CategoryGlyph colorKey={swatchKey} icon={iconForCategory(category)} letter={(name.trim().charAt(0) || '?').toUpperCase()} />}
       title={name}
       subtitle={[categoryLabel, formatter.formatDate(row.local_date, 'short')].filter((p) => p !== null && p !== '').join(' · ')}
       trailing={<Text style={{ ...textRole(pairing, 'body'), color: amountColor }}>{amountShown}</Text>}

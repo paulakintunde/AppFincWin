@@ -5,7 +5,7 @@ import { StyleSheet } from 'react-native';
 import { useT } from '@/i18n';
 import type { RecurringFreq } from '@/engine/recurring';
 import { space } from '@/theme/layout';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
@@ -79,7 +79,7 @@ function BillSheetForm({ mode, currency, initial, onSave, onDismiss, onStop }: B
                   label={t('decide.screens.setupPayBills.bills.stopped')}
                   accessibilityHint={t('decide.screens.setupPayBills.bills.stoppedNote')}
                   onPress={() => {
-                    hapticLight();
+                    hapticTap();
                     onStop();
                   }}
                 />

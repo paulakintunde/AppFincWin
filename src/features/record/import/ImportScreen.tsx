@@ -120,7 +120,8 @@ function StageView({ state, entry, onDone }: { state: ImportState; entry: Import
     case 'committing':
       return <T tone="inkMuted">{t('importCsv.committing')}</T>;
     case 'done':
-      return <SuggestionsStep state={state} onDone={onDone} />;
+      // 06.2-23: keyed on the commit, so the import-done icon plays once per commit.
+      return <SuggestionsStep key={state.committedStepId ?? 'done'} state={state} onDone={onDone} />;
     default:
       return null;
   }

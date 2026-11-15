@@ -15,7 +15,7 @@ import { wrap } from '@/test/stepProps';
 import { YourMonthCard } from '@/features/decide/screens/home/YourMonthCard';
 import { ThisMonthCard } from '../ThisMonthCard';
 
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn() }));
 jest.setTimeout(30000);
 
 const fmtMinor = (n: number): string => `$${(n / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;

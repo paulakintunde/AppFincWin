@@ -6,15 +6,23 @@
  * 06.1-56 (A-HOME-7, DS-12): a draft shows its typed price too; each row carries its own date (the purchase date, else the day it
  * was made), short ("Nov 3"); the spoken label lists only the parts that have a value. The newest 5 show, then "See all" opens the
  * rest in place (there is no separate open-checks list).
+ * 06.2-22 (D-23, board L08/L08b; D-13): each row is a plain 64 row led by the state icon as a 36 tile in that state's tint, then
+ * the name, the badge word with the meta line, and the arrow. The state colour is only in the tile's shape and the badge; nothing
+ * else on the row is tinted. A draft's tile is neutral with the pen in a square (the Draft icon, status map). The spoken label is
+ * unchanged, and a press is still a tick (hapticTick is hapticTick, D-20).
  */
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { verdictRowFor, type Code, type Variant } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
-import { radii, space } from '@/theme/layout';
+import { iconSize, radii, space, tile } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
+import { stateColors, type StateTone } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
+import { Glyph } from '@/ui/icons/Glyph';
+import type { IconName } from '@/ui/icons/iconData';
+import { IconTile } from '@/ui/icons/IconTile';
 import { StateBadge, type StateBadgeShape } from '@/ui/StateBadge';
 import { Text } from '@/ui/Text';
 import { stateForVerdict } from '../logic/stateForVerdict';
@@ -33,6 +41,24 @@ export interface OpenChecksCardProps {
   onAddPurchase: () => void;
 }
 
+/**
+ * 06.2-22 (D-23): the tile icon for each state. cond (half symbol in 06.1) takes the half-filled stateTight drawing and extra
+ * (up symbol) takes stateUp: the closest L07/L08 set glyphs to the 06.1 badge shapes. Colour, badge word and spoken label still
+ * tell cond from tight.
+ */
+export const OPEN_CHECK_TILE_ICON: Readonly<Record<StateTone, IconName>> = Object.freeze({
+  fits: 'stateFits',
+  tight: 'stateTight',
+  short: 'stateShort',
+  net: 'stateSafetyNet',
+  notYet: 'stateDue',
+  cond: 'stateTight',
+  extra: 'stateUp',
+});
+
+/** The Draft icon (status map: L06 draws the pen in a square beside "Draft"). */
+export const OPEN_CHECK_DRAFT_ICON: IconName = 'firstEntry';
+
 /** The badge a row shows: its tone, glyph shape and word. A draft is notYet "Draft"; an unanswered row is a draft. */
 export function useRowBadge(row: OpenCheckRowModel): { tone: ReturnType<typeof stateForVerdict>['tone']; shape: StateBadgeShape; word: string } {
   const t = useT();
@@ -50,6 +76,8 @@ function Row({ row, last, props }: { row: OpenCheckRowModel; last: boolean; prop
   const t = useT();
   const { colors, pairing } = useTheme();
   const badge = useRowBadge(row);
+  const isDraft = row.draft || row.code === null;
+  const tileColors = isDraft ? { color: colors.inkDim, tint: colors.fill1 } : { color: stateColors[badge.tone].stroke, tint: stateColors[badge.tone].tint };
   const { formatMoney, formatMoneySpoken, formatDate, today } = props;
   const own = row.date ?? row.createdOn ?? null;
   const dateText = own === null || own === today ? t('decide.screens.sheetsHome.openChecks.today') : formatDate(own);
@@ -79,7 +107,7 @@ function Row({ row, last, props }: { row: OpenCheckRowModel; last: boolean; prop
       accessibilityRole="button"
       accessibilityLabel={row.changed ? `${spoken}. ${t('decide.screens.sheetsHome.openChecks.changedRow')}` : spoken}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         props.onOpen(row.id);
       }}
       style={({ pressed }) => [
@@ -87,18 +115,26 @@ function Row({ row, last, props }: { row: OpenCheckRowModel; last: boolean; prop
         { backgroundColor: pressed ? colors.fill6 : 'transparent', borderBottomColor: colors.line1, borderBottomWidth: last ? 0 : 1 },
       ]}
     >
+      <IconTile
+        icon={isDraft ? OPEN_CHECK_DRAFT_ICON : OPEN_CHECK_TILE_ICON[badge.tone]}
+        size={tile.row}
+        color={tileColors.color}
+        tint={tileColors.tint}
+        testID={`open-check-tile-${row.id}`}
+      />
       <View style={styles.main}>
-        <View style={styles.head}>
-          <Text style={[styles.name, { ...textRole(pairing, 'body'), fontWeight: '500', color: colors.ink }]}>
-            {row.name}
-          </Text>
+        <Text style={[styles.name, { ...textRole(pairing, 'body'), fontWeight: '500', color: colors.ink }]}>
+          {row.name}
+        </Text>
+        <View style={styles.metaLine}>
           <StateBadge tone={badge.tone} shape={badge.shape} label={badge.word} testID={`open-check-badge-${row.id}`} />
+          <Text style={[styles.meta, { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }]}>{meta}</Text>
         </View>
-        <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{meta}</Text>
         {row.changed ? (
           <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.warn1 }}>{t('decide.screens.sheetsHome.openChecks.changedRow')}</Text>
         ) : null}
       </View>
+      <Glyph name="arrowRight" size={iconSize.inline} color={colors.inkFaint} />
     </Pressable>
   );
 }
@@ -121,7 +157,7 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
           accessibilityRole="link"
           accessibilityLabel={t('decide.screens.sheetsHome.openChecks.addPurchaseA11y')}
           onPress={() => {
-            hapticSelection();
+            hapticTick();
             props.onAddPurchase();
           }}
           style={styles.add}
@@ -138,7 +174,7 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
           accessibilityRole="button"
           accessibilityLabel={t('decide.screens.sheetsHome.openChecks.seeAllA11y')}
           onPress={() => {
-            hapticSelection();
+            hapticTick();
             setAll(true);
           }}
           style={styles.add}
@@ -154,8 +190,10 @@ const styles = StyleSheet.create({
   card: { borderRadius: radii.card, paddingHorizontal: space.cardPad, paddingVertical: space.gapSm },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapSm, minHeight: space.touchMin },
   add: { minHeight: space.touchMin, justifyContent: 'center', paddingHorizontal: space.gapSm },
-  row: { minHeight: 52, justifyContent: 'center', paddingVertical: space.gapSm },
-  main: { gap: 2 },
-  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapSm },
+  // 06.2-22 (L08): a 64 row (two lines), tile, text and arrow 12 apart.
+  row: { minHeight: 64, flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: space.gapSm },
+  main: { flex: 1, minWidth: 0, gap: 3 },
+  metaLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 6, rowGap: 4 },
+  meta: { flexShrink: 1 },
   name: { flexShrink: 1 },
 });

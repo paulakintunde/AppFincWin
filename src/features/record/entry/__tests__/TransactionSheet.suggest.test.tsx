@@ -25,7 +25,7 @@ const DINING = { id: 'd1', builtin_key: null, name: 'Dining', color_key: 'teal',
 
 jest.mock('@/ui/haptics', () => ({
   ...jest.requireActual('@/ui/haptics'),
-  hapticLight: () => mockHapticLight(),
+  hapticTap: () => mockHapticLight(),
 }));
 jest.mock('@/data/mutations/categoryRules', () => ({ useAddRule: () => ({ add: mockAddRule }) }));
 jest.mock('@/features/record/useGuessContext', () => {

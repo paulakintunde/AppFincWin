@@ -11,7 +11,7 @@ import { RefundTag, refundTagFor } from '../RefundTag';
 
 const mockAccess = { v3: true };
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => mockAccess }));
-jest.mock('@/ui/haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 
 const categories = { all: [], active: [], byId: new Map(), transferCategoryId: 'tc', loading: false } as unknown as CategoryLookup;
 const formatter = {

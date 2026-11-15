@@ -40,7 +40,9 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 06.1 wave 5: decide_settings answered_*_at and tax_set_aside_bp, check history and new keys -- bumped 7 -> 8.
 // 06.1-31: savings goals now select decide_may_use (20261111000100 in production) -- bumped 8 -> 9.
 // 05.5-21: decide_settings lost four interim columns (household share and three safety-net ones) -- bumped 9 -> 10.
-export const CACHE_SCHEMA_VERSION = '10';
+// 06.2-17: categories.icon_key -- bumped 9 -> 10.
+// Merge of 05.5 into 06.2: both sides bumped 9 -> 10 with different shapes -- bumped 10 -> 11.
+export const CACHE_SCHEMA_VERSION = '11';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

@@ -39,6 +39,7 @@ import { undoLabelText } from '@/i18n/undoLabel';
 import { getAnalytics } from '@/services/analytics';
 import type { EventProps } from '@/services/analytics';
 import { showToast } from '@/state/undoToast';
+import { markJustSaved } from '@/state/justSaved';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
@@ -66,7 +67,7 @@ import { RuleOfferCard } from './RuleOfferCard';
 import { guessCategory } from '@/engine/categorize';
 import { useGuessContext } from '@/features/record/useGuessContext';
 import { useAddRule } from '@/data/mutations/categoryRules';
-import { hapticLight, hapticSuccess } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { useBulkAdd } from '@/data/mutations/bulkAdd';
 import { saveCount, summarise, type ListItem } from '@/engine/entryList';
 import { EntryList } from './EntryList';
@@ -394,7 +395,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       return;
     }
 
-    const { stepId } = addTransfer(
+    const { stepId, legIds } = addTransfer(
       toTransferInput(state, out, inn, {
         householdId: rc.householdId,
         userId: rc.userId,
@@ -404,18 +405,24 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         toName,
       })
     );
+    // 06.2 L02 / D-20: the new legs wash once in Activity; one light tap for the save.
+    markJustSaved(legIds ?? []);
+    hapticTap();
     showToast({ kind: 'ordinary', text: undoLabelText('transferAdded', { name: toName }), stepId });
     trackAdded({ kind: 'transfer', recurring: false });
     onClose();
   };
 
-  /** UI-SPEC 10: warn once when this save takes a category from under its cap to at or over it. */
-  const runCapCheck = (stepId: string | null, previous?: TransactionRow) => {
-    if (isTransfer) return;
+  /**
+   * UI-SPEC 10: warn once when this save takes a category from under its cap to at or over it. True when it warned
+   * (the warning haptic then stands for the save; 06.2 D-20 one meaning each).
+   */
+  const runCapCheck = (stepId: string | null, previous?: TransactionRow): boolean => {
+    if (isTransfer) return false;
     const parsed = parse(state.amountText, state.currency);
-    if (!parsed.ok) return;
+    if (!parsed.ok) return false;
     const positive = state.direction === 'in' || state.refund;
-    checkCap({
+    return checkCap({
       categoryId: state.categoryId,
       localDate: state.localDate,
       amountMinor: positive ? parsed.value : -parsed.value,
@@ -476,7 +483,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const addToList = () => {
     const item = addCurrentToList();
     if (!item) return;
-    hapticLight();
+    hapticTap();
     const name =
       item.type === 'transfer'
         ? t('record.sheet.list.transferName', { from: nameOf(item.accountId), to: nameOf(item.toAccountId ?? '') })
@@ -499,15 +506,20 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     }
     const items = [...list.items].reverse();
     if (current) items.push(current);
-    const stepId = saveList(items, {
-      householdId: rc.householdId,
-      ownerId: rc.userId,
-      homeCurrency: rc.homeCurrency,
-      timeZone: rc.timeZone,
-      transferCategoryId: categories.transferCategoryId,
-    });
+    const stepId = saveList(
+      items,
+      {
+        householdId: rc.householdId,
+        ownerId: rc.userId,
+        homeCurrency: rc.homeCurrency,
+        timeZone: rc.timeZone,
+        transferCategoryId: categories.transferCategoryId,
+      },
+      markJustSaved
+    );
+    // 06.2 D-20: saving a list is a save like any other: a light tap, never Success.
+    hapticTap();
     showToast({ kind: 'ordinary', text: undoLabelText('addedMany', { n: items.length }), stepId });
-    hapticSuccess();
     list.clearAll();
     onClose();
   };
@@ -620,17 +632,20 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         anchorIsNew: true,
         ownerId: rc.userId,
       });
+      markJustSaved([newId]);
       showToast({ kind: 'ordinary', text: undoLabelText('seriesCreated', { name }), stepId: seriesStep });
-      runCapCheck(seriesStep);
+      if (!runCapCheck(seriesStep)) hapticTap();
       trackAdded({ kind: state.direction === 'in' ? 'income' : 'expense', recurring: true });
       onClose();
       return;
     }
 
     const stepId = newStepId();
-    add({ ...input, undo: { stepId, labelKey: 'added', labelParams: { name } } });
+    const addedId = add({ ...input, undo: { stepId, labelKey: 'added', labelParams: { name } } });
+    // 06.2 L02 / D-20: the new row washes once in Activity; one light tap (the cap warning stands for it instead).
+    markJustSaved([addedId]);
     showToast({ kind: 'ordinary', text: undoLabelText('added', { name }), stepId });
-    runCapCheck(stepId);
+    if (!runCapCheck(stepId)) hapticTap();
     trackAdded({ kind: state.direction === 'in' ? 'income' : 'expense', recurring: false });
     onClose();
   };
@@ -739,7 +754,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
       category: target,
     });
     showToast({ kind: 'ordinary', text: undoLabelText('ruleAdded', { name: offer.keyword }), stepId });
-    hapticLight();
+    hapticTap();
     setOffer(null);
   };
   const paymentOptions = (PAYMENT_TYPES[state.direction === 'in' ? 'in' : 'out'] as readonly PaymentType[]).map((value) => ({
