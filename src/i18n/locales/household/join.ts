@@ -1,0 +1,53 @@
+/** 08-12: joining and inviting (UI-SPEC Screens 3 and 12, invite sheet, departure card). */
+export const join = {
+  title: 'Join a household',
+  codeLabel: 'Invite code',
+  codeHelper: 'Paste the code from your invite.',
+  check: 'Check code',
+  preview: '{{inviter}} invited you to {{household}}',
+  previewCount: '{{count}} people so far',
+  joinCta: 'Join {{household}}',
+  notNow: 'Not now',
+  recordsMoveIn: 'Your accounts and records come with you and stay private.',
+  inAnother: {
+    title: 'You’re in another household. Leave it first to join this one.',
+    go: 'Go to my household',
+  },
+  errors: {
+    invalid: 'This invite has run out or was already used. Ask {{inviter}} for a new one.',
+    rateLimited: 'Too many tries. Wait a few minutes and try again.',
+    full: '{{household}} already has 6 people. Ask the owner to remove someone first.',
+    offline: 'You need a connection to join. Connect and try again.',
+  },
+  shared: {
+    title: 'You’re in {{household}}',
+    body: 'Your records stay private. Only lines you mark shared are seen by {{household}}. Your Decide checks are never shared.',
+    gotIt: 'Got it',
+  },
+  joinedToast: '{{name}} joined',
+  invite: {
+    title: 'Invite someone',
+    send: 'Send invite',
+    note: 'Works once, for one person. Expires {{date}}.',
+    copyCode: 'Copy code',
+    codeCopied: 'Code copied',
+    share: 'Share',
+    full: '{{household}} already has 6 people. Remove someone before inviting another.',
+    shareMessage: '{{inviter}} invited you to {{household}} on FincWin. Your invite code is {{code}}.',
+  },
+  departure: {
+    body: '{{name}} was removed. Invite {{name}} again to reconnect their lines.',
+    again: 'Invite again',
+  },
+  web: {
+    heading: '{{inviter}} invited you to {{household}}',
+    headingAnon: 'Someone invited you to {{household}}',
+    body: 'Share money with the people you live with. Your records stay private. Only lines you mark shared are seen by the household.',
+    appStore: 'Download on the App Store',
+    googlePlay: 'Get it on Google Play',
+    haveApp: 'Already have the app? Open it and enter the code below.',
+    codeLabel: 'Your invite code',
+    gone: 'This invite has run out or was already used. Ask the person who invited you for a new one.',
+    footer: 'FincWin is a money-management tool. It holds no money and is not a financial institution.',
+  },
+} as const;
