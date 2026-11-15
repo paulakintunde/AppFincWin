@@ -5,7 +5,7 @@ import { useDecideAccess } from '../useDecideAccess';
 const mockUseProfile = jest.fn();
 jest.mock('@/features/you/useProfile', () => ({ useProfile: () => mockUseProfile() }));
 
-// Owner 2026-11-06 (quick-261106-bf2): DECIDE_V3 is on, so every account gets v3 whatever profiles.decide_v3 says.
+// Owner 2026-11-06 (quick-261106-bf2): the old engine switch is gone (05.5), so every account gets v3 whatever profiles.decide_v3 says.
 describe('useDecideAccess', () => {
   it('v3 while loading', async () => {
     mockUseProfile.mockReturnValue({ profile: null });
