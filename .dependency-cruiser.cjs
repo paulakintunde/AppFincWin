@@ -51,6 +51,14 @@ module.exports = {
       to: { path: '^src/engine/(decide|payoff)/(?!index\\.ts$|v3/index\\.ts$)' },
     },
     {
+      name: 'decide-never-writes-accounts',
+      severity: 'warn',
+      comment:
+        '05.5 D-10 (BO-07 point 7): Activity owns overdraft limits and account purpose; Decide opens AccountSheet and only reads. warn until 05.5-17 moves Decide setup onto AccountSheet, then error.',
+      from: { path: '^src/features/decide/', pathNot: '__tests__' },
+      to: { path: '^src/data/mutations/(accounts|accountUse)(\\.ts)?$' },
+    },
+    {
       name: 'no-circular',
       severity: 'error',
       from: {},
