@@ -91,4 +91,22 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
   it('never lists internal version columns', () => {
     for (const cols of Object.values(EXPORT_MANIFEST)) expect(cols).not.toContain('version');
   });
+
+  // 08-07 (CMP-F18, T-08-24): the SC7 two-user privacy suite names every exported table between two marker comments.
+  it('every exported table is covered by the two-user privacy test', () => {
+    const file = path.resolve(__dirname, '../../../supabase/tests/database/101_household_privacy_two_user.test.sql');
+    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+    const start = lines.findIndex((l) => l.trim() === '-- export-tables:');
+    const end = lines.findIndex((l) => l.trim() === '-- end-export-tables');
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const listed = new Set(
+      lines
+        .slice(start + 1, end)
+        .map((l) => l.replace(/^--\s*/, '').replace(/\s*\(\d+\)\s*$/, '').trim())
+        .filter((l) => l.length > 0),
+    );
+    const missing = Object.keys(EXPORT_MANIFEST).filter((t) => !listed.has(t));
+    expect(missing).toEqual([]);
+  });
 });

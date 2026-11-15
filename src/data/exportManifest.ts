@@ -10,6 +10,7 @@
  * table that is in neither EXPORT_MANIFEST nor NOT_USER_DATA.
  */
 
+// CMP-F18: export runs as the signed-in user, so RLS limits it to own + shared rows; 101 proves it per table.
 export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   transactions: [
     'id', 'household_id', 'account_id', 'created_by', 'original_amount', 'original_currency', 'home_currency', 'home_amount',
@@ -22,6 +23,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'income_kind', 'counts_as', 'refund_of',
     // 06-30
     'debt_id',
+    // 08 (D-12, D-18): what is shared and who paid, so an export shows it
+    'is_shared', 'paid_by',
   ],
   accounts: [
     'id', 'household_id', 'created_by', 'name', 'kind', 'currency', 'opening_balance', 'archived_at', 'overdraft_limit',
@@ -32,6 +35,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'overdraft_rate',
     // 06
     'interest_rate',
+    // 08 (D-13): a joint account
+    'is_shared',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'icon_key', 'created_at', 'updated_at'],
   category_rules: [
@@ -47,14 +52,17 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'end_reason',
     // 06
     'goal_id',
+    // 08 (D-16): a shared series
+    'is_shared',
   ],
   custom_currencies: ['id', 'owner_id', 'code', 'symbol', 'decimals', 'reference_currency', 'unit_value', 'as_of', 'created_at', 'updated_at'],
   import_profiles: ['id', 'owner_id', 'account_id', 'layout_signature', 'profile', 'created_at'],
   undo_log: ['id', 'owner_id', 'label_key', 'label_params', 'status', 'refusal', 'created_at', 'resolved_at'],
   dismissed_series_offers: ['offer_key', 'created_at'],
   statement_periods: ['id', 'household_id', 'account_id', 'period_start', 'period_end', 'import_batch_id'],
-  households: ['id', 'horizon_month'],
-  household_members: ['household_id', 'user_id', 'display_name'],
+  households: ['id', 'horizon_month', 'name', 'reporting_currency'],
+  household_members: ['household_id', 'user_id', 'display_name', 'is_owner', 'role_label', 'colour_key', 'name_hidden', 'weight'],
+  household_events: ['id', 'household_id', 'kind', 'actor_id', 'subject_id', 'ref_id', 'params', 'created_at'],
   profiles: [
     'home_currency', 'show_cents', 'lead_figure', 'region', 'region_subdivision', 'week_start', 'sample_prompt_answered_at',
     // profiles.decide_v3 and profiles.decide_shadow are access switches, not user data: excluded on purpose (05.2, 05.4).
