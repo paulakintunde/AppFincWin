@@ -18,5 +18,19 @@ describe('BO-07 point 1: month picture behaviour', () => {
     const prepared = prepare(inputsOf({ months: [...months, monthOf('2026-10', [], { full: false })], balance: minorUnits(250_000) }));
     expect(monthPicture(prepared).leftAfterPlans).toBe(homeFigure(prepared));
   });
-  test.todo('Home small line and Decide lead show the same figure');
+  it('Home small line and Decide lead show the same figure', () => {
+    // Engine-only: both cards are handed the one leftAfterPlans of the one picture. The render check is homeDecideParity.test.tsx.
+    const months = ['2026-08', '2026-09'].map((m) =>
+      monthOf(m, [
+        v3Line({ id: `p-${m}`, date: `${m}-25`, amount: 300_000, role: 'income' }),
+        v3Line({ id: `e-${m}`, date: `${m}-12`, amount: 100_000 }),
+      ]),
+    );
+    const prepared = prepare(inputsOf({ months: [...months, monthOf('2026-10', [], { full: false })], balance: minorUnits(250_000) }));
+    const picture = monthPicture(prepared);
+    const homeLine = picture.leftAfterPlans;
+    const decideLead = monthPicture(prepared).leftAfterPlans;
+    expect(homeLine).toBe(decideLead);
+    expect(homeLine).toBe(homeFigure(prepared));
+  });
 });

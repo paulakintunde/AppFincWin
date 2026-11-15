@@ -16,6 +16,9 @@ import type { AccountRow } from '@/db/rows';
 import { type MonthPosition, type MonthTotals } from '@/engine/activity';
 import { monthPositionOf } from '@/features/record/activity/monthFigureInputs';
 import { monthOf } from '@/engine/time';
+import { monthPicture } from '@/engine/month';
+import type { MinorUnits } from '@/engine/money';
+import { useDecideV3 } from '@/data/queries/decideV3';
 import { useRecordContext, type RecordContext } from '@/features/record/useRecordContext';
 import { useRowFlow } from '@/features/record/activity/useActivityViewModel';
 import { useRowActions, type RowActions } from '@/features/record/activity/useRowActions';
@@ -42,6 +45,8 @@ export function useHomeViewModel(): {
   rowActions: RowActions;
   flow: ReturnType<typeof useRowFlow>;
   refreshKeys: readonly QueryKey[];
+  /** 05.5-14 (D-19): the month picture's leftAfterPlans, current month only; null otherwise. */
+  afterPlans: { left: MinorUnits } | null;
 } {
   const rc = useRecordContext();
   const formatter = useMoneyFormatter(rc.showCents);
@@ -92,6 +97,12 @@ export function useHomeViewModel(): {
 
   const hh = rc.householdId;
   const refreshKeys = useMemo(() => monthRefreshKeys(hh, month), [hh, month]);
+  const { prepared } = useDecideV3();
+  const currentMonth = monthOf(rc.today);
+  const afterPlans = useMemo(
+    () => (month === currentMonth && prepared !== null ? { left: monthPicture(prepared).leftAfterPlans } : null),
+    [month, currentMonth, prepared]
+  );
   const dataState: MonthDataState = rc.ready ? monthView.dataState : 'loading';
 
   return {
@@ -113,5 +124,6 @@ export function useHomeViewModel(): {
     rowActions,
     flow,
     refreshKeys,
+    afterPlans,
   };
 }
