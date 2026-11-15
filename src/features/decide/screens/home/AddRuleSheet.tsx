@@ -6,11 +6,16 @@
  * button says Close.
  * 06.1-80 (DC-7, OQ-80-1 A): only kinds not already on the list are offered (kindsOffered), so "Add rule" always adds a rule and
  * never quietly fills one that is there. DB-13: when "Add rule" is off below the cap, a NeedLine under it says what is missing.
+ * 05.5-15 (D-11, D-17, OFO-4, OFO-5): a Category rule IS the category's Activity cap. "Add rule" writes categories.monthly_cap through
+ * useEditCategory (one Undo step, same crossing check), never the rules document. A category that already has a cap cannot be added
+ * again: the sheet says so and links to its category sheet. Caps do not count toward the 5 own rules.
  */
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { useEditCategory } from '@/data/mutations/categories';
+import type { CategoryRow } from '@/db/rows';
 import { useT } from '@/i18n';
-import { space } from '@/theme/layout';
+import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
@@ -23,20 +28,23 @@ import { Text } from '@/ui/Text';
 import { NeedLine } from '../ui/NeedLine';
 import { commitRule, type RuleLabel } from './commitRule';
 import { OptionCard, OptionRow } from './OptionCard';
-import { canAddRule, kindsOffered, newRuleId, upsertRule, type Crossing, type OwnRuleKind, type RulesDoc } from './homeCardsModel';
+import { canAddRule, kindsOffered, newRuleId, upsertRule, type AddRuleKind, type Crossing, type RulesDoc } from './homeCardsModel';
 import type { RulesPatch } from './useHomeCards';
 
 export interface AddRuleSheetProps {
   visible: boolean;
   doc: RulesDoc;
   currency: string;
-  categories: readonly { id: string; name: string }[];
+  /** `row` is the category's stored row; a category cap is written on it (and is taken when its monthly_cap is set). */
+  categories: readonly { id: string; name: string; row?: CategoryRow }[];
   crossings: (patch: RulesPatch) => readonly Crossing[];
   save: (patch: RulesPatch, label: RuleLabel) => string | null;
+  /** The category's cap is already set: open Activity's category sheet for it (the capExists link). */
+  onOpenCategory?: (categoryId: string) => void;
   onDismiss: () => void;
 }
 
-const COPY: Readonly<Record<OwnRuleKind, { title: string; sub: string }>> = {
+const COPY: Readonly<Record<AddRuleKind, { title: string; sub: string }>> = {
   category_cap: { title: 'category', sub: 'categorySub' },
   category_share: { title: 'categoryShare', sub: 'categoryShareSub' },
   largest: { title: 'largest', sub: 'largestSub' },
@@ -47,10 +55,11 @@ export function AddRuleSheet(props: AddRuleSheetProps) {
   return props.visible ? <AddRuleForm {...props} /> : null;
 }
 
-function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: AddRuleSheetProps) {
+function AddRuleForm({ doc, currency, categories, crossings, save, onOpenCategory, onDismiss }: AddRuleSheetProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const [kind, setKind] = useState<OwnRuleKind | null>(null);
+  const { edit } = useEditCategory();
+  const [kind, setKind] = useState<AddRuleKind | null>(null);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [amount, setAmount] = useState<number | null>(null);
   const [percentValue, setPercentValue] = useState(10);
@@ -59,14 +68,31 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
   // A kind that left the list while the sheet was open (added elsewhere) counts as not chosen.
   const chosen = kind !== null && offered.includes(kind) ? kind : null;
   const needsCategory = chosen === 'category_cap' || chosen === 'category_share';
-  const open = canAddRule(doc);
+  // A cap does not count toward the 5 own rules (D-11): only keep, largest and category share do.
+  const open = chosen === 'category_cap' || canAddRule(doc);
   const hasValue = chosen === 'category_share' || (amount !== null && amount > 0);
-  const ready = open && chosen !== null && (!needsCategory || categoryId !== null) && hasValue;
+  const picked = categories.find((c) => c.id === categoryId);
+  const capTaken = chosen === 'category_cap' && picked?.row?.monthly_cap != null;
+  const capRow = chosen === 'category_cap' && picked?.row !== undefined && !capTaken ? picked.row : null;
+  const ready = open && chosen !== null && (!needsCategory || categoryId !== null) && hasValue && !capTaken && (chosen !== 'category_cap' || capRow !== null);
   // DB-13: the reason "Add rule" is off. At the cap the cap line says it, so no NeedLine.
-  const need = !open || ready ? null : chosen !== null && hasValue && needsCategory ? t('decide.screens.sheetsHome.addRule.needCategory') : t('decide.screens.sheetsHome.addRule.need');
+  const need = !open || ready || capTaken ? null : chosen !== null && hasValue && needsCategory ? t('decide.screens.sheetsHome.addRule.needCategory') : t('decide.screens.sheetsHome.addRule.need');
 
   const add = () => {
     if (!ready || chosen === null) return;
+    if (chosen === 'category_cap') {
+      if (capRow === null) return;
+      const cap = amount ?? 0;
+      commitRule({
+        patch: { caps: { [capRow.id]: cap } },
+        label: 'ruleAdded',
+        crossings,
+        save: () => edit(capRow, { monthlyCap: cap }),
+        doneKey: 'decide.screens.sheetsHome.addRule.toast',
+      });
+      onDismiss();
+      return;
+    }
     const value = chosen === 'category_share' ? percentValue : (amount ?? 0);
     const next = upsertRule(doc, { id: newRuleId(chosen, doc), kind: chosen, on: true, value, categoryId: needsCategory ? categoryId : null });
     commitRule({ patch: { doc: next }, label: 'ruleAdded', crossings, save, doneKey: 'decide.screens.sheetsHome.addRule.toast' });
@@ -105,6 +131,23 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
                 ))}
               </View>
             )}
+            {capTaken && picked !== undefined ? (
+              <View testID="add-rule-cap-exists" style={styles.exists}>
+                <Text accessibilityRole="alert" style={{ ...small, color: colors.warn1 }}>
+                  {t('decide.screens.sheetsHome.addRule.capExists', { category: picked.name })}
+                </Text>
+                <Pressable
+                  testID="add-rule-cap-link"
+                  accessibilityRole="link"
+                  onPress={() => onOpenCategory?.(picked.id)}
+                  style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+                >
+                  <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.accent }}>
+                    {t('decide.screens.sheetsHome.addRule.capExistsLink', { category: picked.name })}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
           </>
         ) : null}
 
@@ -144,4 +187,6 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onDismiss }: 
 const styles = StyleSheet.create({
   column: { gap: space.gapSm, paddingBottom: space.gapMd },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.gapSm },
+  exists: { gap: space.gapSm },
+  link: { minHeight: space.touchMin, minWidth: space.touchMin, justifyContent: 'center' },
 });

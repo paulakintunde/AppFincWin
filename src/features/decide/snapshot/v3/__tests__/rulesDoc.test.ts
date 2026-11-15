@@ -25,17 +25,21 @@ describe('readRulesDoc', () => {
 
   it('reads valid rules and defaults a missing on flag to off', () => {
     const doc = readRulesDoc(wrap([{ id: 'a', kind: 'largest', value: 100 }, { id: 'b', kind: 'category_cap', value: 7, categoryId: 'c1', on: true }]));
-    expect(doc.rules).toEqual([
-      { id: 'a', kind: 'largest', on: false, value: 100, categoryId: null },
-      { id: 'b', kind: 'category_cap', on: true, value: 7, categoryId: 'c1' },
-    ]);
+    // 05.5-15 (D-11): a stored category_cap entry is a legacy shape; it is left out, never shown or counted.
+    expect(doc.rules).toEqual([{ id: 'a', kind: 'largest', on: false, value: 100, categoryId: null }]);
+  });
+
+  it('05.5-15 (D-11): legacy category_cap entries do not use up the 5 own rules', () => {
+    const caps = [1, 2, 3].map((n) => ({ id: `own_category_cap_${n}`, kind: 'category_cap', value: n, categoryId: 'c', on: true }));
+    const own = [1, 2, 3, 4, 5].map((n) => ({ id: `k${n}`, kind: 'keep', value: n }));
+    expect(readRulesDoc(wrap([...caps, ...own])).rules.map((r) => r.id)).toEqual(['k1', 'k2', 'k3', 'k4', 'k5']);
   });
 
   it('drops invalid entries, duplicates and entries past the cap', () => {
     const bad = [
       null, 'x', [], { id: '', kind: 'keep', value: 1 }, { id: 3, kind: 'keep', value: 1 }, { id: 'k', kind: 'nope', value: 1 },
       { id: 'n', kind: 'keep', value: '1' }, { id: 'f', kind: 'keep', value: 1.5 }, { id: 'neg', kind: 'keep', value: -1 },
-      { id: 'big', kind: 'category_share', value: 101, categoryId: 'c' }, { id: 'nocat', kind: 'category_cap', value: 1 },
+      { id: 'big', kind: 'category_share', value: 101, categoryId: 'c' }, { id: 'nocat', kind: 'category_share', value: 1 },
       { id: 'emptycat', kind: 'category_share', value: 1, categoryId: '' },
     ];
     const good = Array.from({ length: MAX_OWN_RULES + 2 }, (_, i) => ({ id: `r${i}`, kind: 'keep', value: i }));
@@ -60,6 +64,12 @@ describe('document edits', () => {
     expect(upsertRule(full, rule({ id: 'r1', value: 1 })).rules[1]?.value).toBe(1);
   });
 
+  it('05.5-15 (D-11): upsertRule refuses a category_cap; caps are never stored in the document', () => {
+    const base = docOf(rule());
+    const cap = { id: 'cap', kind: 'category_cap', on: true, value: 200, categoryId: 'c1' } as unknown as Parameters<typeof upsertRule>[1];
+    expect(upsertRule(base, cap)).toBe(base);
+  });
+
   it('removeRule drops by id', () => {
     expect(removeRule(docOf(rule(), rule({ id: 'b' })), 'b').rules.map((r) => r.id)).toEqual(['own_keep']);
   });
@@ -72,14 +82,14 @@ describe('document edits', () => {
   it('kindTaken is true only for a present singleton kind', () => {
     expect(kindTaken(docOf(rule()), 'keep')).toBe(true);
     expect(kindTaken(docOf(rule()), 'largest')).toBe(false);
-    expect(kindTaken(docOf(rule({ id: 'c', kind: 'category_cap', categoryId: 'x' })), 'category_cap')).toBe(false);
+    expect(kindTaken(docOf(rule({ id: 'c', kind: 'category_share', categoryId: 'x' })), 'category_share')).toBe(false);
   });
 
   it('newRuleId gives singletons a fixed id and numbers category rules past taken ids', () => {
     expect(newRuleId('keep', EMPTY_RULES)).toBe('own_keep');
     expect(newRuleId('largest', EMPTY_RULES)).toBe('own_largest');
-    expect(newRuleId('category_cap', EMPTY_RULES)).toBe('own_category_cap_1');
-    expect(newRuleId('category_cap', docOf(rule({ id: 'own_category_cap_2', kind: 'category_cap', categoryId: 'x' })))).toBe('own_category_cap_3');
+    expect(newRuleId('category_share', EMPTY_RULES)).toBe('own_category_share_1');
+    expect(newRuleId('category_share', docOf(rule({ id: 'own_category_share_2', kind: 'category_share', categoryId: 'x' })))).toBe('own_category_share_3');
   });
 });
 
@@ -94,12 +104,10 @@ describe('engine views', () => {
     const doc = docOf(
       rule(),
       rule({ id: 'own_largest', kind: 'largest', value: 100, on: false }),
-      rule({ id: 'cap', kind: 'category_cap', value: 200, categoryId: 'c1' }),
       rule({ id: 'share', kind: 'category_share', value: 15, categoryId: 'c2' }),
     );
     expect(ownLinesOf(doc)).toEqual([
       { id: 'own_largest', on: false, spec: { kind: 'single_purchase_cap', cap: 100 } },
-      { id: 'cap', on: true, spec: { kind: 'category_monthly_cap', categoryId: 'c1', cap: 200 } },
       { id: 'share', on: true, spec: { kind: 'category_income_share', categoryId: 'c2', pct: '15' } },
     ]);
   });

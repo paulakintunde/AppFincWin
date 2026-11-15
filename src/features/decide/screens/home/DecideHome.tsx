@@ -50,6 +50,7 @@ import { SETUP_ROUTES } from '../setup/SetupChecklist';
 import { WhyLine } from '../ui/WhyLine';
 import { useSetupProgress } from '../setup/useSetupProgress';
 import { useSetupText } from '../setup/useSetupText';
+import { CategorySheet } from '@/features/record/categories/CategorySheet';
 import { AddRuleSheet } from './AddRuleSheet';
 import { CheckCard, type ReadsAs } from './CheckCard';
 import { MoneyRulesCard, type RuleTarget } from './MoneyRulesCard';
@@ -292,7 +293,16 @@ export function DecideHome() {
   const rules = useMoneyRules();
   const crossings = useRuleCrossings();
   const categories = useCategories(rc.userId ?? undefined).data;
-  const categoryList = useMemo(() => (categories ?? []).map((c) => ({ id: c.id, name: c.name ?? '' })), [categories]);
+  // 05.5-15 (D-11): the name shown follows the category row (built-ins have no stored name, so categoryName resolves it).
+  const categoryList = useMemo(() => (categories ?? []).map((c) => ({ id: c.id, name: c.name ?? '', row: c })), [categories]);
+  // D-11, D-17: a capped category is a money rule. Its cap is categories.monthly_cap; the row opens Activity's CategorySheet.
+  const caps = useMemo(
+    () => (categories ?? []).filter((c) => !c.is_system && c.archived_at === null && c.monthly_cap !== null).map((c) => ({ categoryId: c.id, amount: c.monthly_cap as number })),
+    [categories],
+  );
+  const [capCategoryId, setCapCategoryId] = useState<string | null>(null);
+  const capCategory = useMemo(() => (categories ?? []).find((c) => c.id === capCategoryId) ?? null, [categories, capCategoryId]);
+  const capCrossings = useCallback((id: string, cap: number | null) => crossings({ caps: { [id]: cap } }), [crossings]);
   const categoryName = useCallback((id: string): string => categoryList.find((c) => c.id === id)?.name ?? '', [categoryList]);
   const [ruleTarget, setRuleTarget] = useState<RuleTarget | null>(null);
   const [addRuleOpen, setAddRuleOpen] = useState(false);
@@ -405,7 +415,20 @@ export function DecideHome() {
               onClose={() => setWorkedOpen(false)}
             />
           ) : null}
-          <AddRuleSheet visible={addRuleOpen} doc={rules.doc} currency={currency} categories={categoryList} crossings={crossings} save={rules.save} onDismiss={() => setAddRuleOpen(false)} />
+          <AddRuleSheet
+            visible={addRuleOpen}
+            doc={rules.doc}
+            currency={currency}
+            categories={categoryList}
+            crossings={crossings}
+            save={rules.save}
+            onOpenCategory={(id) => {
+              setAddRuleOpen(false);
+              setCapCategoryId(id);
+            }}
+            onDismiss={() => setAddRuleOpen(false)}
+          />
+          {capCategory !== null ? <CategorySheet visible mode={{ kind: 'edit', category: capCategory }} capCrossings={capCrossings} onClose={() => setCapCategoryId(null)} /> : null}
         </>
       }
     >
@@ -508,6 +531,8 @@ export function DecideHome() {
           netLocked={rulesFacts.netLocked}
           dsrLine={rules.dsrLine}
           rules={rules.doc.rules}
+          caps={caps}
+          onOpenCategory={setCapCategoryId}
           saving={rulesFacts.saving}
           investing={rulesFacts.investing}
           formatMoney={money}
