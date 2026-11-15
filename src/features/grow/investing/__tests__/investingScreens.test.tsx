@@ -128,7 +128,8 @@ describe('Investing segment', () => {
     expect(screen.getByTestId('investing-hero')).toHaveTextContent('$7,690');
     expect(screen.getByText(/\$690 above what you put in · values you typed, as of Nov 1\./)).toBeTruthy();
     expect(screen.getByText('Retirement · $150 a month · as of Nov 1')).toBeTruthy();
-    expect(screen.getByText('+$650')).toBeTruthy();
+    // 06.2-21 (D-14): the gain reads by arrow and word, not a signed green number.
+    expect(screen.getByText('up 11.2%')).toBeTruthy();
     expect(screen.getByText('Retirement 84% · Brokerage 16%', { includeHiddenElements: true })).toBeTruthy();
     expect(screen.getByText(en.grow.investing.noPrices)).toBeTruthy();
     expect(screen.getByText('Investing · $200 a month. Your rule is at least $200.')).toBeTruthy();
@@ -151,14 +152,15 @@ describe('Investing segment', () => {
     await renderIt(<InvestingSegment />);
     expect(screen.getAllByTestId('investing-stale-row')).toHaveLength(1);
     expect(screen.getByText(en.grow.investing.staleRow)).toBeTruthy();
-    expect(screen.getByText('Last updated Oct 3')).toBeTruthy();
+    // 06.2-21 (D-12): the slate clock badge with how long ago the oldest value was given.
+    expect(screen.getByText('Updated 34 days ago')).toBeTruthy();
   });
 
   it('a loss reads below and is announced in words', async () => {
     mockRead = readOf([holding({ value: 570000 })]);
     await renderIt(<InvestingSegment />);
-    expect(screen.getByText('-$100')).toBeTruthy();
-    expect(screen.getByLabelText('$100 below what you put in')).toBeTruthy();
+    expect(screen.getByText('down 1.7%')).toBeTruthy();
+    expect(screen.getByLabelText('down 1.7%, $100 below what you put in')).toBeTruthy();
   });
 
   it('opens its own Add a holding sheet with no onAdd', async () => {
