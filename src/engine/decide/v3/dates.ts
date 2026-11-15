@@ -1,7 +1,8 @@
 // Pure calendar maths for v3 (05.1). No clock: every function takes its dates (I16). Cadences outside
 // RecurringFreq (every N weeks or months, D-19) live here so recurring/schedule.ts, which is SQL-mirrored,
 // never changes.
-import { daysInMonth, MAX_OCCURRENCES_PER_CALL } from '../../recurring/schedule';
+import { MAX_OCCURRENCES_PER_CALL } from '../../recurring/schedule';
+import { addDays, addMonthsClamped, daysBetween, daysInMonth, parseDate } from '../../time/calendar';
 import { isValidLocalDate as isValidCalendarDate } from '../../time/localDate';
 
 /** Structurally identical to Cadence in the v3 types; kept local so this leaf has no types import. */
@@ -15,51 +16,14 @@ export function isValidLocalDate(s: string): boolean {
   return isValidCalendarDate(s);
 }
 
-const MS_PER_DAY = 86_400_000;
-
 function assertDate(date: string, fn: string): void {
   if (!isValidLocalDate(date)) {
     throw new RangeError(`${fn}: "${date}" is not a valid local date`);
   }
 }
 
-function format(y: number, m: number, d: number): string {
-  return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-}
-
-export function parseDate(s: string): { y: number; m: number; d: number } {
-  assertDate(s, 'parseDate');
-  const [ys, ms, ds] = s.split('-') as [string, string, string];
-  return { y: Number(ys), m: Number(ms), d: Number(ds) };
-}
-
-/** b minus a, in whole days. */
-export function daysBetween(a: string, b: string): number {
-  const pa = parseDate(a);
-  const pb = parseDate(b);
-  return Math.round((Date.UTC(pb.y, pb.m - 1, pb.d) - Date.UTC(pa.y, pa.m - 1, pa.d)) / MS_PER_DAY);
-}
-
-export function addDays(date: string, n: number): string {
-  if (!Number.isInteger(n)) {
-    throw new RangeError(`addDays: n must be an integer, got ${n}`);
-  }
-  const { y, m, d } = parseDate(date);
-  const dt = new Date(Date.UTC(y, m - 1, d + n));
-  return format(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
-}
-
-/** The anchor moved by `months`, day clamped to the target month's length; computed from the anchor each time. */
-export function addMonthsClamped(anchor: string, months: number): string {
-  if (!Number.isInteger(months)) {
-    throw new RangeError(`addMonthsClamped: months must be an integer, got ${months}`);
-  }
-  const { y, m, d } = parseDate(anchor);
-  const total = m - 1 + months;
-  const y2 = y + Math.floor(total / 12);
-  const m2 = (((total % 12) + 12) % 12) + 1;
-  return format(y2, m2, Math.min(d, daysInMonth(y2, m2)));
-}
+// The one calendar lives in time/calendar.ts (05.5-10); re-exported so v3 callers keep their import path.
+export { addDays, addMonthsClamped, daysBetween, parseDate };
 
 export function assertEvery(c: CadenceLike, fn: string): void {
   if (c.unit !== 'week' && c.unit !== 'month') {

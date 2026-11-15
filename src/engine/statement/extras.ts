@@ -5,6 +5,8 @@
  * and never changes a default (RESEARCH A10).
  */
 
+import { daysBetween } from '../time/calendar';
+
 export const EXTRA_NEAR_WINDOW_DAYS = 3;
 
 export interface StatementPeriod {
@@ -37,12 +39,6 @@ export interface ExtraLine {
 export interface FindExtrasResult {
   extras: ExtraLine[];
   nearByIndex: Map<number, string>;
-}
-
-function daysBetween(a: string, b: string): number {
-  const [ya, ma, da] = a.split('-').map(Number) as [number, number, number];
-  const [yb, mb, db] = b.split('-').map(Number) as [number, number, number];
-  return Math.round((Date.UTC(yb, mb - 1, db) - Date.UTC(ya, ma - 1, da)) / 86_400_000);
 }
 
 /** Stated period, else first-to-last row dates; null when unknown or inverted. */

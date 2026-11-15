@@ -8,7 +8,7 @@
  * A month can span up to 6 weeks (RESEARCH Pitfall 5). Day-of-week comes from
  * Date.UTC so it never depends on the device time zone.
  */
-import { daysInMonth } from '../recurring/schedule';
+import { daysInMonth } from '../time/calendar';
 
 type WeekStart = 0 | 1;
 

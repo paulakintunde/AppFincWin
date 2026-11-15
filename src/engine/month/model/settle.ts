@@ -12,7 +12,7 @@
  * Callers pass only status 'paid' lines: a pending line never settles.
  */
 import type { MinorUnits } from '../../money/types';
-import { AMOUNT_TOLERANCE_DIVISOR } from '../../decide/v3/constants';
+import { AMOUNT_TOLERANCE_DIVISOR } from '../../money/tolerance';
 import { daysBetween } from '../../decide/v3/dates';
 import type { Cadence, V3Line } from '../../decide/v3/types';
 

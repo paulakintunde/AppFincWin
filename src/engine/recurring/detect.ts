@@ -6,6 +6,8 @@
  * offered (D-56).
  */
 import { normaliseDescription } from '../categorize/guessCategory';
+import { AMOUNT_TOLERANCE_DIVISOR } from '../money/tolerance';
+import { daysBetween } from '../time/calendar';
 import type { RecurringFreq } from './schedule';
 
 export interface RecurringDetectRow {
@@ -48,19 +50,6 @@ export const MIN_ROWS: Readonly<Record<RecurringFreq, number>> = {
 // Windows never overlap, so the first one containing every gap is the only one that can.
 const FREQ_ORDER: readonly RecurringFreq[] = ['weekly', 'fortnightly', 'monthly', 'quarterly', 'yearly'];
 
-function parseLocalDateParts(s: string): { year: number; month: number; day: number } {
-  const [year, month, day] = s.split('-').map(Number) as [number, number, number];
-  return { year, month, day };
-}
-
-function daysBetween(a: string, b: string): number {
-  const pa = parseLocalDateParts(a);
-  const pb = parseLocalDateParts(b);
-  const ta = Date.UTC(pa.year, pa.month - 1, pa.day);
-  const tb = Date.UTC(pb.year, pb.month - 1, pb.day);
-  return Math.round((tb - ta) / 86_400_000);
-}
-
 function freqForGaps(gaps: readonly number[]): RecurringFreq | null {
   for (const freq of FREQ_ORDER) {
     const [lo, hi] = INTERVAL_WINDOWS[freq];
@@ -70,7 +59,7 @@ function freqForGaps(gaps: readonly number[]): RecurringFreq | null {
 }
 
 /** The lower of the two middle values on an even count, per the plan's tie-break. */
-function lowerMedian(values: readonly number[]): number {
+export function lowerMedian(values: readonly number[]): number {
   const sorted = [...values].sort((a, b) => a - b);
   const n = sorted.length;
   const idx = n % 2 === 0 ? n / 2 - 1 : Math.floor(n / 2);
@@ -80,7 +69,7 @@ function lowerMedian(values: readonly number[]): number {
 /** Integer-maths 10% check: |a - median| * 10 <= |median|. */
 function amountsWithinTolerance(amounts: readonly number[], median: number): boolean {
   const absMedian = Math.abs(median);
-  return amounts.every((a) => Math.abs(a - median) * 10 <= absMedian);
+  return amounts.every((a) => Math.abs(a - median) * AMOUNT_TOLERANCE_DIVISOR <= absMedian);
 }
 
 interface Group {

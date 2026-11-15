@@ -7,6 +7,8 @@
  * nested quantifiers and run on short cell strings.
  */
 
+import { daysInMonth } from '../../time/calendar';
+
 export interface PdfDateParts {
   y: number | null;
   m: number;
@@ -56,7 +58,7 @@ const MON_D_RE = /^([A-Z]{3,9})\.?[ -](\d{1,2})(?:(?:,? |-)(\d{4}))?$/;
 const NUMERIC_RE = /^(\d{1,2})([/.-])(\d{1,2})(?:\2(\d{4}|\d{2}))?$/;
 
 function monthLength(y: number | null, m: number): number {
-  return new Date(Date.UTC(y ?? 2000, m, 0)).getUTCDate();
+  return daysInMonth(y ?? 2000, m);
 }
 
 function validDay(y: number | null, m: number, d: number): boolean {
