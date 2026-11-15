@@ -1,9 +1,10 @@
 name: Mutation (full)
-# 05.4-43 (QA-04, D-172..D-178): the whole D-32 scope (v3 engine and its 5 shared files), split into about 20 parts
+# 2026-11-15 owner decision: weekly, 40 parts, at most 10 at a time (20 parts nightly never finished and blocked PR CI).
+# 05.4-43 (QA-04, D-172..D-178): the whole D-32 scope (v3 engine and its 5 shared files), split into about 40 parts
 # with the same number of mutants each (scripts/mutation-shards.mjs; big files are cut into line ranges), then merged
 # into one report, one score and one gate at 90% (scripts/mutation-merge.mjs, D-174). Static mutants stay out
 # (--ignoreStatic, D-173); property tests run 10 cases (FC_RUNS=10, D-176).
-# Starts: the `mutation-full` label on a PR (works before the merge, D-178), by hand, or nightly once on main.
+# Starts: the `mutation-full` label on a PR (works before the merge, D-178), by hand, or weekly on main (Sunday 04:41 UTC).
 # Never cancelled by a new push: its own concurrency group per commit. The merged incremental file is saved as the
 # baseline that mutation-changed.yml re-uses, so a push then re-tests only mutants in changed code (D-175).
 on:
@@ -11,7 +12,7 @@ on:
     types: [labeled]
   workflow_dispatch: {}
   schedule:
-    - cron: '41 4 * * *'
+    - cron: '41 4 * * 0'
 permissions:
   contents: read
 concurrency:
@@ -32,7 +33,7 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - name: Split the mutants into parts
         id: plan
-        run: node scripts/mutation-shards.mjs --parts 20 --out reports/mutation-plan.json
+        run: node scripts/mutation-shards.mjs --parts 40 --out reports/mutation-plan.json
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mutation-plan
@@ -41,11 +42,11 @@ jobs:
     name: part ${{ matrix.part }}
     needs: plan
     runs-on: ubuntu-latest
-    # A part is about 700 mutants: about 2 hours at 6 a minute, plus 5-10 minutes of first test run
+    # A part is about 370 mutants: about 2.5 hours at the measured 2.6 a minute (2026-11-15: 736 mutants took 279 min), plus 5-10 minutes of first test run. At most 10 parts at once so PR CI keeps free job slots.
     timeout-minutes: 300
     strategy:
       fail-fast: false
-      max-parallel: 20
+      max-parallel: 10
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
