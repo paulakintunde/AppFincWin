@@ -22,9 +22,11 @@ export interface TabHeaderProps {
   trailing?: React.ReactNode;
   /** D-93: false hides the back control (a tab root). Omitted: shown when the history can go back. */
   showBack?: boolean;
+  /** 06.1-56 (X-3): the title's text role; Decide home's title is 'display' (the display face). Default 'heading'. */
+  titleRole?: 'display' | 'heading';
 }
 
-export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, showBack }: TabHeaderProps): React.JSX.Element {
+export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, showBack, titleRole = 'heading' }: TabHeaderProps): React.JSX.Element {
   const { colors, fonts, pairing } = useTheme();
   const insets = useScreenInsets();
   const { canGoBack, goBack } = useBackHistory();
@@ -62,7 +64,7 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, show
           accessibilityRole="header"
           accessibilityLabel={eyebrow ? `${title}, ${eyebrow}` : undefined}
           style={{
-            ...textRole(pairing, 'heading'),
+            ...textRole(pairing, titleRole),
             color: colors.ink,
             marginTop: eyebrow ? space.eyebrowGap : 0,
           }}

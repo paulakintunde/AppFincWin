@@ -11,7 +11,7 @@ import { useGoalLines } from '@/data/queries/growGoals';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
-import { usePastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { DateField } from '@/features/record/entry/pickers/DateField';
 import { AccountPicker } from '@/features/record/entry/pickers/AccountPicker';
 import { space } from '@/theme/layout';

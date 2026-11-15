@@ -1,0 +1,85 @@
+# 06.1-61 shared: the Not ready card's "First: What is <account> for: …?" item (a missing figure, 06.1-66 DS-2) has no one-tap
+# choice; its Fix opens Records with the Your accounts sheet (06.1-71 DN-6). This answers that account "Everyday spending",
+# closes the sheet and goes Back to the answer (FQ1). If the sheet opens with no panel (G-78-2), Back clears it and Fix is
+# tried again (at most 3 times). Four taps when the sheet shows the first time: Fix, the radio, Close, Back.
+# Writes one account purpose on the signed-in account (Undo is on the toast and in Records > Answers you gave).
+appId: com.fincwin.app
+---
+- copyTextFrom:
+    id: "answer-fix-account_use_question"
+- evalScript: ${output.acct = (maestro.copiedText.match(/What is (.+) for:/) || [null, ''])[1]}
+- evalScript: "${console.log('ACCOUNT-USE answering ' + output.acct)}"
+- evalScript: ${output.sheetTries = 0}
+- repeat:
+    times: 3
+    while:
+      notVisible:
+        id: "sheet-container"
+    commands:
+      - runFlow:
+          when:
+            visible:
+              id: "answer-fix-account_use_question"
+          commands:
+            - tapOn:
+                id: "answer-fix-account_use_question"
+            - evalScript: ${output.sheetTries = output.sheetTries + 1}
+      - extendedWaitUntil:
+          visible:
+            id: "sheet-container"
+          timeout: 15000
+          optional: true
+      # G-78-2: a sheet with no panel; Back clears it and leaves Records, then Back again returns to the answer
+      - runFlow:
+          when:
+            notVisible:
+              id: "sheet-container"
+          commands:
+            - evalScript: "${console.log('ACCOUNT-USE G-78-2 empty sheet on try ' + output.sheetTries)}"
+            - back
+            - waitForAnimationToEnd
+            - runFlow:
+                when:
+                  visible:
+                    id: "setup-item-frame"
+                commands:
+                  - back
+            - extendedWaitUntil:
+                visible:
+                  id: "answer-fix-account_use_question"
+                timeout: 30000
+                optional: true
+- assertVisible:
+    id: "sheet-container"
+# No swipe inside the sheet: on the emulator a swipe in this sheet can lose its panel (06.1-61 gap row G-61-1). Accounts still
+# to answer are listed first, so the named one is at the top.
+- assertVisible: "What is ${output.acct} for\\?"
+- tapOn:
+    text: "Everyday spending"
+    below: "What is ${output.acct} for\\?"
+- extendedWaitUntil:
+    visible: "Account use saved"
+    timeout: 15000
+# Back closes the sheet (a "Close" text tap can match the full-screen backdrop, whose label is also "Close", and land on the panel)
+- back
+- extendedWaitUntil:
+    notVisible:
+      id: "sheet-container"
+    timeout: 15000
+- waitForAnimationToEnd
+- back
+# a Back pressed while the sheet is still closing can be lost (06.1-74 G-74-2); press it again if Records is still showing
+- extendedWaitUntil:
+    visible: "Not ready yet.*|I bought it"
+    timeout: 10000
+    optional: true
+- runFlow:
+    when:
+      visible:
+        id: "setup-item-frame"
+    commands:
+      - evalScript: "${console.log('ACCOUNT-USE Back after Close was lost; pressed again')}"
+      - back
+- extendedWaitUntil:
+    visible: "Not ready yet.*|I bought it"
+    timeout: 30000

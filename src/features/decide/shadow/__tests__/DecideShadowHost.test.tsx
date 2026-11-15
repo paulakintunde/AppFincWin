@@ -4,7 +4,7 @@ import { act, render } from '@testing-library/react-native';
 import React from 'react';
 import * as decideV3Queries from '@/data/queries/decideV3';
 import * as profileModule from '@/features/you/useProfile';
-import * as idle from '../../check/scheduleIdle';
+import * as idle from '../scheduleIdle';
 import * as runner from '../runShadow';
 import { DecideShadowHost } from '../DecideShadowHost';
 import * as availability from '../../availability';

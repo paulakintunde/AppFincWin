@@ -4,7 +4,7 @@
 // Screens with their own list (Activity's FlashList) take these pieces directly; TabRootScreen
 // wraps them for plain scrolling screens. The large header carries the problem-only sync line (D-15),
 // so every tab root shows it at rest. Refresh logic itself lives in useShellRefresh (03-20).
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   RefreshControl,
@@ -71,6 +71,15 @@ export interface TabRootChromeOptions {
   hideSyncLine?: boolean;
   /** 05.3-109: pin the compact header in the layout column (Decide home) so it never covers rows or links. */
   compactInFlow?: boolean;
+  /** 06.1-56 (X-3): the large title's text role; Decide home uses 'display'. Default 'heading'. */
+  titleRole?: 'display' | 'heading';
+  /** 06.1-56 (DB-10): filled with a scrollTo(y) for the screen's own scroll view, so a screen can bring a part of it into view. */
+  scrollHandle?: React.Ref<TabRootScrollHandle>;
+}
+
+/** 06.1-56: what `scrollHandle` receives. `y` is the content offset to scroll to. */
+export interface TabRootScrollHandle {
+  scrollTo(y: number): void;
 }
 
 export interface TabRootChrome {
@@ -92,7 +101,7 @@ export interface TabRootChrome {
 const isTabRoot = true;
 
 export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
-  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing, hideSyncLine = false, compactInFlow = false } = options;
+  const { title, eyebrow, trailing, refreshKeys, compactTitle, compactTitleRole, compactTrailing, hideSyncLine = false, compactInFlow = false, titleRole, scrollHandle } = options;
   const { colors } = useTheme();
   const insets = useScreenInsets();
 
@@ -185,6 +194,16 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
     if (node?.scrollToOffset) node.scrollToOffset({ offset: 0, animated: true });
     else node?.scrollTo?.({ y: 0, animated: true });
   }, [scrollRef]);
+  useImperativeHandle(
+    scrollHandle,
+    () => ({
+      scrollTo: (y: number) => {
+        const node = scrollRef.current as unknown as { scrollTo?: (o: { y: number; animated: boolean }) => void } | null;
+        node?.scrollTo?.({ y: Math.max(0, y), animated: true });
+      },
+    }),
+    [scrollRef],
+  );
   const trailingNode =
     typeof compactTrailing === 'function' ? <TrailingSlot render={compactTrailing} scrollToTop={scrollToTop} /> : compactTrailing;
 
@@ -206,7 +225,7 @@ export function useTabRootChrome(options: TabRootChromeOptions): TabRootChrome {
 
   const largeHeader = (
     <View onLayout={onLargeLayout} style={compactInFlow ? { marginTop: -insets.top } : undefined}>
-      <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} showBack={!isTabRoot} />
+      <TabHeader title={title} eyebrow={eyebrow} trailing={trailing} titleRef={largeTitleRef} showBack={!isTabRoot} titleRole={titleRole} />
       {hideSyncLine ? null : <SyncProblemLine />}
     </View>
   );

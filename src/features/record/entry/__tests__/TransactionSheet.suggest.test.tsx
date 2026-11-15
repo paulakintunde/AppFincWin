@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { TransactionRow } from '@/db/rows';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { TransactionSheet } from '../TransactionSheet';
+import { layOutSheets } from '@/test/sheetLayout';
 
 // 06-37: OccurrenceActions marks goal lines paid through useGoalLinePay; these sheets never open a goal line.
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: jest.fn(() => true) }) }));
@@ -273,6 +274,7 @@ describe('TransactionSheet: category suggestion and rule offer (REC-27)', () => 
     });
     expect(out.queryByText('Suggested')).toBeNull();
     expect(out.getByText('Uncategorised')).toBeTruthy();
+    await layOutSheets();
     await fireEvent.press(out.getByTestId('sheet-backdrop', { hidden: true }));
     expect(out.queryByText('Discard changes?')).toBeNull();
   });

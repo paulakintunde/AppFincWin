@@ -1587,9 +1587,9 @@
         "FIN-01",
         "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-14",
+      "ownerReason": "Owner (2026-11-14, 06.1-33 wording sign-off): approved as written on the Decide wording review page (reports/wording/decide-v3.html), reply \"signed\".",
       "expertNote": null,
       "plannerNote": "Hand total 1037629 (plainPlanTotal) equals the engine's interest_is_a_cost total when the first payment is read as today ({interest 137629, total 1037629}; table.test pins it). Through the right-answer fixture the engine asks first (needs_input, pause_interest_not_answered): toEngineInputs maps every plan's first payment as a deferral with the pause question unanswered, and mapping first-payment choices is FIN-05 / BO-05's (all BR cases are knownRed FIN-05). With the first payment as today the engine gives monthly_short / month_already_short with the listed facts."
     },

@@ -24,16 +24,6 @@ describe('05.2 copy, verbatim from UI-SPEC', () => {
     'income.paid.title': 'How are you paid?',
     'income.season.title': 'Does your income change by season?',
     'income.method.title': 'Your income changes. How should Decide count it?',
-    'decide.setup.welcome.title': 'Set up Decide',
-    'decide.setup.regular.unmarkedLine': 'Payments you don’t mark aren’t counted as regular. You can mark them later.',
-    'decide.setup.saving.overLine': '{{amount}} more than your regular saving.',
-    'decide.setup.saving.overExplain': 'If you leave it, Decide counts the larger of the two as set aside each month.',
-    'decide.setup.saving.raise': 'Raise my regular saving to {{amount}}',
-    'decide.setup.saving.lower': 'Lower a bucket',
-    'decide.setup.summary.footer':
-      'Worked out from your own records and what you told us. FincWin records and plans. It does not lend money, arrange credit or hold your funds.',
-    'decide.settings.resetBody': 'This clears your setup answers only. Your transactions, regular payments, loans and envelopes stay as they are.',
-    'decide.setupPage.readoutEyebrow': 'WHAT DECIDE RECEIVES',
     'activity.incomeCard.body': 'Set it up once so Activity and Decide count your income the right way.',
     'activity.incomeTag.countLine_other': 'This also tags {{count}} earlier payments from {{payer}}.',
     'activity.refund.footer': 'Your balances and records stay exactly as logged. Only Decide’s view changes.',
@@ -41,11 +31,6 @@ describe('05.2 copy, verbatim from UI-SPEC', () => {
 
   it.each(Object.entries(verbatim))('%s', (path, text) => {
     expect(get(path)).toBe(text);
-  });
-
-  it('the Summary not-a-lender footer appears once (decide.flow.notLender carries the same closing sentence)', () => {
-    const hits = leaves(en).filter((l) => l.value.startsWith('Worked out from your own records') && l.value.includes('It does not lend money, arrange credit or hold your funds.'));
-    expect(hits.map((l) => l.path)).toEqual(['decide.setup.summary.footer']);
   });
 
   it('the singular earlier-payment line exists for the one-payment case', () => {
@@ -61,25 +46,9 @@ describe('05.2 namespace completeness', () => {
     ['income.method', en.income.method],
     ['income.other', en.income.other],
     ['decide.setup.shell', en.decide.setup.shell],
-    ['decide.setup.welcome', en.decide.setup.welcome],
-    ['decide.setup.regular', en.decide.setup.regular],
-    ['decide.setup.loans', en.decide.setup.loans],
-    ['decide.setup.saving', en.decide.setup.saving],
-    ['decide.setup.everyday', en.decide.setup.everyday],
-    ['decide.setup.unusual', en.decide.setup.unusual],
     ['decide.setup.accountUse', en.decide.setup.accountUse],
-    ['decide.setup.emergency', en.decide.setup.emergency],
-    ['decide.setup.envelopes', en.decide.setup.envelopes],
-    ['decide.setup.unspent', en.decide.setup.unspent],
-    ['decide.setup.share', en.decide.setup.share],
-    ['decide.setup.detail', en.decide.setup.detail],
-    ['decide.setup.reminders', en.decide.setup.reminders],
-    ['decide.setup.summary', en.decide.setup.summary],
     ['decide.accountUse', en.decide.accountUse],
-    ['decide.unspentSheet', en.decide.unspentSheet],
     ['decide.emergencySheet', en.decide.emergencySheet],
-    ['decide.settings', en.decide.settings],
-    ['decide.setupPage', en.decide.setupPage],
     ['activity.incomeCard', en.activity.incomeCard],
     ['activity.incomeTag', en.activity.incomeTag],
     ['activity.refund', en.activity.refund],
@@ -90,44 +59,19 @@ describe('05.2 namespace completeness', () => {
     expect(found.length).toBeGreaterThan(0);
     expect(found.filter((l) => l.value.trim() === '').map((l) => l.path)).toEqual([]);
   });
-
-  it('the settings page has all 17 rows with a label and an effect line', () => {
-    const rows = Object.values(en.decide.settings.row);
-    expect(rows).toHaveLength(17);
-    for (const row of rows) {
-      expect(row.label.length).toBeGreaterThan(0);
-      expect(row.effect.length).toBeGreaterThan(0);
-    }
-  });
-
-  it('the setup page has the 11 readout labels', () => {
-    const labels = Object.keys(en.decide.setupPage).filter((k) => k.startsWith('label'));
-    expect(labels).toHaveLength(11);
-  });
-
-  it('the five section names exist', () => {
-    const s = en.decide.setup.shell;
-    expect([s.sectionIncome, s.sectionRegular, s.sectionSpending, s.sectionMoney, s.sectionAnswers]).toEqual([
-      'Income',
-      'Regular payments',
-      'Spending',
-      'Your money now',
-      'Answers',
-    ]);
-  });
 });
 
 describe('05.2-38 gap-plan copy, undo labels and reverse picker', () => {
   const BANNED = [/\badvice\b/i, /\badvis/i, /recommend/i, /you should/i, /we suggest/i, /\bsafe\b/i, /\bapprove/i, /\breject/i, /\bdecline/i];
   const scoped = leaves(en).filter((l) =>
-    /^(decide\.setup\.debtSheet|record\.seriesStatus|decide\.settings\.changed)\./.test(l.path) ||
+    /^record\.seriesStatus\./.test(l.path) ||
     /^activity\.refund\.(pickerTitleReverse|pickerSublineReverse|searchPayments|emptyTitleReverse|rowSub|rowSubNoCategory|refundRowValue|refundRowA11y)$/.test(l.path) ||
     l.path === 'activity.incomeTag.detailNotSet' ||
     /^undo\.label(Unnamed)?\.(debtAdded|debtEdited|debtPaidOff|seriesStopped|seriesPaused|seriesResumed)$/.test(l.path),
   );
 
   it('covers every new key', () => {
-    expect(scoped.length).toBe(22 + 19 + 11 + 9 + 12 + 1);
+    expect(scoped.length).toBe(40);
   });
 
   it.each(scoped)('passes the banned-word check: $path', ({ value }) => {

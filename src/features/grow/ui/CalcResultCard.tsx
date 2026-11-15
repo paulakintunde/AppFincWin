@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Platform, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
-import { useSettledLabel } from '@/features/decide/check/useSettledLabel';
+import { useSettledLabel } from '@/ui/useSettledLabel';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadows } from '@/theme/tokens';
 import { radii, space } from '@/theme/layout';

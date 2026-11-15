@@ -2,7 +2,7 @@
 // themselves (depcruise fx-fetch-never-from-reads). Mounted by app/(app)/decide/past.tsx.
 import React, { type ReactNode } from 'react';
 import { useEditTransaction } from '@/data/mutations/transactions';
-import { GoalTagEditContext } from '@/features/decide/past/goalTagEdit';
+import { GoalTagEditContext } from '@/features/decide/screens/past/data/goalTagEdit';
 
 export function GoalTagEditProvider({ children }: { children: ReactNode }) {
   const { edit } = useEditTransaction();

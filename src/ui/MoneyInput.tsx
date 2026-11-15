@@ -4,18 +4,25 @@
  *
  * CR-D01: the value is reported as the user types (null while the text does not parse), so a button pressed while the
  * field still has focus reads the typed figure. The iOS decimal pad has no return key and a tap elsewhere need not blur
- * the field, so a blur-only commit could leave a typed figure uncounted. The parser's error is shown on blur or submit.
+ * the field, so a blur-only commit could leave a typed figure uncounted.
+ *
+ * 06.1-52 (C-10): text that more typing cannot fix (a letter, too many decimals, too large) shows its error as it is
+ * typed; a half-typed grouping ('1,2' on the way to '1,200') waits for the blur. 06.1-52 (X-4): once the field loses
+ * focus a figure rests grouped, with no fraction on a whole amount ('9,000'); the reported value is unchanged. 06.1-83: a pre-filled
+ * amount, or one the parent sets, shows the same way from the start, so it reads '3,000' while editing too.
  *
  * WR-D05: a value the parent resets to null from outside clears the text and the error. A null the parent sends back in
  * answer to this field's own report (a 0 or an over-limit figure it normalises to null) keeps the typed text.
  */
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, type AccessibilityValue } from 'react-native';
 import { TextInput } from '@/ui/TextInput';
 import type { TextInput as TextInputInstance } from '@/ui/TextInput';
 import { Text } from '@/ui/Text';
 import { SURFACE_ON_INK_OPACITY } from '@/ui/Chip';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useFontScale } from '@/theme/FontScaleProvider';
+import { effectiveScale } from '@/theme/fontScale';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { useAmountParser } from '@/ui/money/useAmountParser';
@@ -41,7 +48,7 @@ export interface MoneyInputProps {
   onBlur?: () => void;
   /** 05-85 (D-70, rule I): a control after the label, as its next flex sibling (an info button). */
   labelAccessory?: React.ReactNode;
-  /** 05-101 (D-87, R16.3): the running-cost Amount field: no label, a 44-high pill, 1.5px dashed line4 while empty, solid line1 on fill6 with an amount. `width` undefined fills the row. */
+  /** 05-101 (D-87, R16.3): the running-cost Amount field: no label, a 44-high pill, 1.5px dashed line4 while empty, solid line1 on fill6 with an amount. `width` undefined fills the row. 06.1-61: `width` is at the default font size and grows with the OS font scale (to the 2x body cap), as the typed text does. */
   amountField?: { width?: number };
   /** 05-101: the input instance, so a row press can focus it. */
   inputRef?: React.Ref<TextInputInstance>;
@@ -49,20 +56,31 @@ export interface MoneyInputProps {
   tone?: 'light' | 'dark';
   /** D-105: sit like a sheet text Box -- fill6, the card radius and padding, body type -- and lead the text with the currency symbol or marker. */
   boxed?: boolean;
+  /** 06.1-52 (X-4): lead the text with the currency's symbol, as `boxed` does, on any field look. */
+  prefix?: 'symbol';
+  /** 06.1-52 (X-4): a short word after the text (e.g. 'a month', '%'). */
+  suffix?: string;
+  /** 06.1-52 (C-18): the raw text as typed, so a caller can tell an empty field from one that did not read as an amount. */
+  onTextChange?: (text: string) => void;
 }
 
 const COMPACT_MIN_WIDTH = 128;
 const AMOUNT_BORDER = 1.5; // R16.3
 const FOCUS_RING = 2; // D-95
 
-export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, zeroHint = false, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false }: MoneyInputProps) {
+/** 06.1-85 (G-PD-4): the empty field's value: a key with no text (see accessibilityValue below). RN types text as string only. */
+const EMPTY_VALUE = { text: null } as unknown as AccessibilityValue;
+
+export function MoneyInput({ value, currency, onChange, label, accessibilityLabel, large = false, placeholder, zeroHint = false, readOnly = false, compact = false, onBlur, labelAccessory, amountField, inputRef, tone = 'light', boxed = false, prefix, suffix, onTextChange }: MoneyInputProps) {
   const { colors, pairing } = useTheme();
+  const fontScale = useFontScale();
   const dark = tone === 'dark' && !amountField;
   const [focused, setFocused] = useState(false);
   const labelColor = dark ? colors.inkSoft1 : colors.inkDim;
   const parser = useAmountParser();
   const speaker = useMoneyFormatter(false);
-  const [text, setText] = useState(() => (value === null ? '' : parser.toInputText(value, currency)));
+  // 06.1-83 (owner, 2026-11-14): a pre-filled or outside amount shows as it rests after a blur ('3,000'), so it never reads '3000.00' while editing.
+  const [text, setText] = useState(() => (value === null ? '' : parser.toDisplayText(value, currency)));
   const [error, setError] = useState<string | null>(null);
 
   // True for the one render that follows this field's own report: a value arriving then is the parent's answer to it.
@@ -74,7 +92,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
     if (answering) setAnswering(false);
     if (value !== null) {
       const parsed = parser.parse(text, currency);
-      if (!parsed.ok || parsed.value !== value) setText(parser.toInputText(value, currency));
+      if (!parsed.ok || parsed.value !== value) setText(parser.toDisplayText(value, currency));
     } else if (!answering) {
       if (text !== '') setText('');
       setError(null);
@@ -90,13 +108,15 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
 
   const onText = (next: string) => {
     setText(next);
+    onTextChange?.(next);
     if (next.trim() === '') {
       setError(null);
       report(null);
       return;
     }
     const result = parser.parse(next, currency);
-    if (result.ok) setError(null);
+    if (result.ok || result.error === 'ambiguous-separator') setError(null);
+    else setError(parser.errorMessage(result));
     report(result.ok ? result.value : null);
   };
 
@@ -109,6 +129,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
     const result = parser.parse(text, currency);
     if (result.ok) {
       setError(null);
+      setText(parser.toDisplayText(result.value, currency));
       report(result.value);
     } else {
       setError(parser.errorMessage(result));
@@ -137,7 +158,8 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
 
   // formatAmount's rules ("$" is USD only; other dollars keep their marker), read off a zero so the field never decides one itself.
   let symbol = '';
-  if (boxed) {
+  const leadSymbol = boxed || prefix === 'symbol';
+  if (leadSymbol) {
     try {
       symbol = speaker.formatMoney({ amount: minorUnits(0), currency: currencyCode(currency) }).replace(/[^\p{L}\p{S}]/gu, '');
     } catch {
@@ -146,7 +168,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
   }
 
   return (
-    <View style={amountField?.width === undefined ? undefined : { width: amountField.width }}>
+    <View style={amountField?.width === undefined ? undefined : { width: amountField.width * effectiveScale(fontScale, 'body') }}>
       {compact || amountField ? null : labelAccessory ? (
         <View style={styles.labelRow}>
           <View style={styles.labelText}>
@@ -162,6 +184,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           styles.field,
           compact && styles.compact,
           boxed && styles.boxed,
+          !boxed && !compact && (prefix !== undefined || suffix !== undefined) && styles.adorned,
           amountField
             ? {
                 borderWidth: AMOUNT_BORDER,
@@ -180,7 +203,7 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
             style={[StyleSheet.absoluteFill, { backgroundColor: colors.surface, opacity: SURFACE_ON_INK_OPACITY, borderRadius: radii.pill }]}
           />
         ) : null}
-        {boxed && symbol !== '' ? (
+        {leadSymbol && symbol !== '' ? (
           <Text testID="money-symbol" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
             {symbol}
           </Text>
@@ -199,13 +222,22 @@ export function MoneyInput({ value, currency, onChange, label, accessibilityLabe
           returnKeyType="done"
           inputMode="decimal"
           accessibilityLabel={accessibilityLabel}
-          accessibilityValue={spoken === undefined ? undefined : { text: spoken }}
+          // 06.1-84 (G-61-6): never no value. On Android setAccessibilityValue(null) wipes the content description and does not
+          // rebuild it from the label, so a cleared field lost its name. 06.1-85 (G-PD-4): an empty field sends text: null, not ''.
+          // updateViewContentDescription still runs (the map has the key) and rebuilds from the label, but adds a value only when it is
+          // a string, so the name is "Price", not "Price, " (an '' text was joined in with ", ").
+          accessibilityValue={spoken === undefined ? EMPTY_VALUE : { text: spoken }}
           placeholder={hint}
           editable={!readOnly}
           // 05.3-44/52: inkFaint fails 4.5:1 on fill1 and fill6; inkMuted passes on every light ground the field sits on.
           placeholderTextColor={dark ? colors.inkSoft2 : colors.inkMuted}
-          style={[styles.input, (compact || boxed) && styles.compactInput, { ...textRole(pairing, large || compact || boxed ? 'body' : 'label'), color: dark ? colors.surface : colors.ink }]}
+          style={[styles.input, (compact || boxed || prefix !== undefined || suffix !== undefined) && styles.compactInput, { ...textRole(pairing, large || compact || boxed ? 'body' : 'label'), color: dark ? colors.surface : colors.ink }]}
         />
+        {suffix ? (
+          <Text testID="money-suffix" style={{ ...textRole(pairing, 'body'), color: dark ? colors.inkSoft1 : colors.inkDim }}>
+            {suffix}
+          </Text>
+        ) : null}
       </View>
       {error ? <Text style={{ ...textRole(pairing, 'label'), color: dark ? colors.surface : colors.danger }}>{error}</Text> : null}
     </View>
@@ -224,5 +256,6 @@ const styles = StyleSheet.create({
   input: { minHeight: space.touchMin, padding: 0 },
   compact: { minWidth: COMPACT_MIN_WIDTH, flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   compactInput: { flex: 1 },
+  adorned: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   boxed: { borderRadius: space.cardPad, paddingHorizontal: space.cardPad, flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
 });

@@ -4,8 +4,8 @@ import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { minorUnits } from '@/engine/money';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
-import { goal as goalFixture } from '@/features/decide/past/__tests__/helpers/pastFixtures';
+import { wrap } from '@/test/stepProps';
+import { goal as goalFixture } from '@/test/pastFixtures';
 import type { GoalsRead } from '../useGoalsRead';
 import { GoalDetailScreen } from '../GoalDetailScreen';
 
@@ -102,7 +102,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: mockToday, userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
 }));
 let mockToday = '2026-10-20';
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({
     userId: 'u1',
     householdId: 'h1',

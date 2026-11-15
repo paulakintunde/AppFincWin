@@ -12,7 +12,8 @@ import { createFakeSupabase, type FakeSupabase } from '@/db/__tests__/fakeSupaba
 import { mutationKeys, queryKeys } from '@/data/keys';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
-import { registerDecideOutcomeMutations, usePass, useWaitAndSave } from '../decideOutcome';
+import { registerDecideOutcomeMutations, saveForItTarget, useNotBuying, usePass, useSaveForIt, useWaitAndSave } from '../decideOutcome';
+import type { CheckV2, Evaluation } from '@/engine/decide/v3';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;
@@ -346,5 +347,75 @@ describe('D-21 undo steps (05.3-68: recorded by the server)', () => {
     result.current.pass({ check, verdict: 'no', coolingOff: false });
     await waitFor(() => expect(getToast()).not.toBeNull());
     noClientStep(fake);
+  });
+});
+
+
+// 06.1-13 (D-22): Save for it and Not buying on a v3 check.
+const evalOf = (dayOne: number, whole: number, readyBy: unknown = { kind: 'date', date: '2027-03-01' }): Evaluation =>
+  ({ result: { legacyState: 'adjust', readyBy }, purchase: { dayOne, whole } }) as unknown as Evaluation;
+const v3Of = (mode: 'once' | 'plan'): CheckV2 => ({ v: 2, pay: { mode } }) as unknown as CheckV2;
+
+describe('saveForItTarget', () => {
+  it('is the whole price for cash and only the up-front part for a plan', () => {
+    expect(saveForItTarget(v3Of('once'), evalOf(0, 90000))).toBe(90000);
+    expect(saveForItTarget(v3Of('plan'), evalOf(20000, 90000))).toBe(20000);
+  });
+  it('is null when nothing is to be saved', () => {
+    expect(saveForItTarget(v3Of('plan'), evalOf(0, 90000))).toBeNull();
+    expect(saveForItTarget(v3Of('once'), { ...evalOf(0, 0), purchase: null } as Evaluation)).toBeNull();
+  });
+});
+
+describe('useSaveForIt', () => {
+  it('sends one outcome call with the whole price, one step id, and returns the goal id', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => useSaveForIt(), { wrapper: wrapper(qc) });
+    const out = await result.current.save({
+      check, v3: v3Of('once'), evaluation: evalOf(0, 90000), monthly: 30000, currency: 'USD', today: '2026-10-16',
+    });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(fake.calls.filter((c) => c.method === 'rpc')).toHaveLength(1);
+    const p = rpcArgs(fake);
+    expect(p.p_outcome).toBe('wait');
+    expect(p.p_decision).toEqual({
+      verdict: 'adjust', wait_monthly: 30000, ready_by: '2027-03-01', cooling_off: false,
+      goal: { id: out.goalId, name: 'Sofa', currency: 'USD', target: 90000, account_id: null },
+    });
+    expect(out.goalId).toEqual(expect.any(String));
+    expect(p.p_undo_step).toEqual({ id: out.stepId, label_key: 'planSaved', label_params: { name: 'Sofa' } });
+    expect(mockWait).toHaveBeenCalledWith('chk1', '2027-03-01', '2026-10-16');
+  });
+
+  it('saves only the up-front part for a plan', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => useSaveForIt(), { wrapper: wrapper(qc) });
+    await result.current.save({
+      check, v3: v3Of('plan'), evaluation: evalOf(20000, 90000, { kind: 'month', month: '2027-04' }), monthly: 5000,
+      currency: 'USD', today: '2026-10-16',
+    });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    const d = rpcArgs(fake).p_decision as { goal: { target: number }; ready_by: string };
+    expect(d.goal.target).toBe(20000);
+    expect(d.ready_by).toBe('2027-04-01');
+  });
+});
+
+describe('useNotBuying', () => {
+  it('sends the pass outcome with an undo step and shows the confirming toast', async () => {
+    const fake = setup();
+    fake.respondWith(applied());
+    const qc = newClient();
+    const { result } = await renderHook(() => useNotBuying(), { wrapper: wrapper(qc) });
+    const stepId = result.current.pass({ check, evaluation: evalOf(0, 90000) });
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+    expect(rpcArgs(fake).p_outcome).toBe('pass');
+    expect(rpcArgs(fake).p_undo_step).toEqual({ id: stepId, label_key: 'notBuyingSaved', label_params: { name: 'Sofa' } });
+    expect(getToast()?.text).toEqual({ key: 'decide.screens.answerActions.notBuyingToast' });
+    expect(getToast()?.stepId).toBe(stepId);
   });
 });

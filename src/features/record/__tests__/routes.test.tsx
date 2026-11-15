@@ -62,6 +62,8 @@ jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPr
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1' }),
 }));
+// 06.1-72: the app layouts wrap Decide screens in DecideV3Scope; here it only passes its children through.
+jest.mock('@/data/queries/decideV3', () => ({ DecideV3Scope: ({ children }: { children: unknown }) => children }));
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({ data: [{ archived_at: null }], isLoading: false, isError: false }),
 }));

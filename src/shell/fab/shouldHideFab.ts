@@ -4,11 +4,12 @@
 //   'onboarding' - set by Phase 9
 //   'stepFlow'   - set by Phase 5's check editor and date pickers
 //   'bulkSelect' / 'entryFlow' - set by Record
+//   'decide'     - set by Decide home while its tab is focused (06.1-56, A-HOME-3: the prototype has no FAB on Decide)
 //   sheetOpen    - from the sheet stack store (03-06)
 //   signedIn     - defence in depth: the (app) group is Stack.Protected
 // D-22: an outer (detail) screen covers the tab group, so 'outer' hides the button.
 
-export type FabHideReason = 'bulkSelect' | 'entryFlow' | 'onboarding' | 'stepFlow' | 'locked';
+export type FabHideReason = 'bulkSelect' | 'entryFlow' | 'onboarding' | 'stepFlow' | 'locked' | 'decide';
 
 export type FabSurface = 'tabRoot' | 'outer' | 'unknown';
 

@@ -6,7 +6,7 @@ import React, { forwardRef, useImperativeHandle, useMemo, useState } from 'react
 import { View } from 'react-native';
 import { Chip } from '@/ui/Chip';
 import { Text } from '@/ui/Text';
-import { ChoiceCard } from '@/features/decide/ui/ChoiceCard';
+import { ChoiceCard } from '@/ui/ChoiceCard';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { MAX_INPUT_MINOR } from '@/features/decide/snapshot/checkInputs';
 import { useDecideV3 } from '@/data/queries/decideV3';
@@ -15,7 +15,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { hapticSelection } from '@/ui/haptics';
-import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { useIncomeContext } from '../useIncomeContext';
 import { Caption, ChipRow, Intro, Meta, CHOOSE_ONE_REASON_KEY, Why, useNoWrapMoney, useReportReady, useCopy } from './shared';
 

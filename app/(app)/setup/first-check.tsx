@@ -1,10 +1,6 @@
-import { useLocalSearchParams } from 'expo-router';
-import { uuidParam } from '@/features/navigation/routeParams';
-import { FirstCheckScreen } from '@/features/decide/onboarding/FirstCheckScreen';
+import { Redirect, type Href } from 'expo-router';
 
+// 06.1-28 D-05/D-23: old onboarding step. The first check is the new Decide home with the "What is it?" field focused.
 export default function SetupFirstCheckRoute() {
-  const params = useLocalSearchParams<{ accountId?: string | string[] }>();
-  // IN-D04: the same id check and array-param rule as every other route
-  const id = uuidParam(params.accountId);
-  return <FirstCheckScreen accountId={id} />;
+  return <Redirect href={'/decide?focus=check' as Href} />;
 }

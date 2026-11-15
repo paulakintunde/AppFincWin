@@ -5,7 +5,7 @@
  */
 import { currencyCode, minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
-import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
+import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, QuickLine, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
 import { addMonthsClamped, cadenceDate } from '../../dates';
 import { buildFunds } from '../../funds/build';
 import { buildMonthModel } from '../../month/model';
@@ -66,12 +66,13 @@ function firstPaymentOf(asOf: string, cadence: Cadence, firstDate: string): Firs
 
 function payOf(p: RightAnswerFixture['check']['pay'], asOf: string): PayV2 {
   if (p.mode === 'once') return { mode: 'once' };
-  const cadence: Cadence = p.every === 'fortnight' ? { unit: 'week', every: 2 } : { unit: 'month', every: 1 };
+  // 06.1-30 (FIN-23 draft AP-05): 'week' is a payment every week.
+  const cadence: Cadence = p.every === 'fortnight' ? { unit: 'week', every: 2 } : p.every === 'week' ? { unit: 'week', every: 1 } : { unit: 'month', every: 1 };
   return {
     mode: 'plan',
     cadence,
     count: p.months,
-    termMonths: p.every === 'fortnight' ? null : p.months,
+    termMonths: p.every === 'fortnight' || p.every === 'week' ? null : p.months,
     apr: p.apr === null ? null : percent(p.apr),
     fees: { setup: mu(p.fees), perPeriod: mu(0), end: mu(0) },
     deposit: mu(p.deposit),
@@ -258,6 +259,28 @@ function replacesOf(r: NonNullable<RightAnswerFixture['check']['replaces']>): Re
   };
 }
 
+/** 06.1 D-21: a fixture quick line in the engine's own shape (the name never reaches a calculation). */
+function quickLineOf(q: NonNullable<RightAnswerFixture['check']['quickLines']>[number]): QuickLine {
+  switch (q.kind) {
+    case 'expense': return { id: q.id, kind: 'expense', name: q.id, amount: mu(q.amount), everyMonths: q.everyMonths, date: q.date };
+    case 'loan': return { id: q.id, kind: 'loan', name: q.id, monthly: mu(q.monthly), payments: q.payments, firstDate: q.firstDate };
+    case 'savings': return { id: q.id, kind: 'savings', name: q.id, amount: mu(q.amount), usable: q.usable };
+    case 'income': return { id: q.id, kind: 'income', name: q.id, amount: mu(q.amount), everyMonths: q.everyMonths, date: q.date };
+  }
+}
+
+/** The income profile the case states; absent when it states none (scheduled pay with no types). */
+function profileOf(f: RightAnswerFixture): Pick<V3Inputs, 'profile'> | Record<string, never> {
+  const irr = f.pay.irregular;
+  const fl = f.pay.freelance;
+  const types = f.incomeTypes ?? (irr !== undefined ? ['freelance' as const] : fl !== undefined ? ['salary' as const, 'freelance' as const] : null);
+  if (types === null) return {};
+  // TX-16: irregular pay with no steady figure counts what comes in ('match').
+  if (irr?.steady === false) return { profile: { types, variable: 'match', steady: null, billsHorizonMonths: null } };
+  const steady = irr !== undefined ? f.pay.amount : fl !== undefined ? fl.steady : null;
+  return { profile: { types, variable: steady === null ? null : 'steady', steady: steady === null ? null : mu(steady), billsHorizonMonths: null } };
+}
+
 export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check: CheckV2 } {
   const ym = f.asOf.slice(0, 7);
   const start = `${monthBefore(ym, f.historyMonths)}-01`;
@@ -271,6 +294,10 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   const savingLine = (m: string) => (sv === undefined ? [] : [v3Line({ id: `save-${m}`, date: `${m}-${pad(sv.day)}`, amount: sv.amount, role: 'saved_invested', seriesId: 'saving' })]);
   // 05.4 D-52: irregular pay has no pay series; each history month's income is one unlinked line on the stated day.
   const irr = f.pay.irregular;
+  // 06.1 FIN-20 (draft): freelance pay beside the salary is one unlinked income line a month on its day (the profile's own variable
+  // income, read by the steady method).
+  const fl = f.pay.freelance;
+  const freelanceLine = (m: string, amount: number) => (fl === undefined || amount <= 0 ? [] : [v3Line({ id: `fl-${m}`, date: `${m}-${pad(fl.day)}`, amount, role: 'income' as const, seriesId: null })]);
   const months: V3Month[] = [];
   for (let i = f.historyMonths; i >= 1; i--) {
     const m = monthBefore(ym, i);
@@ -280,6 +307,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     months.push(
       monthOf(m, [
         income,
+        ...freelanceLine(m, fl === undefined ? 0 : (fl.amounts[f.historyMonths - i] ?? 0)),
         ...bills.history(m),
         // 05.4 ARC-07: the essential part of everyday spending sits in a category marked essential (the starter safety net).
         ...(f.usualMonth.everyday - f.usualMonth.essentialEveryday > 0
@@ -298,6 +326,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
       ym,
       [
         ...(t.received > 0 ? [v3Line({ id: `in-${ym}`, date: `${ym}-01`, amount: t.received, role: 'income' as const, seriesId: irr ? null : 'pay' })] : []),
+        ...freelanceLine(ym, fl === undefined ? 0 : fl.received),
         ...bills.now,
         ...(t.everydaySoFar > 0 ? [v3Line({ id: `day-${ym}`, date: `${ym}-01`, amount: t.everydaySoFar })] : []),
         ...(sv !== undefined && sv.movedThisMonth ? savingLine(ym) : []),
@@ -349,7 +378,9 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     months,
     series: [...(irr ? [] : [pay]), ...bills.series, ...(saving === null ? [] : [saving])],
     ...(bills.waivers.length === 0 ? {} : { waivers: bills.waivers }),
-    ...(irr ? { profile: { types: ['freelance'], variable: 'steady', steady: mu(f.pay.amount), billsHorizonMonths: null } } : {}),
+    // D-52 irregular pay: a freelance profile with her own steady figure. 06.1 FIN-20 (draft): the types as the case states them
+    // (incomeTypes), and salary + freelance with pay.freelance (the steady figure is the freelance part only).
+    ...profileOf(f),
     balance: mu(spending),
     accounts,
     // 06 (D-05, D-06): the goals as stated, each with an explicit locked flag.
@@ -398,12 +429,16 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     essentialCategoryIds: f.usualMonth.essentialEveryday > 0 ? [ESSENTIAL] : [],
     factLines: f.factLines, // D-08 (05.4-20)
     tightLine: f.userLine === null ? null : mu(f.userLine), // 05.4-21 (FIN-07, BR-09): the money-left-each-month line the user set
+    // 06.1 FIN-20 (D-26): the share of freelance pay put aside for tax, as typed; prepare cuts the freelance pay (income/setAside.ts).
+    ...(f.taxSetAsideBp == null ? {} : { taxSetAsideBp: f.taxSetAsideBp }),
   });
   // 05.4-18: the confirmed unspent figure is the app's own suggested sum (spending money less the bills still due and the
   // everyday spending still to come), as a user who confirms it would see it. A raw balance would count this month's spending
   // still to come as money from earlier months (SN-04: "$300 now and $300 a month", not $700). Signed (05.4 ENG-02).
   const mm = buildMonthModel(inputs0);
-  const toArrive = mm.moneyIn - t.received > 0 ? mm.moneyIn - t.received : 0;
+  // 06.1 FIN-20: freelance pay beside the salary that is already in is received too (thisMonth.received is the salary only).
+  const inNow = t.received + (fl?.received ?? 0);
+  const toArrive = mm.moneyIn - inNow > 0 ? mm.moneyIn - inNow : 0;
   // 05.4 ENG-17 (D-114): the app cannot convert an account with no rate, so its suggested figure leaves that account out too.
   const rated: V3Inputs = { ...inputs0, accounts: accounts.filter((a) => a.noRate !== true) };
   const inputs: V3Inputs = { ...inputs0, unspent: { amount: mu(buildFunds(rated, mm, null).suggested + toArrive), at: f.asOf } };
@@ -422,6 +457,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     ...(c.closingPercent == null ? {} : { closingPercent: percent(c.closingPercent) }),
     ...(c.purchaseDate == null ? {} : { purchaseDate: c.purchaseDate }),
     ...(c.replaces == null ? {} : { replaces: replacesOf(c.replaces) }),
+    // 06.1 D-21: the quick-estimate lines for this one check (judged through judgeWithQuickLines).
+    ...(c.quickLines == null ? {} : { quickLines: c.quickLines.map(quickLineOf) }),
   });
   // 05.4-23 (FIN-08): the answer to "Can you cover the low months?"; absent or null = not answered.
   if (c.yourAnswer === 'yes' || c.yourAnswer === 'no') return { inputs, check: { ...check, volatileCover: c.yourAnswer === 'yes' } };

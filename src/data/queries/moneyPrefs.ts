@@ -26,11 +26,13 @@ export interface MoneyPrefsQuery {
   isFetchedAfterMount: boolean;
 }
 
-export function useMoneyPrefs(userId?: string): MoneyPrefsQuery {
+/** 06.1-78 (G-72-2): `opts.staleTime` is the observer's freshness (Decide's screens pass five minutes); undefined keeps the app default. */
+export function useMoneyPrefs(userId?: string, opts?: { staleTime?: number }): MoneyPrefsQuery {
   const query = useQuery({
     queryKey: queryKeys.moneyPrefs(userId ?? ''),
     queryFn: async () => (await fetchMoneyPrefs(supabase, userId as string)) ?? DEFAULT_MONEY_PREFS,
     enabled: Boolean(userId),
+    ...(opts?.staleTime === undefined ? {} : { staleTime: opts.staleTime }),
   });
 
   // Never surfaces `undefined` to a caller -- a screen renders the placeholder default

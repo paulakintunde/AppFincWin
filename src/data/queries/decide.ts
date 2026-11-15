@@ -1,7 +1,7 @@
 // 05-12: Decide reads. Row-derived reads nest under ['transactions', hh] (D-15). The snapshot is built in
 // memory with useMemo, never stored in the cache (it carries bigints, Pitfall 8). Stored rates only.
 import { useCallback, useMemo } from 'react';
-import { hashKey, useMutationState, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
+import { hashKey, keepPreviousData, useMutationState, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { serverFetchTimeOf } from '@/data/cache/persister';
 import { fetchDebts, type DebtRow } from '@/db/debts';
 import { fetchDecideChanges } from '@/db/decideChanges';
@@ -26,7 +26,6 @@ import { buildDecideSnapshot, type SnapshotSource } from '@/features/decide/snap
 import { recordsAsOfOf, rollForward } from '@/features/decide/snapshot/offlineFallback';
 import { selectOtherChecks } from '@/features/decide/snapshot/stacking';
 import { EMPTY_STACK, type SnapshotResult, type StackSelection } from '@/features/decide/snapshot/types';
-import { useJudgeOn } from '@/features/decide/judgeOn/judgeOnStore';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';
 import { supabase } from '@/services/supabase';
@@ -36,16 +35,22 @@ import { useAccountBalances } from './activity';
 import { useCategories } from './categories';
 import { useCustomCurrencies } from './customCurrencies';
 import { useFxLatest } from './fxLatest';
+import { DECIDE_READ_STALE_MS } from './decideStale';
 import { useRecurringSeries } from './recurringSeries';
 
 export const DECIDE_LOOKBACK_MONTHS = 12;
 export const DECIDE_UPCOMING_MONTHS = 120; // pending one-offs dated after this month (05-06)
+export { DECIDE_READ_STALE_MS } from './decideStale';
+/** 06.1-72: the observer options Decide passes to the shared reads it uses. */
+const DECIDE_READ = { staleTime: DECIDE_READ_STALE_MS } as const;
 
 export function useDecideChecks(userId?: string, householdId?: string): UseQueryResult<DecideCheckRow[]> {
   return useQuery({
     queryKey: queryKeys.decideChecks(userId ?? '', householdId ?? ''),
     queryFn: () => fetchDecideChecks(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
   });
 }
 
@@ -65,6 +70,8 @@ export function useOpenChecks(userId?: string, householdId?: string): UseQueryRe
     queryKey: queryKeys.decideChecks(userId ?? '', householdId ?? ''),
     queryFn: () => fetchDecideChecks(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
     select: selectOpenChecks,
   });
 }
@@ -74,22 +81,26 @@ export function useDecideSettings(userId?: string): UseQueryResult<DecideSetting
     queryKey: queryKeys.decideSettings(userId ?? ''),
     queryFn: () => fetchDecideSettings(supabase, userId as string),
     enabled: Boolean(userId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
   });
 }
 
-export function useDebts(householdId?: string): UseQueryResult<DebtRow[]> {
+export function useDebts(householdId?: string, opts?: { staleTime?: number }): UseQueryResult<DebtRow[]> {
   return useQuery({
     queryKey: queryKeys.debts(householdId ?? ''),
     queryFn: () => fetchDebts(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }
 
-export function useStatementPeriods(householdId?: string): UseQueryResult<StatementPeriodRow[]> {
+export function useStatementPeriods(householdId?: string, opts?: { staleTime?: number }): UseQueryResult<StatementPeriodRow[]> {
   return useQuery({
     queryKey: queryKeys.statementPeriods(householdId ?? ''),
     queryFn: () => fetchStatementPeriods(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }
 
@@ -104,6 +115,10 @@ export function useDecideLinks(
     queryKey: [...queryKeys.decideLinks(userId ?? '', householdId ?? ''), checkIds.join(',')],
     queryFn: () => fetchDecideLinks(supabase, checkIds),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
+    // 06.1-46 (B-3): a new check changes the key; keep the last links while it loads so Decide never drops back to loading.
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -129,15 +144,18 @@ export function useDecideChanges(userId?: string, householdId?: string) {
     queryKey: queryKeys.decideChanges(userId ?? '', householdId ?? ''),
     queryFn: () => fetchDecideChanges(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    // 06.1-72 (G-73-1): a Decide-only read; a write still invalidates it at once.
+    staleTime: DECIDE_READ_STALE_MS,
   });
 }
 
 /** D-34: savings goals. */
-export function useSavingsGoals(userId?: string, householdId?: string) {
+export function useSavingsGoals(userId?: string, householdId?: string, opts?: { staleTime?: number }) {
   return useQuery({
     queryKey: queryKeys.savingsGoals(userId ?? '', householdId ?? ''),
     queryFn: () => fetchSavingsGoals(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }
 
@@ -209,6 +227,8 @@ export interface DecideSnapshotState {
   errorKind?: DbErrorKind | null;
   /** APP-01 (05.4-33): the reads with nothing cached (not even last month's), by name, for the 08.1 offline card. */
   missingReads?: readonly string[];
+  /** 06.1-46 (B-2): writes still waiting to send, live. Laid over at judge time; `source.unsavedWrites` is always 0. Optional for test stand-ins. */
+  unsavedWrites?: number;
 }
 
 /** The snapshot's reads, by name, in the order of `reads` in useDecideSnapshot (APP-01 offline card). */
@@ -306,41 +326,49 @@ export function useDecideSnapshot(): DecideSnapshotState {
     queryFn: () => fetchTransactionsInRange(supabase, hh as string, { from, toInclusive: to }),
     enabled,
     placeholderData: historyFallback,
+    staleTime: DECIDE_READ_STALE_MS,
   });
   const upcoming = useQuery({
     queryKey: upcomingKey,
     queryFn: () => fetchTransactionsInRange(supabase, hh as string, { from: upcomingFrom, toInclusive: upcomingTo }),
     enabled,
     placeholderData: upcomingFallback,
+    staleTime: DECIDE_READ_STALE_MS,
   });
-  const accountsQuery = useAccounts(hhId);
+  // 06.1-72 (G-73-1): every read here is held fresh for DECIDE_READ_STALE_MS, so a Decide screen that mounts (the answer over
+  // Decide home) does not refetch the reads home already holds once they pass the app's 60 s default. A write still
+  // invalidates its keys at once (an invalidated read is stale whatever its staleTime), and other screens keep the default.
+  const accountsQuery = useAccounts(hhId, DECIDE_READ);
   const allAccounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
-  const { balances } = useAccountBalances(hh, allAccounts);
+  const { balances } = useAccountBalances(hh, allAccounts, DECIDE_READ);
   // Same key as useAccountBalances' read (shared, not refetched): only here for its error and loaded state.
   const balanceRead = useQuery({
     queryKey: queryKeys.accountBalances(hh ?? ''),
     queryFn: () => fetchAccountBalances(supabase, hh as string),
     enabled,
+    staleTime: DECIDE_READ_STALE_MS,
   });
-  const seriesQuery = useRecurringSeries(hhId);
+  const seriesQuery = useRecurringSeries(hhId, DECIDE_READ);
   const fxQuery = useFxLatest();
-  const categoriesQuery = useCategories(userKey);
-  const customQuery = useCustomCurrencies(userKey);
+  const categoriesQuery = useCategories(userKey, DECIDE_READ);
+  const customQuery = useCustomCurrencies(userKey, DECIDE_READ);
   const settingsQuery = useDecideSettings(userKey);
-  const debtsQuery = useDebts(hhId);
-  const goalsQuery = useSavingsGoals(userKey, hhId);
-  const periodsQuery = useStatementPeriods(hhId);
+  const debtsQuery = useDebts(hhId, DECIDE_READ);
+  const goalsQuery = useSavingsGoals(userKey, hhId, DECIDE_READ);
+  const periodsQuery = useStatementPeriods(hhId, DECIDE_READ);
   const changesQuery = useDecideChanges(userKey, hhId);
   const checksQuery = useDecideChecks(userKey, hhId);
   const paymentQuery = useQuery({
     queryKey: queryKeys.decidePaymentLinks(userId ?? '', hh ?? ''),
     queryFn: () => fetchPaymentLinks(supabase, hh as string),
     enabled: enabled && Boolean(userId),
+    staleTime: DECIDE_READ_STALE_MS,
   });
   const writtenQuery = useQuery({
     queryKey: queryKeys.decideWrittenRowLinks(userId ?? '', hh ?? ''),
     queryFn: () => fetchWrittenRowLinks(supabase, hh as string),
     enabled: enabled && Boolean(userId),
+    staleTime: DECIDE_READ_STALE_MS,
   });
   // 05.4-35 (D-19, D-142): the state or province for the tax lookup. A required read like the others, so an answer never flips from
   // "no tax" to "tax" when it lands. null = not set.
@@ -348,6 +376,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
     queryKey: queryKeys.regionSubdivision(userId ?? ''),
     queryFn: () => fetchRegionSubdivision(supabase, userId as string),
     enabled: enabled && Boolean(userId),
+    staleTime: DECIDE_READ_STALE_MS,
   });
 
   const reads = [
@@ -388,9 +417,13 @@ export function useDecideSnapshot(): DecideSnapshotState {
     [historyHash, upcomingHash, balancesHash, rc.timeZone, history.dataUpdatedAt, upcoming.dataUpdatedAt, balanceRead.dataUpdatedAt]
   );
   // 05.4 D-127: writes still waiting to send (in flight, queued or paused offline). The D-113 note only, never the sums.
+  // 06.1-46 (B-2): returned on the state and laid over at judge time, never part of the source, so a count change rebuilds nothing.
   const unsavedWrites = useMutationState({ filters: { status: 'pending' }, select: countWrite }).length;
 
+  // 06.1-46 (B-2): the snapshot reads checks only for their (id, kind) pairs, so it keys on those, not on the rows: a draft save
+  // that changes only a check's stored inputs keeps the same payment links, the same source and the same build.
   const checkRows = checksQuery.data;
+  const checkKindSig = checkRows === undefined ? undefined : checkRows.map((c) => `${c.id}\t${c.kind}`).join('\n');
   const paymentLinks = useMemo(() => {
     const kinds = new Map((checkRows ?? []).map((c) => [c.id, c.kind] as const));
     const out: SnapshotSource['paymentLinks'][number][] = [];
@@ -399,7 +432,9 @@ export function useDecideSnapshot(): DecideSnapshotState {
       if (kind !== undefined) out.push({ check_id: link.check_id, target_id: link.target_id, check_kind: kind });
     }
     return out;
-  }, [checkRows, paymentQuery.data]);
+    // checkKindSig is the part of checkRows read here; the rows themselves change on every draft save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkKindSig, paymentQuery.data]);
 
   const balanceRecord = useMemo(() => {
     const out: Record<string, number> = {};
@@ -415,15 +450,10 @@ export function useDecideSnapshot(): DecideSnapshotState {
   }, [categoryRows]);
 
   const region = getDeviceRegion(rc.region) ?? null;
-  // D-107: the Judge-on choice (device view). null until it has been read, so no verdict flashes on the wrong basis.
-  const { judgeOn: storedJudgeOn, pendingDefault, applyingDefault } = useJudgeOn(userId);
-  // While the one-time default switch is unresolved the snapshot is built on the settings basis (judgeOn null), so the
-  // switch can re-baseline the checks before any render shows This month.
-  const judgeOn = storedJudgeOn !== null && pendingDefault ? null : storedJudgeOn;
-  const waitingForChoice = storedJudgeOn === null || applyingDefault;
+  // 06.1-36: the old Judge-on device choice is gone; the snapshot always judges on the settings basis.
 
   const source = useMemo<SnapshotSource | null>(() => {
-    if (!rc.ready || missing || waitingForChoice) return null;
+    if (!rc.ready || missing) return null;
     return {
       today: rc.today,
       homeCurrency: rc.homeCurrency,
@@ -443,9 +473,8 @@ export function useDecideSnapshot(): DecideSnapshotState {
       changes: changesQuery.data ?? [],
       paymentLinks,
       writtenRowLinks: writtenQuery.data ?? [],
-      judgeOn,
       recordsAsOf,
-      unsavedWrites,
+      unsavedWrites: 0, // 06.1-46 (B-2): the live count is on the state, laid over at judge time
       regionSubdivision: subdivisionQuery.data ?? null,
     };
   }, [
@@ -469,15 +498,13 @@ export function useDecideSnapshot(): DecideSnapshotState {
     changesQuery.data,
     paymentLinks,
     writtenQuery.data,
-    judgeOn,
-    waitingForChoice,
     recordsAsOf,
-    unsavedWrites,
     subdivisionQuery.data,
   ]);
 
-  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? '', judgeOn ?? ''].join('|');
-  const sourceDeps = [...reads.map((q) => q.data), recordsAsOf, unsavedWrites];
+  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? ''].join('|');
+  // 06.1-46 (B-2): the checks read keys by its (id, kind) signature (see paymentLinks), not by its rows.
+  const sourceDeps = [...reads.map((q) => (q === checksQuery ? checkKindSig : q.data)), recordsAsOf];
   const shared = useMemo(
     () => (source === null ? null : sharedSnapshot(sourceKey, sourceDeps, source)),
     // sourceDeps is rebuilt each render from the same references; `source` and the key say when they changed.
@@ -499,7 +526,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
   }, [failedFlags]);
 
   const status: DecideSnapshotState['status'] = failed ? 'error' : result === null ? 'loading' : 'ready';
-  return { status, result, source: sharedSource, retry, errorKind, missingReads };
+  return { status, result, source: sharedSource, retry, errorKind, missingReads, unsavedWrites };
 }
 
 /** D-24 (part 2): the other open checks a check is judged with, counted and memoised. */

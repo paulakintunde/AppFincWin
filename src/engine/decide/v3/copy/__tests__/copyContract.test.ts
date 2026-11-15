@@ -11,6 +11,8 @@ import { minorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
 import { MISSING_PRIORITY } from '../../constants';
 import { evaluate } from '../../evaluate';
+import { prepare } from '../../prepare';
+import { judgeWithQuickLines } from '../../quick/overlay';
 import type { CaveatCode, CheckV2, CustomOptions, FactCode, LimitLine, MissingCode, NoticeCode, V3Inputs, V3Month } from '../../types';
 import extraFile from '../../__tests__/golden/extra-d18.json';
 import scenariosFile from '../../__tests__/golden/scenarios22.json';
@@ -66,7 +68,7 @@ const OWN_PET: CustomOptions = {
 };
 
 function collect(into: Emitted[], inputs: V3Inputs, check: CheckV2): void {
-  const ev = evaluate(inputs, check);
+  const ev = judgeWithQuickLines(prepare(inputs), check); // 06.1 D-21: the same as evaluate when the check has no quick lines
   for (const f of ev.result.facts) into.push({ group: 'fact', code: f.code, values: f.values });
   for (const n of ev.result.notices) into.push({ group: 'notice', code: n.code, values: n.values });
   for (const c of ev.result.caveats ?? []) CAVEATS.push({ code: c.code, values: c.values });
@@ -268,6 +270,11 @@ function buildCorpus(): Emitted[] {
     const { inputs, check } = toEngineInputs(c.fixture);
     collect(out, inputs, check);
   }
+  // 06.1 D-21: the quick-line cases (the quick_lines_counted and quick_savings_counted facts).
+  for (const c of loadCases().filter((x) => x.topic === 'quick-lines')) {
+    const { inputs, check } = toEngineInputs(c.fixture);
+    collect(out, inputs, check);
+  }
   // 06 D-05, D-06, D-22: locked goals kept out (alone and with a locked net) and unlocked goals counted as spare money.
   {
     const sn15 = toEngineInputs(loadCases().find((x) => x.id === 'SN-15')!.fixture);
@@ -293,6 +300,11 @@ function buildCorpus(): Emitted[] {
   const ben = loadCases().find((c) => c.id === 'TX-06')!.fixture;
   for (const region of [{ country: 'CA', subdivision: 'ON' }, { country: 'CA', subdivision: null }]) {
     const { inputs, check } = toEngineInputs({ ...ben, region, check: { ...ben.check, taxPercent: null, taxIncluded: null } });
+    collect(out, inputs, check);
+  }
+  // 06.1 FIN-20 (D-26): the tax set-aside line (TX-10 freelance, TX-12 salary + freelance). 06.1 FIN-23: the UK/EU rate line (AP-01, AP-02).
+  for (const id of ['TX-10', 'TX-12', 'AP-01', 'AP-02']) {
+    const { inputs, check } = toEngineInputs(loadCases().find((c) => c.id === id)!.fixture);
     collect(out, inputs, check);
   }
   // 05.4 BO-05 (05.4-27): a sale the answer counts (SO-01, sale_counted) and a debt the sale pays only in part (SO-04, debt_left_after_sale).

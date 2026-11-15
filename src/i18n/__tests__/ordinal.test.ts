@@ -35,17 +35,7 @@ describe('formatOrdinal', () => {
 });
 
 describe('ordinal copy', () => {
-  it('reads as an ordinal at the four call sites', () => {
+  it('reads as an ordinal at the surviving call site', () => {
     expect(t('income.pay.prefill', { payer: 'Acme', amount: '£19.99', day: 24 })).toContain('around the 24th of each month');
-    expect(t('decide.setup.regular.rowMeta', { frequency: 'Monthly', day: 30 })).toBe('Monthly · around the 30th');
-    expect(t('decide.setup.loans.dueLine', { day: 1 })).toBe('due the 1st');
-    expect(t('decide.setup.saving.aroundDay', { day: 2 })).toBe('Around the 2nd, every month');
-  });
-
-  it('shows None / None yet for empty settings counts and singular envelope', () => {
-    expect(t('decide.settings.valueOtherIncome', { count: 0 })).toBe('None');
-    expect(t('decide.settings.valueEnvelopes', { amount: '$0', count: 0 })).toBe('None yet');
-    expect(t('decide.settings.valueEnvelopes', { amount: '$5', count: 1 })).toBe('$5 in 1 envelope');
-    expect(t('decide.settings.valueEnvelopes', { amount: '$5', count: 3 })).toBe('$5 in 3 envelopes');
   });
 });

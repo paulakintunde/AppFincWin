@@ -21,6 +21,12 @@ function fromHex(hex: string): Uint8Array {
   return aesjs.utils.hex.toBytes(hex);
 }
 
+/**
+ * 06.1-73: how long the last setItem spent encrypting (utf8 + AES-CTR + hex) and storing, in ms, and the plaintext length.
+ * Numbers only; read by the persister's 'persist' breadcrumb and the perf probe.
+ */
+export const lastSetTiming = { encryptMs: 0, storeMs: 0, chars: 0 };
+
 export class LargeSecureStore {
   private secureKeyName(key: string): string {
     return `${key.replace(/[^A-Za-z0-9._-]/g, '_')}.k`;
@@ -86,11 +92,17 @@ export class LargeSecureStore {
     const iv = new Uint8Array(16);
     crypto.getRandomValues(iv);
 
+    const encryptStart = Date.now();
     const valueBytes = aesjs.utils.utf8.toBytes(value);
     const aesCtr = new aesjs.ModeOfOperation.ctr(keyBytes, new aesjs.Counter(iv));
     const cipherBytes = aesCtr.encrypt(valueBytes);
+    const blob = `${toHex(iv)}:${toHex(cipherBytes)}`;
+    const storeStart = Date.now();
 
-    await AsyncStorage.setItem(key, `${toHex(iv)}:${toHex(cipherBytes)}`);
+    await AsyncStorage.setItem(key, blob);
+    lastSetTiming.encryptMs = storeStart - encryptStart;
+    lastSetTiming.storeMs = Date.now() - storeStart;
+    lastSetTiming.chars = value.length;
   }
 
   async removeItem(key: string): Promise<void> {

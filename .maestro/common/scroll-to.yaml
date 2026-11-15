@@ -1,0 +1,16 @@
+# 06.1-32 shared: swipe up the page until ${TARGET} (text or regex) is visible, at most 8 swipes. Used instead of
+# scrollUntilVisible on Decide screens: on the emulator its slow centre swipe was taken as a press or a horizontal gesture
+# by the month card and never scrolled the page. Ends with ${TARGET} visible or fails.
+appId: com.fincwin.app
+---
+- repeat:
+    times: 8
+    while:
+      notVisible: ${TARGET}
+    commands:
+      - swipe:
+          start: "50%,75%"
+          end: "50%,35%"
+          duration: 400
+      - waitForAnimationToEnd
+- assertVisible: ${TARGET}

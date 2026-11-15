@@ -12,11 +12,13 @@ import { BUILTIN_CATEGORY_KEYS, type BuiltinCategoryKey } from '@/engine/categor
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
 
-export function useCategories(userId?: string) {
+/** 06.1-72: a caller may hold the read fresh for longer (Decide's reads use DECIDE_READ_STALE_MS). */
+export function useCategories(userId?: string, opts?: { staleTime?: number }) {
   return useQuery({
     queryKey: queryKeys.categories(userId ?? ''),
     queryFn: () => fetchCategories(supabase, userId as string),
     enabled: Boolean(userId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 }
 

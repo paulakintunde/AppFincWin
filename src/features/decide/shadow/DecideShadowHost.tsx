@@ -10,7 +10,7 @@ import { useDecideV3 } from '@/data/queries/decideV3';
 import { useProfile } from '@/features/you/useProfile';
 import { captureError, captureFailedWrite } from '@/services/errors/errorReporter';
 import { supabase } from '@/services/supabase';
-import { scheduleIdle } from '../check/scheduleIdle';
+import { scheduleIdle } from './scheduleIdle';
 import { runShadow, type ShadowReporter } from './runShadow';
 
 const subscribeOnline = onlineManager.subscribe.bind(onlineManager);

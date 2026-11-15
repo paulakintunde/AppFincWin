@@ -31,8 +31,8 @@ jest.mock('@/data/queries/decide', () => ({
   useDecideSettings: () => ({ data: { dsr_line: mockRule } }),
   useDecideSnapshot: () => ({ status: 'ready', result: { currency: 'USD' } }),
 }));
-jest.mock('@/features/decide/home/homeCardModel', () => ({ monthBreakdown: () => ({ income: 320000, result: 42500 }) }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/grow/lines/monthBreakdown', () => ({ monthBreakdown: () => ({ income: 320000, result: 42500 }) }));
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({ userId: 'u1', householdId: 'h1', today: '2026-11-05', ctx: {} }),
 }));
 jest.mock('@/features/record/useRecordContext', () => ({

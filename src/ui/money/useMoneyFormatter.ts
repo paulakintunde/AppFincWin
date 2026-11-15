@@ -30,36 +30,64 @@ export interface MoneyFormatter {
  * `homeCurrency` (D-94) decides how USD is spoken: "dollars" at a USD home, "US dollars"
  * otherwise. Omit it and USD always reads "US dollars", which is never ambiguous.
  */
+/** 06.1-72 (G-73-2): the most strings one formatter keeps before it starts over. */
+export const FORMAT_MEMO_MAX = 400;
+
+/**
+ * 06.1-72 (G-73-2): the engine's formatters build a new Intl.NumberFormat or DateTimeFormat on every call, and a screen
+ * re-render formats the same amounts and dates again. One formatter keeps the strings it already made (same locale, show-cents
+ * and currency settings, so the same output), so a re-render with unchanged figures builds no Intl objects.
+ */
+function memoOf(): (key: string, make: () => string) => string {
+  const memo = new Map<string, string>();
+  return (key, make) => {
+    const hit = memo.get(key);
+    if (hit !== undefined) return hit;
+    const value = make();
+    if (memo.size >= FORMAT_MEMO_MAX) memo.clear();
+    memo.set(key, value);
+    return value;
+  };
+}
+
+const optsKey = (money: Money, opts?: MoneyFormatterOptions): string =>
+  `${money.currency}|${String(money.amount)}|${opts?.exponent ?? ''}|${opts?.customSymbol ?? ''}|${opts?.customName ?? ''}`;
+
 export function useMoneyFormatter(showCents: boolean, homeCurrency?: string): MoneyFormatter {
   const { locale } = useDeviceLocale();
+  const memo = useMemo(() => memoOf(), [locale, showCents, homeCurrency]);
 
   const formatMoney = useCallback(
     (money: Money, opts?: MoneyFormatterOptions) =>
-      formatAmount(money, {
-        locale,
-        showCents,
-        exponent: opts?.exponent,
-        customSymbol: opts?.customSymbol,
-      }),
-    [locale, showCents]
+      memo(`m|${optsKey(money, opts)}`, () =>
+        formatAmount(money, {
+          locale,
+          showCents,
+          exponent: opts?.exponent,
+          customSymbol: opts?.customSymbol,
+        })
+      ),
+    [memo, locale, showCents]
   );
 
   const formatMoneyA11y = useCallback(
     (money: Money, opts?: MoneyFormatterOptions) =>
-      formatMoneyA11yPure(money, {
-        locale,
-        showCents,
-        exponent: opts?.exponent,
-        customSymbol: opts?.customSymbol,
-        customName: opts?.customName,
-        homeCurrency,
-      }),
-    [locale, showCents, homeCurrency]
+      memo(`a|${optsKey(money, opts)}`, () =>
+        formatMoneyA11yPure(money, {
+          locale,
+          showCents,
+          exponent: opts?.exponent,
+          customSymbol: opts?.customSymbol,
+          customName: opts?.customName,
+          homeCurrency,
+        })
+      ),
+    [memo, locale, showCents, homeCurrency]
   );
 
   const formatDate = useCallback(
-    (localDate: string, style?: LocalDateStyle) => formatLocalDate(localDate, locale, style),
-    [locale]
+    (localDate: string, style?: LocalDateStyle) => memo(`d|${localDate}|${style ?? ''}`, () => formatLocalDate(localDate, locale, style)),
+    [memo, locale]
   );
 
   return useMemo(

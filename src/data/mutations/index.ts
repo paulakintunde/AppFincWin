@@ -12,6 +12,7 @@ import { registerTransactionMutations } from './transactions';
 import { registerImportFinalizeMutations } from './importFinalize';
 import { registerCustomCurrencyMutations } from './customCurrencies';
 import { registerMoneyPrefsMutations } from './moneyPrefs';
+import { registerRegionSubdivisionMutations } from './regionSubdivision';
 import { registerPatchMutations } from './patches';
 import { registerUndoMutations } from './undo';
 import { registerCategoryMutations } from './categories';
@@ -30,6 +31,8 @@ import { registerDecideSettingsMutations } from './decideSettings';
 import { registerDecideLinkMutations } from './decideLinks';
 import { registerDecideGoAheadMutations } from './decideGoAhead';
 import { registerDecideOutcomeMutations } from './decideOutcome';
+import { registerDecideNetUseMutations } from './decideNetUse';
+import { registerDecideHistoryMutations } from './decideHistory';
 import { registerDecideChangeMutations } from './decideChanges';
 import { registerDecidePotMutations } from './decidePots';
 import { registerDebtMutations } from './debts';
@@ -55,6 +58,8 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerAccountMutations(qc);
   registerCustomCurrencyMutations(qc);
   registerMoneyPrefsMutations(qc);
+  // 06.1-71: You > Region's state or province.
+  registerRegionSubdivisionMutations(qc);
   // 02-16: bulk actions and undo/rollback. The remaining unregistered keys (categories,
   // recurring series, transfers, saveImportProfile) land with their own plans.
   registerPatchMutations(qc);
@@ -104,4 +109,7 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerGrowDebtMutations(qc);
   // 06-14: holdings, entries, values and an account's rate.
   registerGrowHoldingMutations(qc);
+  // 06.1-12: Decide's safety-net unlock and the per-check history.
+  registerDecideNetUseMutations(qc);
+  registerDecideHistoryMutations(qc);
 }

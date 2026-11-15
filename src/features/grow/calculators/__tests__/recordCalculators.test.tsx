@@ -5,8 +5,8 @@ import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { minorUnits } from '@/engine/money';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
-import { goal as goalFixture } from '@/features/decide/past/__tests__/helpers/pastFixtures';
+import { wrap } from '@/test/stepProps';
+import { goal as goalFixture } from '@/test/pastFixtures';
 import type { GoalsRead } from '@/features/grow/goals/useGoalsRead';
 import type { DebtsRead } from '@/features/grow/debts/useDebtsRead';
 import { DebtExtraCalculator } from '../record/DebtExtraCalculator';
@@ -14,6 +14,7 @@ import { GoalCalculator } from '../record/GoalCalculator';
 import { GrowthIllustration } from '../record/GrowthIllustration';
 import { useRecordLinks } from '../record/useRecordLinks';
 import { CalculatorsScreen } from '../typed/CalculatorsScreen';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.setTimeout(60000);
 
@@ -51,7 +52,7 @@ jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { 
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', showCents: false, today: '2026-10-20', userId: 'u1', householdId: 'h1', ready: true, timeZone: 'UTC' }),
 }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({
     userId: 'u1',
     householdId: 'h1',
@@ -208,6 +209,7 @@ describe('GoalCalculator (GC02, D-17)', () => {
     expect(mockSaveGoal).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByText('Make this the plan'));
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     expect(mockSaveGoal).not.toHaveBeenCalled();
 

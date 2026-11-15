@@ -4,7 +4,7 @@
  * all mount the same bodies. It draws no rail, footer or navigation.
  */
 import React, { forwardRef } from 'react';
-import type { SetupStepBodyProps, SetupStepHandle } from '@/features/decide/setup/steps/types';
+import type { SetupStepBodyProps, SetupStepHandle } from '@/features/income/stepTypes';
 import { MethodStep } from './steps/MethodStep';
 import { OtherStep } from './steps/OtherStep';
 import { PaidStep } from './steps/PaidStep';

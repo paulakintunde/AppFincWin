@@ -5,6 +5,7 @@ import type { DecideAnswerRow } from '@/db/decideAnswers';
 import type { DecideSettingsRow } from '@/db/decideSettings';
 import type { RecurringDismissalRow } from '@/db/recurringDismissals';
 import { isNotPayKey } from '@/features/income/notPay';
+import { ownLinesOf, readRulesDoc, tightLineOf } from './rulesDoc';
 import type { V3SettingsSource } from './types';
 
 const ENGINE_TYPE: Readonly<Record<string, IncomeType>> = {
@@ -39,13 +40,14 @@ export interface SettingsSourceInput {
 }
 
 /** Pitfall 9: a held-back bridge counts only while its check is bought, not deleted, and its plan is still live. */
-function liveBridgeCheckIds(input: SettingsSourceInput): string[] {
+export function liveBridgeCheckIds(input: Pick<SettingsSourceInput, 'checks' | 'planLive'>): string[] {
   return input.checks.filter((c) => c.status === 'bought' && c.deleted_at === null && input.planLive(c.id)).map((c) => c.id);
 }
 
 export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource | null {
   const s = input.settings;
   if (s === null) return null;
+  const rules = readRulesDoc(s.custom_options); // 06.1-22: the user's own rules (keep, largest, category) live in custom_options.rules
   return {
     income_types: s.income_types,
     variable_method: s.variable_method,
@@ -61,7 +63,9 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
     rough_as_of: s.rough_as_of,
     series_extra: {},
     dismissals: input.dismissals.filter((d) => d.deleted_at === null && !isNotPayKey(d.payee_key)).map((d) => d.payee_key),
-    own_lines: [],
+    own_lines: ownLinesOf(rules),
+    tight_line: tightLineOf(rules),
+    tax_set_aside_bp: s.tax_set_aside_bp, // 06.1 FIN-20: a share, not money, so withoutMoney keeps it
     custom_options: null,
     income_pattern: s.income_pattern,
     income_pattern_confirmed: s.income_pattern_confirmed,

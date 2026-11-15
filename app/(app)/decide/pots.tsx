@@ -1,11 +1,6 @@
-import { PotsScreen } from '@/features/decide/pots/PotsScreen';
-import { GoalTagEditProvider } from '@/shell/decide/GoalTagEditProvider';
+import { Redirect, type Href } from 'expo-router';
 
-// The Wait pot's decision detail and the pot sheet's Tag a transfer both write goal_id through Record's undoable edit.
+// 06.1-28 D-05: old path. The lists live on the new Decide home.
 export default function PotsRoute() {
-  return (
-    <GoalTagEditProvider>
-      <PotsScreen />
-    </GoalTagEditProvider>
-  );
+  return <Redirect href={'/decide' as Href} />;
 }

@@ -108,6 +108,19 @@ describe('DSG-02: no raw colour literals outside the token set', () => {
     '#F0EAEF',
     '#F4EFE3',
     '#ECEEF1',
+    // 06.1 D-16: the seven Decide state colours (stateColors) and stateMuted, named in CLAUDE.md Design fidelity
+    '#E4F0E8',
+    '#FBEFD6',
+    '#1F3A5F',
+    '#E4ECF6',
+    '#1E6B5E',
+    '#DFF1EE',
+    '#933720',
+    '#F8E2DA',
+    '#5B3A75',
+    '#EEE6F4',
+    '#E6ECEF',
+    '#5A564B',
   ]);
 
   it('keeps every hex used in tokens.ts and accents.ts inside the deliberate allow-list', () => {

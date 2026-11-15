@@ -314,12 +314,15 @@ function buildAccountBalanceView(account: AccountRow, legs: readonly AccountBala
 /** REC-08/REC-17/D-49/D-50: paid+pending sums and standing per account, built from that account's own legs only. */
 export function useAccountBalances(
   householdId: string | null,
-  accounts: readonly AccountRow[]
+  accounts: readonly AccountRow[],
+  /** 06.1-72: a caller may hold the read fresh for longer (Decide's reads use DECIDE_READ_STALE_MS). */
+  opts?: { staleTime?: number }
 ): { balances: Map<string, AccountBalanceView>; isLoading: boolean } {
   const query = useQuery({
     queryKey: queryKeys.accountBalances(householdId ?? ''),
     queryFn: () => fetchAccountBalances(supabase, householdId as string),
     enabled: Boolean(householdId),
+    ...opts, // only a given staleTime: an explicit undefined would replace the app default
   });
 
   const legsByAccount = useMemo(() => {

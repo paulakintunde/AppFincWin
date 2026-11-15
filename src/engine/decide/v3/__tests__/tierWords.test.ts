@@ -25,20 +25,10 @@ export const LEGACY_ALLOWLIST = {
     // Old engine: the old level type and its rule.
     'src/engine/decide/confidence.ts',
     'src/engine/decide/types.ts',
-    // Old screens: the old chip and the screens that read the old engine's level or the old 'rough' setup and snapshot kinds.
-    'src/features/decide/check/steps/Step3Verdict.tsx',
-    'src/features/decide/home/DecideHomeScreen.tsx',
-    'src/features/decide/home/HomeProblemsSheet.tsx',
-    'src/features/decide/home/YourMonthCard.tsx',
-    'src/features/decide/home/homeCardModel.ts',
-    'src/features/decide/settings/DecideSettingsScreen.tsx',
-    'src/features/decide/setup/SetupStatusCard.tsx',
-    'src/features/decide/setup/setupFlow.ts',
-    'src/features/decide/setup/useSetupFacts.ts',
+    // The old snapshot's 'rough' kind, which the Grow lines breakdown still reads.
+    'src/features/grow/lines/monthBreakdown.ts',
     'src/features/decide/snapshot/buildSnapshot.ts',
-    'src/features/decide/snapshot/computeCheck.ts',
     'src/features/decide/snapshot/types.ts',
-    'src/features/decide/ui/ConfidenceChip.tsx',
     // The v3 input builder reads the old snapshot's 'rough' kind (buildSnapshot.ts); it goes when the old snapshot does.
     'src/features/decide/snapshot/v3/buildV3Inputs.ts',
   ],

@@ -45,6 +45,8 @@ const DECIDE_TOAST_LABEL: Readonly<Record<string, UndoLabelKey>> = {
   'decide.clear.toast': 'checkCleared',
   'decide.delete.toastDecision': 'decisionDeleted',
   'decide.delete.toastChange': 'changeDeleted',
+  // 06.1-80 (DC-9): the answer screen's "Deleted: <item>." is useRemoveDecision's step; without this it showed no Undo.
+  'decide.screens.common.toast.deleted': 'decisionDeleted',
   'decide.toast.unlinked': 'lineUnlinked',
   // D-105: the Pots toasts keep their own words too. "Pot saved" is shared by add and edit, so PotSheet passes `undoLabel` in the
   // toast params to say which step it recorded; the map entry is the fallback.

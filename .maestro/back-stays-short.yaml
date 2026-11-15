@@ -4,7 +4,7 @@ appId: com.fincwin.app
 name: Back stays short
 ---
 - runFlow: common/to-tabs.yaml
-- tapOn: "Activity, tab, 2 of 3"
+- tapOn: "Activity, tab, 2 of [0-9]"
 - assertVisible:
     id: "activity-summary-card"
 # A row's detail sheet, then its edit sheet; Back closes the sheet and stays on Activity.

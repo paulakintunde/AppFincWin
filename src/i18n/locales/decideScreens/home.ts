@@ -1,0 +1,111 @@
+/**
+ * 06.1-05 (D-18): Decide home (D01), More details open (D02), the changed chip (D01c) and the Your month card.
+ * Owner plan: 21. The Open checks and Your money rules cards are in sheetsHome.ts; the home note is stepper.homeNote.
+ * Draft copy, signed under D-08. No household lines (D-03); no "+ Investment" link (D-13).
+ */
+export const home = {
+  kicker: 'DECIDE',
+  title: 'Can I afford it?',
+  // 06.1-59 (G-10): the subtitle now sits behind the header's Why? link.
+  subtitle: 'Judged on what comes in and goes out of your accounts, not just the price.',
+  pastDecisions: 'Past decisions',
+  pastDecisionsA11y_one: 'Past decisions, {{count}} to look back on',
+  pastDecisionsA11y_other: 'Past decisions, {{count}} to look back on',
+  check: {
+    whatLabel: 'What is it?',
+    whatPlaceholder: 'For example, headphones',
+    kindA11y: 'Kind: {{kind}}. Opens the kind picker',
+    priceLabel: 'Price',
+    whenLabel: 'When?',
+    today: 'Today',
+    nextPayday: 'Next payday',
+    anyDay: 'Any day',
+    moreDetails: 'More details',
+    moreDetailsSub: 'How you pay, quick estimates · optional',
+    // 06.1-56 (CS-6): the collapsed More details row names what is set, joined by ' · '.
+    quickCount_one: '{{count}} quick estimate',
+    quickCount_other: '{{count}} quick estimates',
+    // 06.1-56 (A-HOME-5, X-4): the short note at the right of the Price label.
+    taxAdded: 'Tax is added for you',
+    taxEstimate: 'About {{amount}} tax added',
+    // 06.1-59 (G-10, section D): the kept short note matches the stepper's "Tax not added"; the reason sits behind Why?.
+    taxNotIncluded: 'Tax not added',
+    taxWhy: 'Tax is added once your region is set.',
+    checkIt: 'Check it',
+    readsAs: 'Reads as',
+  },
+  // 06.1-52 (C-18): the NeedLine under a disabled Check it names the missing part. Statements, never orders.
+  need: {
+    what: 'What it is comes first.',
+    price: 'A price comes first.',
+    priceUnread: 'That price didn’t read as an amount.',
+  },
+  examples: {
+    title: 'Try an example',
+    headphones: 'Headphones',
+    laptop: 'Laptop',
+    usedCar: 'Used car',
+  },
+  moreDetails: {
+    howYouPay: 'How you pay',
+    needOrWant: 'Need or want?',
+    need: 'Need',
+    want: 'Want',
+    notSet: 'Not set',
+    needOrWantNote: 'This changes only the order of the options, never the answer.',
+    quickEstimates: 'Quick estimates',
+    quickEstimatesNote: 'Money your records do not know about yet. It counts in this check only.',
+    tileExpense: 'Expense',
+    tileLoan: 'Loan',
+    tileSavings: 'Savings',
+    tileIncome: 'Income',
+    tileExpenseA11y: 'Add an expense quick estimate',
+    tileLoanA11y: 'Add a loan quick estimate',
+    tileSavingsA11y: 'Add a savings quick estimate',
+    tileIncomeA11y: 'Add an income quick estimate',
+    everyMonth: 'every month',
+    every3Months: 'every 3 months',
+    everyYear: 'every year',
+    once: 'once',
+    removeA11y: 'Remove {{item}}',
+    editA11y: 'Edit {{item}}',
+    forGoodNote: 'To change your records for good, use Something changed? further down.',
+  },
+  month: {
+    title: 'Your month',
+    leftIn: 'left in {{month}}',
+    shortIn: 'short in {{month}}',
+    expected: 'Expected',
+    leadLabel: 'after this month’s plans',
+    tilesUsual: 'A usual month',
+    tilesLow: 'Your low month',
+    comesIn: 'COMES IN',
+    goesOut: 'GOES OUT',
+    left: 'LEFT',
+    short: 'short',
+    usual: 'Usual month',
+    low: 'Low month',
+    explainUsual: 'A usual month from your records: what comes in, less what goes out.',
+    explainLow: 'The lowest month in your records: what came in, less what went out.',
+    // 06.1-79 (DS-10, OQ-79-2 A): the date alone; the month count is records.complete, the count the answer uses.
+    recordsRow: 'Records up to {{date}}',
+    barA11y: 'Comes in {{moneyIn}}, goes out {{costs}}, left {{left}}',
+    // 06.1-56 (A-HOME-6): the usual/low switch says what each leaves; the stacked bar's legend has two lines.
+    leftSub: '{{amount}} left',
+    shortSub: '{{amount}} short',
+    legendIn: 'Comes in {{amount}}',
+    legendOut: 'Goes out {{costs}} · Left {{left}}',
+    legendOutShort: 'Goes out {{costs}} · Short {{left}}',
+    earlierA11y: 'Earlier month',
+    laterA11y: 'Later month',
+  },
+  // 06.1-79 (DS-10, OQ-79-2 A): one months-of-records count everywhere (home, Records setup), the one the answer's basis line uses.
+  records: {
+    complete: 'Months complete enough to use: {{monthsUsed}} of {{monthsTotal}}.', // 06.1-83: the count never sits before a counted word
+  },
+  changedChip: 'Changed: {{change}} · Reset',
+  changedChipResetA11y: 'Reset the change: {{change}}',
+  // 06.1-59 (G-10): the two footer sentences moved into the "How this was worked out" sheet the footer row opens.
+  footerRecords: 'Answers use your recorded months of pay and spending.', // 06.1-83 (owner, 2026-11-14): no count
+  footerUpdates: 'Every answer updates when you change them in Activity or Grow.',
+} as const;

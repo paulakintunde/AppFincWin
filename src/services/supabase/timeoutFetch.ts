@@ -4,6 +4,8 @@
 // /network/i, so classifyWriteError treats it as a connectivity failure (retried, paused
 // offline). A long operation's timeout carries longOp: true and is not retried automatically.
 
+import { addBreadcrumb } from '@sentry/react-native';
+
 export const READ_TIMEOUT_MS = 15_000;
 export const WRITE_TIMEOUT_MS = 20_000;
 export const LONG_OP_TIMEOUT_MS = 120_000;
@@ -43,6 +45,16 @@ function methodOf(input: RequestInfo | URL, init?: RequestInit): string {
   return (m ?? 'GET').toUpperCase();
 }
 
+/**
+ * F-2 (06.1-48): the table (or RPC function) a write goes to: the path segment after /rest/v1/ or /rpc/, without the
+ * query string (it can carry ids and amounts). 'other' for any other path.
+ */
+export function writeTableOf(url: string): string {
+  const path = url.split('?')[0] ?? '';
+  const m = /\/rest\/v1\/(?:rpc\/)?([^/?#]+)/.exec(path);
+  return m?.[1] ?? 'other';
+}
+
 export function timeoutFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const longOp = isLongOperationUrl(urlOf(input));
   const method = methodOf(input, init);
@@ -62,9 +74,33 @@ export function timeoutFetch(input: RequestInfo | URL, init?: RequestInit): Prom
     controller.abort();
   }, timeoutMs);
 
+  // F-2: only writes are traced (reads are many). Method, table, ms and status: never the query string, headers or body.
+  const isWrite = method !== 'GET' && method !== 'HEAD';
+  const startedAt = Date.now();
+  const trace = (status: number | 'failed' | 'timeout') => {
+    if (!isWrite) return;
+    try {
+      addBreadcrumb({
+        category: 'net',
+        message: 'write request',
+        data: { method, table: writeTableOf(urlOf(input)), ms: Date.now() - startedAt, status },
+      });
+    } catch {
+      // telemetry only: never turn a response into a failure
+    }
+  };
+
   return fetch(input, { ...init, signal: controller.signal })
+    .then((res) => {
+      trace(res.status);
+      return res;
+    })
     .catch((err: unknown) => {
-      if (timedOut) throw new RequestTimeoutError(timeoutMs, longOp);
+      if (timedOut) {
+        trace('timeout');
+        throw new RequestTimeoutError(timeoutMs, longOp);
+      }
+      trace('failed');
       throw err;
     })
     .finally(() => {

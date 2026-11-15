@@ -11,6 +11,7 @@ import { DURATION } from '@/theme/motion';
 import { hapticSelection } from '../haptics';
 import { Sheet, SheetScroll } from '../Sheet';
 import { BACKDROP_OPACITY, SHEET_DISMISS_DELAY } from '../sheetDrag';
+import { layOutSheets } from '@/test/sheetLayout';
 
 jest.setTimeout(30000);
 
@@ -140,6 +141,7 @@ describe('Sheet drag to dismiss', () => {
     await advance(SHEET_DISMISS_DELAY + DURATION.sheetDrag + 50);
     expect(onDismiss).not.toHaveBeenCalled();
     expect(translateOf(screen)).toBe(0);
+    await layOutSheets();
     await fireEvent.press(screen.getByTestId('sheet-backdrop', { hidden: true }));
     modalsOf(screen)[0].props.onRequestClose();
     expect(onDismiss).not.toHaveBeenCalled();

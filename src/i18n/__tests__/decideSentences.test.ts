@@ -39,7 +39,17 @@ const NOT_A_NUMBER: Readonly<Record<string, string>> = {
   bill: 'a bill name',
   debt: 'a debt name',
   envelope: 'an envelope name',
-  name: 'a money-help organisation name (free_help, 05.4-38 D-122)',
+  name: 'a money-help organisation name (free_help, 05.4-38 D-122), or a line or item name on a Decide screen',
+  // 06.1-05 (D-18): decide.screens.* placeholders that are names, labels or dates
+  item: 'the name of the item being checked',
+  kind: 'a kind of purchase (Car, Tech)',
+  next: 'the name of the next setup item',
+  stepName: 'a stepper step name',
+  state: 'a verdict word (Fits, Not yet)',
+  method: 'a way to pay (Cash, Installments)',
+  change: 'the name of a change the user reported',
+  answer: 'a short verdict phrase built by the screen',
+  label: 'a waterfall row label',
 };
 
 function sentences(value: string): string[] {
@@ -63,11 +73,14 @@ function wordsIn(sentence: string): number {
 
 const legal = collect(en.legal, 'legal').filter((l) => l.path.startsWith('legal.decide'));
 const v3 = collect(en.decide.v3, 'decide.v3');
-const all = [...v3, ...legal];
+// 06.1-05 (D-18): the new Decide screen strings follow the same rule.
+const screens = collect(en.decide.screens, 'decide.screens');
+const all = [...v3, ...screens, ...legal];
 
 describe('UX-19 Decide v3 sentence rule', () => {
   it('has leaves', () => {
     expect(v3.length).toBeGreaterThan(200);
+    expect(screens.length).toBeGreaterThan(500);
   });
 
   it(`every sentence has at most ${MAX_NUMBERS} numbers and ${MAX_WORDS} words`, () => {
@@ -87,7 +100,7 @@ describe('UX-19 Decide v3 sentence rule', () => {
     expect(numbersIn('1 month is a start; 3 to 6 months is common.')).toBe(2);
     expect(numbersIn('At {{rate}}%, the next 90 days below {{zero}} cost about {{cost}}.')).toBe(4);
     expect(numbersIn('After your pay on {{date}}, {{account}} would still be {{below}}.')).toBe(1);
-    expect(wordsIn('This is close to the line.')).toBe(6);
+    expect(wordsIn('This is close to your limit.')).toBe(6);
     expect(sentences('One. Two? Three!')).toEqual(['One.', 'Two?', 'Three!']);
   });
 

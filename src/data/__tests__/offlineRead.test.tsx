@@ -51,7 +51,7 @@ describe('offline read from the restored persisted cache', () => {
     seedClient.setQueryData(ACCOUNTS_KEY, ACCOUNT_DATA);
     await persistQueryClientSave({
       queryClient: seedClient,
-      persister: createEncryptedPersister(),
+      persister: createEncryptedPersister(undefined, 0),
       dehydrateOptions: persistOptions.dehydrateOptions,
       buster: CACHE_SCHEMA_VERSION,
     });

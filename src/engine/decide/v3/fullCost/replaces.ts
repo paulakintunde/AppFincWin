@@ -22,7 +22,7 @@
  */
 import { divideHalfUp } from '../../../money/rounding';
 import { minorUnits, type MinorUnits } from '../../../money/types';
-import type { DatedFlow } from '../cash/path';
+import { asOutflow, type DatedFlow, type LabelledFlow } from '../cash/path';
 import { addDays, addYearMonths, daysInYearMonth, isValidLocalDate, yearMonthOf } from '../dates';
 import { debtLinks, type DebtFlow } from '../debts';
 import type { DueDrops } from '../month/dueDrops';
@@ -227,6 +227,8 @@ export interface ReplacesEffect {
   /** Yearly and every-3-month bill series whose hold-back goes: the bill stops before its due date. */
   readonly heldStops: ReadonlyMap<string, LocalDate>;
   readonly facts: readonly Fact[];
+  /** 06.1 UX-38: the sale's account part kept on the path (one of flows, by identity), so the dated list names it; absent = none. */
+  readonly saleOnPath?: DatedFlow | null;
 }
 
 /** Everything a check's replaces does (null when there is nothing that counts). */
@@ -264,6 +266,7 @@ export function replacesEffect(replaces: Replaces | null | undefined, ctx: Repla
     debts,
     heldStops: held,
     facts,
+    saleOnPath: now ? null : sale.account,
   };
 }
 
@@ -272,7 +275,16 @@ export function replacesEffect(replaces: Replaces | null | undefined, ctx: Repla
  * sale netted against day one that is more than the day-one cost (it arrives on its date; SO-01 nets the rest).
  */
 export function replacesOutflows(rep: ReplacesEffect, netted: number): DatedFlow[] {
+  return replacesFlowsLabelled(rep, netted).map(asOutflow);
+}
+
+/**
+ * 06.1 UX-38: replacesOutflows with labels (signed, money in positive): the sale's account part is a sale, the rest (costs that stop,
+ * debt payments the sale ends) is money that stays. replacesOutflows is this with the labels dropped.
+ */
+export function replacesFlowsLabelled(rep: ReplacesEffect, netted: number): LabelledFlow[] {
   const above = rep.saleNow - netted;
-  const back = above > 0 ? [...rep.flows, { date: rep.saleDate, amount: minorUnits(above) }] : rep.flows;
-  return back.map((f) => ({ date: f.date, amount: minorUnits(-f.amount) }));
+  const out: LabelledFlow[] = rep.flows.map((f) => ({ date: f.date, amount: f.amount, kind: f === rep.saleOnPath ? 'sale' : 'stopped_cost', seriesId: null, debtId: null }));
+  if (above > 0) out.push({ date: rep.saleDate, amount: minorUnits(above), kind: 'sale', seriesId: null, debtId: null });
+  return out;
 }

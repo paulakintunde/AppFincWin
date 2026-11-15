@@ -564,3 +564,31 @@ describe('05.4 ENG-15 (D-109): price limits in both pay modes', () => {
     expect(buildPurchase(checkOnce(499), { ...ctx, maxPrice: mu(499) }).missing).toEqual([]);
   });
 });
+
+describe('06.1 FIN-23: a typed APR read as UK and EU lenders quote it (owner D-26, 2026-11-12)', () => {
+  const at = (country: string | null, apr: string | null, quoted: number | null = null) =>
+    buildPurchase(checkPlan(1_000_000, { count: 60, apr: apr === null ? null : percent(apr), firstPayment: { kind: 'one_period' }, quotedPayment: quoted === null ? null : mu(quoted) }), {
+      ...ctx,
+      region: { country, subdivision: null },
+    });
+  const line = (b: ReturnType<typeof at>) => b.facts.filter((f) => f.code === 'rate_convention_effective').map((f) => f.values);
+
+  it('the UK and EU readings set the payment and name it once; the US, no region, 0% and a quote alone do not', () => {
+    expect(at('GB', '6.6').purchase?.schedule?.payment).toBe(19_524);
+    expect(line(at('GB', '6.6'))).toEqual([{ area: 'uk' }]);
+    expect(line(at('DE', '6.6'))).toEqual([{ area: 'eu' }]);
+    expect(at('US', '6.6').purchase?.schedule?.payment).toBe(19_614);
+    expect(line(at('US', '6.6'))).toEqual([]);
+    expect(line(at(null, '6.6'))).toEqual([]);
+    expect(line(at('GB', '0'))).toEqual([]);
+    expect(line(at('GB', null, 19_524))).toEqual([]);
+  });
+
+  it('a larger quoted payment is walked at the same UK rate (the walk and the schedule agree)', () => {
+    const s = at('GB', '6.6', 25_000).purchase?.schedule;
+    if (s === null || s === undefined) throw new Error('no schedule');
+    expect(s.payment).toBe(25_000);
+    expect(s.lastPaying).toBeLessThan(60);
+    expect(s.totalPaid - s.fees.end - s.fees.perPeriod * s.lastPaying).toBe(s.financed + s.totalInterest);
+  });
+});

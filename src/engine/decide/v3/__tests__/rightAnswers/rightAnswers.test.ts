@@ -9,7 +9,7 @@
  *
  * In expected.afterBuy a null figure means "not asserted". readyBy is compared exactly (null = no ready-by date).
  */
-import { evaluate } from '../../evaluate';
+import { judgeWithQuickLines } from '../../quick/overlay';
 import { saveForItReadyDate } from '../../fullCost/saveForIt';
 import { prepare } from '../../prepare';
 import { toEngineInputs } from './fixture';
@@ -63,7 +63,7 @@ describe.each(TOPICS)('right answers: %s', (topic) => {
     if (c.status === 'approved') {
       it(`${c.id} ${c.persona}`, () => {
         const { inputs, check } = toEngineInputs(c.fixture);
-        const diff = mismatches(c, pick(evaluate(inputs, check)));
+        const diff = mismatches(c, pick(judgeWithQuickLines(prepare(inputs), check)));
         if (redIds.has(c.id)) {
           if (diff.length === 0) throw new Error(`${c.id} now passes: remove ${c.id} from knownRed/${topic}.json`);
         } else {
@@ -74,7 +74,7 @@ describe.each(TOPICS)('right answers: %s', (topic) => {
     }
     it(`${c.id} ${c.persona} (${c.status}) converts and evaluates`, () => {
       const { inputs, check } = toEngineInputs(c.fixture);
-      expect(() => evaluate(inputs, check)).not.toThrow();
+      expect(() => judgeWithQuickLines(prepare(inputs), check)).not.toThrow();
     });
   }
 });

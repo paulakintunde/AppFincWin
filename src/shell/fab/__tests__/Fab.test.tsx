@@ -2,8 +2,6 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { getAnimatedStyle } from 'react-native-reanimated';
-import en from '@/i18n/locales/en';
-import { useT } from '@/i18n';
 import { hapticLight, hapticMedium } from '@/ui/haptics';
 import { pushSheet } from '@/state/sheetStack';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
@@ -176,13 +174,11 @@ describe('Fab', () => {
     expect(screen.getByRole('button', { name: 'Start a new thing' })).toBeTruthy();
   });
 
-  it('D-107 the FAB strings resolve and Decide home registers New check', async () => {
-    expect(en.decide.fab).toEqual({ label: 'New check', a11y: 'Starts a new affordability check' });
+  it('D-107 a Decide-like screen registers New check and leaving it returns the default Add FAB', async () => {
     const onPress = jest.fn();
     function DecideLike(): null {
-      const t = useT();
       useRegisterFab(
-        React.useMemo(() => ({ label: t('decide.fab.label'), accessibilityLabel: t('decide.fab.a11y'), onPress }), [t])
+        React.useMemo(() => ({ label: 'New check', accessibilityLabel: 'Starts a new affordability check', onPress }), [])
       );
       return null;
     }

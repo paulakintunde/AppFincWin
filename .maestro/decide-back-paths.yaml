@@ -1,0 +1,222 @@
+# 06.1-61 (H-3, H-4; FQ1, FQ2): Back returns to where the person came from.
+#   (a) answer -> "Running costs" (a stepper step opened from the answer) -> Back -> the same answer (name + verdict)
+#   (b) answer -> "Set due day" -> Debts -> Save and close -> the answer (only when this account's answer offers it; logged)
+#   (c) Decide home setup row (the next setup item) -> Back -> Decide home
+#   (d) five rounds of New check -> Check it -> the answer, then Back twice -> the tab bar (the answers did not stack)
+# Writes on the signed-in test account: one "used car bp61" check and five "lamp bp61" checks. Every one is deleted at the end
+# from its open-check sheet (Delete), so the account keeps none. Nothing is bought, saved for or decided.
+# Android: the keyboard is never closed by a command (no hide-keyboard: it sends Back) and pages scroll by swipes
+# (common/scroll-to.yaml downwards; an inline swipe loop upwards), never the built-in scroll-until command.
+# Run on a test account that has met the first-answer gate (it is passed by common/decide-gate.yaml if it shows).
+appId: com.fincwin.app
+name: Decide Back paths (06.1-61)
+---
+- extendedWaitUntil:
+    visible:
+      id: "tab-bar"
+    timeout: 90000
+- runFlow: common/to-tabs.yaml
+
+# (a) answer -> Running costs -> Back -> the same answer
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "used car bp61"
+      # a car opens the stepper; 2,500 stays inside this month's room (no spare-money question, gap row G-61-2)
+      PRICE: "2500"
+- assertVisible:
+    id: "answer-verdict"
+- assertVisible: "(?i).*used car bp61.*"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Running costs.*"
+- tapOn:
+    id: "answer-detail-running"
+- extendedWaitUntil:
+    visible: "Step 3 of 3"
+    timeout: 60000
+- waitForAnimationToEnd
+- back
+- extendedWaitUntil:
+    visible:
+      id: "answer-verdict"
+    timeout: 60000
+# the answer keeps its scroll; back to its top, where the item name is
+- repeat:
+    times: 6
+    while:
+      notVisible:
+        id: "answer-new-check"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- assertVisible: "(?i).*used car bp61.*"
+- assertNotVisible: "Step [123] of 3"
+- evalScript: "${console.log('BACKPATH a running-costs -> Back -> answer: pass')}"
+
+# (b) answer -> Set due day -> Debts -> Save and close -> the answer (when offered)
+- evalScript: ${output.dueDay = 'not offered on this account'}
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Why\\?"
+- runFlow:
+    when:
+      visible:
+        id: "answer-facts-why"
+    commands:
+      - tapOn:
+          id: "answer-facts-why"
+- runFlow:
+    when:
+      visible: "Set due day"
+    commands:
+      - tapOn: "Set due day"
+      - extendedWaitUntil:
+          visible: "Save and close"
+          timeout: 60000
+      - tapOn: "Save and close"
+      - extendedWaitUntil:
+          visible:
+            id: "answer-verdict"
+          timeout: 60000
+      # the answer keeps its scroll; back to its top, where the item name is
+      - repeat:
+          times: 6
+          while:
+            notVisible:
+              id: "answer-new-check"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
+      - assertVisible: "(?i).*used car bp61.*"
+      - evalScript: ${output.dueDay = 'pass'}
+- evalScript: "${console.log('BACKPATH b set-due-day -> Save -> answer: ' + output.dueDay)}"
+
+# (c) Decide home setup row -> the next item -> Back -> Decide home
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- evalScript: ${output.banner = 'no setup row (setup done)'}
+- runFlow:
+    when:
+      visible:
+        id: "setup-banner-row"
+    commands:
+      - tapOn:
+          id: "setup-banner-row"
+      - extendedWaitUntil:
+          visible:
+            id: "setup-item-frame|setup-checklist"
+          timeout: 60000
+      - waitForAnimationToEnd
+      - back
+      - extendedWaitUntil:
+          visible:
+            id: "check-what"
+          timeout: 60000
+      - assertVisible: "Can I afford it\\?"
+      - evalScript: ${output.banner = 'pass'}
+- evalScript: "${console.log('BACKPATH c home setup row -> Back -> Decide home: ' + output.banner)}"
+
+# (d) five rounds of New check -> Check it -> the answer, then Back twice -> the tab bar
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "lamp bp61"
+      PRICE: "25"
+- runFlow: common/decide-gate.yaml
+- repeat:
+    times: 4
+    commands:
+      - tapOn:
+          id: "answer-new-check"
+      - extendedWaitUntil:
+          visible:
+            id: "check-what"
+          timeout: 60000
+      - runFlow:
+          file: common/decide-type-check.yaml
+          env:
+            ITEM: "lamp bp61"
+            PRICE: "25"
+      - runFlow: common/decide-gate.yaml
+      - assertVisible: "(?i).*lamp bp61.*"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "tab-bar"
+    timeout: 60000
+- assertVisible: "Can I afford it\\?"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "tab-bar"
+    timeout: 60000
+- assertNotVisible:
+    id: "answer-verdict"
+- evalScript: "${console.log('BACKPATH d five answers then Back twice -> tab bar: pass')}"
+
+# Undo the writes: delete every bp61 check from its open-check sheet
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- evalScript: ${output.deleted = 0}
+- repeat:
+    times: 6
+    commands:
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
+      - repeat:
+          times: 8
+          while:
+            notVisible: "(?i)(used car|lamp) bp61, .*|See all.* open checks"
+          commands:
+            - swipe:
+                start: "50%,75%"
+                end: "50%,35%"
+                duration: 400
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "(?i)(used car|lamp) bp61, .*"
+          commands:
+            - tapOn: "(?i)(used car|lamp) bp61, .*"
+            - extendedWaitUntil:
+                visible: "Edit the check"
+                timeout: 30000
+            - tapOn: "Delete"
+            - waitForAnimationToEnd
+            - evalScript: ${output.deleted = output.deleted + 1}
+- evalScript: "${console.log('BACKPATH cleanup deleted=' + output.deleted)}"

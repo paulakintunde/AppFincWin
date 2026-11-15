@@ -4,11 +4,12 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 import type { TransactionRow } from '@/db/rows';
-import { resetJudgeOnStoreForTest } from '@/features/decide/judgeOn/judgeOnStore';
 import * as buildModule from '@/features/decide/snapshot/buildSnapshot';
 import { clearServerFetchTimes, trackServerFetches } from '../../cache/persister';
 import { queryKeys } from '../../keys';
 import {
+  DECIDE_READ_STALE_MS,
+  useDebts,
   useDecideChecks,
   useDecideLinks,
   useDecideSettings,
@@ -133,7 +134,6 @@ function history(): TransactionRow[] {
 
 function resetMocks(): void {
   clearSharedSnapshots();
-  resetJudgeOnStoreForTest();
   mockCtx.ready = true;
   mockCtx.userId = 'u1';
   mockCtx.householdId = 'h1';
@@ -608,12 +608,91 @@ describe('read error kinds and waiting writes (05.4-33)', () => {
     expect(result.current.source!.unsavedWrites).toBe(0);
   });
 
-  it('D-127: a write still waiting to send is counted on the source', async () => {
+  it('D-127 / 06.1-46 (B-2): a write still waiting to send is counted on the state, never on the source, and rebuilds nothing', async () => {
+    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
     const client = newClient();
     const { result } = await ready(client);
+    const source = result.current.source;
+    const calls = spy.mock.calls.length;
+    expect(result.current.unsavedWrites).toBe(0);
     await act(async () => {
       void client.getMutationCache().build(client, { mutationFn: () => new Promise(() => undefined) }).execute(undefined);
     });
-    await waitFor(() => expect(result.current.source!.unsavedWrites).toBe(1));
+    await waitFor(() => expect(result.current.unsavedWrites).toBe(1));
+    expect(result.current.source).toBe(source);
+    expect(result.current.source!.unsavedWrites).toBe(0);
+    expect(spy.mock.calls.length).toBe(calls);
+    spy.mockRestore();
+  });
+});
+
+describe('06.1-46: draft saves and fresh reads do not rebuild Decide (B-2, B-9)', () => {
+  it('a check save that changes only its stored inputs keeps the same source; a new kind or check rebuilds', async () => {
+    mockFetch.checks.mockResolvedValue([{ id: 'k1', kind: 'cash', status: 'open', deleted_at: null, inputs: { v: 2, price: 1 } }]);
+    mockFetch.payment.mockResolvedValue([{ check_id: 'k1', target_id: 't1' }]);
+    const spy = jest.spyOn(buildModule, 'buildDecideSnapshot');
+    const client = newClient();
+    const { result } = await ready(client);
+    const source = result.current.source;
+    expect(source!.paymentLinks).toEqual([{ check_id: 'k1', target_id: 't1', check_kind: 'cash' }]);
+    const calls = spy.mock.calls.length;
+    await act(async () => {
+      client.setQueryData(queryKeys.decideChecks('u1', 'h1'), [{ id: 'k1', kind: 'cash', status: 'open', deleted_at: null, inputs: { v: 2, price: 2 } }]);
+    });
+    expect(result.current.source).toBe(source);
+    expect(spy.mock.calls.length).toBe(calls);
+    await act(async () => {
+      client.setQueryData(queryKeys.decideChecks('u1', 'h1'), [{ id: 'k1', kind: 'plan', status: 'open', deleted_at: null, inputs: {} }]);
+    });
+    await waitFor(() => expect(result.current.source).not.toBe(source));
+    expect(result.current.source!.paymentLinks).toEqual([{ check_id: 'k1', target_id: 't1', check_kind: 'plan' }]);
+    expect(spy.mock.calls.length).toBe(calls + 1);
+    spy.mockRestore();
+  });
+
+  it('B-9: history and upcoming stay fresh for DECIDE_READ_STALE_MS, so another Decide screen mounting does not refetch them', async () => {
+    expect(DECIDE_READ_STALE_MS).toBe(5 * 60_000);
+    const client = newClient();
+    await ready(client);
+    const reads = mockFetch.range.mock.calls.length;
+    const again = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(again.result.current.status).toBe('ready'));
+    expect(mockFetch.range.mock.calls.length).toBe(reads);
+    const history = client.getQueryCache().find({ queryKey: queryKeys.decideHistory('h1', '2025-10-01', '2026-10-31') });
+    expect(history?.isStale()).toBe(false);
+  });
+
+  it('06.1-72 (G-73-1): every Decide read stays fresh for DECIDE_READ_STALE_MS on a second mount; a write invalidation still refetches', async () => {
+    const client = newClient();
+    await ready(client);
+    // two minutes old: past the app's 60 s default, inside Decide's five minutes
+    const aged = Date.now() - 120_000;
+    for (const q of client.getQueryCache().getAll()) client.setQueryData(q.queryKey, q.state.data, { updatedAt: aged });
+    const before = { debts: mockFetch.debts.mock.calls.length, checks: mockFetch.checks.mock.calls.length, payment: mockFetch.payment.mock.calls.length, subdivision: mockFetch.subdivision.mock.calls.length, settings: mockFetch.settings.mock.calls.length, periods: mockFetch.periods.mock.calls.length, goals: mockFetch.goals.mock.calls.length };
+    const again = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(client) });
+    await waitFor(() => expect(again.result.current.status).toBe('ready'));
+    const now = { debts: mockFetch.debts.mock.calls.length, checks: mockFetch.checks.mock.calls.length, payment: mockFetch.payment.mock.calls.length, subdivision: mockFetch.subdivision.mock.calls.length, settings: mockFetch.settings.mock.calls.length, periods: mockFetch.periods.mock.calls.length, goals: mockFetch.goals.mock.calls.length };
+    expect(now).toEqual(before);
+    // a plain read of a shared key outside Decide keeps the app default and refetches the two-minute-old copy
+    const plain = await renderHook(() => useDebts('h1'), { wrapper: wrapper(client) });
+    await waitFor(() => expect(mockFetch.debts.mock.calls.length).toBe(before.debts + 1));
+    await plain.unmount();
+    // a write's invalidation refetches a Decide read at once, whatever its staleTime
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: queryKeys.decideChecks('u1', 'h1') });
+    });
+    await waitFor(() => expect(mockFetch.checks.mock.calls.length).toBe(before.checks + 1));
+  });
+
+  it('B-3: a new check id keeps the previous links while the new key loads', async () => {
+    mockFetch.links.mockResolvedValueOnce([{ id: 'l1' }]).mockImplementation(() => new Promise(() => undefined));
+    const client = newClient();
+    let ids = ['k1'];
+    const hook = await renderHook(() => useDecideLinks('u1', 'h1', ids), { wrapper: wrapper(client) });
+    await waitFor(() => expect(hook.result.current.data).toEqual([{ id: 'l1' }]));
+    ids = ['k1', 'k2'];
+    await hook.rerender({});
+    expect(hook.result.current.data).toEqual([{ id: 'l1' }]);
+    expect(hook.result.current.isPlaceholderData).toBe(true);
   });
 });

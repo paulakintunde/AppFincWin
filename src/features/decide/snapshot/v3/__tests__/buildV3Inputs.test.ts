@@ -1,6 +1,6 @@
 import * as fc from 'fast-check';
 import type { AccountRow, FxLatestRow } from '@/db/rows';
-import { holdsMoney } from '../../../setup/accountUseSuggest';
+import { holdsMoney } from '@/features/record/accounts/accountUseSuggest';
 import { MAX_OWN_LINES, buildMonthModel, type AccountUse } from '@/engine/decide/v3';
 import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money';
 import { demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
@@ -277,6 +277,23 @@ describe('buildV3Inputs: v3 settings', () => {
     expect(buildV3Inputs(src, v3s({ own_lines: bad })).limits.lines.filter((l) => l.source === 'own').map((l) => l.id)).toEqual(['ok']);
   });
 
+  it('06.1-22 FIN-07: the keep-at-least line is read as minor units, and anything unreadable is none', () => {
+    expect(buildV3Inputs(src, v3s({ tight_line: 25000 })).tightLine).toBe(25000);
+    expect(buildV3Inputs(src, v3s({ tight_line: null })).tightLine).toBeNull();
+    expect(buildV3Inputs(src, v3s({ tight_line: -1 })).tightLine).toBeNull();
+    expect(buildV3Inputs(src, v3s({ tight_line: 1.5 })).tightLine).toBeNull();
+    expect(buildV3Inputs(src, null).tightLine).toBeNull();
+  });
+
+  it('06.1-29 FIN-20: the tax set-aside share is whole basis points from 0 to 6000, and anything else is none', () => {
+    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 2500 })).taxSetAsideBp).toBe(2500);
+    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 0 })).taxSetAsideBp).toBe(0);
+    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 6000 })).taxSetAsideBp).toBe(6000);
+    for (const bad of [6001, -1, 12.5, null, '2500']) expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: bad as never })).taxSetAsideBp).toBeNull();
+    expect(buildV3Inputs(src, v3s({})).taxSetAsideBp).toBeNull();
+    expect(buildV3Inputs(src, null).taxSetAsideBp).toBeNull();
+  });
+
   it('custom options parse, and anything invalid falls back to none', () => {
     const good = {
       itemTypes: [
@@ -431,7 +448,9 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
     const deleted = { ...base.accounts[0]!, id: 'zz-del', deleted_at: '2026-01-01T00:00:00Z' };
     const foreign = { ...base.accounts[0]!, id: 'zz-xyz', currency: 'XYZ' };
     const inputs = buildV3Inputs({ ...base, accounts: [...base.accounts, archived, deleted, foreign], balances: { ...base.balances, 'zz-xyz': 5 } }, null);
-    expect(inputs.accounts!.map((a) => a.id)).toEqual(base.accounts.filter((a) => a.kind !== 'credit' && a.kind !== 'loan').map((a) => a.id));
+    // 06.1-12 (CO-D-114): the account no rate converts stays listed, marked noRate, holding 0.
+    expect(inputs.accounts!.map((a) => a.id)).toEqual([...base.accounts.filter((a) => a.kind !== 'credit' && a.kind !== 'loan').map((a) => a.id), 'zz-xyz']);
+    expect(inputs.accounts!.find((a) => a.id === 'zz-xyz')).toMatchObject({ noRate: true, balance: 0 });
     expect(inputs.accounts!.every((a) => a.use === null)).toBe(true);
     expect(inputs.accounts!.find((a) => a.id === SAVINGS)!.balance).toBe(base.balances[SAVINGS]);
     expect(buildV3Inputs({ ...base, balances: {} }, null).accounts!.every((a) => a.balance === 0)).toBe(true);
