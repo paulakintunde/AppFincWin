@@ -33,7 +33,7 @@ jobs:
       - name: Split the mutants into parts
         id: plan
         run: node scripts/mutation-shards.mjs --parts 20 --out reports/mutation-plan.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mutation-plan
           path: reports/mutation-plan.json
@@ -61,7 +61,7 @@ jobs:
           npx stryker run stryker.part.config.mjs --force --ignoreStatic --mutate "$MUTATE"
       - name: Keep this part's report and baseline
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mutation-part-${{ matrix.part }}
           path: |
@@ -95,7 +95,7 @@ jobs:
           --incremental-out .stryker-cache/incremental.json --label "Full mutation run" parts
       - name: Keep the merged report
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mutation-report
           path: reports/mutation/
