@@ -34,6 +34,14 @@ updates:
       - dependency-name: "@react-native/*"
       - dependency-name: "@react-native-*/*"
       - dependency-name: "@sentry/react-native"
+      # SDK-bundled native modules whose names the patterns above miss
+      # (node_modules/expo/bundledNativeModules.json). Same rule: SDK upgrade only.
+      - dependency-name: "lottie-react-native"
+      - dependency-name: "@shopify/flash-list"
+      # squawk-cli 2.72 adds rules that flag migrations already in production
+      # (#125 CI: "dropping a constraint..."). Bump deliberately with a
+      # check-migration-compat review, not in the weekly group.
+      - dependency-name: "squawk-cli"
       # jest-expo pins Jest's major; TypeScript majors need a deliberate upgrade.
       - dependency-name: "jest"
         update-types: ["version-update:semver-major"]
