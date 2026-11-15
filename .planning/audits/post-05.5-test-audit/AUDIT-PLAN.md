@@ -330,6 +330,6 @@ Or, if the owner picks P-12b, delete the whole test account in-app (the in-app d
 
 ## Owner decisions (2026-11-15)
 
-- **P-09:** the G-PD-2 root fix and the three other engine items (same-day roll-forward, SN-18, `sayLine` `_one` forms) go into **a new 05.5 plan**. The request was posted on PR #115. Stage A checks that they landed.
+- **P-09:** the G-PD-2 root fix and the three other engine items (same-day roll-forward, SN-18, `sayLine` `_one` forms) go into **05.5-28** (accepted by the 05.5 session on 2026-11-15; it runs before 05.5-23). Stage A checks that 05.5-28 landed and `DECIDE_ENGINE_REVISION` moved past 06.7. The 05.5-27 migration (server "Stopped" label) sorts after 20261115000100.
 - **P-11:** the audit's fix plans go into **a new small phase, "05.6 audit fixes"**. After inserting it, check ROADMAP and STATE (known gsd-sdk phase.insert bug).
 - **P-07:** **one combined Pixel 6 sitting** for 05.5-23's device session and this audit's Stage B, about an hour in total.
