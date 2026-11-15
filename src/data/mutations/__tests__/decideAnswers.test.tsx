@@ -144,6 +144,49 @@ describe('useSaveDecideAnswer insert', () => {
     expect(inserts[1]).toMatchObject({ kind: 'volatile_cover', key: CHECK, check_id: CHECK, amount: null, bool_value: false });
   });
 
+  it('readiness_waiver is stored with the waiver key, on_date = at and no amount, bool or check (06.1-43)', async () => {
+    const { fake, qc } = setup();
+    const key = `paid-by-other:${SERIES}:2026-10-03`;
+    fake.respondWith(ok(answer('id-1', { kind: 'readiness_waiver', key, amount: null, on_date: '2026-11-12' })));
+    const { result } = await renderHook(() => useSaveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+
+    const out = result.current.save({
+      kind: 'readiness_waiver',
+      waiver: { kind: 'paid_by_other', seriesId: SERIES, date: '2026-10-03' },
+      at: '2026-11-12',
+    });
+    expect(out).toEqual({ id: 'id-1', stepId: 'id-2' });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'insert')?.args[0]).toEqual({
+      id: 'id-1',
+      household_id: 'hh-1',
+      kind: 'readiness_waiver',
+      key,
+      amount: null,
+      bool_value: null,
+      on_date: '2026-11-12',
+      check_id: null,
+    });
+    expect(lastStep()).toMatchObject({ labelKey: 'answerSaved', ops: [{ entity: 'decide_answers', id: 'id-1' }] });
+  });
+
+  it('readiness_waiver answered again later only moves on_date; a bad key or date throws before writing', async () => {
+    const { fake, qc } = setup();
+    qc.setQueryData(KEY, [answer('w1', { kind: 'readiness_waiver', key: 'nothing-to-add:2026-10', amount: null, on_date: '2026-11-01' })]);
+    fake.respondWith(ok([answer('w1', { kind: 'readiness_waiver', key: 'nothing-to-add:2026-10', amount: null, on_date: '2026-11-12', version: 2 })]));
+    const { result } = await renderHook(() => useSaveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });
+
+    expect(() =>
+      result.current.save({ kind: 'readiness_waiver', waiver: { kind: 'always_other', seriesId: 'bad' }, at: '2026-11-12' })
+    ).toThrow(RangeError);
+    expect(() => result.current.save({ kind: 'readiness_waiver', waiver: { kind: 'income_elsewhere' }, at: '2026-11' })).toThrow(RangeError);
+    expect(fake.calls).toHaveLength(0);
+
+    result.current.save({ kind: 'readiness_waiver', waiver: { kind: 'nothing_to_add', month: '2026-10', at: '2026-11-12' }, at: '2026-11-12' });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalled());
+    expect(fake.calls.find((c) => c.method === 'update')?.args[0]).toEqual({ on_date: '2026-11-12' });
+  });
+
   it('rejects an amount that is not whole minor units before writing', async () => {
     const { fake, qc } = setup();
     const { result } = await renderHook(() => useSaveDecideAnswer('user-1', 'hh-1'), { wrapper: wrapper(qc) });

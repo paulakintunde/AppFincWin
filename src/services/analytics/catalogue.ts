@@ -8,8 +8,13 @@
 // CATALOGUE_IS_FINITE) makes such a property type fail to compile, so a future edit smuggling
 // financial detail in is caught at review time, not by discipline alone.
 // 05.3: literal unions spelled out here (mirroring engine/decide/v3 types.ts and month/refine.ts) so the services layer takes no engine import.
-export type DecideCode = 'needs_input' | 'not_yet' | 'monthly_short' | 'emergency_use' | 'fits_unspent' | 'fits_month';
-export type DecideVariant = 'payday' | 'not_covered' | 'low_month';
+// 06.1-23 (CO-D-124): widened to every literal the engine's Code and Variant carry, so each answer board reports its own code.
+export type DecideCode =
+  | 'needs_input' | 'not_yet' | 'monthly_short' | 'fits_on_your_answer' | 'fits_by_borrowing' | 'fits_uses_overdraft'
+  | 'emergency_use' | 'fits_uses_net' | 'fits_unspent' | 'fits_month';
+export type DecideVariant =
+  | 'payday' | 'not_covered' | 'low_month' | 'tight' | 'borrowing_costs_more' | 'not_cleared' | 'protection_off' | 'no_net' | 'small_net'
+  | 'costly_debt' | 'extra_savings' | 'month_already_short' | 'month_short_small' | 'month_short_moderate' | 'month_short_moderate_extra';
 export type DecideRefineCardKind =
   | 'pay' | 'pay_stopped' | 'everyday' | 'everyday_override_expiring' | 'new_regular' | 'saving_bucket' | 'unspent'
   | 'changing_income' | 'steady_above_income' | 'series_drift' | 'card_not_paid_in_full' | 'under_logged_month';

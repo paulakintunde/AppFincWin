@@ -101,3 +101,33 @@ describe('TabRootScreen', () => {
     expect(within(ov, isScroll)).toBe(false);
   });
 });
+
+type ScrollJson = { type: string; props: Record<string, unknown>; children?: unknown[] | null };
+function findScroll(node: unknown): ScrollJson | null {
+  if (!node || typeof node === 'string') return null;
+  if (Array.isArray(node)) {
+    for (const n of node) {
+      const hit = findScroll(n);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  const j = node as ScrollJson;
+  if (j.type === 'RCTScrollView') return j;
+  return findScroll(j.children ?? null);
+}
+
+describe('TabRootScreen keyboardShouldPersistTaps (06.1-62, CB-1)', () => {
+  it('passes the opt-in prop to the scroll view', async () => {
+    const r = await renderWithShellProviders(<TabRootScreen title="Decide" keyboardShouldPersistTaps="handled" />);
+    expect(findScroll(r.toJSON())?.props.keyboardShouldPersistTaps).toBe('handled');
+  });
+
+  it('leaves the default unchanged when the prop is absent', async () => {
+    const r = await renderWithShellProviders(<TabRootScreen title="Decide" />);
+    const scroll = findScroll(r.toJSON());
+    expect(scroll).not.toBeNull();
+    expect(scroll?.props.keyboardShouldPersistTaps).toBeUndefined();
+  });
+});
+

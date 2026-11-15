@@ -3,9 +3,10 @@
 // host owns the quick-menu entry (and You > Add > New check), which is available from every tab.
 import React, { useCallback } from 'react';
 import { useProvideQuickAction } from '@/shell/fab/FabProvider';
-import { openNewCheck } from './home/checkHref';
+import type { Href } from 'expo-router';
+import { pushOnce } from '@/shell/navigation/pushOnce';
 
 export function DecideShellHost(): React.JSX.Element | null {
-  useProvideQuickAction('newCheck', useCallback(() => openNewCheck('buy'), []));
+  useProvideQuickAction('newCheck', useCallback(() => pushOnce('/decide?focus=check' as Href), []));
   return null;
 }

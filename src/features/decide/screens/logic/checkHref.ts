@@ -1,0 +1,36 @@
+// 05-21: the check route's href and the one place a new check id is minted (T-05-21-03: the check route
+// validates the id again). The route itself lands in 05-30, hence the `as Href`.
+import { router, type Href } from 'expo-router';
+import { goDecideHome } from './decideNav';
+
+export type CheckKind = 'buy' | 'invest';
+// Owner 2026-11-11: no new investment check is offered; investing is planned in Grow. 'invest' stays only for already-saved checks.
+export type NewCheckKind = 'buy';
+
+type CheckStepParam = '1' | '2' | '3' | '4' | '5';
+
+/** `cleared` and `clearedStep` (05-75, D-77) name the check Clear just removed, so Undo can route back to it. */
+export function checkHref(id: string, params: { kind?: CheckKind; step?: CheckStepParam; cleared?: string; clearedStep?: CheckStepParam } = {}): Href {
+  return { pathname: '/decide/check/[id]', params: { id, ...params } } as Href;
+}
+
+/** 06.1-28 (D-05): a new check starts on Decide home with the "What is it?" field focused. */
+export const NEW_CHECK_HREF = '/decide?focus=check' as Href;
+
+/**
+ * Opens a brand-new check. Nothing is written until the check is built from Decide home.
+ * 06.1-64 (CN-4): returns to the Decide home already in the stack (dismissTo), so loops of New check never stack Decide homes.
+ */
+export function openNewCheck(_kind: NewCheckKind): void {
+  goDecideHome(router, { focusCheck: true });
+}
+
+export const PAST_HREF = '/decide/past' as Href;
+
+// 05-113 (D-99): the lists' own pushed screens.
+export const OPEN_HREF = '/decide/open' as Href;
+export const CHANGES_HREF = '/decide/changes' as Href;
+export const LINES_HREF = '/decide/lines' as Href;
+
+// Owner 2026-11-11: pots became Grow goals; Month details and the problems list open the Grow goals segment.
+export const POTS_HREF = '/grow?segment=goals' as Href;

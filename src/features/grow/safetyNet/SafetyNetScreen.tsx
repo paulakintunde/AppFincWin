@@ -12,7 +12,7 @@ import { useDecideV3 } from '@/data/queries/decideV3';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useT } from '@/i18n';
-import { usePastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
 import { GoalHistoryCard, goalHistoryOf, type HistoryItem } from '@/features/grow/goals/GoalHistory';
 import { goalSeriesOf } from '@/features/grow/goals/GoalPlanEditSheet';

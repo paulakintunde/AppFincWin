@@ -1,0 +1,21 @@
+# 06.1-32 shared: the quick-estimates first answer (D39): three round amounts, then See the answer now.
+# 06.1-61: no keyboard-close tap. The screen keeps taps with the keyboard open (06.1-58, keyboardShouldPersistTaps), so the
+# first tap on See the answer now presses it. (The old close tap was on "Before your records are ready. Round numbers are
+# fine.", which 06.1-60 split; the first sentence is now behind Why?.)
+appId: com.fincwin.app
+---
+- extendedWaitUntil:
+    visible: "A first answer from three estimates"
+    timeout: 15000
+- tapOn: "About how much comes in each month\\?"
+- inputText: "3000"
+- tapOn: "About how much goes on bills\\?"
+- inputText: "1200"
+- tapOn: "About how much on everyday spending\\?"
+- inputText: "800"
+- assertVisible: "A usual month leaves about .* by these estimates\\."
+- runFlow:
+    file: scroll-to.yaml
+    env:
+      TARGET: "See the answer now"
+- tapOn: "See the answer now"

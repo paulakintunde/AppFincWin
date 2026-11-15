@@ -105,6 +105,20 @@ export const categorySwatch = {
 } as const;
 export type CategorySwatchKey = keyof typeof categorySwatch;
 
+export type StateTone = 'fits' | 'tight' | 'net' | 'extra' | 'short' | 'cond' | 'notYet';
+/** 06.1 D-16: Decide state colours. Only in badges, verdict cards and amounts, always with a glyph and a word (UX-09). color = text and glyph; stroke = non-text fills (differs only for short). */
+export const stateColors: Readonly<Record<StateTone, { readonly color: string; readonly stroke: string; readonly tint: string }>> = Object.freeze({
+  fits: { color: '#1B4D3E', stroke: '#1B4D3E', tint: '#E4F0E8' },
+  tight: { color: '#8A5A1B', stroke: '#8A5A1B', tint: '#FBEFD6' },
+  net: { color: '#1F3A5F', stroke: '#1F3A5F', tint: '#E4ECF6' },
+  extra: { color: '#1E6B5E', stroke: '#1E6B5E', tint: '#DFF1EE' },
+  short: { color: '#933720', stroke: '#B4472A', tint: '#F8E2DA' },
+  cond: { color: '#5B3A75', stroke: '#5B3A75', tint: '#EEE6F4' },
+  notYet: { color: '#3E5C6B', stroke: '#3E5C6B', tint: '#E6ECEF' },
+});
+/** 06.1 D-16: muted text on any state tint. */
+export const stateMuted = '#5A564B';
+
 /** Component.HHCOL, FincWin United.dc.html line 3216. */
 export const memberColors = ['#1B4D3E', '#B4472A', '#3E5C6B', '#7E6020', '#6E4A63', '#2F6E68'] as const;
 

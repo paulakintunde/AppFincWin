@@ -2,7 +2,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { screen } from '@testing-library/react-native';
-import { wrap } from '@/features/decide/check/steps/__tests__/helpers/stepProps';
+import { wrap } from '@/test/stepProps';
 import { Stepper } from '../Stepper';
 
 const props = { value: 50, step: 10, onChange: jest.fn(), valueText: '$50', accessibilityLabel: 'Extra each month, 50 dollars', decrementLabel: 'Less', incrementLabel: 'More' };

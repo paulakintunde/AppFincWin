@@ -5,7 +5,7 @@ import { cleanup, screen } from '@testing-library/react-native';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { fontSize } from '@/theme/typography';
 import { renderWithShellProviders, resetShellStores } from '@/shell/__tests__/testUtils';
-import { MATRIX, expectFits, matrixName } from '@/features/decide/__tests__/helpers/r18Fit';
+import { MATRIX, expectFits, matrixName } from '@/test/textFitMatrix';
 import { CompactHeader } from '../CompactHeader';
 import { DetailHeader } from '../DetailHeader';
 

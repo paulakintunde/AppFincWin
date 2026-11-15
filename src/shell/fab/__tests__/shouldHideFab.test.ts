@@ -18,7 +18,7 @@ describe('shouldHideFab (D-10)', () => {
   it('hides while a sheet is open', () => {
     expect(shouldHideFab({ ...base, sheetOpen: true })).toBe(true);
   });
-  it.each(['bulkSelect', 'entryFlow', 'onboarding', 'stepFlow', 'locked'] as const)('hides for reason %s', (reason) => {
+  it.each(['bulkSelect', 'entryFlow', 'onboarding', 'stepFlow', 'locked', 'decide'] as const)('hides for reason %s', (reason) => {
     expect(shouldHideFab({ ...base, hideReasons: [reason] })).toBe(true);
   });
   it('hides when no action is registered', () => {

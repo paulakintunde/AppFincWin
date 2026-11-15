@@ -5,7 +5,7 @@
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
-import { usePastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { BarChart } from '@/features/grow/ui/BarChart';
 import { CalcResultCard } from '@/features/grow/ui/CalcResultCard';
 import { HowWorkedOutBox } from '@/features/grow/ui/HowWorkedOutBox';

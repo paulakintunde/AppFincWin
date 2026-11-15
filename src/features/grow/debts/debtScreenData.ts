@@ -6,7 +6,7 @@ import type { Href } from 'expo-router';
 import { useDebts, useDecideSettings, useDecideSnapshot } from '@/data/queries/decide';
 import type { DebtRow } from '@/db/debts';
 import { currencyCode, minorUnits } from '@/engine/money';
-import { monthBreakdown } from '@/features/decide/home/homeCardModel';
+import { monthBreakdown } from '@/features/grow/lines/monthBreakdown';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { formatOrdinal } from '@/i18n/ordinal';
 import { useT } from '@/i18n';

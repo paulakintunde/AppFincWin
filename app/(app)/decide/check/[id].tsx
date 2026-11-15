@@ -1,28 +1,17 @@
-import { useLocalSearchParams } from 'expo-router';
-import { CheckFlowScreen, CheckNotFound } from '@/features/decide/check/CheckFlowScreen';
-import type { StepNumber } from '@/features/decide/check/stepTypes';
-import { CommitMutationsProvider } from '@/shell/decide/CommitMutationsProvider';
+import { Redirect, useLocalSearchParams, type Href } from 'expo-router';
+import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { isUuid, oneParam } from '@/features/navigation/routeParams';
 
-// T-05-30-01: the id, step and kind come from the URL or a notification, so each is checked before it reaches the screen.
-const STEPS = ['1', '2', '3', '4', '5'] as const;
+// 06.1-28 D-05: old path. Notification payloads and old links keep working: the answer for the check, or the matching stepper step
+// when the old link named step 1 to 3. The id is checked before it goes into the new path (T-05-30-01).
+const STEP_PATH: Readonly<Record<string, string>> = { '1': 'kind', '2': 'price', '3': 'costs' };
 
 export default function CheckRoute() {
-  const p = useLocalSearchParams<{ id: string; step?: string; kind?: string; cleared?: string; clearedStep?: string }>();
+  const p = useLocalSearchParams<{ id: string; step?: string }>();
   const id = oneParam(p.id);
   if (!isUuid(id)) return <CheckNotFound />;
   const step = oneParam(p.step);
-  const initialStep = step !== undefined && (STEPS as readonly string[]).includes(step) ? (Number(step) as StepNumber) : null;
-  const kind = oneParam(p.kind) === 'invest' ? 'invest' : 'buy';
-  // 05-75 (T-05-75-01): the cleared check's id and step are validated; anything else is dropped.
-  const clearedParam = oneParam(p.cleared);
-  const cleared = isUuid(clearedParam) ? clearedParam : null;
-  const clearedStepParam = oneParam(p.clearedStep);
-  const clearedStep = clearedStepParam !== undefined && (STEPS as readonly string[]).includes(clearedStepParam) ? (Number(clearedStepParam) as StepNumber) : null;
-  // 05-29: Go ahead, Wait and Pass are injected here (the decide feature may not import the write path).
-  return (
-    <CommitMutationsProvider>
-      <CheckFlowScreen id={id} initialStep={initialStep} kind={kind} cleared={cleared} clearedStep={clearedStep} />
-    </CommitMutationsProvider>
-  );
+  const stepPath = step === undefined ? undefined : STEP_PATH[step];
+  const href = stepPath === undefined ? `/decide/answer/${id}` : `/decide/check/${stepPath}?id=${id}`;
+  return <Redirect href={href as Href} />;
 }

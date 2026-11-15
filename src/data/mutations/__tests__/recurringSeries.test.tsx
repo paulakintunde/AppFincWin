@@ -21,6 +21,7 @@ import {
   useCreateSeries,
   useEditSeriesFrom,
   useEndSeries,
+  useSetSeriesStatus,
 } from '../recurringSeries';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
@@ -353,6 +354,54 @@ describe('useEditSeriesFrom', () => {
       expect.objectContaining({ entity: 'recurring_series', entityId: 's1', kind: 'conflict', code: 'version-conflict' })
     );
     expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.recurringSeries('h1') });
+  });
+});
+
+// 06.1-75 (DC-5, DC-6): edits and stops show in the cached series list at once; the refetch after the write reconciles.
+describe('optimistic series patches', () => {
+  it('edit-from lays the patch over the cached row before the server answers', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(applied(4));
+    const qc = newClient();
+    qc.setQueryData(queryKeys.recurringSeries('h1'), [seriesRow(), seriesRow({ id: 's2', name: 'Phone', amount: -4500 })]);
+    const { result } = await renderHook(() => useEditSeriesFrom(), { wrapper: wrapper(qc) });
+
+    result.current.editFrom({ id: 's1', householdId: 'h1', expectedVersion: 3, patch: { amount: -130000 }, effectiveFrom: '2026-11-01', ownerId: 'u1', name: 'Rent' });
+
+    await waitFor(() => {
+      const rows = qc.getQueryData<RecurringSeriesRow[]>(queryKeys.recurringSeries('h1'));
+      expect(rows?.find((r) => r.id === 's1')?.amount).toBe(-130000);
+    });
+    expect(qc.getQueryData<RecurringSeriesRow[]>(queryKeys.recurringSeries('h1'))?.find((r) => r.id === 's2')?.amount).toBe(-4500);
+  });
+
+  it('a stop sets the end date (the day before) and the reason on the cached row; past entries are not touched', async () => {
+    jest.useFakeTimers({ now: new Date('2026-11-20T12:00:00Z'), doNotFake: ['nextTick', 'setImmediate', 'setTimeout', 'setInterval', 'queueMicrotask'] });
+    try {
+      const fake = createFakeSupabase() as FakeSupabase & DbClient;
+      mockActiveClient = fake;
+      fake.respondWith(applied(4));
+      const qc = newClient();
+      qc.setQueryData(queryKeys.recurringSeries('h1'), [seriesRow()]);
+      qc.setQueryData(queryKeys.transactionsRoot('h1'), ['untouched']);
+      const { result } = await renderHook(() => useSetSeriesStatus(), { wrapper: wrapper(qc) });
+
+      const stepId = result.current.stop(seriesRow(), '2026-11-20', 'u1');
+
+      await waitFor(() => {
+        const row = qc.getQueryData<RecurringSeriesRow[]>(queryKeys.recurringSeries('h1'))?.[0];
+        expect(row).toMatchObject({ end_date: '2026-11-19', end_reason: 'stopped' });
+      });
+      expect(qc.getQueryData(queryKeys.transactionsRoot('h1'))).toEqual(['untouched']);
+      await waitFor(() => expect(rpcCalls(fake)).toHaveLength(1));
+      expect(rpcCalls(fake)[0]!.args).toMatchObject({
+        p_patch: { end_date: '2026-11-19', end_reason: 'stopped' },
+        p_undo_step: { id: stepId, label_key: 'seriesStopped', label_params: { name: 'Rent' } },
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
 

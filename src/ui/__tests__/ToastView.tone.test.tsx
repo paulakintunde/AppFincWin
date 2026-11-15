@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { colors } from '@/theme/tokens';
 import { radii } from '@/theme/layout';
@@ -57,21 +57,46 @@ describe('ToastView tone', () => {
     expect(style.gap).toBe(14);
   });
 
-  it('controls reach 44px through hitSlop, not their own box, and stay separate buttons', async () => {
+  it('Undo reaches 44px through hitSlop, not its own box, and the controls stay separate buttons', async () => {
     const screen = await render(
       <ThemeProvider>
         <ToastView message="Gone" actionLabel="Undo" onAction={jest.fn()} onDismiss={jest.fn()} dismissLabel="Dismiss" />
       </ThemeProvider>
     );
-    for (const name of ['Undo', 'Dismiss']) {
-      const btn = screen.getByRole('button', { name });
-      const flat = StyleSheet.flatten(btn.props.style) ?? {};
-      expect(flat.minWidth).toBeUndefined();
-      expect(flat.minHeight).toBeUndefined();
-      expect(btn.props.hitSlop).toEqual({ top: 12, bottom: 12, left: 8, right: 8 });
-    }
+    const undo = screen.getByRole('button', { name: 'Undo' });
+    const flat = StyleSheet.flatten(undo.props.style) ?? {};
+    expect(flat.minWidth).toBeUndefined();
+    expect(flat.minHeight).toBeUndefined();
+    expect(undo.props.hitSlop).toEqual({ top: 12, bottom: 12, left: 8, right: 8 });
+    expect(screen.getByRole('button', { name: 'Dismiss' })).toBeTruthy();
     const msg = screen.getByText('Gone');
     expect(msg.props.accessibilityRole).toBe('alert');
     expect(msg.props.accessibilityLiveRegion).toBe('polite');
+  });
+
+  it('DB-12: Dismiss is a 48 x 48 dp target that keeps the 12 dp glyph and the toast size', async () => {
+    const onDismiss = jest.fn();
+    const screen = await render(
+      <ThemeProvider>
+        <ToastView message="Gone" actionLabel="Undo" onAction={jest.fn()} onDismiss={onDismiss} dismissLabel="Dismiss" />
+      </ThemeProvider>
+    );
+    const btn = screen.getByRole('button', { name: 'Dismiss' });
+    const s = StyleSheet.flatten(btn.props.style);
+    const slop = (btn.props.hitSlop ?? {}) as { top?: number; bottom?: number; left?: number; right?: number };
+    const w = (s.width as number) + (slop.left ?? 0) + (slop.right ?? 0);
+    const h = (s.height as number) + (slop.top ?? 0) + (slop.bottom ?? 0);
+    expect(w).toBeGreaterThanOrEqual(48);
+    expect(h).toBeGreaterThanOrEqual(48);
+    // The box takes no more room in the row than the glyph did: footprint 12 x 12.
+    const glyph = 12;
+    expect((s.width as number) + (s.marginLeft as number) + (s.marginRight as number)).toBe(glyph);
+    expect((s.height as number) + 2 * (s.marginVertical as number)).toBe(glyph);
+    // The glyph sits where it sat: the box's left reach is undone by its left padding.
+    expect(s.paddingLeft).toBe(-(s.marginLeft as number));
+    // It never reaches past the 14 dp gap into Undo's own box.
+    expect(-(s.marginLeft as number)).toBeLessThanOrEqual(14);
+    await fireEvent.press(btn);
+    expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 });

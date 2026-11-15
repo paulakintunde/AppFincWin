@@ -1,0 +1,44 @@
+# 06.1-32 APP-13 (N19 / D63, N19S): an answer -> I bought it -> Add to records -> Added to records -> the first running-cost
+# offer is passed over ("Not this one": the plan's draft said "Skip"; the real key is answerActions.runningCost.skip), then
+# Undo takes the purchase back out, so the test account keeps no record. A used car brings running costs (insurance, fuel),
+# so at least one offer shows. Run signed in as a test account with an everyday account.
+appId: com.fincwin.app
+name: Decide I bought it
+# 06.1 pre-device check: the price can be set with `-e PRICE=9000` (a 9,000 cash car asks to confirm spare money first; since
+# 06.1-84 the shared gate answers that on the answer itself with "That's right"). No flow-level env: it would win over -e.
+---
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "used car"
+      # 06.1-61: 2,500 by default. A 9,000 cash buy above this month's room asks to confirm spare money first
+      # (unspent_not_confirmed, G-61-2); since 06.1-84 common/decide-gate answers it, so `-e PRICE=9000` runs that path.
+      # On the test account the 9,000 path then stops on "What is the $… for" (gap row G-PD-2), so it fails there for now.
+      PRICE: "${typeof PRICE === 'undefined' ? '2500' : PRICE}"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "I bought it"
+- tapOn: "I bought it"
+- extendedWaitUntil:
+    visible: "Add to your records"
+    timeout: 15000
+- assertVisible: "This updates FincWin\\. No payment is made and no money moves\\."
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Add to records"
+- tapOn: "Add to records"
+- extendedWaitUntil:
+    visible: "Added to records"
+    timeout: 20000
+- assertVisible: ".* is in your records, bought .*"
+# The first running-cost offer: pass over it
+- assertVisible: ".*Add it as a bill\\?"
+- tapOn: "Not this one"
+# Clean up: Undo takes the purchase back out
+- tapOn: "Undo"
+- extendedWaitUntil:
+    visible: "Undone\\. Nothing was added\\."
+    timeout: 20000
+- tapOn: "Back to Decide"

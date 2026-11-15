@@ -58,7 +58,7 @@ jest.mock('@/data/queries/growHoldings', () => ({
 }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
 jest.mock('@/data/queries/activity', () => ({ useAccountBalances: () => ({ balances: new Map() }) }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({ userId: 'u1', householdId: 'h1', today: '2026-11-06', ctx: { home: 'USD', rates: [], customs: [], today: '2026-11-06', timeZone: 'UTC' } }),
 }));
 

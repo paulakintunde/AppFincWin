@@ -3,7 +3,7 @@
 // a simulated NetInfo event actually flips onlineManager.isOnline().
 import NetInfo from '@react-native-community/netinfo';
 import { AppState } from 'react-native';
-import { onlineManager, QueryClient } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryObserver } from '@tanstack/react-query';
 import { getEnv } from '@/config/env';
 import { afterCacheRestore, reachabilityTest, resetOnlineManagerForTests, startOnlineManager } from '../onlineManager';
 import { netClass, UNREACHABLE_GRACE_MS } from '../sync/connectivity';
@@ -113,11 +113,44 @@ describe('startOnlineManager on app focus', () => {
 describe('afterCacheRestore', () => {
   it('D-88 the cache refetches without waiting for writes after restore', () => {
     const qc3 = new QueryClient();
-    const invalidate = jest.spyOn(qc3, 'invalidateQueries').mockResolvedValue(undefined);
-    const replay = jest.fn(() => new Promise<void>(() => undefined)); // a write that never settles
+    const order: string[] = [];
+    const refetch = jest.spyOn(qc3, 'refetchQueries').mockImplementation(async () => {
+      order.push('refetch');
+    });
+    const invalidate = jest.spyOn(qc3, 'invalidateQueries');
+    const replay = jest.fn(() => {
+      order.push('replay');
+      return new Promise<void>(() => undefined); // a write that never settles
+    });
     afterCacheRestore(qc3, replay);
     expect(replay).toHaveBeenCalledTimes(1);
-    expect(invalidate).toHaveBeenCalledTimes(1); // synchronously, with the replay still pending
+    expect(refetch).toHaveBeenCalledTimes(1); // synchronously, with the replay still pending
+    expect(refetch).toHaveBeenCalledWith({ stale: true, type: 'active' });
+    expect(order).toEqual(['replay', 'refetch']);
+    expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  // B-4 (06.1-48): a cold start no longer refetches every restored read at once.
+  it('B-4 fresh restored data inside its staleTime is not refetched; stale data is', async () => {
+    const qc5 = new QueryClient({ defaultOptions: { queries: { staleTime: 5 * 60_000 } } });
+    const freshFn = jest.fn(async () => 'fresh-server');
+    const staleFn = jest.fn(async () => 'stale-server');
+    qc5.setQueryData(['fresh'], 'restored', { updatedAt: Date.now() });
+    qc5.setQueryData(['stale'], 'restored', { updatedAt: Date.now() - 6 * 60_000 });
+    // Active observers, as a mounted screen would have (no initial fetch: data is there and not stale for 'fresh').
+    const o1 = new QueryObserver(qc5, { queryKey: ['fresh'], queryFn: freshFn, refetchOnMount: false });
+    const o2 = new QueryObserver(qc5, { queryKey: ['stale'], queryFn: staleFn, refetchOnMount: false });
+    const u1 = o1.subscribe(() => undefined);
+    const u2 = o2.subscribe(() => undefined);
+
+    afterCacheRestore(qc5, () => Promise.resolve());
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(freshFn).not.toHaveBeenCalled();
+    expect(staleFn).toHaveBeenCalledTimes(1);
+    u1();
+    u2();
+    qc5.clear();
   });
 });
 

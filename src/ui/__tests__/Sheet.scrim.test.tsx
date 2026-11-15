@@ -7,6 +7,7 @@ import { colors } from "@/theme/tokens";
 import { DURATION } from "@/theme/motion";
 import { Sheet } from "../Sheet";
 import { BACKDROP_OPACITY } from "../sheetDrag";
+import { layOutSheets } from "@/test/sheetLayout";
 
 jest.setTimeout(20000);
 
@@ -36,7 +37,10 @@ describe("Sheet backdrop", () => {
     expect(getAnimatedStyle(fill).opacity).toBeCloseTo(BACKDROP_OPACITY, 2);
     const backdrop = screen.getByTestId("sheet-backdrop", { hidden: true });
     expect(backdrop.props.accessibilityRole).toBe("button");
-    await fireEvent.press(backdrop);
+    expect(backdrop.props.pointerEvents).toBe("none"); // 06.1-81: no taps before the panel lays out
+    await layOutSheets();
+    expect(screen.getByTestId("sheet-backdrop", { hidden: true }).props.pointerEvents).toBe("auto");
+    await fireEvent.press(screen.getByTestId("sheet-backdrop", { hidden: true }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 

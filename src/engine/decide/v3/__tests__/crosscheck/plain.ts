@@ -17,10 +17,178 @@ const maxC = (a: Cents, b: Cents): Cents => (a > b ? a : b);
  * short). 05.4-19: the usual month was read as one fortnight's pay before SN-09 came into the comparison.
  */
 export function monthPay(f: RightAnswerFixture): Cents {
+  return ownPay(f) + quickMonthlyIncome(f);
+}
+
+function ownPay(f: RightAnswerFixture): Cents {
   if (f.pay.irregular !== undefined) return big(f.pay.amount);
+  if (f.pay.freelance !== undefined) return salaryPay(f) + big(f.pay.freelance.steady);
+  return salaryPay(f);
+}
+
+function salaryPay(f: RightAnswerFixture): Cents {
   if (f.pay.cadence === 'monthly') return lowerPay(f);
   const year = big(f.pay.amount) * (f.pay.cadence === 'fortnightly' ? 26n : 52n);
   return (year * 2n + 12n) / 24n;
+}
+
+// --- Tax set-aside (06.1 FIN-20, DRAFT for the owner: TX-10 .. TX-15). Restated from the plan's draft rule. Not read from the engine.
+// "Freelance income is counted after the share the user says they put aside for tax." Only when the profile's types include
+// freelance and a share above 0 is typed (0% .. 60%). Each freelance pay counts at its amount less the share (the share rounded half
+// up, in minor units); salary is unchanged. The share of freelance pay already in this month is still in the everyday account, so it
+// is held back from that account (the answer never spends it). Everything else follows from the smaller pay.
+
+/** The income profile's types as the case states them (the fixture converter's own reading). */
+function incomeTypes(f: RightAnswerFixture): readonly string[] {
+  return f.incomeTypes ?? (f.pay.irregular !== undefined ? ['freelance'] : f.pay.freelance !== undefined ? ['salary', 'freelance'] : []);
+}
+
+/** A salary part (salary or mix ticked): its pay is salary, never cut. */
+function hasSalaryPart(f: RightAnswerFixture): boolean {
+  return incomeTypes(f).some((t) => t === 'salary' || t === 'mix');
+}
+
+/** The share typed, in basis points, when it applies; 0 when it does not (no freelance type, nothing typed, or 0%). */
+export function plainSetAsideBp(f: RightAnswerFixture): Cents {
+  const bp = f.taxSetAsideBp ?? 0;
+  return incomeTypes(f).includes('freelance') && bp > 0 ? big(bp) : 0n;
+}
+
+/** The share of one freelance pay, rounded half up. */
+function setAsideOf(amount: number, bp: Cents): Cents {
+  return (big(amount) * bp + 5000n) / 10000n;
+}
+
+/** The fact's figure: the share of a usual month's freelance pay (the steady figure); 0 when the rule does not apply. */
+export function plainSetAsideMonthly(f: RightAnswerFixture): Cents {
+  const bp = plainSetAsideBp(f);
+  if (bp === 0n) return 0n;
+  if (f.pay.freelance !== undefined) return setAsideOf(f.pay.freelance.steady, bp);
+  // TX-16 (owner 2026-11-12): with no records, the typed quick income estimate is the usual month's freelance pay.
+  if (f.pay.irregular === undefined && f.quickEstimates !== null && !hasSalaryPart(f)) return setAsideOf(f.quickEstimates.income, bp);
+  return setAsideOf(f.pay.amount, bp);
+}
+
+/** The case as the answer reads it: freelance pay less the share, and this month's share held back from the everyday account. */
+export function withTaxSetAside(f: RightAnswerFixture): RightAnswerFixture {
+  const bp = plainSetAsideBp(f);
+  if (bp === 0n) return f;
+  const kept = (a: number): number => a - Number(setAsideOf(a, bp));
+  const irr = f.pay.irregular;
+  const fl = f.pay.freelance;
+  const receivedFreelance = fl !== undefined ? fl.received : f.thisMonth.received;
+  const held = Number(setAsideOf(receivedFreelance, bp));
+  const spend = f.accounts.findIndex((a) => (a.kind === 'checking' || a.kind === 'current') && a.use === 'everyday');
+  // A freelance profile with scheduled pay and no freelance part beside it: the scheduled pay is the freelance pay (the last branch).
+  const pay: RightAnswerFixture['pay'] =
+    irr !== undefined
+      ? { ...f.pay, amount: kept(f.pay.amount), irregular: { ...irr, amounts: irr.amounts.map(kept) } }
+      : fl !== undefined
+        ? { ...f.pay, freelance: { ...fl, steady: kept(fl.steady), amounts: fl.amounts.map(kept), received: kept(fl.received) } }
+        : { ...f.pay, amount: kept(f.pay.amount), setupAmount: f.pay.setupAmount === null ? null : kept(f.pay.setupAmount), lastThree: f.pay.lastThree === null ? null : [kept(f.pay.lastThree[0]), kept(f.pay.lastThree[1]), kept(f.pay.lastThree[2])], ...(f.pay.lean === undefined ? {} : { lean: f.pay.lean.map((l) => ({ ...l, amount: kept(l.amount) })) }) };
+  // TX-16 (owner 2026-11-12): a typed quick income estimate counts less the share too, when there is no salary part.
+  const q = f.quickEstimates;
+  const quickEstimates = q !== null && fl === undefined && !hasSalaryPart(f) ? { ...q, income: kept(q.income) } : q;
+  return {
+    ...f,
+    taxSetAsideBp: null,
+    quickEstimates,
+    pay,
+    thisMonth: fl === undefined ? { ...f.thisMonth, received: kept(f.thisMonth.received) } : f.thisMonth,
+    accounts: f.accounts.map((a, i) => (i === spend ? { ...a, balance: a.balance - held } : a)),
+  };
+}
+
+/** 06.1 FIN-20 (draft): the freelance pay beside the salary, at its steady figure; 0 when there is none. */
+function freelanceSteady(f: RightAnswerFixture): Cents {
+  return big(f.pay.freelance?.steady ?? 0);
+}
+
+// --- Quick lines (06.1 D-21). Restated from CONTEXT D-21 and the quick-line cases QL-01 .. QL-08. Not read from the engine.
+// A quick line counts for the one check only. A line with no amount above 0 (a loan: no payments) counts nowhere.
+// - A repeating expense is a running cost from its date (today when it has none). A once expense is one bill on its date (today when
+//   it has none or it is past), left out of the usual month.
+// - A loan is a card-or-loan minimum paid `payments` times, a month apart, the first on its date (a month from today when it has
+//   none). Its balance is the payments still to come, so the minimum stops when they are paid (D-73).
+// - Income is money arriving on its date. A date today or earlier counts from tomorrow. A monthly one moves on a month at a time to
+//   its first date after today and is part of a usual month's pay; a once one is not.
+// - Savings the user said answers can use are spare money kept in a savings account nobody spends from (an unlocked goal there).
+
+/** The first date on or after `from` among start, start + 1 month, start + 2 months ...; and how many months that took. */
+function plainRoll(start: string, from: string): { date: string; steps: number } {
+  let steps = 0;
+  while (plusMonths(start, steps) < from) steps++;
+  return { date: plusMonths(start, steps), steps };
+}
+
+/** Each income line's arrivals inside the 90 days: { date, amount }. */
+export function quickIncomeDates(f: RightAnswerFixture): { date: string; amount: Cents }[] {
+  const out: { date: string; amount: Cents }[] = [];
+  const end = dayAfter(f.asOf, PATH_DAYS);
+  const tomorrow = dayAfter(f.asOf, 1);
+  for (const q of f.check.quickLines ?? []) {
+    if (q.kind !== 'income' || q.amount <= 0) continue;
+    if (q.everyMonths === 0) {
+      const on = q.date < tomorrow ? tomorrow : q.date;
+      if (on < end) out.push({ date: on, amount: big(q.amount) });
+      continue;
+    }
+    for (let n = 0; ; n++) {
+      const d = plusMonths(plainRoll(q.date, tomorrow).date, n);
+      if (d >= end) break;
+      out.push({ date: d, amount: big(q.amount) });
+    }
+  }
+  return out;
+}
+
+/** What monthly income lines add to a usual month. */
+function quickMonthlyIncome(f: RightAnswerFixture): Cents {
+  return (f.check.quickLines ?? []).reduce((t, q) => (q.kind === 'income' && q.everyMonths === 1 && q.amount > 0 ? t + big(q.amount) : t), 0n);
+}
+
+/** Income arriving later this month. */
+function quickIncomeToArrive(f: RightAnswerFixture): Cents {
+  const ym = f.asOf.slice(0, 7);
+  return quickIncomeDates(f).filter((x) => x.date.slice(0, 7) === ym).reduce((t, x) => t + x.amount, 0n);
+}
+
+/** Spare savings the user said answers can use. */
+function quickSavings(f: RightAnswerFixture): Cents {
+  return (f.check.quickLines ?? []).reduce((t, q) => (q.kind === 'savings' && q.usable && q.amount > 0 ? t + big(q.amount) : t), 0n);
+}
+
+/**
+ * Expenses and loans as the fixture records they already know (running costs, bills, debts); income and savings stay as lines for the
+ * hooks above. The same fixture comes back when there are no quick lines.
+ */
+export function foldQuickLines(f: RightAnswerFixture): RightAnswerFixture {
+  const lines = f.check.quickLines ?? [];
+  if (lines.length === 0) return f;
+  const ym = f.asOf.slice(0, 7);
+  const runningCosts = [...(f.check.runningCosts ?? [])];
+  const bills = [...f.bills];
+  const debts = [...f.debts];
+  let billsDue = f.thisMonth.billsDue;
+  const keep: typeof lines = [];
+  for (const q of lines) {
+    if (q.kind === 'income' || q.kind === 'savings') {
+      keep.push(q);
+    } else if (q.kind === 'expense' && q.amount > 0) {
+      if (q.everyMonths === 0) {
+        const on = q.date !== null && q.date > f.asOf ? q.date : f.asOf;
+        bills.push({ id: 'q-' + q.id, amount: q.amount, everyMonths: 12, nextDue: on, lastPaid: null, paidBy: 'me' });
+        if (on.slice(0, 7) === ym) billsDue += q.amount;
+      } else {
+        runningCosts.push({ id: 'q-' + q.id, amount: q.amount, everyMonths: q.everyMonths, start: q.date ?? f.asOf, end: null });
+      }
+    } else if (q.kind === 'loan' && q.monthly > 0 && q.payments >= 1) {
+      const rolled = plainRoll(q.firstDate ?? plusMonths(f.asOf, 1), f.asOf);
+      const left = q.payments - rolled.steps;
+      if (left >= 1) debts.push({ id: 'q-' + q.id, kind: 'loan', balance: q.monthly * left, minimum: q.monthly, apr: null, dueDay: Number(rolled.date.slice(8, 10)), joint: false });
+    }
+  }
+  return { ...f, bills, debts, thisMonth: { ...f.thisMonth, billsDue }, check: { ...f.check, runningCosts, quickLines: keep } };
 }
 
 /**
@@ -116,6 +284,67 @@ export function monthlyPayment(amount: Cents, months: number, apr: string | null
   let growth = S;
   for (let i = 0; i < months; i++) growth = (growth * (S + r)) / S;
   return (amount * r * growth) / (S * (growth - S));
+}
+
+/**
+ * 06.1-30 FIN-23 (DRAFT, owner approval pending, AP-01..AP-06). Restated from the draft cases: in the UK and the EU a typed APR is
+ * the yearly rate with the compounding already inside it, so the rate for one payment period is r with (1 + r)^k = 1 + APR (k = 12
+ * for monthly payments, 52 for weekly); elsewhere, or with no region set, r = APR / k as today (AP-03, AP-06). The level payment is
+ * rounded up to the cent, as the cases state ("rounded up to £195.24"). Own list and own maths (QA-03).
+ */
+export const PLAIN_EFFECTIVE_APR_COUNTRIES: readonly string[] = [
+  'GB', 'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL',
+  'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+];
+/** The scale the plain per-period rate is held at (15 decimal places). */
+export const PLAIN_RATE_SCALE: Cents = 10n ** 15n;
+
+export function plainReadsEffective(country: string | null): boolean {
+  return country !== null && PLAIN_EFFECTIVE_APR_COUNTRIES.includes(country);
+}
+
+/** The rate for one payment period, times PLAIN_RATE_SCALE, rounded down. k = payments a year. */
+export function plainPeriodRate(apr: string, k: number, country: string | null): Cents {
+  const S = PLAIN_RATE_SCALE;
+  const bp = basisPoints(apr);
+  if (!plainReadsEffective(country)) return (bp * S) / (10_000n * BigInt(k));
+  // The largest r with (S + r)^k x 10,000 <= S^k x (10,000 + bp): halve the range until it closes.
+  const K = BigInt(k);
+  const target = S ** K * (10_000n + bp);
+  let lo = 0n;
+  let hi = (bp * S) / 10_000n;
+  while (lo < hi) {
+    const mid = (lo + hi + 1n) / 2n;
+    if ((S + mid) ** K * 10_000n <= target) lo = mid;
+    else hi = mid - 1n;
+  }
+  return lo;
+}
+
+/** The level payment on `amount` over n payments at the period rate r (times PLAIN_RATE_SCALE), rounded up to the cent. */
+export function plainLevelPayment(amount: Cents, n: number, r: Cents): Cents {
+  const N = BigInt(n);
+  if (r === 0n) return (amount + N - 1n) / N;
+  const S = PLAIN_RATE_SCALE;
+  const G = (S + r) ** N;
+  const num = amount * r * G;
+  const den = S * (G - S ** N);
+  return (num + den - 1n) / den;
+}
+
+/** The case's own plan: payments a year (12 monthly, 26 fortnightly, 52 weekly) and the payment by the FIN-23 draft rule. */
+export function plainPlanPayment(f: RightAnswerFixture, rule: 'draft' | 'today' = 'draft'): { payment: Cents; perYear: number } {
+  const p = f.check.pay;
+  if (p.mode !== 'plan') throw new Error('plainPlanPayment: not a plan');
+  const perYear = p.every === 'week' ? 52 : p.every === 'fortnight' ? 26 : 12;
+  const country = rule === 'draft' && f.region !== null ? f.region.country : null;
+  const r = plainPeriodRate(p.apr ?? '0', perYear, country);
+  return { payment: plainLevelPayment(big(f.check.price ?? 0) - big(p.deposit), p.months, r), perYear };
+}
+
+/** A payment as a month: payment x payments a year / 12, half up. */
+export function plainMonthOf(payment: Cents, perYear: number): Cents {
+  return (payment * BigInt(perYear) * 2n + 12n) / 24n;
 }
 
 // Restated from the right-answer table (QE-07) and the needs-input rule (UP §5.4 rule 3); not imported from the engine (QA-03).
@@ -364,7 +593,8 @@ export function everydayToCome(f: RightAnswerFixture): Cents {
  */
 export function leftThisMonth(f: RightAnswerFixture): Cents {
   const t = f.thisMonth;
-  const moneyIn = f.pay.irregular === undefined ? big(t.received) : big(f.pay.amount);
+  // 06.1 FIN-20 (draft): freelance pay beside the salary counts at its steady figure this month, received or not, as irregular pay does.
+  const moneyIn = (f.pay.irregular === undefined ? big(t.received) + freelanceSteady(f) : big(f.pay.amount)) + quickIncomeToArrive(f);
   // D-67 / D-55: the month sets the regular saving aside, moved yet or not. DB-10: "$3,000 pay - $1,200 bills - $800 everyday
   // spending - $100 already paid - $200 still due = $700": the whole minimum, paid or not.
   // 05.4-24 FIN-09b (D-86, owner): "money owed from last month comes off this month's big number, for everyone", and "it uses this
@@ -382,7 +612,7 @@ export function carriedIn(f: RightAnswerFixture): Cents {
   const moved = f.usualMonth.saving?.movedThisMonth === true ? big(f.usualMonth.saving.amount) : 0n;
   // DB-10: "$100 already paid - $200 still due": the part of a card or loan minimum already paid this month left the account too
   const debtPaid = maxC(0n, debtMinimums(f) - debtToPay(f));
-  const opening = sittingMoney(f) - big(t.received) + big(t.billsPaid) + big(t.everydaySoFar) + moved + debtPaid;
+  const opening = sittingMoney(f) - big(t.received) - big(f.pay.freelance?.received ?? 0) + big(t.billsPaid) + big(t.everydaySoFar) + moved + debtPaid;
   return opening < 0n ? -opening : 0n;
 }
 
@@ -408,7 +638,7 @@ export function payToArrive(f: RightAnswerFixture): Cents {
  * plans"). This month's room is part of it, counted once.
  */
 export function freeMoney(f: RightAnswerFixture): Cents {
-  const free = sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f);
+  const free = sittingMoney(f) + payToArrive(f) + quickIncomeToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f);
   // D-56: "spare money" is money left in the everyday account, so it is never more than the account holds at month end (a month
   // end below 0 is the cash check's to judge, not a cap). Balances follow from their records (05.4-48), so this binds only by
   // rounding; it is restated so the rule has a reader here.
@@ -497,7 +727,7 @@ export function plainHoldBack(f: RightAnswerFixture): Cents {
  */
 export function monthEndBalance(f: RightAnswerFixture): Cents {
   // DB-01: "November leaves $1,000 spare before his card": the minimum still to pay this month leaves the account too.
-  return sittingMoney(f) + payToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f) - savingToMove(f) - debtToPay(f);
+  return sittingMoney(f) + payToArrive(f) + quickIncomeToArrive(f) - big(f.thisMonth.billsDue) - everydayToCome(f) - savingToMove(f) - debtToPay(f);
 }
 
 // --- Safety net (05.4 FIN-01, FIN-02, ENG-03, ENG-04). Restated from the approved safety-net cases SN-01 .. SN-15, CONTEXT D-05,
@@ -544,6 +774,9 @@ export function plainNet(f: RightAnswerFixture): PlainNet {
     goals += counted;
     if (kept && a.balance > 0) goalsKept += counted;
   }
+  const quick = quickSavings(f);
+  goals += quick;
+  goalsKept += quick;
   const locked = !off && n.locked !== false;
   // `above` is every spare saving outside the spending accounts: the net's own money above its size and the unlocked goals.
   return { off, locked, saved, size, starter, protectedPart, netAbove, goals, goalsKept, above: netAbove + goals, lend: off ? saved : locked ? 0n : protectedPart };
@@ -651,7 +884,7 @@ export function withoutUnrated(f: RightAnswerFixture): RightAnswerFixture {
 
 /** The answer, with D-65's headline (D-63's on the Large tier) on every answer but an ask when the usual month is already short. */
 export function plainAnswer(f0: RightAnswerFixture): PlainAnswer {
-  const f = withoutUnrated(f0);
+  const f = withoutUnrated(foldQuickLines(withTaxSetAside(f0)));
   const a = plainCode(f);
   if (a.code === 'needs_input' || !usualMonthShort(f)) return a;
   // 05.4-22: "Only by borrowing" keeps the headline the plan's own fit gets when the month is already short
@@ -1023,10 +1256,12 @@ export function plainPathFlows(f: RightAnswerFixture, flows: readonly { date: st
   let money = sittingMoney(f);
   const saves = new Set(savingDates(f)); // D-67: each saving transfer leaves the account on its date
   const minimums = debtDates(f); // FIN-04: each minimum on its due date, once
+  const incomes = quickIncomeDates(f); // 06.1 D-21: quick income lines land on their dates
   for (let i = 0; i < PATH_DAYS; i++) {
     const date = dayAfter(f.asOf, i);
     for (const fl of flows) if (fl.date === date) money -= fl.amount;
     if (pays.has(date)) money += payAmount(f);
+    for (const x of incomes) if (x.date === date) money += x.amount;
     if (saves.has(date)) money -= savingAmount(f);
     // The usual bills land on payday; with irregular pay (D-52) there is no pay series, so on the 1st of each later month.
     const billsDay = f.pay.irregular === undefined ? pays.has(date) : date.slice(8, 10) === '01' && date.slice(0, 7) !== ym;

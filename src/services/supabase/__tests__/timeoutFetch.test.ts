@@ -1,4 +1,7 @@
-import { RequestTimeoutError, isLongOperationUrl, timeoutFetch } from '../timeoutFetch';
+import { addBreadcrumb } from '@sentry/react-native';
+import { RequestTimeoutError, isLongOperationUrl, timeoutFetch, writeTableOf } from '../timeoutFetch';
+
+jest.mock('@sentry/react-native', () => ({ addBreadcrumb: jest.fn() }));
 
 const BASE = 'https://x.supabase.co';
 
@@ -80,5 +83,53 @@ describe('timeoutFetch', () => {
     const ok = new Response('{}', { status: 200 });
     global.fetch = jest.fn(() => Promise.resolve(ok)) as unknown as typeof fetch;
     await expect(timeoutFetch(`${BASE}/rest/v1/x`)).resolves.toBe(ok);
+  });
+
+  describe('F-2 write request breadcrumbs', () => {
+    const netCrumbs = () =>
+      (addBreadcrumb as jest.Mock).mock.calls
+        .map((c) => c[0] as { category: string; message: string; data: Record<string, unknown> })
+        .filter((b) => b.category === 'net');
+    beforeEach(() => (addBreadcrumb as jest.Mock).mockClear());
+
+    it('a POST records method, table (no query string), ms and HTTP status', async () => {
+      global.fetch = jest.fn(() => Promise.resolve(new Response('{}', { status: 201 }))) as unknown as typeof fetch;
+      await timeoutFetch(`${BASE}/rest/v1/decide_checks?select=*&id=eq.secret`, { method: 'POST', body: '{"amount":1234}' });
+      const crumbs = netCrumbs();
+      expect(crumbs).toHaveLength(1);
+      expect(crumbs[0]!.message).toBe('write request');
+      expect(crumbs[0]!.data).toMatchObject({ method: 'POST', table: 'decide_checks', status: 201 });
+      expect(typeof crumbs[0]!.data.ms).toBe('number');
+      const text = JSON.stringify(crumbs[0]);
+      expect(text).not.toContain('secret');
+      expect(text).not.toContain('1234');
+      expect(text).not.toContain('select');
+    });
+
+    it('an RPC records its function name; a failure and a timeout are recorded as such', async () => {
+      global.fetch = jest.fn(() => Promise.reject(new TypeError('Network request failed'))) as unknown as typeof fetch;
+      await outcome(timeoutFetch(`${BASE}/rest/v1/rpc/apply_patches`, { method: 'PATCH' }));
+      expect(netCrumbs()[0]!.data).toMatchObject({ method: 'PATCH', table: 'apply_patches', status: 'failed' });
+
+      (addBreadcrumb as jest.Mock).mockClear();
+      global.fetch = hangingFetch() as unknown as typeof fetch;
+      const p = outcome(timeoutFetch(`${BASE}/rest/v1/accounts?id=eq.1`, { method: 'DELETE' }));
+      await jest.advanceTimersByTimeAsync(20_000);
+      await p;
+      expect(netCrumbs()[0]!.data).toMatchObject({ method: 'DELETE', table: 'accounts', status: 'timeout' });
+    });
+
+    it('a GET adds no breadcrumb', async () => {
+      global.fetch = jest.fn(() => Promise.resolve(new Response('[]', { status: 200 }))) as unknown as typeof fetch;
+      await timeoutFetch(`${BASE}/rest/v1/accounts?select=*`);
+      await timeoutFetch(`${BASE}/rest/v1/accounts?select=*`, { method: 'HEAD' });
+      expect(netCrumbs()).toHaveLength(0);
+    });
+
+    it('writeTableOf takes the segment after /rest/v1/ or /rpc/ up to the query string', () => {
+      expect(writeTableOf(`${BASE}/rest/v1/decide_checks?select=*`)).toBe('decide_checks');
+      expect(writeTableOf(`${BASE}/rest/v1/rpc/apply_patches`)).toBe('apply_patches');
+      expect(writeTableOf(`${BASE}/functions/v1/delete-account`)).toBe('other');
+    });
   });
 });

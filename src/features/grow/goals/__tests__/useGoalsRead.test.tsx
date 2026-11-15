@@ -12,7 +12,7 @@ jest.mock('@/data/queries/growGoals', () => ({
   useSavingsGoalRows: () => ({ data: mockRows, isError: mockRowsError, refetch: jest.fn() }),
   useGoalLines: () => ({ data: mockLines, isError: false, refetch: jest.fn() }),
 }));
-jest.mock('@/features/decide/past/usePastDecisions', () => ({
+jest.mock('@/features/decide/screens/past/data/usePastDecisions', () => ({
   usePastContext: () => ({
     userId: 'u1',
     householdId: 'h1',

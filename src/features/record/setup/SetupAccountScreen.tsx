@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { AccountSheet } from '@/features/record/accounts/AccountSheet';
 import { DECIDE_OPEN } from '@/features/decide/availability';
@@ -42,11 +42,13 @@ export function SetupAccountScreen() {
         visible={sheetOpen}
         mode={{ kind: 'new', context: 'onboarding' }}
         onClose={() => setSheetOpen(false)}
-        // 05-23 (D-03): rough figures and the first check come before "Bring your history".
-        // quick-261025-f46: while DECIDE_OPEN is false the coming-soon switch skips rough figures and the first check.
+        // Owner 2026-11-11: account -> quick estimates -> import history -> Decide home. The quick estimates return to /setup/history.
+        // quick-261025-f46: while DECIDE_OPEN is false the coming-soon switch skips the quick estimates.
         onSaved={(id) =>
           router.replace(
-            DECIDE_OPEN ? { pathname: '/setup/rough', params: { accountId: id } } : { pathname: '/setup/history', params: { accountId: id } },
+            DECIDE_OPEN
+              ? ({ pathname: '/decide/setup/quick-estimates', params: { returnTo: `/setup/history?accountId=${id}` } } as Href)
+              : { pathname: '/setup/history', params: { accountId: id } },
           )
         }
       />

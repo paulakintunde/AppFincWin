@@ -205,8 +205,10 @@ describe('F-11 persisted cache budget', () => {
     it('records one numeric-only breadcrumb with no payload strings', async () => {
       const muts = Array.from({ length: 400 }, (_, i) => mutation(i, 6000));
       await persistNow(client([], muts));
-      expect(addBreadcrumb).toHaveBeenCalledTimes(1);
-      const crumb = (addBreadcrumb as jest.Mock).mock.calls[0][0] as {
+      // 06.1-73: every save also leaves a 'persist' / 'saved' timing crumb; this test reads the over-budget one.
+      const overBudget = (addBreadcrumb as jest.Mock).mock.calls.filter((c) => c[0].message === 'queued writes over budget');
+      expect(overBudget).toHaveLength(1);
+      const crumb = overBudget[0]![0] as {
         category: string;
         message: string;
         data: Record<string, unknown>;
@@ -225,7 +227,7 @@ describe('F-11 persisted cache budget', () => {
       await persistNow(client([query(['a'], [1])], [mutation(1)]));
       const rows = await rawRows();
       expect(Object.keys(rows).filter((k) => k.startsWith(WRITES_OVERFLOW_PREFIX))).toHaveLength(0);
-      expect(addBreadcrumb).not.toHaveBeenCalled();
+      expect((addBreadcrumb as jest.Mock).mock.calls.filter((c) => c[0].message === 'queued writes over budget')).toHaveLength(0);
     });
 
     it('removeClient removes the overflow rows too', async () => {

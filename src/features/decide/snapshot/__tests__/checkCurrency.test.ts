@@ -2,7 +2,6 @@ import type { FxLatestRow } from '@/db/rows';
 import { convertLatest } from '@/data/queries/fxConvert';
 import { emptyCheckInputs } from '../checkInputs';
 import { fromHomePatch, inHomeCurrency, sourceFor, typedCurrency } from '../checkCurrency';
-import { computeChip, computeCore } from '../computeCheck';
 import type { CheckInputs, SnapshotResult } from '../types';
 import { TODAY, loggedSource } from './helpers/snapshotFixtures';
 
@@ -100,8 +99,6 @@ describe('D-67 checks typed in another currency (CR-B02, CR-C06)', () => {
     expect(inHomeCurrency(typedGbp(), loggedSource(), { isSample: false }).kind).toBe('missing');
     const source = sourceFor(usd(), jpy);
     expect(source.unconverted).toEqual({ currencies: ['JPY'], rowCount: 1 });
-    expect(computeCore(source, jpy.inputs).status).toBe('unconverted');
-    expect(computeChip(source, jpy.inputs).status).toBe('unconverted');
   });
 
   it('sourceFor keeps the snapshot for a home or converted check, and an existing unconverted note', () => {
@@ -114,9 +111,8 @@ describe('D-67 checks typed in another currency (CR-B02, CR-C06)', () => {
   it('a £1,200 check is judged as about $1,507, not $1,200', () => {
     const s = usd();
     const view = inHomeCurrency(typedGbp({ adjustments: [], runningCosts: [], replaces: [], lossOfValue: null }), s, { isSample: false });
-    const core = computeCore(sourceFor(s, view), view.inputs);
-    expect(core.resolvedPrice?.price).toBe(gbpToUsd(120_000));
-    expect(core.resolvedPrice?.price).not.toBe(120_000);
+    expect(view.inputs.advertised).toBe(gbpToUsd(120_000));
+    expect(view.inputs.advertised).not.toBe(120_000);
   });
 
   describe('fromHomePatch', () => {

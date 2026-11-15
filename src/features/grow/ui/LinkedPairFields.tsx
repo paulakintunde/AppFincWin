@@ -2,7 +2,7 @@
 // derived value. After an edit settles, the other field's new value is announced. Stacks above 1.3x font scale. No maths here.
 import React, { useEffect, useRef } from 'react';
 import { AccessibilityInfo, Platform, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { useSettledLabel } from '@/features/decide/check/useSettledLabel';
+import { useSettledLabel } from '@/ui/useSettledLabel';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';

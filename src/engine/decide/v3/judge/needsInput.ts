@@ -25,7 +25,7 @@ import { MISSING_PRIORITY, NEEDS_INPUT_ENTRY_AGE_DAYS, NEEDS_INPUT_MIN_BAND, UND
 import { minorUnits } from '../../../money/types';
 import { recordsSynced } from '../month/freshness';
 import { dependsOnMonths, expectedFor } from '../month/incomePattern';
-import { classifyLine, liveSeriesOf, seriesIndex } from '../month/series';
+import { classifyLine, seriesIndex, usualPayOf } from '../month/series';
 import type { Funds, MissingCode, MonthModel, Purchase, V3Inputs, YearMonth } from '../types';
 
 export interface NeedsInputContext {
@@ -37,7 +37,7 @@ export interface NeedsInputContext {
 }
 
 function hasConfirmedIncome(inputs: V3Inputs): boolean {
-  return liveSeriesOf(inputs.series, inputs.asOf, 'pay').length > 0;
+  return usualPayOf(inputs.series, inputs.asOf).length > 0;
 }
 
 function newestSpending(inputs: V3Inputs): string | null {

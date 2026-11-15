@@ -92,6 +92,9 @@ export const queryKeys = {
   refundPurchases: (householdId: string, ids: string) => ['transactions', householdId, 'refund-purchases', ids] as const,
   refundCandidates: (householdId: string, from: string, to: string) =>
     ['transactions', householdId, 'refund-candidates', from, to] as const,
+  // 06.1 (CO-D-64 (6)): what Decide said on each day for one check. Owner-private; not row-derived.
+  // Named decideCheckHistory because decideHistory above is the row-derived month window.
+  decideCheckHistory: (userId: string, checkId: string) => ['decide-check-history', userId, checkId] as const,
 };
 
 export const mutationKeys = {
@@ -102,6 +105,8 @@ export const mutationKeys = {
   addCustomCurrency: ['custom-currencies', 'add'] as const,
   editCustomCurrency: ['custom-currencies', 'edit'] as const,
   updateMoneyPrefs: ['money-prefs', 'update'] as const,
+  // 06.1-71 (OQ-71-1 B): the state or province for the sales tax estimate (profiles.region_subdivision), set on You > Region.
+  updateRegionSubdivision: ['region-subdivision', 'update'] as const,
   // Phase 2 (Record)
   addCategory: ['categories', 'add'] as const,
   editCategory: ['categories', 'edit'] as const,
@@ -190,6 +195,11 @@ export const mutationKeys = {
   recordDebtOneOff: ['debts', 'record-one-off'] as const, // 06-30 (D-33)
   saveGrowDebt: ['debts', 'save-grow'] as const,
   setAccountRate: ['accounts', 'set-rate'] as const,
+  // 06.1 Decide screens
+  decideNetUse: ['savings-goals', 'net-answer-use'] as const, // D-20 unlock / lock
+  safetyNetAnswer: ['decide-checks', 'safety-net-answer'] as const, // D-14 / D-28 (composes Grow's save/edit keys; reserved)
+  decideAnswered: ['decide-setup', 'answered'] as const, // D-23 (reserved: the write runs on updateDecideSetup)
+  decideHistory: ['decide-check-history', 'add'] as const, // CO-D-64 (6)
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --

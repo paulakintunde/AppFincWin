@@ -12,7 +12,7 @@ import type { GoalPlanSeries } from '@/db/goalPlan';
 import type { RecurringSeriesRow } from '@/db/rows';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import { useT } from '@/i18n';
-import { usePastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
 import { useDebtFormat } from '@/features/grow/debts/debtScreenData';
 import { seriesPayload } from '@/features/grow/goals/GoalPlanEditSheet';

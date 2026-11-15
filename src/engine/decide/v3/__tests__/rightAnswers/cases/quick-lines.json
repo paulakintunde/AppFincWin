@@ -1,0 +1,840 @@
+{
+  "topic": "quick-lines",
+  "cases": [
+    {
+      "id": "QL-01",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $2,000 in the everyday account and looks at a $900 item, paid in one go today (15 November 2026). Before buying, Jo types a quick estimate: a new $450 cost every month, from today. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "expense",
+              "amount": 45000,
+              "everyMonths": 1,
+              "date": null
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "tight",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": 15000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "quick_lines_counted"
+        ],
+        "mustNotHaveFacts": [
+          "quick_savings_counted"
+        ]
+      },
+      "why": "The $450 a month is counted in the usual month for this check only, so the usual month goes from about $600 to about $150. Cash is there for the item, but little is left each month, so it is the amber \"Fits, but tight\". Nothing is saved to the records.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QL-02",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $2,000 in the everyday account and looks at a $900 item, paid in one go today (15 November 2026). Jo types a quick estimate: a one-time $700 cost on 20 November. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "expense",
+              "amount": 70000,
+              "everyMonths": 0,
+              "date": "2026-11-20"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": -100000,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "quick_lines_counted"
+        ],
+        "mustNotHaveFacts": [
+          "quick_savings_counted"
+        ]
+      },
+      "why": "The $700 falls on 20 November, before the next pay on 1 December. $2,000 - $450 of everyday spending still to come - $700 leaves $850, less than the $900 item. The answer is Not yet until the pay arrives on 1 December. The one-time cost is not part of the usual month.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QL-03",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $1,400 in the everyday account and looks at a $900 item, paid in one go today (15 November 2026). Jo types a quick estimate: a loan of 6 payments of $150, the first on 25 November. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "loan",
+              "monthly": 15000,
+              "payments": 6,
+              "firstDate": "2026-11-25"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": -45000,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "quick_lines_counted"
+        ],
+        "mustNotHaveFacts": [
+          "quick_savings_counted"
+        ]
+      },
+      "why": "Without the loan Jo has $1,400 - $450 still to come = $950, which just covers $900. The loan takes $150 on 25 November, before the next pay, so $800 is left for a $900 item. The answer is Not yet until the pay arrives on 1 December. Six payments of $150 are $900 in all, and the loan stops after the sixth.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QL-04",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $1,200 in the everyday account and looks at a $1,300 item, to be bought on 25 November 2026 and paid in one go. Jo types a quick estimate: $1,000 of income, once, on 18 November. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purchaseDate": "2026-11-25",
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "income",
+              "amount": 100000,
+              "everyMonths": 0,
+              "date": "2026-11-18"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 30000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "quick_lines_counted"
+        ],
+        "mustNotHaveFacts": [
+          "quick_savings_counted"
+        ]
+      },
+      "why": "Without the income, $1,200 - $450 still to come = $750 is less than the $1,300 item: Not yet. The $1,000 arrives on 18 November, before the 25 November purchase, so $1,750 is there for it. It fits, and $300 of this month is still left. The income is counted for this check only and is not a record.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QL-05",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $1,200 in the everyday account and looks at a $1,300 item, to be bought on 25 November 2026 and paid in one go. Jo types a quick estimate: $1,000 of income every month, the first on 20 November. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "purchaseDate": "2026-11-25",
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "income",
+              "amount": 100000,
+              "everyMonths": 1,
+              "date": "2026-11-20"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": 30000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "quick_lines_counted"
+        ],
+        "mustNotHaveFacts": [
+          "quick_savings_counted"
+        ]
+      },
+      "why": "The first $1,000 arrives on 20 November, before the purchase on 25 November, so the cash is there: $1,200 - $450 + $1,000 = $1,750 against $1,300. It fits, and $300 of this month is still left. A monthly income also adds to the usual month. It is counted for this check only and is not a record.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QL-06",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $1,200 in the everyday account and looks at a $1,300 item, paid in one go today (15 November 2026). Jo has $700 in a savings account and says answers can use it. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "savings",
+              "amount": 70000,
+              "usable": true
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "tight",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "quick_lines_counted",
+          "quick_savings_counted"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "Without the savings, $1,200 - $450 still to come = $750 is less than $1,300: Not yet. Savings Jo says answers can use count as spare money for this check only: $750 + $700 = $1,450, so the item fits, but with little to spare, so it is the amber \"Fits, but tight\". The answer says it counted the $700 and that it is for this check only. The $1,000 safety net stays out.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QL-07",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $1,200 in the everyday account and looks at a $1,300 item, paid in one go today (15 November 2026). Jo has $700 in a savings account and says answers can not use it. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "savings",
+              "amount": 70000,
+              "usable": false
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "payday",
+        "afterBuy": {
+          "month": -70000,
+          "usualMonth": null
+        },
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "quick_lines_counted",
+          "quick_savings_counted"
+        ]
+      },
+      "why": "Savings Jo says answers can not use count nowhere. The answer is the same as with no quick line: $1,200 - $450 still to come = $750 is less than $1,300, so Not yet until the pay arrives on 1 December. The answer does not say it counted any quick estimate.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    },
+    {
+      "id": "QL-08",
+      "topic": "quick-lines",
+      "persona": "Jo, paid $3,000 a month (invented)",
+      "situation": "Jo has $1,200 in the everyday account and looks at a $1,300 item, paid in one go today (15 November 2026). Jo types two quick estimates: $700 of savings answers can use, and a new $200 cost every month from 1 December. A usual month: pay $3,000, bills $1,500 and everyday spending $900, so about $600 is left. This month the pay and bills are in, and $450 of everyday spending is done. The $1,000 safety net is saved in its own account and kept out of every answer.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 54000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 100000,
+          "saved": 100000,
+          "locked": true
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "quickLines": [
+            {
+              "id": "q1",
+              "kind": "savings",
+              "amount": 70000,
+              "usable": true
+            },
+            {
+              "id": "q2",
+              "kind": "expense",
+              "amount": 20000,
+              "everyMonths": 1,
+              "date": "2026-12-01"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "code": "fits_unspent",
+        "variant": "tight",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": 40000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "quick_lines_counted",
+          "quick_savings_counted"
+        ],
+        "mustNotHaveFacts": []
+      },
+      "why": "The usable savings cover the gap: $750 + $700 = $1,450 against $1,300. The $200 a month starts on 1 December, so it lowers the usual month from about $600 to about $400 but does not touch the cash today. The item fits, but tight, and the answer names both lines, counted for this check only.",
+      "fixIds": [
+        "D-21"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-11",
+      "ownerReason": null,
+      "expertNote": null
+    }
+  ]
+}

@@ -5,7 +5,7 @@ import { convertLatest } from '@/data/queries/fxConvert';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import type { TransactionRow } from '@/db/rows';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
-import { usePastContext, type PastContext } from '@/features/decide/past/usePastDecisions';
+import { usePastContext, type PastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { toCurrencyOf } from './goalOwnMoney';
 import { planFromMonthly } from './goalPlanModel';
 import { goalPointsOf, goalSaved, safetyNetPointOf, type GoalPoint, type SafetyNetPoint, type ToHome } from '../connect';

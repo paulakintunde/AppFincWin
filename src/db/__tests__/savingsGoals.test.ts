@@ -46,6 +46,14 @@ describe('savingsGoals module surface', () => {
   });
 });
 
+describe('06.1-31 decide_may_use', () => {
+  it('the goal read selects decide_may_use now that 20261111000100 is in production, and no write path sends it', () => {
+    expect(goals.SAVINGS_GOAL_COLUMNS.split(', ')).toContain('decide_may_use');
+    expect(goals.SAVINGS_GOAL_PATCH_KEYS).not.toContain('decide_may_use');
+    expect(goals.SAVINGS_GOAL_INSERT_KEYS).not.toContain('decide_may_use');
+  });
+});
+
 describe('fetchSavingsGoals', () => {
   it('selects live goals of the household', async () => {
     const client = createFakeSupabase();

@@ -1,6 +1,8 @@
 # 05.4-34 BO-03: Record as bought through the dev-only harness (dev builds only), then Activity shows it, then it is undone.
 # Run signed in as the sample data account (D-129; D-139 allowed one run on the Pixel 9's signed-in account). Writes one check, a day-one line, two repeating payments and a debt,
 # and the undo takes them all back.
+# 06.1-32: still valid after the Decide rebuild. The harness ids (harness-record-bought, harness-bought-done) are unchanged in
+# src/features/devHarness/BoughtWriteHarness.tsx; the new I bought it screen is covered by decide-bought.yaml.
 appId: com.fincwin.app
 name: Record as bought
 ---
@@ -19,7 +21,7 @@ name: Record as bought
 - assertNotVisible:
     id: "harness-bought-refused"
 - runFlow: common/to-tabs.yaml
-- tapOn: "Activity, tab, 2 of 3"
+- tapOn: "Activity, tab, 2 of [0-9]"
 - scrollUntilVisible:
     element: "Maestro test laptop"
     direction: DOWN
@@ -30,5 +32,5 @@ name: Record as bought
     file: common/undo-latest.yaml
     env:
       UNDO_NAME: ".*Maestro test laptop"
-- tapOn: "Activity, tab, 2 of 3"
+- tapOn: "Activity, tab, 2 of [0-9]"
 - assertNotVisible: "Maestro test laptop"

@@ -10,19 +10,14 @@ export function decideHintsKey(userId: string): string {
   return `${STORAGE_PREFIX}decide-hints:${userId}`;
 }
 
-/** D-107: the Judge-on choice, a device view that drives the home card and every check. */
-export type JudgeOn = 'month' | 'worst' | 'average';
-
-function isJudgeOn(v: unknown): v is JudgeOn {
-  return v === 'month' || v === 'worst' || v === 'average';
-}
-
 interface HintsRecord {
   v: 1;
   foldHintSeen?: true;
   homeBasisSeen?: true;
-  judgeOn?: JudgeOn;
-  judgeOnDefaulted?: true;
+  introSeenVersion?: string;
+  setupDoneSeen?: true;
+  /** 06.1-66 (FQ5): the first-answer safety-net question was shown and put away (answered or not); the gate asks it once. */
+  netQuestionSeen?: true;
 }
 
 /** The stored record, or an empty v1 record when it is missing, unreadable or another version. Never throws. */
@@ -30,20 +25,21 @@ async function readRecord(userId: string): Promise<HintsRecord> {
   try {
     const raw = await AsyncStorage.getItem(decideHintsKey(userId));
     if (!raw) return { v: 1 };
-    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; judgeOn?: unknown; judgeOnDefaulted?: unknown } | null;
+    const parsed = JSON.parse(raw) as { v?: unknown; foldHintSeen?: unknown; homeBasisSeen?: unknown; introSeenVersion?: unknown; setupDoneSeen?: unknown; netQuestionSeen?: unknown } | null;
     if (parsed?.v !== 1) return { v: 1 };
     const record: HintsRecord = { v: 1 };
     if (parsed.foldHintSeen === true) record.foldHintSeen = true;
     if (parsed.homeBasisSeen === true) record.homeBasisSeen = true;
-    if (isJudgeOn(parsed.judgeOn)) record.judgeOn = parsed.judgeOn;
-    if (parsed.judgeOnDefaulted === true) record.judgeOnDefaulted = true;
+    if (typeof parsed.introSeenVersion === 'string') record.introSeenVersion = parsed.introSeenVersion;
+    if (parsed.setupDoneSeen === true) record.setupDoneSeen = true;
+    if (parsed.netQuestionSeen === true) record.netQuestionSeen = true;
     return record;
   } catch {
     return { v: 1 };
   }
 }
 
-async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen' | 'judgeOnDefaulted'): Promise<void> {
+async function markFlag(userId: string, flag: 'foldHintSeen' | 'homeBasisSeen' | 'setupDoneSeen' | 'netQuestionSeen'): Promise<void> {
   try {
     const record = await readRecord(userId);
     record[flag] = true;
@@ -70,26 +66,35 @@ export async function markHomeBasisSeen(userId: string): Promise<void> {
   await markFlag(userId, 'homeBasisSeen');
 }
 
-/** D-107: the stored Judge-on choice, or null when none is stored or it cannot be read. Never throws. */
-export async function loadJudgeOn(userId: string): Promise<JudgeOn | null> {
-  return (await readRecord(userId)).judgeOn ?? null;
+/** D-25: the version of the 'How Decide answers' card last seen on this phone, or null. A changed text shows it again. Never throws. */
+export async function loadIntroSeenVersion(userId: string): Promise<string | null> {
+  return (await readRecord(userId)).introSeenVersion ?? null;
 }
 
-export async function saveJudgeOn(userId: string, value: JudgeOn): Promise<void> {
+export async function markIntroSeen(userId: string, version: string): Promise<void> {
   try {
     const record = await readRecord(userId);
-    record.judgeOn = value;
+    record.introSeenVersion = version;
     await AsyncStorage.setItem(decideHintsKey(userId), JSON.stringify(record));
   } catch {
-    // A preference that cannot be saved still holds for this session.
+    // A card that cannot be remembered simply shows again.
   }
 }
 
-/** D-107 (walkthrough round 2): true once the first resolution of the default Judge-on (the update-time switch to This month) is done. */
-export async function loadJudgeOnDefaulted(userId: string): Promise<boolean> {
-  return (await readRecord(userId)).judgeOnDefaulted === true;
+/** The setup-done card is shown once per phone. */
+export async function loadSetupDoneSeen(userId: string): Promise<boolean> {
+  return (await readRecord(userId)).setupDoneSeen === true;
 }
 
-export async function markJudgeOnDefaulted(userId: string): Promise<void> {
-  await markFlag(userId, 'judgeOnDefaulted');
+export async function markSetupDoneSeen(userId: string): Promise<void> {
+  await markFlag(userId, 'setupDoneSeen');
+}
+
+/** 06.1-66 (FQ5): true once the first-answer safety-net question was put away on this phone, even by a swipe. Nothing is written to the account. */
+export async function loadNetQuestionSeen(userId: string): Promise<boolean> {
+  return (await readRecord(userId)).netQuestionSeen === true;
+}
+
+export async function markNetQuestionSeen(userId: string): Promise<void> {
+  await markFlag(userId, 'netQuestionSeen');
 }

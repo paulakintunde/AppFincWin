@@ -2,6 +2,7 @@
 // catalogue.ts and checks every Decide event's declared property names. DECIDE_EVENTS must name every Decide event there is.
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { VERDICT_TABLE } from '@/engine/decide/v3';
 import { DECIDE_EVENTS, isDecideEvent } from '../catalogue';
 
 const SOURCE = readFileSync(join(__dirname, '..', 'catalogue.ts'), 'utf8');
@@ -44,5 +45,15 @@ describe('05.4-38 analytics catalogue (CMP-F03, APP-19)', () => {
   it('the scan bites: a band property would be caught', () => {
     expect(SIZE.test('band')).toBe(true);
     expect(SIZE.test('price_band')).toBe(true);
+  });
+
+  it('06.1-23: DecideCode names every engine code and DecideVariant every engine variant', () => {
+    const codes = /export type DecideCode =([\s\S]*?);/.exec(SOURCE)?.[1] ?? '';
+    const variants = /export type DecideVariant =([\s\S]*?);/.exec(SOURCE)?.[1] ?? '';
+    for (const key of Object.keys(VERDICT_TABLE)) expect(codes).toContain(`'${key.split('.')[0] as string}'`);
+    // the engine's Variant literals (types.ts), spelled out in the catalogue
+    for (const v of ['payday', 'not_covered', 'low_month', 'tight', 'borrowing_costs_more', 'not_cleared', 'protection_off', 'no_net', 'small_net', 'costly_debt', 'extra_savings', 'month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra']) {
+      expect(variants).toContain(`'${v}'`);
+    }
   });
 });

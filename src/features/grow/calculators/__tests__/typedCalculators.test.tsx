@@ -128,9 +128,9 @@ describe('CompoundCalculator (GC30)', () => {
 
   it('opens prefilled from route params, shows a result without typing, and stays editable', async () => {
     await wrap(<CompoundCalculator start="769000" rate="4" monthly="0" />);
-    expect(screen.getByLabelText('Start with', o).props.value).toBe('7690.00');
+    expect(screen.getByLabelText('Start with', o).props.value).toBe('7,690');
     expect(screen.getByLabelText('Rate a year', o).props.value).toBe('4');
-    expect(screen.getByLabelText('Add each month', o).props.value).toBe('0.00');
+    expect(screen.getByLabelText('Add each month', o).props.value).toBe('0');
     const before = screen.getByTestId('calc-result-value', o).props.children;
     expect(before).toMatch(/^\$/);
     await type('Rate a year', '6');
@@ -142,7 +142,7 @@ describe('CompoundCalculator (GC30)', () => {
     await wrap(<CompoundCalculator start="abc" rate="4%" monthly="20000" />);
     expect(screen.getByLabelText('Start with', o).props.value).toBe('');
     expect(screen.getByLabelText('Rate a year', o).props.value).toBe('');
-    expect(screen.getByLabelText('Add each month', o).props.value).toBe('200.00');
+    expect(screen.getByLabelText('Add each month', o).props.value).toBe('200');
     expect(screen.getByText('Fill in the numbers above', o)).toBeTruthy();
   });
 });

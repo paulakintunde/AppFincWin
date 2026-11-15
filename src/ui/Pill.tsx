@@ -12,6 +12,7 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+import { usePressFeedback } from '@/ui/pressFeedback';
 
 export type PillVariant = 'primary' | 'secondary' | 'danger';
 
@@ -23,13 +24,21 @@ export interface PillProps {
   onPress?: () => void;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  /**
+   * 06.1-62 (H-1): work started by this pill is still running. Dimmed, announced busy, repeat taps ignored.
+   * Same label, no spinner and no new copy.
+   */
+  pending?: boolean;
 }
 
-export function Pill({ label, variant, selected = false, disabled = false, onPress, accessibilityLabel, accessibilityHint }: PillProps) {
+export function Pill({ label, variant, selected = false, disabled = false, pending = false, onPress, accessibilityLabel, accessibilityHint }: PillProps) {
   const { colors, pairing } = useTheme();
   // a pill inside a read-only region is announced disabled and inert; the region already dims it
   const scoped = useReadOnlyScope();
   const inert = disabled || scoped;
+  // 06.1-62 (CB-5 / CF-1): a native ripple on Android and a pressed dim on iOS, but never on an inert or pending pill
+  const feedback = usePressFeedback(variant === 'primary' ? 'fill' : 'row');
+  const live = !inert && !pending;
 
   const backgroundColor =
     variant === 'primary' ? colors.accent : variant === 'danger' ? colors.dangerTint1 : colors.fill1;
@@ -41,10 +50,15 @@ export function Pill({ label, variant, selected = false, disabled = false, onPre
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: inert, selected }}
-      disabled={inert}
-      onPress={onPress}
-      style={[styles.pill, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }]}
+      accessibilityState={pending ? { disabled: true, selected, busy: true } : { disabled: inert, selected }}
+      disabled={inert || pending}
+      onPress={pending ? undefined : onPress}
+      android_ripple={live ? feedback.android_ripple : undefined}
+      style={({ pressed }) => [
+        styles.pill,
+        { backgroundColor, borderColor, opacity: disabled || pending ? 0.5 : 1 },
+        live ? feedback.pressedStyle(pressed) : null,
+      ]}
     >
       <Text style={{ ...textRole(pairing, 'label'), color: textColor }}>{label}</Text>
     </Pressable>
@@ -58,6 +72,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.cardPad,
     borderRadius: radii.pill,
     borderWidth: 2,
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

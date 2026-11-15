@@ -18,6 +18,7 @@ import {
   type V3Inputs,
 } from '@/engine/decide/v3';
 import { currencyCode } from '@/engine/money';
+import { perfMark } from '@/features/decide/perf/perfMarks';
 import { buildDecideSnapshot, type SnapshotSource } from '../buildSnapshot';
 import { parseCheckInputs } from '../checkInputs';
 import { inHomeCurrency } from '../checkCurrency';
@@ -60,6 +61,8 @@ export interface PreparedV3 {
 interface PreparedEntry extends PreparedV3 {
   readonly v3: V3SettingsSource | null;
   readonly uses: Readonly<Record<string, AccountUse>> | undefined;
+  /** 06.1-46 (B-1): the empty-check evaluations by waiting-write count, judged once each on first ask and shared by every hook. */
+  readonly empty: Map<number, Evaluation>;
 }
 
 // 05.4 ENG-13 / APP-03 (05.4-33): build and prepare once per data change. The read hooks memoise `source` and the settings
@@ -72,25 +75,65 @@ export function preparedV3(source: SnapshotSource, v3: V3SettingsSource | null, 
   const list = preparedBySource.get(source) ?? [];
   const hit = list.find((e) => e.v3 === v3 && e.uses === uses);
   if (hit !== undefined) return hit;
+  return preparedMiss(source, v3, uses, list);
+}
+
+function preparedMiss(
+  source: SnapshotSource,
+  v3: V3SettingsSource | null,
+  uses: Readonly<Record<string, AccountUse>> | undefined,
+  list: PreparedEntry[]
+): PreparedEntry {
+  perfMark('decide.prepare:start'); // 06.1-46: a miss is the whole build; a hit costs nothing
   const built = buildDecideSnapshot(source);
   const inputs = buildV3Inputs(source, v3, built, uses);
-  const entry: PreparedEntry = { v3, uses, built, inputs, prepared: prepare(inputs) };
+  const entry: PreparedEntry = { v3, uses, built, inputs, prepared: prepare(inputs), empty: new Map() };
+  perfMark('decide.prepare:end');
   preparedBySource.set(source, [entry, ...list].slice(0, PREPARED_PER_SOURCE));
   return entry;
 }
 
-/** Judges one stored check on the held Prepared (per key press: only the check-dependent part runs). */
+/**
+ * 06.1-46 (B-2): the waiting-write count laid over a held Prepared at judge time. The engine reads `inputs.unsavedWrites` only
+ * when it judges (the unsaved-changes notice), never in prepare, so a count change no longer rebuilds the inputs. The same
+ * Prepared comes back when the count already matches.
+ */
+export function withUnsaved(prepared: Prepared, n: number): Prepared {
+  if (n === prepared.inputs.unsavedWrites) return prepared;
+  return { ...prepared, inputs: { ...prepared.inputs, unsavedWrites: n } };
+}
+
+/**
+ * 06.1-46 (B-1): the evaluation of an empty check (the home and setup reading), judged once per prepared entry and waiting-write
+ * count, and shared by every hook that asks with the same source and settings. Equal to
+ * `computeV3(source, v3, {}, undefined, null, unsaved)`.
+ */
+export function emptyCheckEvaluation(source: SnapshotSource, v3: V3SettingsSource | null, unsaved = 0): Evaluation {
+  const entry = preparedV3(source, v3) as PreparedEntry;
+  const hit = entry.empty.get(unsaved);
+  if (hit !== undefined) return hit;
+  const evaluation = computeV3(source, v3, {}, undefined, null, unsaved);
+  entry.empty.set(unsaved, evaluation);
+  return evaluation;
+}
+
+/**
+ * Judges one stored check on the held Prepared (per key press: only the check-dependent part runs). 06.1-46: `unsaved` is the
+ * live waiting-write count, laid over at judge time (withUnsaved); left out, the source's own count stands.
+ */
 export function computeV3(
   source: SnapshotSource,
   v3: V3SettingsSource | null,
   storedInputs: unknown,
   uses?: Readonly<Record<string, AccountUse>>,
-  checkId?: string | null
+  checkId?: string | null,
+  unsaved?: number
 ): Evaluation {
   const { built, prepared } = preparedV3(source, v3, uses);
   const check = checkOf(storedInputs, source, built);
   const cover = volatileCoverOf(v3, checkId);
-  return judgeCheck(prepared, cover === null ? check : { ...check, volatileCover: cover });
+  const held = unsaved === undefined ? prepared : withUnsaved(prepared, unsaved);
+  return judgeCheck(held, cover === null ? check : { ...check, volatileCover: cover });
 }
 
 // S9: three thin names for 05.3 to call; each is the same function, so the same check gives the same Result everywhere.
