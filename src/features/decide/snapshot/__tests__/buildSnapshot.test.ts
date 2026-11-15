@@ -14,7 +14,7 @@ import {
 import { currencyCode, minorUnits } from '@/engine/money';
 import { simulateMinimum } from '@/engine/payoff';
 import { buildDecideSnapshot, marketKeyFor, type SnapshotSource } from '../buildSnapshot';
-import type { SnapshotResult } from '../types';
+import type { SnapshotResult } from '../buildSnapshot';
 import {
   CAD_RATE,
   CATEGORIES,

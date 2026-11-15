@@ -6,6 +6,12 @@
 
 All paths are relative to `C:\dev\fincwin-h8`. Excerpts are short on purpose; open the analog for the rest.
 
+**Revision 2026-11-15 (quick 261114-x0q, main 318d6799):** this map predates Grow (06), 06.1 and 05.5 Band A. Where it disagrees with a plan, the plan wins. In particular:
+- `apply_patches`: the base is the newest body on main at build time (`20261114000100_decide_answered_undo.sql` on 2026-11-15; `20261115000100_category_icon_key.sql` if PR #122 lands first). Never copy the `20261028001100_apply_patches_v3.sql` excerpt or its line numbers below. 08-05's interfaces list the current line numbers and the lines that must survive (`261114`, `decide_may_use`, holdings).
+- Grow and 06.1 added security-definer functions and tables; 08-05 classifies each function and 08-06 / 08-07 list each table.
+- Highest pgTAP file on main is `98_decide_rule_caps_copy.test.sql` (trap 6 below is stale); Phase 8 uses 100-110.
+- `src/features/decide/settings/settingsRows.ts` and the Decide wiring rows below are gone (06.1 plan 36); that work moved to 08.1 / 05.5.
+
 ## File Classification
 
 | New/Modified File | Role | Data Flow | Closest Analog | Match |
@@ -17,7 +23,7 @@ All paths are relative to `C:\dev\fincwin-h8`. Excerpts are short on purpose; op
 | `..._household_settlements.sql` (settlements, lines, confirm RPC, cron lapse) | migration | event-driven / batch | `20261103000600_decide_purge_job.sql` (cron) | role-match |
 | `..._household_leave_remove_delete.sql` (leave/remove/transfer, `before delete on auth.users`) | migration | CRUD | `20260922000100` `handle_new_user` (auth.users trigger) | partial |
 | `..._household_realtime.sql` (publication, replica identity, `household_events`) | migration | pub-sub | none in repo | none |
-| `..._apply_patches_v4.sql` (allow-list + creator-only rules for `is_shared`, `paid_by`) | migration | request-response | `20261028001100_apply_patches_v3.sql` | exact |
+| `..._apply_patches_v4.sql` (allow-list + creator-only rules for `is_shared`, `paid_by`) | migration | request-response | newest `apply_patches` body on main (see revision note; NOT `20261028001100_apply_patches_v3.sql`) | exact |
 | `supabase/tests/database/79..9x_*.test.sql` (two-user RLS, invite, settlement, deletion) | test | request-response | `02_rls_isolation.test.sql`, `22_fx_resolve_rate_limit.test.sql`, `36_account_deletion.test.sql` | exact |
 | `supabase/functions/delete-account/{index.ts,deno.json,*.test.ts}` | edge function | request-response | `supabase/functions/resolve-rate/index.ts` (+ `config.toml` entry) | role-match |
 | `src/engine/split/allocate.ts` (allow 0 weights) | utility | transform | itself | exact |
@@ -61,7 +67,9 @@ create policy "members read category rules" on public.category_rules for select 
 
 ### `..._apply_patches_v4.sql` (migration, request-response)
 
-**Analog:** `supabase/migrations/20261028001100_apply_patches_v3.sql`. The entity allow-list appears literally at L22 (trigger), L101, L137; the per-entity authorisation `if/elsif` chain is L231-262. Excerpt of the chain to extend:
+**Superseded 2026-11-15:** copy the newest body named in 08-05's interfaces, not this file. The excerpt below shows the shape only; its line numbers are stale.
+
+**Analog (historic):** `supabase/migrations/20261028001100_apply_patches_v3.sql`. The entity allow-list appears literally at L22 (trigger), L101, L137; the per-entity authorisation `if/elsif` chain is L231-262. Excerpt of the chain to extend:
 ```sql
 elsif v_entity in ('transactions', 'recurring_series', 'accounts') then
   if not ((v_row_json ->> 'household_id')::uuid in (select public.user_household_ids())) then

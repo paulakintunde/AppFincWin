@@ -6,22 +6,26 @@
  * the user already owns; the engine reads only the keys it knows). Reading is forgiving: anything that is not the document shape
  * reads as no rules. Writing always spreads the existing custom_options, so own item types and purposes are never lost.
  *
- * Up to 5 of the user's own rules (keep, largest and category rules together), matching the engine's own-line limit (D-12).
+ * Up to 5 of the user's own rules (keep, largest and category share rules together; category caps are not counted, D-11), matching the engine's own-line limit (D-12).
  */
 
 import { kindTaken, MAX_RULE_PERCENT, type OwnRuleKind, type RulesDoc } from '@/features/decide/snapshot/v3/rulesDoc';
 export * from '@/features/decide/snapshot/v3/rulesDoc';
 
-/** The kinds "Add a rule" can list, in the order it lists them. */
-export const ADD_RULE_KINDS: readonly OwnRuleKind[] = ['category_cap', 'category_share', 'largest', 'keep'];
+/**
+ * The kinds "Add a rule" can list, in the order it lists them. 05.5-15 (D-11): Category is a monthly cap on the category itself
+ * (categories.monthly_cap, the Activity cap), so it is an add kind but never a stored own rule kind.
+ */
+export type AddRuleKind = OwnRuleKind | 'category_cap';
+export const ADD_RULE_KINDS: readonly AddRuleKind[] = ['category_cap', 'category_share', 'largest', 'keep'];
 
 /**
  * 06.1-80 (DC-7, OQ-80-1 A): the kinds "Add your own rule" offers. A kind already on the list (Keep at least or Largest single
  * purchase, on or off) is left out: it is changed from its own row, so adding never quietly fills a rule that is already there.
  * Category rules can repeat, so they are always offered.
  */
-export function kindsOffered(doc: RulesDoc): OwnRuleKind[] {
-  return ADD_RULE_KINDS.filter((k) => !kindTaken(doc, k));
+export function kindsOffered(doc: RulesDoc): AddRuleKind[] {
+  return ADD_RULE_KINDS.filter((k) => k === 'category_cap' || !kindTaken(doc, k));
 }
 
 /** The debt share as stored text ("30") to whole percent; null when off or unreadable. */

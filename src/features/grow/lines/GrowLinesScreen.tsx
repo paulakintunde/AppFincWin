@@ -4,13 +4,13 @@
 // engine's default, tagged as such. The copy says these are the user's own limits.
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import { useDecideSettings, useDecideSnapshot } from '@/data/queries/decide';
+import { useDecideSettings } from '@/data/queries/decide';
+import { useDecideV3 } from '@/data/queries/decideV3';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
-import { prepareContext } from '@/engine/decide';
+import { standingPlans } from '@/engine/month';
 import { currencyCode, minorUnits } from '@/engine/money';
 import { currencyExponent } from '@/engine/money/currencyExponents';
 import { useT } from '@/i18n';
-import { percentText } from '@/features/grow/lines/percentText';
 import { monthBreakdown } from '@/features/grow/lines/monthBreakdown';
 import { planFromMonthly } from '@/features/grow/goals/goalPlanModel';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
@@ -29,6 +29,8 @@ import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Text } from '@/ui/Text';
 import { LineSheet, type MoneyRule } from './LineSheet';
 
+/** The engine's default debt-payment line, 36% (src/engine/decide/lineDefaults.ts DEFAULT_DSR_LINE), as the text the screen shows. */
+const DEFAULT_DSR_TEXT = '36';
 const NET_HREF = '/grow/safety-net' as const;
 
 interface LineRowProps {
@@ -84,29 +86,25 @@ export function GrowLinesScreen() {
   const money = useGoalMoney();
   const read = useGoalsRead();
   const settings = useDecideSettings(rc.userId ?? undefined).data ?? null;
-  const snapshot = useDecideSnapshot();
+  const { prepared } = useDecideV3();
   const rowsQ = useSavingsGoalRows(rc.userId ?? undefined, rc.householdId ?? undefined);
   const [editing, setEditing] = useState<MoneyRule | null>(null);
 
-  const result = snapshot.result;
-  const logged = result !== null && result.kind === 'logged' ? result : null;
-  const limits = useMemo(() => {
-    if (logged === null) return null;
-    const ctx = prepareContext(logged.snapshot);
-    return ctx.ok ? ctx.context.limits : null;
-  }, [logged]);
-  const breakdown = useMemo(() => (result === null ? null : monthBreakdown(result, rc.today)), [result, rc.today]);
-  const currency = result?.currency ?? rc.homeCurrency;
+  // 05.5-26: the month's figures come from the v3 Prepared (the same one Decide reads), never from the old prepareContext.
+  const breakdown = useMemo(() => monthBreakdown(prepared), [prepared]);
+  const plans = useMemo(() => (prepared === null ? null : standingPlans(prepared)), [prepared]);
+  const currency = prepared?.inputs.currency ?? rc.homeCurrency;
 
   const foreign = settings !== null && settings.currency !== null && settings.currency !== currency;
   const dsrStored = settings?.dsr_line ?? null;
-  const dsrPct = dsrStored ?? (limits === null ? null : percentText(limits.dsrLine));
+  // A rule with no figure of its own reads the engine's default (36%, lineDefaults DEFAULT_DSR_LINE); the floors default to what is set up now.
+  const dsrPct = dsrStored ?? (prepared === null ? null : DEFAULT_DSR_TEXT);
   const investingStored = settings === null || foreign ? null : settings.investing_floor;
   const savingStored = settings === null || foreign ? null : settings.saving_floor;
-  const investingFloor = investingStored ?? (limits === null ? null : limits.investingFloor);
-  const savingFloor = savingStored ?? (limits === null ? null : limits.savingFloor);
-  const monthlyInvesting = logged === null ? 0 : logged.snapshot.monthlyInvesting;
-  const monthlySaving = logged === null ? 0 : logged.snapshot.monthlySaving;
+  const monthlyInvesting = plans === null ? 0 : plans.investing;
+  const monthlySaving = plans === null ? 0 : plans.saving;
+  const investingFloor = investingStored ?? (plans === null ? null : plans.investing);
+  const savingFloor = savingStored ?? (plans === null ? null : plans.saving);
   const debtNow = breakdown === null || breakdown.income <= 0 ? null : Math.round((breakdown.debts / breakdown.income) * 100);
 
   const defaults: Record<MoneyRule, number> = {

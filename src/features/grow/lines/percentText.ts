@@ -1,4 +1,4 @@
-import type { Percent } from '@/engine/decide';
+import type { Percent } from '@/engine/payoff';
 
 const SCALE = 10n ** 10n;
 const HUNDREDTH = SCALE / 100n; // 10^8: one hundredth of a percentage point

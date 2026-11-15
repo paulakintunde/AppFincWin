@@ -9,7 +9,8 @@
  * value, so nothing drifts by a rounding unit.
  */
 import { convertLatest } from '@/data/queries/fxConvert';
-import type { CheckInputs, SnapshotResult, UnconvertedNote } from './types';
+import type { CheckInputs, UnconvertedNote } from './types';
+import type { SnapshotResult } from './buildSnapshot';
 
 /** IN-A01: seeded sample checks carry no currency; their amounts are USD minor units (the demo seed). */
 export const SAMPLE_CURRENCY = 'USD';

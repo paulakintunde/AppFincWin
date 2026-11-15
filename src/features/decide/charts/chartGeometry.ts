@@ -1,5 +1,37 @@
 // 05-35: pure chart geometry (D-26, D-31). Pixel floats only; an amount is never returned or
 // modified here (MON-01). Ticks are rounded to whole currency units in minor units BEFORE scaling.
+import type { MinorUnits } from '@/engine/money';
+import type { Percent } from '@/engine/payoff';
+
+// 05.5-18: chart report types, owned here (moved from the old engine; types only, shapes unchanged).
+export interface CashPathPoint {
+  readonly day: number;
+  readonly date: string;
+  readonly amount: MinorUnits;
+}
+export interface CashTightFact {
+  readonly code: 'cash_tight_before_payday';
+  readonly date: string;
+  readonly amount: MinorUnits;
+}
+export type CashPathReport =
+  | { readonly status: 'unavailable'; readonly code: 'cash_path_unavailable' }
+  | {
+      readonly status: 'available';
+      readonly withoutPurchase: readonly MinorUnits[];
+      readonly withPurchase: readonly MinorUnits[];
+      readonly lowestWithout: CashPathPoint;
+      readonly lowestWith: CashPathPoint;
+      readonly tightBeforePayday: CashTightFact | null;
+    };
+export type ProjectionRangeCode = 'exceeds_range';
+export interface NetWorthPath {
+  readonly rate: Percent;
+  readonly withoutPurchase: readonly (MinorUnits | null)[]; // a point is null when it is out of range
+  readonly withPurchase: readonly (MinorUnits | null)[];
+  readonly rangeCode: ProjectionRangeCode | null;
+}
+
 export interface ChartBox {
   readonly x0: number;
   readonly x1: number;

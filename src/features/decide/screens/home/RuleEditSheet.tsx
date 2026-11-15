@@ -1,6 +1,6 @@
 /**
  * 06.1-22 (D49): edit one rule. Variants: debt share (a 5 to 60 % stepper), keep at least (an amount a month), largest purchase
- * (an amount), a category rule (its amount or share), and saving / investing at least, which are read-only here and open Grow.
+ * (an amount), a category share rule (its share; a category cap is edited in Activity's category sheet, 05.5-15), and saving / investing at least, which are read-only here and open Grow.
  * "Answers check this rule" switches it on or off. Save goes through commitRule: when the new rule makes an open check cross it,
  * the haptic is the warning one and the toast names the check. "Remove this rule" is for the user's own rules and is undoable.
  * 06.1-58 (A-SH-2, D49): a percent rule picks from preset chips (30 / 33 / 36 / 40) or Other, which opens a whole-percent field with a
@@ -63,7 +63,7 @@ function RuleEditForm({ target, doc, dsrLine, currency, formatMoney, categoryNam
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
 
   const readOnly = target.kind === 'saving' || target.kind === 'investing';
-  const section = target.kind === 'stored' ? (target.rule.kind === 'category_cap' || target.rule.kind === 'category_share' ? 'category' : target.rule.kind) : target.kind;
+  const section = target.kind === 'stored' ? (target.rule.kind === 'category_share' ? 'category' : target.rule.kind) : target.kind;
   const title =
     section === 'debt' ? t('decide.screens.sheetsHome.rule.debt.title')
     : section === 'saving' ? t('decide.screens.sheetsHome.rule.saving.title')
@@ -80,7 +80,7 @@ function RuleEditForm({ target, doc, dsrLine, currency, formatMoney, categoryNam
     : '';
 
   const percentRule = section === 'debt' || (stored !== null && stored.kind === 'category_share');
-  const needsAmount = section === 'keep' || section === 'largest' || (stored !== null && stored.kind === 'category_cap');
+  const needsAmount = section === 'keep' || section === 'largest';
   const valid = !draft.on || section === 'debt' || !needsAmount || draft.value > 0;
 
   const doSave = () => {

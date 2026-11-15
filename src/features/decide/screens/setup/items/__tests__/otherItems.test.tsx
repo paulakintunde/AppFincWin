@@ -237,7 +237,7 @@ describe('RulesSetup (D36)', () => {
   });
 
   it('06.1-65 (CB-15): at the five-rule cap, the chip of a rule with no value is disabled and the cap line sits under it', async () => {
-    const own = (id: string) => ({ id, kind: 'category_cap', on: true, value: 1000, categoryId: 'c1' });
+    const own = (id: string) => ({ id, kind: 'category_share', on: true, value: 10, categoryId: 'c1' });
     mockDoc = { v: 1, rules: [own('r1'), own('r2'), own('r3'), own('r4'), own('r5')] };
     await wrap(<RulesSetup />);
     const keepChip = screen.getByLabelText('Keep at least Not set, change');
