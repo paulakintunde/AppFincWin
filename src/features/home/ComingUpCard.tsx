@@ -21,6 +21,8 @@ import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { StatusBadge } from '@/ui/status/StatusBadge';
+import { EmptyState } from '@/ui/EmptyState';
+import { openEntry } from '@/features/record/entry/entryHost';
 import type { ComingUpItem } from './comingUp';
 
 // UI-SPEC prototype-literal exceptions (Home): row side padding 18, heading padding 0/6/10, Pay
@@ -168,7 +170,18 @@ export function ComingUpCard({
     return (
       <View>
         {heading}
-        {wrap(<Text style={noteStyle}>{t('home.upcoming.empty', { month: monthName })}</Text>)}
+        {/* 06.2-18 (HOME-03, D-24): one tile, one sentence and one button; Add a bill opens the same entry sheet as
+            Home's Add quick action (no new flow). */}
+        {wrap(
+          <EmptyState
+            testID="coming-up-empty"
+            icon="payBills"
+            heading={t('appLife.empty.comingUp.heading', { month: monthName })}
+            body={t('appLife.empty.comingUp.body')}
+            actionLabel={t('appLife.empty.comingUp.action')}
+            onAction={() => openEntry({ kind: 'new', direction: 'out' })}
+          />
+        )}
       </View>
     );
   }

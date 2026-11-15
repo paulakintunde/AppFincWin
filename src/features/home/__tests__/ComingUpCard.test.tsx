@@ -9,6 +9,7 @@ import type { CategoryLookup } from '@/data/queries/categories';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import type { ComingUpItem } from '../comingUp';
 import { ComingUpCard } from '../ComingUpCard';
+import * as entryHost from '@/features/record/entry/entryHost';
 
 jest.setTimeout(30000);
 
@@ -141,6 +142,17 @@ describe('ComingUpCard', () => {
     expect(queryByText('See all')).toBeNull();
   });
 
+  it('06.2-18 HOME-03: the empty card is a payBills tile, one sentence and one Add a bill button that opens the entry sheet', async () => {
+    const open = jest.spyOn(entryHost, 'openEntry').mockImplementation(() => undefined);
+    const { getByText, getAllByRole, getByTestId } = await draw({ items: [], total: 0 });
+    expect(getByTestId('empty-state-tile', { includeHiddenElements: true })).toBeTruthy();
+    expect(getByText('Bills you add as monthly show here before they are due.')).toBeTruthy();
+    expect(getAllByRole('button')).toHaveLength(1);
+    await fireEvent.press(getByText('Add a bill'));
+    expect(open).toHaveBeenCalledWith({ kind: 'new', direction: 'out' });
+    open.mockRestore();
+  });
+
   it.each([
     ['error', 'Bills due couldn’t load.'],
     ['offline', 'Bills due will show once this month loads.'],
@@ -180,9 +192,13 @@ describe('ComingUpCard', () => {
 
   it('keeps the shadow on an outer view and clips on an inner one', async () => {
     const { getByText } = await draw({ items: [], total: 0 });
-    const inner = getByText(/Nothing outstanding/).parent as unknown as { props: { style: unknown }; parent: { props: { style: unknown } } };
+    type Node = { props: { style: unknown }; parent: Node | null };
+    let inner = getByText(/Nothing outstanding/) as unknown as Node;
+    while ((StyleSheet.flatten(inner.props.style as never) as Record<string, unknown> | undefined)?.overflow !== 'hidden') {
+      inner = inner.parent as Node;
+    }
     expect((StyleSheet.flatten(inner.props.style as never) as Record<string, unknown>).overflow).toBe('hidden');
-    const outer = StyleSheet.flatten(inner.parent.props.style as never) as Record<string, unknown>;
+    const outer = StyleSheet.flatten((inner.parent as Node).props.style as never) as Record<string, unknown>;
     expect(outer.overflow).toBeUndefined();
     expect(outer.boxShadow ?? outer.shadowOpacity ?? outer.elevation).toBeDefined();
   });
