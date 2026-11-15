@@ -260,6 +260,6 @@ describe('costs that stop (ARC-23)', () => {
 
   it('the same bill named twice ends once; a stop before the anchor ends on the anchor', () => {
     expect(endSeriesOf([bill('gym', '2026-11-20'), bill('gym', '2026-12-20')], [gym])).toHaveLength(1);
-    expect(endSeriesOf([bill('gym', '2026-01-01')], [gym])[0].end_date).toBe('2026-01-05');
+    expect(endSeriesOf([bill('gym', '2026-01-01')], [gym])[0]?.end_date).toBe('2026-01-05');
   });
 });
