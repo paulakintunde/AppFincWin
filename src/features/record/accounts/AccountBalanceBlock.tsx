@@ -3,12 +3,16 @@
 // the minus sign always visible, the standing sentence beneath it, other-currency subtotals,
 // the still-to-come figure and, for a foreign account, an approximate home figure with the
 // rate's date. The figure uses the latest stored rate only and never fetches (02-DECISION-fx-on-demand.md
-// item 5); with no stored rate for the pair it reads "Waiting for a rate", never a guess. A negative balance figure is danger (2026-10-07 amendment); its standing sentence
-// stays the D-49 copy in warn1 / muted.
+// item 5); with no stored rate for the pair it reads "Waiting for a rate", never a guess.
+// 06.2 D-14 (supersedes the 2026-10-07 amendment): a negative figure keeps its minus sign and speaks "minus"; it is
+// ink, and danger only for money owed beyond a limit (overdrawn beyond the overdraft, card over its limit) or for
+// debt (a card or loan with money owed). Ordinary spending is never red. The standing sentence stays the D-49 copy
+// in warn1 / muted.
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import type { AccountRow } from '@/db/rows';
+import type { Standing } from '@/engine/accounts';
 import type { AccountBalanceView } from '@/data/queries/activity';
 import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { useFxLatest } from '@/data/queries/fxLatest';
@@ -49,6 +53,22 @@ export function useBalanceSummary(account: AccountRow, balance: AccountBalanceVi
   return [fmt(balance.balance), sentence].filter((p): p is string => p !== null).join(', ');
 }
 
+/**
+ * 06.2 D-14: whether a balance figure is drawn in danger. Red means owed beyond a limit or debt: a deposit account
+ * overdrawn beyond its overdraft, a card over its limit, or a card or loan with money owed. A deposit account that is
+ * overdrawn within its overdraft (or with none set) stays ink: its minus sign and standing line carry it.
+ */
+export function balanceIsDanger(kind: AccountRow['kind'], balance: number | null, standing: Standing | null): boolean {
+  if (balance === null) return false;
+  if (standing?.kind === 'overdrawn-beyond' || standing?.kind === 'over-limit') return true;
+  return (kind === 'credit' || kind === 'loan') && balance < 0;
+}
+
+/** 06.2 D-14: the spoken form of a figure; a negative one says "minus" in words, never only the sign. */
+function spokenFigure(t: ReturnType<typeof useT>, balance: number, fmt: (minor: number) => string): string {
+  return balance < 0 ? t('appLife.accounts.negativeA11y', { amount: fmt(Math.abs(balance)) }) : fmt(balance);
+}
+
 type FxRates = ReturnType<typeof useFxLatest>['data'];
 
 /** The approximate home figure and its rate provenance; latest stored rate only, never a guess. */
@@ -80,8 +100,12 @@ function deriveHome(
 export interface CompactBalance {
   figure: string | null;
   negative: boolean;
+  /** 06.2 D-14: the figure is drawn in danger (owed beyond a limit, or debt). */
+  danger: boolean;
   line: { text: string; tone: 'plain' | 'warn' } | null;
   label: string | null;
+  /** 06.2 D-14: the label with a negative figure spoken as "minus ..." in words. */
+  spokenLabel: string | null;
 }
 
 /** D-39: what a list row shows (figure + at most one short line) and speaks as its label. */
@@ -95,7 +119,7 @@ export function useCompactBalance(
   const formatter = useMoneyFormatter(rc.showCents);
   const { options } = useCurrencyOptions(rc.userId ?? undefined);
   const rates = useFxLatest().data;
-  if (!balance) return { figure: null, negative: false, line: null, label: null };
+  if (!balance) return { figure: null, negative: false, danger: false, line: null, label: null, spokenLabel: null };
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
   const fmtIn = (code: string) => (minor: number) => formatter.formatMoney(money(minor, code), { exponent: exponentFor(code) });
   const { homeFigure, foreign, overflow } = deriveHome(account, balance, homeCurrency, rates, fmtIn(homeCurrency));
@@ -104,7 +128,10 @@ export function useCompactBalance(
   const figure = overflow ? null : fmtIn(account.currency)(balance.balance as number);
   const negative = balance.balance !== null && balance.balance < 0;
   const label = [figure ?? t('accounts.balanceNow'), line?.text].filter((p): p is string => Boolean(p)).join(', ');
-  return { figure, negative, line, label };
+  const spoken = overflow ? null : spokenFigure(t, balance.balance as number, fmtIn(account.currency));
+  const spokenLabel = [spoken ?? t('accounts.balanceNow'), line?.text].filter((p): p is string => Boolean(p)).join(', ');
+  const danger = balanceIsDanger(account.kind, balance.balance, balance.standing);
+  return { figure, negative, danger, line, label, spokenLabel };
 }
 
 export function AccountBalanceBlock({ account, balance, homeCurrency, compact = false }: AccountBalanceBlockProps) {
@@ -130,10 +157,9 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
   if (!balance) return null;
 
   const overflow = balance.overflow || balance.balance === null;
-  const negative = balance.balance !== null && balance.balance < 0;
-  // 2026-10-07 amendment (supersedes the D-49 colour narrowing for the figure only): a negative
-  // balance is danger. The standing sentence below keeps its D-49 words and its warn1 / muted colour.
-  const balanceColor = negative ? colors.danger : colors.ink;
+  // 06.2 D-14: danger only for owed beyond a limit or debt; the minus sign is always visible and spoken.
+  const balanceColor = balanceIsDanger(account.kind, balance.balance, balance.standing) ? colors.danger : colors.ink;
+  const figureA11y = overflow ? undefined : spokenFigure(t, balance.balance as number, fmt);
   const metaStyle = { ...textRole(pairing, 'label'), color: colors.inkMuted };
 
   const { homeFigure, rateDate, rateSource, foreign } = deriveHome(account, balance, homeCurrency, rates, fmtIn(homeCurrency));
@@ -147,7 +173,9 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
         {overflow ? (
           <Text style={metaStyle} accessibilityLabel={t('accounts.balanceNow')}>—</Text>
         ) : (
-          <Text style={{ ...textRole(pairing, 'body'), color: balanceColor }}>{fmt(balance.balance as number)}</Text>
+          <Text style={{ ...textRole(pairing, 'body'), color: balanceColor }} accessibilityLabel={figureA11y}>
+            {fmt(balance.balance as number)}
+          </Text>
         )}
         {compactLine ? (
           <Text style={{ ...textRole(pairing, 'label'), color: compactLine.tone === 'warn' ? colors.warn1 : colors.inkMuted }}>
@@ -164,7 +192,7 @@ export function AccountBalanceBlock({ account, balance, homeCurrency, compact = 
       {overflow ? (
         <Text style={metaStyle} accessibilityLabel={t('accounts.balanceNow')}>—</Text>
       ) : (
-        <Text style={{ ...textRole(pairing, compact ? 'body' : 'heading'), color: balanceColor }}>
+        <Text style={{ ...textRole(pairing, compact ? 'body' : 'heading'), color: balanceColor }} accessibilityLabel={figureA11y}>
           {fmt(balance.balance as number)}
         </Text>
       )}

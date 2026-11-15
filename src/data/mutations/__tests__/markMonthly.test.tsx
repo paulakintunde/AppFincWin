@@ -23,7 +23,9 @@ jest.mock('@/services/supabase', () => ({
 jest.mock('expo-crypto', () => ({ randomUUID: jest.fn(() => `id-${++mockUuid}`) }));
 jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn(async () => undefined),
+  impactAsync: jest.fn(async () => undefined),
   NotificationFeedbackType: { Success: 'success', Warning: 'warning' },
+  ImpactFeedbackStyle: { Light: 'light' },
 }));
 jest.mock('@/data/sync/failedWrites', () => ({ recordFailedWrite: jest.fn(async () => undefined) }));
 jest.mock('@/db/undoLog', () => ({ insertUndoStep: jest.fn(async () => undefined) }));
@@ -32,6 +34,8 @@ jest.mock('@/db/undoLog', () => ({ insertUndoStep: jest.fn(async () => undefined
 const { recordFailedWrite } = require('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { insertUndoStep } = require('@/db/undoLog') as { insertUndoStep: jest.Mock };
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const Haptics = require('expo-haptics') as { notificationAsync: jest.Mock; impactAsync: jest.Mock };
 
 const ctx = { householdId: 'h1', ownerId: 'u1', timeZone: 'Europe/London' };
 
@@ -81,6 +85,8 @@ beforeEach(() => {
   resetToastForTests();
   recordFailedWrite.mockClear();
   insertUndoStep.mockClear();
+  Haptics.notificationAsync.mockClear();
+  Haptics.impactAsync.mockClear();
 });
 
 describe('useMarkMonthly', () => {
@@ -109,6 +115,9 @@ describe('useMarkMonthly', () => {
     expect(args.p_undo_step).toEqual({ id: stepId, label_key: 'markedMonthly', label_params: { n: 3 } });
     expect(insertUndoStep).not.toHaveBeenCalled();
     expect(getToast()?.stepId).toBe(stepId);
+    // 06.2 D-20: a bulk save is a light tap, not a milestone.
+    expect(Haptics.impactAsync).toHaveBeenCalledWith('light');
+    expect(Haptics.notificationAsync).not.toHaveBeenCalled();
   });
 
   it('markOne sends a batch of one', async () => {

@@ -9,7 +9,7 @@ import { RuleEditSheet } from '../RuleEditSheet';
 import { SomethingChanged, SomethingChangedSheet } from '../SomethingChanged';
 
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/data/mutations/categories', () => ({ useEditCategory: () => ({ edit: jest.fn(() => 'step-cap') }) }));
 jest.mock('@/features/record/entry/pickers/DateField', () => ({ DateField: () => null }));

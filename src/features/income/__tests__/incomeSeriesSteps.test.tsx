@@ -9,7 +9,7 @@ import { OtherStep } from '../steps/OtherStep';
 let mockDecideV3 = true;
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockDecideV3 }) }));
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 jest.mock('@react-native-community/datetimepicker', () => ({ __esModule: true, default: () => null }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'new-series-id' }));
 

@@ -1,14 +1,23 @@
 // 06-21: value-over-time line. One path through the points (integer minor units, scaled to the box), a dot for a single
-// point, nothing for none. One chart-level label (which carries the end value). Drawn once; no animation. Tokens only.
-import React, { useState } from 'react';
+// point, nothing for none. One chart-level label (which carries the end value). Tokens only.
+// 06.2-21 (D-15, Specifics: Grow): the line draws itself once per session (a stroke reveal over DURATION.fill); later views,
+// and Reduce Motion, show it already drawn. No loop, no bounce, nothing moves after the reveal.
+import React, { useEffect, useState } from 'react';
 import { View, type LayoutChangeEvent } from 'react-native';
+import Animated, { ReduceMotion, useAnimatedProps, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
+import { DURATION, EASING, useMotion } from '@/theme/motion';
 import { useTheme } from '@/theme/ThemeProvider';
+import { useOncePerSession } from '@/ui/motion/useOncePerSession';
+
+const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 export interface LineChartProps {
   points: readonly number[];
   accessibilityLabel: string;
   height?: number;
+  /** Once-per-session key for the draw. Defaults to one key per chart content (its label), so each chart draws once. */
+  sessionKey?: string;
 }
 
 const DEFAULT_WIDTH = 330;
@@ -31,9 +40,33 @@ export function linePath(points: readonly number[], width: number, height: numbe
     .join(' ');
 }
 
-export function LineChart({ points, accessibilityLabel, height = 140 }: LineChartProps) {
+/** The drawn length of linePath's polyline, for the stroke reveal's dash. */
+export function lineLength(points: readonly number[], width: number, height: number): number {
+  const d = linePath(points, width, height);
+  if (d === '') return 0;
+  const xy = d.split(/[ML]/).filter((p) => p !== '').map((p) => p.trim().split(' ').map(Number) as [number, number]);
+  let total = 0;
+  for (let i = 1; i < xy.length; i++) total += Math.hypot(xy[i]![0] - xy[i - 1]![0], xy[i]![1] - xy[i - 1]![1]);
+  return Math.ceil(total);
+}
+
+export function LineChart({ points, accessibilityLabel, height = 140, sessionKey }: LineChartProps) {
   const { colors } = useTheme();
+  const motion = useMotion();
   const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const first = useOncePerSession(sessionKey ?? `line-chart:${accessibilityLabel}`);
+  // 1 = fully drawn. Only the first view in a session, with Reduce Motion off, starts at 0 and draws.
+  const drawn = useSharedValue(first ? 0 : 1);
+  const draws = first && !motion.reduced && points.length > 1;
+  useEffect(() => {
+    if (!draws) {
+      drawn.value = 1;
+      return;
+    }
+    drawn.value = withTiming(1, { duration: DURATION.fill, easing: EASING, reduceMotion: ReduceMotion.System });
+  }, [draws, drawn]);
+  const length = lineLength(points, width, height);
+  const reveal = useAnimatedProps(() => ({ strokeDashoffset: length * (1 - drawn.value) }));
   if (points.length === 0) return null;
   const only = points[0] ?? 0;
   return (
@@ -49,7 +82,19 @@ export function LineChart({ points, accessibilityLabel, height = 140 }: LineChar
         {points.length === 1 ? (
           <Circle testID="line-chart-dot" cx={PAD} cy={height - PAD - (only > 0 ? height - PAD * 2 : 0)} r={4} fill={colors.accent} />
         ) : (
-          <Path testID="line-chart-path" d={linePath(points, width, height)} stroke={colors.accent} strokeWidth={LINE_WIDTH} fill="none" />
+          draws ? (
+            <AnimatedPath
+              testID="line-chart-path"
+              d={linePath(points, width, height)}
+              stroke={colors.accent}
+              strokeWidth={LINE_WIDTH}
+              fill="none"
+              strokeDasharray={[length, length]}
+              animatedProps={reveal}
+            />
+          ) : (
+            <Path testID="line-chart-path" d={linePath(points, width, height)} stroke={colors.accent} strokeWidth={LINE_WIDTH} fill="none" />
+          )
         )}
       </Svg>
     </View>

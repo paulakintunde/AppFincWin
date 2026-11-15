@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { HomeScreen } from '../HomeScreen';
 
@@ -13,7 +13,7 @@ const mockVm = {
   setMonth: jest.fn(),
   months: ['2026-09'],
   totals: {},
-  position: {},
+  position: { unpaidCount: 5 },
   loading: false,
   dataState: 'ready' as string,
   comingUp: [],
@@ -91,6 +91,28 @@ describe('HomeScreen', () => {
     expect(at('month')).toBeLessThan(at('coming'));
     expect(at('coming')).toBeLessThan(at('accounts'));
     expect(getByTestId('tab-root').props.refreshKeys).toBe(mockRefreshKeys);
+  });
+
+  it('06.2 D-02 / D-15: wraps each card in a once-per-session FadeIn, same order, nothing added', async () => {
+    const { getByTestId, toJSON } = await render(<HomeScreen />);
+    const json = JSON.stringify(toJSON());
+    const ids = ['quick', 'thisMonth', 'comingUp', 'accounts'].map((n) => json.indexOf(`"home-card-${n}"`));
+    expect(ids.every((i) => i > -1)).toBe(true);
+    expect([...ids].sort((a, b) => a - b)).toEqual(ids);
+    expect(within(getByTestId('home-card-quick')).getByTestId('probe-quick')).toBeTruthy();
+    expect(within(getByTestId('home-card-thisMonth')).getByTestId('probe-month')).toBeTruthy();
+    expect(within(getByTestId('home-card-comingUp')).getByTestId('probe-coming')).toBeTruthy();
+    expect(within(getByTestId('home-card-accounts')).getByTestId('probe-accounts')).toBeTruthy();
+  });
+
+  it('06.2: gives Pay bills the month unpaid count (ready only) and Coming up today', async () => {
+    await render(<HomeScreen />);
+    expect(mockSeen.quick?.unpaidCount).toBe(5);
+    expect(mockSeen.coming?.today).toBe('2026-09-10');
+    mockVm.dataState = 'loading';
+    await render(<HomeScreen />);
+    expect(mockSeen.quick?.unpaidCount).toBe(0);
+    mockVm.dataState = 'ready';
   });
 
   it('has no net worth, health or coach content', async () => {

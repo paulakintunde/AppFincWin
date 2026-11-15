@@ -320,7 +320,7 @@ describe('AccountBalanceBlock', () => {
     expect(getByText('Nothing owing.')).toBeTruthy();
   });
 
-  it('shows a visible minus, never parentheses, and a negative balance in danger even when standing is understood (2026-10-07 amendment)', async () => {
+  it('shows a visible minus, never parentheses; an overdraft with no limit set stays ink (06.2 D-14 supersedes the 2026-10-07 amendment)', async () => {
     const { getByText } = await wrap(
       <AccountBalanceBlock
         account={account()}
@@ -330,7 +330,8 @@ describe('AccountBalanceBlock', () => {
     );
     const figure = getByText(/^[−-]£240\.00$/);
     expect(figure.props.children).not.toMatch(/\(/);
-    expect(JSON.stringify(figure.props.style)).toContain(colors.danger);
+    expect(JSON.stringify(figure.props.style)).not.toContain(colors.danger);
+    expect(figure.props.accessibilityLabel).toBe('minus £240.00');
   });
 
   it('keeps a positive balance in plain ink', async () => {
@@ -381,7 +382,8 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     mockBalances = new Map([['acc1', view({ balance: -2500, standing: { kind: 'overdrawn-no-limit', overdrawnBy: 2500 } as never })]]);
     const { getByLabelText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
     const card = getByLabelText(/^Current, /);
-    expect(card.props.accessibilityLabel).toContain('−£25.00');
+    // 06.2 D-14: the minus is spoken in words.
+    expect(card.props.accessibilityLabel).toContain('minus £25.00');
     expect(card.props.accessibilityLabel).toMatch(/, Overdrawn$/);
     expect(card.props.accessibilityLabel).not.toContain('No overdraft set');
   });
@@ -390,7 +392,7 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     mockAccounts = [account({ name: 'Main', currency: 'EUR' })];
     mockBalances = new Map([['acc1', view({ balance: -74000 })]]);
     const { getByLabelText, getByText, queryByText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
-    expect(getByLabelText(/^Main, Current account · EUR, −€740\.00, ≈ −?£/)).toBeTruthy();
+    expect(getByLabelText(/^Main, Current account · EUR, minus €740\.00, ≈ −?£/)).toBeTruthy();
     expect(getByText(/^≈ −?£/)).toBeTruthy();
     expect(queryByText(/Rate of/)).toBeNull();
   });
@@ -405,7 +407,7 @@ describe('AccountsScreen and AccountDetailScreen', () => {
   it('shows the empty state', async () => {
     const { getByText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
     expect(getByText('No accounts yet.')).toBeTruthy();
-    expect(getByText('Add one to start logging money in and out.')).toBeTruthy();
+    expect(getByText('Add the account your pay goes into first. You can add more later.')).toBeTruthy();
   });
 
   it('opens the new-account sheet from Add account', async () => {

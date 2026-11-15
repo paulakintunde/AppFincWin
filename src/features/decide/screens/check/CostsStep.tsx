@@ -20,7 +20,7 @@ import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { StackedBar, wholePercents, type StackedSegment } from '@/ui/StackedBar';
 import { Text } from '@/ui/Text';
@@ -220,7 +220,7 @@ export function CostsStep({ id }: { id: string }) {
                 label={label}
                 value={l.on}
                 onChange={(v) => {
-                  hapticLight();
+                  hapticTap();
                   patchLine(l.id, { on: v });
                 }}
               />

@@ -12,7 +12,7 @@ jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 
 const mockSaveOne = jest.fn((_i: Record<string, unknown>) => ({ stepId: 'step-one' }));
 const mockSaveMany = jest.fn((_i: unknown) => ({ stepId: 'step-many' }));

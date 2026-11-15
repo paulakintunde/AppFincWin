@@ -1,5 +1,6 @@
 // HOME-01..04 / D-30 / D-31: Home's first content. Order per D-30 (differs from the prototype's
 // hero-first order, UI-SPEC deviation 8); no net-worth hero, health card or Coach until their phases.
+// 06.2 D-02 / D-15: the same four cards in the same order, each fading in on the first Home view this session only.
 import React, { useCallback, useState } from 'react';
 import { router } from 'expo-router';
 import type { ProjectionView } from '@/data/queries/activity';
@@ -15,6 +16,7 @@ import { useT } from '@/i18n';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import { requestActivityFocus } from '@/state/activityFocus';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
+import { FadeIn } from '@/ui/motion/FadeIn';
 import { AccountsCard } from './AccountsCard';
 import { ComingUpCard } from './ComingUpCard';
 import { ProjectionDetailSheet } from './ProjectionDetailSheet';
@@ -93,38 +95,47 @@ export function HomeScreen() {
         </>
       }
     >
-      <QuickActions month={vm.month} />
-      <ThisMonthCard
-        position={vm.position}
-        totals={vm.totals}
-        month={vm.month}
-        months={vm.months}
-        onMonthChange={vm.setMonth}
-        formatter={formatter}
-        homeCurrency={rc.homeCurrency}
-        currentMonth={monthOf(rc.today)}
-        state={vm.dataState}
-        afterPlans={vm.afterPlans}
-      />
-      <ComingUpCard
-        items={vm.comingUp}
-        total={vm.comingUpTotal}
-        month={vm.month}
-        formatter={formatter}
-        homeCurrency={rc.homeCurrency}
-        categories={categories}
-        state={vm.dataState}
-        onPay={vm.rowActions.pay}
-        onOpenRow={flow.openDetail}
-        onOpenProjection={setProjection}
-        onSeeAll={seeAll}
-      />
-      <AccountsCard
-        accounts={vm.accounts}
-        balances={vm.balances}
-        homeCurrency={rc.homeCurrency}
-        loading={vm.accountsLoading}
-      />
+      <FadeIn once="home.card.quick" testID="home-card-quick">
+        <QuickActions month={vm.month} unpaidCount={vm.dataState === 'ready' ? vm.position.unpaidCount : 0} />
+      </FadeIn>
+      <FadeIn once="home.card.thisMonth" testID="home-card-thisMonth">
+        <ThisMonthCard
+          position={vm.position}
+          totals={vm.totals}
+          month={vm.month}
+          months={vm.months}
+          onMonthChange={vm.setMonth}
+          formatter={formatter}
+          homeCurrency={rc.homeCurrency}
+          currentMonth={monthOf(rc.today)}
+          state={vm.dataState}
+          afterPlans={vm.afterPlans}
+        />
+      </FadeIn>
+      <FadeIn once="home.card.comingUp" testID="home-card-comingUp">
+        <ComingUpCard
+          items={vm.comingUp}
+          today={rc.today}
+          total={vm.comingUpTotal}
+          month={vm.month}
+          formatter={formatter}
+          homeCurrency={rc.homeCurrency}
+          categories={categories}
+          state={vm.dataState}
+          onPay={vm.rowActions.pay}
+          onOpenRow={flow.openDetail}
+          onOpenProjection={setProjection}
+          onSeeAll={seeAll}
+        />
+      </FadeIn>
+      <FadeIn once="home.card.accounts" testID="home-card-accounts">
+        <AccountsCard
+          accounts={vm.accounts}
+          balances={vm.balances}
+          homeCurrency={rc.homeCurrency}
+          loading={vm.accountsLoading}
+        />
+      </FadeIn>
     </TabRootScreen>
   );
 }

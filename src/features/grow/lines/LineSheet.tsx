@@ -13,7 +13,7 @@ import { Stepper } from '@/features/grow/ui/Stepper';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -73,7 +73,7 @@ function LineForm({ rule, userId, currency, settings, defaults, onClose, onSaved
     const forward = stampSettingsPatch(patch, settings, currency);
     const previous = inverseSettingsPatch(forward, settings);
     mutation.update(forward);
-    hapticLight();
+    hapticTap();
     onClose();
     onSaved(() => mutation.update(previous));
   };

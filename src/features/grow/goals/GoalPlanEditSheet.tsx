@@ -15,7 +15,7 @@ import { showToast } from '@/state/undoToast';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -106,7 +106,7 @@ function PlanForm({ mode, goal, saved, today, series, ownerId, onClose, onSaved 
       showToast({ kind: 'refusal', text: { key: 'grow.common.saveFailed' } });
       return;
     }
-    hapticLight();
+    hapticTap();
     onClose();
     onSaved(stepId);
   };

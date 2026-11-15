@@ -1,11 +1,11 @@
-// D-13: a settings-row group — an all-caps label heading above a surface card whose rows
-// get 15px padding and a 1px line1 separator between them (not above the first row).
+// D-13: a settings-row group — a heading above a surface card whose rows get 15px padding and a
+// 1px line1 separator between them (not above the first row).
+// 06.2-15 (D-06, D-24, L04): the heading is the shared SectionHeader, never with an icon.
 import { Children, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Text } from '@/ui/Text';
+import { SectionHeader } from '@/ui/SectionHeader';
 import { useTheme } from '@/theme/ThemeProvider';
-import { space, radii } from '@/theme/layout';
-import { fontSize } from '@/theme/typography';
+import { space, radii, step } from '@/theme/layout';
 import { shadows } from '@/theme/tokens';
 
 export interface SettingsGroupProps {
@@ -14,19 +14,14 @@ export interface SettingsGroupProps {
 }
 
 export function SettingsGroup({ title, children }: SettingsGroupProps) {
-  const { colors, fonts } = useTheme();
+  const { colors } = useTheme();
   const rows = Children.toArray(children);
 
   return (
     <View style={styles.wrapper}>
-      <Text
-        style={[
-          styles.heading,
-          { fontFamily: fonts.body[600], color: colors.inkDim },
-        ]}
-      >
-        {title}
-      </Text>
+      <View style={styles.heading}>
+        <SectionHeader title={title} />
+      </View>
       <View style={[styles.card, shadows.card, { backgroundColor: colors.surface }]}>
         {rows.map((row, index) => (
           <View
@@ -46,16 +41,14 @@ const styles = StyleSheet.create({
     marginTop: space.groupGap,
   },
   heading: {
-    fontSize: fontSize.label,
-    lineHeight: fontSize.label * 1.4,
-    letterSpacing: fontSize.label * 0.11,
-    textTransform: 'uppercase',
     marginBottom: space.gapSm,
   },
   card: {
     borderRadius: radii.card,
   },
+  // 06.2-15: rows are 52+ tall by themselves (Row, D-09), so the card adds only a hair above and below.
   row: {
-    padding: space.rowPad,
+    paddingHorizontal: space.rowPad,
+    paddingVertical: step.hair,
   },
 });

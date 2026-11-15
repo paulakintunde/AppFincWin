@@ -5,7 +5,7 @@ import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { usePressFeedback } from '@/ui/pressFeedback';
 
 export interface SegmentedControlOption {
@@ -37,7 +37,7 @@ export function SegmentedControl({ options, value, onChange, accessibilityLabel 
             accessibilityLabel={option.a11yLabel ?? option.label}
             onPress={() => {
               if (selected) return;
-              hapticSelection();
+              hapticTick();
               onChange(option.key);
             }}
             android_ripple={feedback.android_ripple}

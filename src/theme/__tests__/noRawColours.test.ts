@@ -121,6 +121,11 @@ describe('DSG-02: no raw colour literals outside the token set', () => {
     '#EEE6F4',
     '#E6ECEF',
     '#5A564B',
+    // 06.2 D-22/D-27: the four owner-approved page tints (pageTint), one per theme colour
+    '#F1F5F2',
+    '#F1F3F7',
+    '#F7F2EE',
+    '#F1F4F5',
   ]);
 
   it('keeps every hex used in tokens.ts and accents.ts inside the deliberate allow-list', () => {

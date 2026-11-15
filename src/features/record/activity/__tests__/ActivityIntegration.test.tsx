@@ -320,7 +320,8 @@ describe('month tools', () => {
   it('an empty earliest month offers Paste only', async () => {
     mockCounts = new Map([['2026-09', 0]]);
     const screen = await renderScreen({ initialMonth: '2026-09' });
-    expect(screen.getByText('Add the first one with the Add button, or paste a list.')).toBeTruthy();
+    expect(screen.getByText('Add the first one, or bring in a month from your bank statement.')).toBeTruthy();
+    expect(screen.getByText('Add a transaction')).toBeTruthy();
     expect(screen.queryByText('Clone August')).toBeNull();
   });
 });

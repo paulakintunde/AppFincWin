@@ -6,7 +6,7 @@ import { useT } from '@/i18n';
 import type { RecurringFreq } from '@/engine/recurring';
 import type { AccountRow } from '@/db/rows';
 import { space } from '@/theme/layout';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
@@ -139,7 +139,7 @@ function OtherIncomeForm({ currency, onAdd, onDismiss }: OtherIncomeSheetProps) 
           disabled={!ready}
           onPress={() => {
             if (!validAmount(amount) || freq === null || counts === null || name.trim() === '') return;
-            hapticLight();
+            hapticTap();
             onAdd({ name: name.trim(), amount, freq, counts });
           }}
         />

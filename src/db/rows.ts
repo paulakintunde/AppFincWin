@@ -275,6 +275,8 @@ export interface CategoryRow {
   // Record polish: optional monthly cap (client-writable); is_sample is server-written, read-only.
   monthly_cap: number | null;
   is_sample: boolean;
+  // 06.2-17 (D-07): a custom category's icon from FincWin's own set (a key of ICONS); null/absent draws the letter tile.
+  icon_key?: string | null;
   version: number;
   updated_by: string | null;
   created_at: string;
@@ -285,15 +287,17 @@ export interface NewCategory {
   name: string;
   color_key: CategoryColorKey;
   monthly_cap?: number | null;
+  icon_key?: string | null; // 06.2-17
 }
 export type CategoryPatch = Partial<{
   name: string;
   color_key: CategoryColorKey;
   archived_at: string | null;
   monthly_cap: number | null;
+  icon_key: string | null; // 06.2-17
 }>;
 export const CATEGORY_COLUMNS =
-  'id, owner_id, builtin_key, name, color_key, is_system, archived_at, monthly_cap, is_sample, version, updated_by, created_at, updated_at';
+  'id, owner_id, builtin_key, name, color_key, is_system, archived_at, monthly_cap, is_sample, icon_key, version, updated_by, created_at, updated_at';
 
 export interface RecurringSeriesRow {
   id: string;

@@ -7,7 +7,7 @@ import { notPayKey } from '../notPay';
 
 jest.setTimeout(30000);
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: true }) }));
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn() }));
 jest.mock('@react-native-community/datetimepicker', () => ({ __esModule: true, default: () => null }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => 'id' }));
 jest.mock('@/data/mutations/seriesAttributes', () => ({ useConfirmRegularCandidate: () => ({ confirm: jest.fn() }) }));

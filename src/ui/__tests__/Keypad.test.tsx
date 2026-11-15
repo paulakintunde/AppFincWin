@@ -2,9 +2,9 @@ import React from 'react';
 import { fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { Keypad } from '../Keypad';
-import { hapticSelection } from '../haptics';
+import { hapticTick } from '../haptics';
 
-jest.mock('../haptics', () => ({ hapticLight: jest.fn(), hapticSelection: jest.fn() }));
+jest.mock('../haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn() }));
 
 jest.setTimeout(20000);
 
@@ -33,14 +33,14 @@ describe('Keypad', () => {
     const { getByLabelText, onChange } = await setup();
     await fireEvent.press(getByLabelText('5'));
     expect(onChange).toHaveBeenCalledWith('5');
-    expect(hapticSelection).toHaveBeenCalledTimes(1);
+    expect(hapticTick).toHaveBeenCalledTimes(1);
   });
 
   it('decimal with exponent 0 is a no-op', async () => {
     const { getByLabelText, onChange } = await setup({ exponent: 0, value: '12' });
     await fireEvent.press(getByLabelText('Decimal point'));
     expect(onChange).not.toHaveBeenCalled();
-    expect(hapticSelection).not.toHaveBeenCalled();
+    expect(hapticTick).not.toHaveBeenCalled();
   });
 
   it('long-press backspace clears', async () => {

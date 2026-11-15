@@ -172,6 +172,8 @@ function makeState(over: Partial<Record<keyof ImportState, unknown>> = {}): Impo
     suggestionCap: 2999,
     transfersUnavailable: false,
     suggestions: [],
+    committedCount: 0,
+    committedStepId: null,
     acceptSuggestion: fn(),
     dismissSuggestion: fn(),
     mode: null,
@@ -891,10 +893,12 @@ describe('ImportScreen: commit problems (S-WR-04)', () => {
 describe('ImportScreen: done', () => {
   const suggestion = { key: 'k1', name: 'Netflix', amount: -999, currency: 'GBP', freq: 'monthly', anchorDate: '2026-03-01', rowIds: ['r1', 'r2', 'r3'] };
 
-  it('shows Import finished and a recurring suggestion per detected series', async () => {
-    mockState = makeState({ stage: 'done', accountId: 'a1', suggestions: [suggestion] });
+  it('shows Import done and a recurring suggestion per detected series', async () => {
+    mockState = makeState({ stage: 'done', accountId: 'a1', suggestions: [suggestion], committedCount: 3, committedStepId: 'step-1' });
     await renderScreen();
-    expect(screen.getByText('Import finished')).toBeTruthy();
+    // 06.2-23: the kit header replaced "Import finished".
+    expect(screen.getByText('Import done')).toBeTruthy();
+    expect(screen.getByText('3 transactions added')).toBeTruthy();
     expect(screen.getByText('Looks like Netflix, £9.99 monthly. Make it recurring?')).toBeTruthy();
   });
 

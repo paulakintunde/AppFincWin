@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 05.5 wave 1 built (PR #116); wave 2 built (PR #120; Band A in production, to main via PR #119); wave 3 built (10, 13, 14, 17, 21). Phase 06.1 complete (83/83, PR #102, preview APK 051b0232); next after 05.5: 06.2 App life"
+stopped_at: "06.2 App life merging (PR #122): main (05.5 waves 1-3, PRs #116/#120/#121) merged into feat/06.2-app-life, cache version 11; 06.2 built 24/24, icon_key migration in production. 05.5 wave 1 (PR #116), wave 2 (PR #120), wave 3 (PR #121) on main"
 last_updated: "2026-11-14T20:00:00.000Z"
 last_activity: 2026-11-14 -- 05.5-11 Band A pushed to production; main (PR #118) merged into phase/05.5-wave2
 progress:

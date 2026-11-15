@@ -27,11 +27,10 @@ jest.mock('@/shell/screen/DetailScreen', () => {
 });
 jest.mock('@/state/undoToast', () => ({ showToast: (t: unknown) => mockShowToast(t) }));
 jest.mock('@/ui/haptics', () => ({
-  hapticSelection: jest.fn(),
-  hapticLight: () => mockLight(),
-  hapticWarning: jest.fn(),
-  hapticSuccess: jest.fn(),
-  hapticMedium: jest.fn(),
+  hapticTick: jest.fn(),
+  hapticTap: () => mockLight(),
+  hapticWarn: jest.fn(),
+  hapticMilestone: jest.fn(),
 }));
 jest.mock('@/data/mutations/decideSettings', () => ({
   useUpdateDecideSettings: () => ({ update: (p: unknown) => mockUpdate(p) }),

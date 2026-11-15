@@ -2,6 +2,8 @@
 // included). Colour comes only from the 7 fixed swatch pairs. Every write records its own
 // undo step and shows the Undo toast (REC-11). Removal goes through RemoveCategoryPrompt
 // (merge or archive, never delete, D-36).
+// 06.2-19 (D-07): a custom category picks its icon from our own set (CategoryIconPicker) and saves it as icon_key
+// (null = the letter). A built-in keeps its drawn icon, so the Icon row is not offered for one.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -20,12 +22,16 @@ import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { hapticWarning } from '@/ui/haptics';
+import { iconForCategory } from '@/ui/icons/iconFor';
+import type { IconName } from '@/ui/icons/iconData';
+import { Row } from '@/ui/Row';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { useIsDirty } from '@/ui/useIsDirty';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { SwatchDot } from '@/ui/SwatchDot';
 import { RemoveCategoryPrompt } from './RemoveCategoryPrompt';
+import { CategoryIconPicker, useIconWord } from './CategoryIconPicker';
 
 export type CategorySheetMode = { kind: 'new' } | { kind: 'edit'; category: CategoryRow };
 
@@ -63,6 +69,13 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
     editing && editing.monthly_cap !== null ? parser.toInputText(editing.monthly_cap, rc.homeCurrency) : ''
   );
   const showCap = !editing?.is_system;
+  // A built-in (seed or system) category keeps its drawn icon; only a custom one picks.
+  const showIcon = editing === null || (editing.builtin_key === null && !editing.is_system);
+  // Only an icon_key that names one of our icons counts; anything else reads as the letter.
+  const initialIcon = editing ? iconForCategory({ icon_key: editing.icon_key ?? null }) : null;
+  const [iconKey, setIconKey] = useState<IconName | null>(initialIcon);
+  const [pickingIcon, setPickingIcon] = useState(false);
+  const iconWord = useIconWord();
   const capRaw = capText.trim() === '' ? null : parser.parse(capText, rc.homeCurrency);
   // The DB check is 1..10^13 minor units, so a zero or out-of-range cap is refused here too.
   const capParsed =
@@ -74,10 +87,11 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
   const [submitted, setSubmitted] = useState(false);
   const [removing, setRemoving] = useState(false);
   // D-26: unsaved work = any field differs from what the sheet opened with.
-  const [initial] = useState(() => ({ name, colorKey, capText }));
-  const dirty = useIsDirty(initial, { name, colorKey, capText });
+  const [initial] = useState(() => ({ name, colorKey, capText, iconKey }));
+  const dirty = useIsDirty(initial, { name, colorKey, capText, iconKey });
 
   const trimmed = name.trim();
+  const letter = (trimmed.charAt(0) || '?').toUpperCase();
   const nameMissing = trimmed.length < 1 || trimmed.length > NAME_MAX;
   const title = editing ? t('categories.sheet.titleEdit') : t('categories.sheet.titleNew');
 
@@ -86,15 +100,22 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
     if (nameMissing || !rc.userId) return;
     if (showCap && capFailure) return;
     if (!editing) {
-      const { stepId } = add({ ownerId: rc.userId, name: trimmed, colorKey, ...(showCap && capMinor !== null ? { monthlyCap: capMinor } : {}) });
+      const { stepId } = add({
+        ownerId: rc.userId,
+        name: trimmed,
+        colorKey,
+        ...(showCap && capMinor !== null ? { monthlyCap: capMinor } : {}),
+        ...(iconKey !== null ? { iconKey } : {}),
+      });
       showToast({ kind: 'ordinary', text: undoLabelText('categoryAdded', { name: trimmed }), stepId });
       onClose();
       return;
     }
-    const patch: { name?: string; colorKey?: CategoryColorKey; monthlyCap?: number | null } = {};
+    const patch: { name?: string; colorKey?: CategoryColorKey; monthlyCap?: number | null; iconKey?: string | null } = {};
     if (trimmed !== initialName) patch.name = trimmed;
     if (colorKey !== editing.color_key) patch.colorKey = colorKey;
     if (showCap && capMinor !== editing.monthly_cap) patch.monthlyCap = capMinor;
+    if (showIcon && iconKey !== initialIcon) patch.iconKey = iconKey;
     if (Object.keys(patch).length === 0) {
       onClose();
       return;
@@ -128,7 +149,12 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
       <SheetScroll contentContainerStyle={styles.column}>
         <View style={styles.previewRow}>
-          <CategoryGlyph colorKey={colorKey} letter={(trimmed.charAt(0) || '?').toUpperCase()} />
+          <CategoryGlyph
+            colorKey={colorKey}
+            icon={showIcon ? iconKey : iconForCategory(editing)}
+            letter={letter}
+            size={48}
+          />
         </View>
         <Text style={labelStyle}>{t('categories.sheet.name')}</Text>
         <TextInput
@@ -146,6 +172,15 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
             <SwatchDot key={key} colorKey={key} selected={key === colorKey} onPress={() => setColorKey(key)} />
           ))}
         </View>
+        {showIcon ? (
+          <Row
+            label={t('appLife.categories.iconLabel')}
+            value={iconWord(iconKey)}
+            leading={<CategoryGlyph colorKey={colorKey} icon={iconKey} letter={letter} />}
+            chevron
+            onPress={() => setPickingIcon(true)}
+          />
+        ) : null}
         {showCap ? (
           <>
             <Text style={labelStyle}>{t('categories.cap.label')}</Text>
@@ -174,6 +209,19 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
           <Pill label={t('categories.sheet.archive')} variant="danger" onPress={() => setRemoving(true)} />
         ) : null}
       </SheetScroll>
+      {showIcon ? (
+        <CategoryIconPicker
+          visible={pickingIcon}
+          colorKey={colorKey}
+          letter={letter}
+          selected={iconKey}
+          onPick={(icon) => {
+            setIconKey(icon);
+            setPickingIcon(false);
+          }}
+          onClose={() => setPickingIcon(false)}
+        />
+      ) : null}
       {editing ? (
         <RemoveCategoryPrompt
           visible={removing}

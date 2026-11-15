@@ -29,7 +29,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
 import { StateGlyph } from '@/ui/glyphs/StateGlyph';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Text } from '@/ui/Text';
@@ -95,7 +95,7 @@ function PastPill({ count, onPress }: { count: number; onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel={count > 0 ? t('decide.screens.home.pastDecisionsA11y', { count }) : t('decide.screens.home.pastDecisions')}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={[styles.pill, { borderColor: colors.line4 }]}
@@ -550,7 +550,7 @@ export function DecideHome() {
               testID="home-footer-worked"
               accessibilityRole="button"
               onPress={() => {
-                hapticSelection();
+                hapticTick();
                 setWorkedOpen(true);
               }}
               style={({ pressed }) => [styles.workedRow, { opacity: pressed ? PRESSED_OPACITY : 1 }]}

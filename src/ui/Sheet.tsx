@@ -73,7 +73,7 @@ import { Pill } from './Pill';
 import { DURATION, EASING, useMotion } from '@/theme/motion';
 import { markMounted, markUnmounted, pushSheet, removeSheet, useIsTopSheet } from '@/state/sheetStack';
 import { SheetOverlaySlot, useSheetOverlay } from './sheetOverlay';
-import { hapticSelection } from './haptics';
+import { hapticTick } from './haptics';
 import {
   BACKDROP_OPACITY,
   SHEET_DISMISS_DELAY,
@@ -313,7 +313,7 @@ export function Sheet({ visible, onDismiss, children, accessibilityLabel, dismis
   }, [visible, laidOut, requestDismiss]);
 
   const onDragDismiss = useCallback(() => {
-    hapticSelection();
+    hapticTick();
     dismissingRef.current = true;
     setLeaving(true);
     clearDismissTimer();

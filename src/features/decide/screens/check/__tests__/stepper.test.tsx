@@ -39,7 +39,7 @@ jest.mock('expo-router', () => {
     useFocusEffect: (cb: () => void | (() => void)) => useEffect(cb, [cb]),
   };
 });
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }), getDeviceRegion: () => 'US', getDeviceTimeZone: () => 'UTC' }));
 jest.mock('@/theme/motion', () => ({
   ...jest.requireActual('@/theme/motion'),

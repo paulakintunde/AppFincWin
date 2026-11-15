@@ -2,6 +2,10 @@
 // card, one row per holding (value, as-of date, gain or loss), a quiet stale-value row, the allocation bar and the no-live-prices
 // note. Values are ones the user typed; each shows its as-of date. Declarative copy only.
 //
+// 06.2-21 (D-12, D-14, D-16): values only fade to a new value (FadeSwap), never count up or rise; each gain or loss is the
+// shared up/down badge with an arrow and a word ('up 12%'), neutral in colour; the stale-value row carries the slate clock
+// badge 'Updated N days ago'.
+//
 // The segment opens its own AddHoldingSheet for its buttons; GrowHome opens another for the FAB.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -23,31 +27,47 @@ import { radii, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadows, type CategorySwatchKey } from '@/theme/tokens';
 import { textRole } from '@/theme/typography';
+import { FadeSwap } from '@/ui/motion/FadeSwap';
 import { Pill } from '@/ui/Pill';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { Text } from '@/ui/Text';
 import { AddHoldingSheet } from './AddHoldingSheet';
 import { UpdateValueSheet } from './UpdateValueSheet';
-import { useInvestingFormat } from './investingFormat';
+import { tenthsText, useInvestingFormat } from './investingFormat';
 import { useInvestingRead, type HoldingLine } from './useInvestingRead';
 
 const TILE_GLYPH = { pension: 'pension', retirement: 'pension', brokerage: 'invest', crypto: 'invest', other: 'invest' } as const;
 
 const SWATCHES: readonly CategorySwatchKey[] = ['green', 'blue', 'ochre', 'plum', 'teal', 'rust', 'slate'];
 
-/** Gain or loss as a quiet badge: sUp or sDown, ink-toned, with a word for assistive tech. Never red. */
+/**
+ * Gain or loss as the shared up/down badge (D-14): an arrow and a word ('up 11.2%'), neutral, never green or red. With
+ * nothing put in there is no percent, so the word is the signed amount. The spoken label keeps the amount too.
+ */
 export function GainBadge({ line }: { line: HoldingLine }) {
-  const t = useT();
+  const t = useT() as (key: string, options?: Record<string, string | number>) => string;
   const f = useInvestingFormat();
   const up = line.gain >= 0;
   const amount = f.money(Math.abs(line.gain), line.currency);
+  const tenths = line.gainPercentTenths;
+  const word = tenths === null ? f.signed(line.gain, line.currency) : t(up ? 'appLife.status.up' : 'appLife.status.down', { percent: tenthsText(Math.abs(tenths)) });
   return (
-    <StateBadge
-      tone="slate"
-      shape={up ? 'sUp' : 'sDown'}
-      label={f.signed(line.gain, line.currency)}
-      accessibilityLabel={t(up ? 'grow.investing.gainA11y' : 'grow.investing.lossA11y', { amount })}
+    <StatusBadge
+      status={up ? 'up' : 'down'}
+      label={word}
+      testID={`holding-gain-${line.id}`}
+      accessibilityLabel={`${word}, ${t(up ? 'grow.investing.gainA11y' : 'grow.investing.lossA11y', { amount })}`}
     />
   );
+}
+
+/** Whole days from `from` to `to` (both YYYY-MM-DD calendar days), never below 0. */
+export function daysBetween(from: string, to: string): number {
+  const at = (d: string) => {
+    const [y, m, day] = d.split('-').map(Number);
+    return Date.UTC(y!, m! - 1, day!);
+  };
+  return Math.max(0, Math.round((at(to) - at(from)) / 86_400_000));
 }
 
 export function InvestingSegment() {
@@ -139,7 +159,9 @@ export function InvestingSegment() {
     <View testID="grow-investing" style={styles.stack}>
       <View style={[styles.card, { backgroundColor: colors.surface, ...shadows.card }]}>
         <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.heroLabel')}</Text>
-        <Text testID="investing-hero" style={{ ...textRole(pairing, 'display'), color: colors.ink }}>{f.money(model.totals.value)}</Text>
+        <FadeSwap value={f.money(model.totals.value)} testID="investing-hero-fade">
+          <Text testID="investing-hero" style={{ ...textRole(pairing, 'display'), color: colors.ink }}>{f.money(model.totals.value)}</Text>
+        </FadeSwap>
         <Text style={{ ...label, color: colors.inkMuted }}>
           {t('grow.investing.heroNote', {
             amount: f.money(Math.abs(model.totals.gain)),
@@ -189,7 +211,9 @@ export function InvestingSegment() {
                     <Text style={{ ...label, color: colors.inkMuted }}>{sub}</Text>
                   </View>
                   <View style={styles.end}>
-                    <Text style={{ ...strong, color: colors.ink }}>{f.money(h.value, h.currency)}</Text>
+                    <FadeSwap value={f.money(h.value, h.currency)} testID={`holding-value-fade-${h.id}`}>
+                      <Text style={{ ...strong, color: colors.ink }}>{f.money(h.value, h.currency)}</Text>
+                    </FadeSwap>
                     <GainBadge line={h} />
                   </View>
                 </View>
@@ -212,12 +236,12 @@ export function InvestingSegment() {
         <Pressable
           testID="investing-stale-row"
           accessibilityRole="button"
-          accessibilityLabel={`${t('grow.investing.staleRow')} ${t('grow.investing.staleSub', { date: f.day(stale[0]!.asOf) })}`}
+          accessibilityLabel={`${t('grow.investing.staleRow')} ${t('appLife.status.updatedAgo', { count: daysBetween(stale[0]!.asOf, f.today) })}`}
           onPress={() => pushOnce(`/grow/holding/${stale[0]!.id}` as Href)}
           style={[styles.card, styles.between, { backgroundColor: colors.surface, ...shadows.card }]}
         >
           <Text style={{ ...body, color: colors.ink }}>{t('grow.investing.staleRow')}</Text>
-          <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.staleSub', { date: f.day(stale[0]!.asOf) })}</Text>
+          <StatusBadge status="pending" label={t('appLife.status.updatedAgo', { count: daysBetween(stale[0]!.asOf, f.today) })} testID="investing-stale-badge" />
         </Pressable>
       ) : null}
 

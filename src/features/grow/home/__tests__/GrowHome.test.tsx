@@ -426,9 +426,10 @@ describe('Goals segment, D-32 (06-31)', () => {
     await renderHome();
     const hidden = { includeHiddenElements: true }; // the glyph is decorative (hidden from screen readers)
     const lisbon = screen.getByTestId('grow-goal-row-g1', hidden);
-    expect(within(lisbon).getByTestId('grow-glyph-transport', hidden)).toBeTruthy();
-    // no icon picked: the check glyph for a check's goal
-    expect(within(screen.getByTestId('grow-goal-row-g2', hidden)).getByTestId('grow-glyph-checkbuy', hidden)).toBeTruthy();
+    // 06.2-20: the kit icon inside the goal's ring tile
+    expect(within(lisbon).getByTestId('glyph-transport', hidden)).toBeTruthy();
+    // no icon picked: the check icon for a check's goal
+    expect(within(screen.getByTestId('grow-goal-row-g2', hidden)).getByTestId('glyph-checkBuy', hidden)).toBeTruthy();
   });
 
   it('a goal with no target draws no bar; one with a target does', async () => {

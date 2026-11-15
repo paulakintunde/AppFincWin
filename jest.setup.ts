@@ -51,3 +51,15 @@ timeoutManager.setTimeoutProvider({
   setInterval: (cb: () => void, ms: number) => unref(setInterval(cb, ms)),
   clearInterval: (id: Parameters<typeof clearInterval>[0]) => clearInterval(id),
 });
+
+// 06.2-06 (D-25): lottie-react-native is a native view; every suite gets a plain View stand-in.
+jest.mock('lottie-react-native', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: (p: Record<string, unknown>) => React.createElement(View, { testID: 'lottie-view', ...p }),
+  };
+});

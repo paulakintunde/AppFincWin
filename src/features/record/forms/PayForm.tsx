@@ -7,7 +7,7 @@ import { useT } from '@/i18n';
 import type { AccountRow } from '@/db/rows';
 import { space } from '@/theme/layout';
 import { Chip } from '@/ui/Chip';
-import { hapticLight, hapticSelection } from '@/ui/haptics';
+import { hapticTap, hapticTick } from '@/ui/haptics';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { DayGrid, FieldLabel, Note } from './formFields';
@@ -80,7 +80,7 @@ export function PayForm(props: PayFormProps) {
                 label={a.name}
                 selected={accountId === a.id}
                 onPress={() => {
-                  hapticSelection();
+                  hapticTick();
                   onAccount(a.id);
                 }}
               />
@@ -102,7 +102,7 @@ function PrimaryButton({ label, disabled, onPress }: { label: string; disabled: 
       label={label}
       disabled={disabled}
       onPress={() => {
-        hapticLight();
+        hapticTap();
         onPress();
       }}
     />

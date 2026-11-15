@@ -20,6 +20,19 @@ export const DURATION = {
   backdrop: 180,
   sheetDrag: 240,
   searchFade: 150,
+  // 06.2 D-15 motion steps (the app-life timing table):
+  //   press    100  press, switch, chip
+  //   swap     180  fade or value swap (0.15-0.2 s)
+  //   appear   240  card or sheet appears (0.22-0.26 s)
+  //   fill     550  bar or ring fill, first view per session only
+  //   icon    1200  animated icon (1-1.3 s), plays once
+  //   toastOut 150  toast leaves (a fade, 0.15 s)
+  press: 100,
+  swap: 180,
+  appear: 240,
+  fill: 550,
+  icon: 1200,
+  toastOut: 150,
 } as const;
 
 /**
@@ -55,6 +68,11 @@ export interface Motion {
   reduced: boolean;
   duration: (ms: number) => number;
   easing: typeof EASING;
+  /**
+   * 06.2 D-17: a fade length. With Reduce Motion on, movement becomes a quick plain-opacity fade of
+   * DURATION.press; otherwise the given length.
+   */
+  fade: (ms: number) => number;
 }
 
 export function useMotion(): Motion {
@@ -63,5 +81,6 @@ export function useMotion(): Motion {
     reduced,
     duration: (ms: number) => (reduced ? 0 : ms),
     easing: EASING,
+    fade: (ms: number) => (reduced ? DURATION.press : ms),
   };
 }

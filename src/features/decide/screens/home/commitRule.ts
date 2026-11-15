@@ -6,7 +6,7 @@
  * toast host showed no Undo.
  */
 import { showToast } from '@/state/undoToast';
-import { hapticLight, hapticWarning } from '@/ui/haptics';
+import { hapticTap, hapticWarn } from '@/ui/haptics';
 import type { Crossing } from './homeCardsModel';
 import type { RulesPatch } from './useHomeCards';
 
@@ -26,7 +26,7 @@ export function commitRule({ patch, label, crossings, save, doneKey }: CommitRul
   const crossed = label === 'ruleRemoved' ? [] : crossings(patch);
   const stepId = save(patch, label);
   if (crossed.length > 0) {
-    hapticWarning();
+    hapticWarn();
     showToast({
       kind: 'ordinary',
       tone: 'warning',
@@ -35,6 +35,6 @@ export function commitRule({ patch, label, crossings, save, doneKey }: CommitRul
     });
     return;
   }
-  hapticLight();
+  hapticTap();
   showToast({ kind: 'ordinary', text: { key: doneKey, params: { undoLabel: label } }, stepId });
 }

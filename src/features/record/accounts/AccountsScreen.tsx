@@ -1,5 +1,9 @@
 // The account list (REC-08): active accounts with kind, currency, balance and standing line,
 // an Archived section beneath, and Add account. Tapping an account opens its detail.
+// 06.2 (D-10, ranked change 9): each card leads with a 36 IconTile carrying the account-type icon in the accent on the
+// accent tint and ends in the set's arrow, as Home's Accounts card does. The card keeps its own layout rather than Row
+// because the balance block is two lines (figure plus the one short standing / home line, D-39). D-14: a negative
+// figure is spoken "minus ...". D-24: no accounts shows the 48 tile, one sentence and one button that opens Add.
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -9,9 +13,12 @@ import { useAccountBalances, type AccountBalanceView } from '@/data/queries/acti
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radii, space } from '@/theme/layout';
+import { iconSize, radii, space, step, tile } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { EmptyState } from '@/ui/EmptyState';
+import { EmptyState, accentTintOver } from '@/ui/EmptyState';
+import { Glyph } from '@/ui/icons/Glyph';
+import { IconTile } from '@/ui/icons/IconTile';
+import { iconForAccountKind } from '@/ui/icons/iconFor';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
 import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
@@ -41,7 +48,7 @@ function AccountCard({
   const { colors, pairing } = useTheme();
   const kindLine = `${t(`accounts.kind.${account.kind}`)} · ${account.currency}`;
   const compact = useCompactBalance(account, balance, homeCurrency);
-  const label = [account.name, kindLine, compact.label].filter((p): p is string => p !== null && p !== '').join(', ');
+  const label = [account.name, kindLine, compact.spokenLabel].filter((p): p is string => p !== null && p !== '').join(', ');
   return (
     <Pressable
       accessibilityRole="button"
@@ -49,9 +56,19 @@ function AccountCard({
       onPress={onPress}
       style={[styles.card, { backgroundColor: colors.surface }]}
     >
-      <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{account.name}</Text>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{kindLine}</Text>
+      <IconTile
+        icon={iconForAccountKind(account.kind)}
+        size={tile.row}
+        color={colors.accent}
+        tint={accentTintOver(colors.fill1, colors.accent)}
+        testID={`account-tile-${account.id}`}
+      />
+      <View style={styles.text}>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{account.name}</Text>
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{kindLine}</Text>
+      </View>
       {balance ? <AccountBalanceBlock account={account} balance={balance} homeCurrency={homeCurrency} compact /> : null}
+      <Glyph name="arrowRight" size={iconSize.inline} color={colors.inkFaint} />
     </Pressable>
   );
 }
@@ -89,7 +106,14 @@ export function AccountsScreen({ onOpenAccount }: AccountsScreenProps) {
       </View>
       <ScrollView contentContainerStyle={styles.list}>
         {active.length === 0 && archived.length === 0 ? (
-          <EmptyState heading={t('accounts.emptyHeading')} body={t('accounts.emptyBody')} />
+          <EmptyState
+            testID="accounts-empty"
+            icon="accounts"
+            heading={t('appLife.empty.accounts.heading')}
+            body={t('appLife.empty.accounts.body')}
+            actionLabel={t('appLife.empty.accounts.action')}
+            onAction={() => setAdding(true)}
+          />
         ) : (
           active.map((a) => renderAccount(a, true))
         )}
@@ -117,9 +141,12 @@ const styles = StyleSheet.create({
     paddingBottom: space.gapMd,
   },
   card: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: space.cardPad,
     borderRadius: radii.card,
-    gap: space.gapSm / 2,
+    gap: step.row,
     minHeight: space.touchMin,
   },
+  text: { flex: 1, minWidth: 0 },
 });

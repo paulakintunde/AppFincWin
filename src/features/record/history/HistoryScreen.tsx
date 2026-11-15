@@ -78,7 +78,7 @@ export function HistoryScreen() {
       <Text style={labelStyle}>{t('history.note')}</Text>
       {rows.length === 0 ? (
         <View style={styles.empty}>
-          <EmptyState heading={t('history.emptyHeading')} body={t('history.emptyBody')} />
+          <EmptyState icon="history" heading={t('history.emptyHeading')} body={t('history.emptyBody')} />
         </View>
       ) : (
         <View style={styles.list}>

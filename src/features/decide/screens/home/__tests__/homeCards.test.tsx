@@ -1,7 +1,7 @@
 // 06.1-22: Open checks card, Your money rules (D49, D50) and Something changed? (D53). Haptics, toast and data hooks are mocked.
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
-import { hapticLight, hapticWarning } from '@/ui/haptics';
+import { hapticTap, hapticWarn } from '@/ui/haptics';
 import { showToast } from '@/state/undoToast';
 import { wrap } from '@/test/stepProps';
 import { AddRuleSheet } from '../AddRuleSheet';
@@ -13,7 +13,7 @@ import { RuleEditSheet } from '../RuleEditSheet';
 import { ChangedChips, SomethingChanged, SomethingChangedSheet } from '../SomethingChanged';
 
 jest.setTimeout(30000);
-jest.mock('@/ui/haptics', () => ({ hapticSelection: jest.fn(), hapticLight: jest.fn(), hapticWarning: jest.fn() }));
+jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/data/mutations/categories', () => ({ useEditCategory: () => ({ edit: jest.fn(() => 'step-cap') }) }));
 jest.mock('@/features/record/entry/pickers/DateField', () => ({ DateField: () => null }));
@@ -228,8 +228,8 @@ describe('RuleEditSheet', () => {
     await wrap(<RuleEditSheet {...editProps} doc={{ v: 1, rules: [rule] }} target={{ kind: 'stored', rule }} crossings={crossings} save={save} />);
     await fireEvent.press(screen.getByLabelText('Save rule'));
     expect(save).toHaveBeenCalledTimes(1);
-    expect(hapticWarning).toHaveBeenCalledTimes(1);
-    expect(hapticLight).not.toHaveBeenCalled();
+    expect(hapticWarn).toHaveBeenCalledTimes(1);
+    expect(hapticTap).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(
       expect.objectContaining({ tone: 'warning', stepId: 'step-9', text: { key: 'decide.screens.sheetsHome.rule.crosses', params: { count: 1, item: 'Headphones', undoLabel: 'ruleEdited' } } }),
     );
@@ -240,8 +240,8 @@ describe('RuleEditSheet', () => {
     const rule = { id: 'own_largest', kind: 'largest' as const, on: true, value: 50_000, categoryId: null };
     await wrap(<RuleEditSheet {...editProps} doc={{ v: 1, rules: [rule] }} target={{ kind: 'stored', rule }} crossings={() => []} save={save} />);
     await fireEvent.press(screen.getByLabelText('Save rule'));
-    expect(hapticLight).toHaveBeenCalledTimes(1);
-    expect(hapticWarning).not.toHaveBeenCalled();
+    expect(hapticTap).toHaveBeenCalledTimes(1);
+    expect(hapticWarn).not.toHaveBeenCalled();
   });
 
   it('saves the debt share as text, or null when switched off', async () => {

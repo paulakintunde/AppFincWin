@@ -10,7 +10,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { ACCENT_TINT_OPACITY, warnTint } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import { Text } from '@/ui/Text';
 
 /** Stored income_kind values in the order the sheet lists them, with the keys of their names. */
@@ -113,7 +113,7 @@ export function IncomeTagChip({ state, onPress }: IncomeTagChipProps) {
       accessibilityLabel={a11y}
       hitSlop={HIT_SLOP}
       onPress={() => {
-        hapticSelection();
+        hapticTick();
         onPress();
       }}
       style={[styles.chip, { backgroundColor: fill }]}

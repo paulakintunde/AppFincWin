@@ -41,7 +41,7 @@ import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
-import { hapticLight } from '@/ui/haptics';
+import { hapticTap } from '@/ui/haptics';
 import { Row } from '@/ui/Row';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { waiverAnswerKey } from '@/features/decide/snapshot/v3/waiverKeys';
@@ -366,7 +366,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     });
     setSheet(null);
     if (saved === null) return;
-    hapticLight();
+    hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.spare.saved' }, stepId: saved.stepId });
   };
 
@@ -375,7 +375,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     if (unexplained === null || prepared === null) return;
     const saved = unexplainedSaver.save({ amount: unexplained.amount, use, at: prepared.inputs.asOf });
     if (saved === null) return;
-    hapticLight();
+    hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.unexplained.saved' }, stepId: saved.stepId });
   };
 
@@ -414,7 +414,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         return;
       case 'deleteCheck': {
         // 06.1-66 (FQ6): the check goes, with one Undo, and the screen returns to Decide home.
-        hapticLight();
+        hapticTap();
         const stepId = remove(row);
         showToast({ kind: 'destructive', text: { key: 'decide.screens.common.toast.deleted', params: { item: row.name } }, stepId });
         goDecideHome(router);
@@ -439,7 +439,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     const saved = answers.save({ kind: 'readiness_waiver', waiver, at: today });
     if (saved === null) return;
     markAnswered(rowId, { waiverKey: safeWaiverKey(waiver) });
-    hapticLight();
+    hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId: saved.stepId });
   };
   const onReadinessChoice = (fixRow: ReadinessFixRow, choice: WaiverChoice): void => {
@@ -456,7 +456,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       if (stepId === null) return;
       const by: AnsweredBy = { lineId: line.id };
       markAnswered(fixRow.id, by);
-      hapticLight();
+      hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.notReady.saved' }, stepId });
       return;
     }
@@ -509,7 +509,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         if (noOverdraftSent.current.has(account.id)) return; // T-06.1-71-02: one write per account while the fact is still shown
         noOverdraftSent.current.add(account.id);
         const stepId = writes.setNoOverdraft(account, rc.userId);
-        hapticLight();
+        hapticTap();
         showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.noOverdraftSaved', params: { account: account.name } }, stepId });
         return;
       }
@@ -521,7 +521,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         // 06.1-68 (CF-4): the answer shows it landed, with Undo (the flag's own undo step).
         const saved = answered.set({ flag: 'no_debts', on: true });
         if (saved === null) return;
-        hapticLight();
+        hapticTap();
         showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.noneSaved' }, stepId: saved.stepId });
         return;
       }
@@ -529,7 +529,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         // 06.1-68 (CC-8): the answer is on the check itself, so Undo puts the earlier value back on the check (a local undo).
         const before = check.volatileCover ?? null;
         edit((c) => ({ ...c, volatileCover: c.volatileCover === false }));
-        hapticLight();
+        hapticTap();
         showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.coverChanged' }, onUndo: () => edit((c) => ({ ...c, volatileCover: before })) });
         return;
       }

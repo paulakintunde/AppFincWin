@@ -2,6 +2,9 @@
 // optional home figure, status tags and a one-tap Mark paid. A transfer leg is an ordinary
 // row with the Transfer category's tile and a dimmed figure; it never offers Mark paid
 // (D-51, D-56). A projection is muted, tagged Expected and opens a read-only detail (D-42).
+// 06.2 (D-07, D-12..D-14, L02): the tile shows the category's own icon (letter only as fallback); only exceptions carry
+// a StatusBadge (overdue > over cap > due > expected), so a normal day stays quiet; spending is ink, never red; swipe
+// actions show an icon above the word.
 import React from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -16,21 +19,25 @@ import { formatStatementMoney } from './statementMoney';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, space, tile } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { shadows, type CategorySwatchKey, type colors as ThemeColours } from '@/theme/tokens';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { iconForCategory } from '@/ui/icons/iconFor';
+import { StatusBadge } from '@/ui/status/StatusBadge';
+import type { StatusKey } from '@/ui/status/statusMap';
 import { SwipeRow, type SwipeAction } from '@/ui/SwipeRow';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { IncomeTagChip, type IncomeChipState } from './IncomeTagChip';
 import { RefundTag, type RefundTagModel } from './RefundTag';
+import { WashUnderlay } from './NewRowWash';
 
 /** Where a row sits in its run of rows: a section is one grouped card (UI-SPEC list-row cards). */
 export type CardPosition = CardPositionOf;
 
-/** CategoryGlyph tile width (its own constant is private); tags indent past it. */
-const GLYPH_TILE = 32;
+/** CategoryGlyph tile width (06.2 D-05: the 36 row tile); tags indent past it. */
+const GLYPH_TILE = tile.row;
 
 /** Prototype row padding: 13px 18px (space.rowPadDense = 13). */
 const ROW_PAD_H = 18;
@@ -55,6 +62,14 @@ export function cardStyle(position: CardPosition, c: Pick<typeof ThemeColours, '
   };
   const separator: ViewStyle = position === 'first' ? {} : { borderTopWidth: 2, borderTopColor: c.line4 };
   return { ...base, ...corners, ...separator, ...shadows.edge };
+}
+
+/** The card's outer corners only (the same radii cardStyle gives), for a layer drawn inside the card. */
+export function cardCorners(position: CardPosition): ViewStyle {
+  if (position === 'only') return { borderRadius: radii.card };
+  const top = position === 'first' ? radii.card : 0;
+  const bottom = position === 'last' ? radii.card : 0;
+  return { borderTopLeftRadius: top, borderTopRightRadius: top, borderBottomLeftRadius: bottom, borderBottomRightRadius: bottom };
 }
 
 export interface ActivityRowProps {
@@ -88,6 +103,8 @@ export interface ActivityRowProps {
   /** 05.2-30 (D-10): the refund tag for a refund row or a refunded purchase, and what a press does (open the purchase). */
   refundTag?: RefundTagModel | null;
   onRefundTagPress?: (purchaseId: string) => void;
+  /** 06.2 L02: how far past its category's monthly cap this row took the month (minor units, home currency), from overCapRows. */
+  overCapBy?: number | null;
 }
 
 function letterOf(name: string): string {
@@ -99,9 +116,8 @@ function letterOf(name: string): string {
 function Tag({ label, tone = 'neutral', faint = false }: { label: string; tone?: RowTagTone; faint?: boolean }) {
   const { colors, pairing } = useTheme();
   // Moved is inkFaint, so it sits on no fill (inkFaint on fill1 fails contrast); every other
-  // tone is on fill1.
-  const color =
-    tone === 'paid' ? colors.accent : tone === 'unpaid' ? colors.danger : faint ? colors.inkFaint : colors.inkMuted;
+  // tone is on fill1. 06.2 D-14: nothing here is red; an unpaid line's exception reads through StatusBadge.
+  const color = tone === 'paid' ? colors.accent : faint ? colors.inkFaint : colors.inkMuted;
   return (
     <View style={[styles.tag, { backgroundColor: faint ? 'transparent' : colors.fill1 }]}>
       <Text style={{ ...textRole(pairing, 'label'), color }}>{label}</Text>
@@ -131,6 +147,7 @@ export function ActivityRow({
   onIncomeChipPress,
   refundTag = null,
   onRefundTagPress,
+  overCapBy = null,
 }: ActivityRowProps) {
   const t = useT();
   const { v3 } = useDecideAccess();
@@ -171,7 +188,8 @@ export function ActivityRow({
   // Refunds never count as income (D-03): flowOf says 'out'. They still show a leading '+' in
   // accent (UI-SPEC accent item 3), but neither styling nor announcement calls them income.
   const flow = flowOf(row);
-  const tag = rowTag(row, today ?? localDateIn(new Date(), getDeviceTimeZone()));
+  const todayDate = today ?? localDateIn(new Date(), getDeviceTimeZone());
+  const tag = rowTag(row, todayDate);
   const isRefund = tag.refund && !isTransfer;
   const isIncome = flow === 'in';
   const amountColor = isTransfer ? colors.inkDim : isIncome || isRefund ? colors.accent : colors.ink;
@@ -182,12 +200,27 @@ export function ActivityRow({
 
   const canMarkPaid = row.status === 'pending' && !isTransfer && !selectable;
 
-  // S-WR-14: an accessibility label replaces the children, so it carries everything the row
-  // shows that matters: name, amount, the home figure, the tag word and the refund / balance notes.
+  // 06.2 D-06 / D-12: at most one status badge per row, for exceptions only. Priority overdue > over cap > due >
+  // expected. A pending outflow dated later reads "Due <date>" (L02); a normal paid line keeps its quiet tag.
   const tagWord = t(`activity.tag.${tag.kind}`);
+  const pendingOutflowLater = !isTransfer && row.status === 'pending' && row.original_amount < 0 && row.local_date > todayDate;
+  let badge: { status: StatusKey; word: string } | null = null;
+  if (tag.kind === 'overdue') badge = { status: 'overdue', word: tagWord };
+  else if (!isTransfer && overCapBy !== null && overCapBy > 0)
+    badge = { status: 'overCap', word: t('appLife.status.overCapBy', { amount: formatter.formatMoney(money(overCapBy, homeCurrency)) }) };
+  else if (tag.kind === 'due') badge = { status: 'due', word: tagWord };
+  else if (pendingOutflowLater) badge = { status: 'due', word: t('appLife.status.dueOn', { date: formatter.formatDate(row.local_date, 'short') }) };
+  else if (tag.kind === 'expected') badge = { status: 'pending', word: tagWord };
+  // The plain tag shows only when no badge replaces it; an over-cap badge sits on a paid line and drops its Paid tag
+  // (one status per row), though the Paid word is still spoken.
+  const showTag = badge === null;
+
+  // S-WR-14: an accessibility label replaces the children, so it carries everything the row
+  // shows that matters: name, amount, the home figure, the tag word, the badge word and the refund / balance notes.
   const tagTexts = [
     row.pending ? t('sync.pendingRow') : null,
-    tagWord,
+    badge !== null && badge.status !== 'overCap' ? null : tagWord,
+    badge !== null ? badge.word : null,
     isRefund ? t('activity.tag.refund') : null,
     notCounted ? t('activity.balance.notCountedA11y') : null,
   ];
@@ -204,21 +237,22 @@ export function ActivityRow({
   if (row.status !== 'skipped') {
     if (pending && onSwipePay) {
       leftAction = isTransfer
-        ? { word: t('activity.swipe.moved'), a11yLabel: t('activity.detail.markMoved'), tone: 'positive', onCommit: onSwipePay }
+        ? { word: t('activity.swipe.moved'), a11yLabel: t('activity.detail.markMoved'), tone: 'positive', icon: 'stateFits', onCommit: onSwipePay }
         : {
             word: t(isIncome ? 'activity.swipe.received' : 'activity.swipe.paid'),
             a11yLabel: t(isIncome ? 'activity.swipe.a11yMarkReceived' : 'activity.swipe.a11yMarkPaid'),
             tone: 'positive',
+            icon: 'stateFits',
             onCommit: onSwipePay,
           };
     } else if (!pending && onSwipeUnpay) {
       leftAction = isTransfer
-        ? { word: t('activity.swipe.scheduled'), a11yLabel: t('activity.detail.markScheduled'), tone: 'danger', onCommit: onSwipeUnpay }
-        : { word: t('activity.swipe.unpay'), a11yLabel: t('activity.swipe.a11yMarkUnpaid'), tone: 'danger', onCommit: onSwipeUnpay };
+        ? { word: t('activity.swipe.scheduled'), a11yLabel: t('activity.detail.markScheduled'), tone: 'danger', icon: 'stateDue', onCommit: onSwipeUnpay }
+        : { word: t('activity.swipe.unpay'), a11yLabel: t('activity.swipe.a11yMarkUnpaid'), tone: 'danger', icon: 'stateDue', onCommit: onSwipeUnpay };
     }
   }
   const rightAction: SwipeAction | undefined = onSwipeDelete
-    ? { word: t('activity.swipe.delete'), a11yLabel: t('activity.swipe.a11yDelete'), tone: 'danger', onCommit: onSwipeDelete }
+    ? { word: t('activity.swipe.delete'), a11yLabel: t('activity.swipe.a11yDelete'), tone: 'danger', icon: 'delete', onCommit: onSwipeDelete }
     : undefined;
 
   // 05.2-30: the income chip and the refund tag sit under the row's text, outside the row's own Pressable so their
@@ -255,7 +289,7 @@ export function ActivityRow({
           {selected ? <View style={[styles.checkDot, { backgroundColor: colors.surface }]} /> : null}
         </View>
       ) : null}
-      <CategoryGlyph colorKey={swatchKey} letter={letter} />
+      <CategoryGlyph colorKey={swatchKey} icon={iconForCategory(category)} letter={letter} testID={`activity-tile-${row.id}`} />
       <View style={styles.text}>
         <Text numberOfLines={1} style={{ ...textRole(pairing, 'bodyStrong'), color: nameColor }}>
           {name}
@@ -268,7 +302,8 @@ export function ActivityRow({
         </Text>
         <View style={styles.tags}>
           {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
-          <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} />
+          {showTag ? <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} /> : null}
+          {badge !== null ? <StatusBadge status={badge.status} label={badge.word} testID={`activity-badge-${row.id}`} /> : null}
         </View>
       </View>
     </Pressable>
@@ -276,6 +311,8 @@ export function ActivityRow({
 
   const card = (
     <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors)]}>
+      {/* 06.2 L02: inside a NewRowWash the fits tint sits under the content and clears; elsewhere nothing. */}
+      <WashUnderlay style={cardCorners(cardPosition)} />
       {extras === null ? (
         mainPress
       ) : (
@@ -364,7 +401,7 @@ export function ProjectionRow({ projection, categories, accountName, formatter, 
 
   const content = (
     <>
-      <CategoryGlyph colorKey={swatchKey} letter={letterOf(projection.name || categoryLabel)} />
+      <CategoryGlyph colorKey={swatchKey} icon={iconForCategory(category)} letter={letterOf(projection.name || categoryLabel)} />
       <View style={styles.text}>
         <Text numberOfLines={1} style={{ ...textRole(pairing, 'body'), color: colors.inkMuted }}>
           {projection.name}
@@ -426,7 +463,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   // 05.2-30: the row stacks the main press above the tags when tags exist. The tags line up with the text column:
-  // the glyph tile (32) plus the row gap.
+  // the glyph tile (36) plus the row gap.
   mainColumn: { flex: 1, minWidth: 0 },
   mainInColumn: { flex: 0 },
   extras: {

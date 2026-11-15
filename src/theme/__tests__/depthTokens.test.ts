@@ -30,6 +30,15 @@ describe('D-31 depth tokens', () => {
     expect(card).not.toHaveProperty('shadowOpacity');
   });
 
+  it('06.2 D-27: card and edge 1 px ring is at least 0.07 (clearer than the old 0.04)', () => {
+    const s = withPlatform('ios', '18.0', () => depthShadows());
+    for (const style of [s.card, s.edge]) {
+      const ring = (style as { boxShadow: string }).boxShadow.match(/^0 0 0 1px rgba\(20,21,15,([0-9.]+)\)/);
+      expect(ring).not.toBeNull();
+      expect(Number(ring![1])).toBeGreaterThanOrEqual(0.07);
+    }
+  });
+
   it('edge is a two-layer boxShadow', () => {
     const s = withPlatform('ios', '18.0', () => depthShadows());
     const edge = s.edge as Record<string, unknown>;

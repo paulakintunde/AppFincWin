@@ -20,7 +20,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
-import { hapticSelection } from '@/ui/haptics';
+import { hapticTick } from '@/ui/haptics';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { Pill } from '@/ui/Pill';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
@@ -105,7 +105,7 @@ function IncomeTagForm({ tx, newPayer, formatter, onClose, onRefundLink }: Incom
               label={t(k.key)}
               selected={kind === k.kind}
               onPress={() => {
-                hapticSelection();
+                hapticTick();
                 setKind(k.kind);
               }}
             />
@@ -140,7 +140,7 @@ function IncomeTagForm({ tx, newPayer, formatter, onClose, onRefundLink }: Incom
           label={t('activity.incomeTag.applyFuture', { payer })}
           value={applyToFuture}
           onChange={(next) => {
-            hapticSelection();
+            hapticTick();
             setApplyToFuture(next);
           }}
         />
