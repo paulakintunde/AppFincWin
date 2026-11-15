@@ -864,6 +864,8 @@
   "decide.screens.sheetsCosts.waterfall.upFront": "Up front",
   "decide.screens.sheetsHome.addRule.add": "Add rule",
   "decide.screens.sheetsHome.addRule.cap": "Up to 5 of your own rules.",
+  "decide.screens.sheetsHome.addRule.capExists": "{{category}} already has a monthly cap. Change it to set a new amount.",
+  "decide.screens.sheetsHome.addRule.capExistsLink": "Change {{category}} cap",
   "decide.screens.sheetsHome.addRule.category": "Spending in one category at most",
   "decide.screens.sheetsHome.addRule.categoryField": "Category",
   "decide.screens.sheetsHome.addRule.categoryShare": "One category at most",
