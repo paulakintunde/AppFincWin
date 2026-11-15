@@ -1352,7 +1352,7 @@ Plans:
   5. Haptics follow one meaning each (light tap = saved / answer shown; warning = over cap or short; success = goal reached, debt cleared, import done only, never for "fits"; error = a real failed save; tick = choosing), none on tab change, and a Haptics switch in You turns them off.
   6. The page background is a very pale tint of the chosen theme colour, cards stay white, and the contrast tests pass for every theme colour; CLAUDE.md's "complete palette" rule is updated to allow it.
   7. Empty screens show a 48 icon tile, one heading, one sentence and one button; saving an entry fades it in with a short tint, a toast with Undo and a light tap.
-**Plans:** 12/24 plans executed
+**Plans:** 17/24 plans executed
 
 Plans:
 - [x] 06.2-01-PLAN.md — Icon set generated from the boards (check:icons in CI), Glyph, IconTile, icon maps, six spacing steps / row heights / tile sizes (D-03, D-05, D-07..D-10, D-29) (W1)
@@ -1367,11 +1367,11 @@ Plans:
 - [x] 06.2-10-PLAN.md — Activity rows: category icons, exception badges, over-cap cue, swipe icons (D-07, D-12..D-14) (W3)
 - [x] 06.2-12-PLAN.md — Activity calendar: spend-sized dots, bill-due clock, day sheet (L03) (W3)
 - [x] 06.2-13-PLAN.md — Home inside its cards: bar by stretch once per session, card fade, real quick-action and account icons, due-soon/overdue badges (D-02, D-18) (W3)
-- [ ] 06.2-11-PLAN.md — Activity save moment (fade + wash, light tap, Undo toast), 28 day headers, over-cap wiring (L02, D-20) (W4)
-- [ ] 06.2-14-PLAN.md — Toasts to the kit (icon, 48, time-left bar) and Error haptic for a real failed save (D-20) (W4)
-- [ ] 06.2-15-PLAN.md — You grouped with accent tiles and current values; Haptics switch row (D-21, D-28) (W4)
-- [ ] 06.2-16-PLAN.md — Accounts: type icons, negative balance cue, empty state (W4)
-- [ ] 06.2-17-PLAN.md — Migration: categories.icon_key (additive, checked), cache version 10, export manifest (D-07) (W4)
+- [x] 06.2-11-PLAN.md — Activity save moment (fade + wash, light tap, Undo toast), 28 day headers, over-cap wiring (L02, D-20) (W4)
+- [x] 06.2-14-PLAN.md — Toasts to the kit (icon, 48, time-left bar) and Error haptic for a real failed save (D-20) (W4)
+- [x] 06.2-15-PLAN.md — You grouped with accent tiles and current values; Haptics switch row (D-21, D-28) (W4)
+- [x] 06.2-16-PLAN.md — Accounts: type icons, negative balance cue, empty state (W4)
+- [x] 06.2-17-PLAN.md — Migration: categories.icon_key (additive, checked), cache version 10, export manifest (D-07) (W4)
 - [ ] 06.2-18-PLAN.md — Empty screens: Activity (first-entry icon), no-match, History, Coming up, past decisions (D-24, HOME-03) (W5)
 - [ ] 06.2-19-PLAN.md — Categories: icons everywhere and an icon picker for custom categories (D-07) (W5)
 - [ ] 06.2-20-PLAN.md — Grow goals and safety net: ring tiles, large ring, goal-reached icon + one Success haptic (D-19, D-20) (W5)
