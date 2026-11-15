@@ -1388,9 +1388,9 @@ Plans:
   5. A shared record created by one member appears on another member's device without a manual refresh. (The read-only summary link, HH-12, is deferred: 08-CONTEXT D-45.)
   6. A member can leave, be removed, or receive ownership; deleting an account follows the documented rule and leaves the remaining members' balances correct; and guessing invite codes is rate-limited to futility.
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
-  8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Decide side moved to 08.1 with 08-28 on 2026-11-11.)
-  9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (share_pct removal moved to 08.1 or 05.5 with 08-29.)
-**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`.
+  8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Phase 8 delivers only the "off by default" part: 08-25 proves a partner's personal line counts nothing through 05.5's `countsForMe`. The opt-in itself and the two-partners rule moved to 08.1 with former 08-28 on 2026-11-11.)
+  9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (Phase 8: 08-25 my-share adapter on 05.5's `countsForMe`, 08-30 settlement exclusion. Removing the old `decide_settings.share_pct` column is 05.5's work, 05.5 D-09; the Decide screen parts are 08.1's.)
+**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`. The revision round against main ran on 2026-11-15 (quick 261114-x0q); waves unchanged.
 
 Plans:
 **Wave 1**
@@ -1470,7 +1470,7 @@ Plans:
   9. Theme O: version 1 contains the scope listed in the fix plan, Theme O, including the decision record and its "did it cost what you expected?" follow-up; home-buying screens are hidden until their own phase.
 **Carried over from Phase 8 (2026-11-11, owner decision):** re-plan each on the new 06.1 screens (`src/features/decide/screens/**`).
 - Former 08-28: partner opt-in, shared safety net, shared-bills caveat, couples note (`08.1-CARRY-OVER-08-28.md`)
-- Former 08-29: household scope choice in the check, Household link in setup, share_pct removal (owner: 08.1 or 05.5, decided at 05.5 planning), household scope label (`08.1-CARRY-OVER-08-29.md`)
+- Former 08-29: household scope choice in the check, Household link in setup, household scope label (`08.1-CARRY-OVER-08-29.md`). The share_pct removal is not 08.1's: 05.5 removes it (05.5 D-09, 2026-11-12).
 - "Create from Decide" (Grow follow-up, 06 VERIFICATION override), built on the new 06.1 screens
 **Plans:** 0 plans
 
