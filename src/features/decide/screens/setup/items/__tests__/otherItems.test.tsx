@@ -35,7 +35,11 @@ jest.mock('@/data/queries/decide', () => ({
 let mockInputs: unknown = null;
 let mockEvaluation: unknown = null;
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ inputs: mockInputs, evaluation: mockEvaluation, source: null, v3: null }) }));
-jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: [] }) }));
+let mockCategories: unknown[] = [];
+jest.mock('@/data/queries/categories', () => ({ useCategories: () => ({ data: mockCategories }) }));
+// 05.5-16: the category sheet is Activity's; here only its props matter.
+const mockCategorySheet = jest.fn((_p: unknown): null => null);
+jest.mock('@/features/record/categories/CategorySheet', () => ({ CategorySheet: (p: unknown) => mockCategorySheet(p) }));
 let mockAccounts: unknown[] = [];
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 let mockGoals: unknown[] = [];
@@ -90,6 +94,7 @@ beforeEach(() => {
   mockGoals = [];
   mockDoc = { v: 1, rules: [] };
   mockDsr = null;
+  mockCategories = [];
   mockGrow = { saving: null, investing: null };
   mockFacts = facts();
 });
@@ -254,6 +259,40 @@ describe('RulesSetup (D36)', () => {
     await wrap(<RulesSetup />);
     expect(screen.getByLabelText('Keep at least Not set, change').props.accessibilityState?.disabled).toBeFalsy();
     expect(screen.queryByTestId('rule-cap-keep')).toBeNull();
+  });
+
+  // 05.5-16 (D-11, D-17): a category cap is the Activity cap; here it is a row with no switch that opens the category's sheet.
+  describe('category cap rows', () => {
+    const cat = (id: string, name: string, over: Record<string, unknown> = {}) => ({ id, name, is_system: false, archived_at: null, monthly_cap: null, ...over });
+
+    it('lists each capped category with its cap and no switch, and counts as a rule on', async () => {
+      mockCategories = [cat('c1', 'Dining', { monthly_cap: 40000 }), cat('c2', 'Fuel'), cat('c3', 'Gym', { monthly_cap: 5000, archived_at: '2026-10-01T00:00:00Z' })];
+      await wrap(<RulesSetup />);
+      expect(screen.getByTestId('rule-cap_c1')).toHaveTextContent(/Dining at most/);
+      expect(screen.getByTestId('rule-cap_c1')).toHaveTextContent(/\$400/);
+      expect(screen.queryByTestId('rule-cap_c2')).toBeNull();
+      expect(screen.queryByTestId('rule-cap_c3')).toBeNull();
+      expect(screen.queryByRole('switch', { name: /Dining/ })).toBeNull();
+      expect(screen.queryByTestId('rules-none')).toBeNull();
+    });
+
+    it('tapping the row opens that category in the category sheet, in edit mode', async () => {
+      const dining = cat('c1', 'Dining', { monthly_cap: 40000 });
+      mockCategories = [dining];
+      await wrap(<RulesSetup />);
+      expect(mockCategorySheet).not.toHaveBeenCalled();
+      await fireEvent.press(screen.getByTestId('rule-cap_c1'));
+      const last = mockCategorySheet.mock.calls[mockCategorySheet.mock.calls.length - 1]?.[0] as { visible: boolean; mode: { kind: string; category: unknown } };
+      expect(last.visible).toBe(true);
+      expect(last.mode).toEqual({ kind: 'edit', category: dining });
+    });
+
+    it('with no capped category there is no cap row and no category sheet', async () => {
+      mockCategories = [cat('c2', 'Fuel')];
+      await wrap(<RulesSetup />);
+      expect(screen.queryByTestId('rule-cap_c2')).toBeNull();
+      expect(mockCategorySheet).not.toHaveBeenCalled();
+    });
   });
 
   it('switching the debt rule on writes the typed share at once', async () => {

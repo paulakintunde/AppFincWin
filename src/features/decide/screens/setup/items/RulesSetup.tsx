@@ -9,6 +9,8 @@
 //  - Saving and investing at least are the person's regular saving series in Grow. 06.1-79 (DS-8, OQ-79-1 A): they show as rules
 //    set in Grow, the same rows as Decide home's card (rulesShown), with a link to Grow and no switch; they count as rules on.
 //  - 06.1-65 (CB-15): at the five-rule cap, the value chip of a rule not stored yet is disabled and the cap line sits under it.
+//  - 05.5-16 (D-11, D-17): a category cap is the category's Activity cap (categories.monthly_cap). Each capped category shows as a row with
+//    no switch (a cap is always checked); tapping it opens that category's CategorySheet in edit mode, the same as Decide home.
 //    (CF-9): the "N rules on" toast carries the step id of the no-rules clear, so it has Undo like every other setup toast.
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -16,6 +18,7 @@ import { useRouter, type Href } from 'expo-router';
 import { useT } from '@/i18n';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
 import { useCategories } from '@/data/queries/categories';
+import { CategorySheet } from '@/features/record/categories/CategorySheet';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { showToast } from '@/state/undoToast';
@@ -73,6 +76,14 @@ export function RulesSetup() {
   const categories = useCategories(rc.userId ?? undefined).data;
   const categoryList = useMemo(() => (categories ?? []).map((c) => ({ id: c.id, name: c.name ?? '' })), [categories]);
   const categoryName = useCallback((id: string): string => categoryList.find((c) => c.id === id)?.name ?? '', [categoryList]);
+  // D-11, D-17: the capped user categories, newest rules last as on Decide home (the same filter as DecideHome's caps).
+  const caps = useMemo(
+    () => (categories ?? []).filter((c) => !c.is_system && c.archived_at === null && c.monthly_cap !== null).map((c) => ({ categoryId: c.id, amount: c.monthly_cap as number })),
+    [categories],
+  );
+  const [capCategoryId, setCapCategoryId] = useState<string | null>(null);
+  const capCategory = useMemo(() => (categories ?? []).find((c) => c.id === capCategoryId) ?? null, [categories, capCategoryId]);
+  const capCrossings = useCallback((id: string, cap: number | null) => crossings({ caps: { [id]: cap } }), [crossings]);
   const [target, setTarget] = useState<RuleTarget | null>(null);
   const [adding, setAdding] = useState(false);
   const money = useCallback((minor: number): string => fmt.money(minor, currency), [fmt, currency]);
@@ -83,7 +94,7 @@ export function RulesSetup() {
   // 06.1-79 (DS-8, OQ-79-1 A): the same rules, in the same order, as Decide home's rules card. Grow's saving and investing show as
   // rules set in Grow (no switch here; a link opens Grow). Keep at least and Largest single purchase also show as "Not set" rows
   // until the person gives them a value, so they can be switched on from here.
-  const shown = rulesShown({ debtPercent, rules: rules.doc.rules, saving: facts.saving, investing: facts.investing });
+  const shown = rulesShown({ debtPercent, rules: rules.doc.rules, saving: facts.saving, investing: facts.investing, caps });
   const ownRow = (r: StoredRule): RuleRowModel => {
     const kindKey = r.kind === 'keep' || r.kind === 'largest' ? r.kind : r.id;
     const label =
@@ -198,6 +209,26 @@ export function RulesSetup() {
       </View>
       <Pill variant="secondary" label={t('decide.screens.setupOthers.rules.addOwn')} disabled={!roomForOne} onPress={() => setAdding(true)} />
       {!roomForOne ? <Text style={small}>{t('decide.screens.setupOthers.rules.cap')}</Text> : null}
+      {caps.map((c) => (
+        <Pressable
+          key={`cap_${c.categoryId}`}
+          testID={`rule-cap_${c.categoryId}`}
+          accessibilityRole="button"
+          accessibilityLabel={t('decide.screens.setupOthers.rules.changeA11y', {
+            rule: `${t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category: categoryName(c.categoryId) })} ${money(c.amount)}`,
+          })}
+          onPress={() => setCapCategoryId(c.categoryId)}
+          style={({ pressed }) => [styles.card, { backgroundColor: colors.surface, borderColor: colors.line2, opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <View style={styles.growHead}>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, flexShrink: 1 }}>
+              {t('decide.screens.sheetsHome.rulesCard.categoryTitle', { category: categoryName(c.categoryId) })}
+            </Text>
+            <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, fontVariant: ['tabular-nums'] }}>{money(c.amount)}</Text>
+          </View>
+          <Text style={small}>{t('decide.screens.sheetsHome.addRule.categorySub')}</Text>
+        </Pressable>
+      ))}
       {growRows.map((g) => (
         <View key={g.key} testID={`rule-${g.key}`} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
           <View style={styles.growHead}>
@@ -241,6 +272,7 @@ export function RulesSetup() {
         onOpenGrow={() => router.push(GROW)}
         onDismiss={() => setTarget(null)}
       />
+      {capCategory !== null ? <CategorySheet visible mode={{ kind: 'edit', category: capCategory }} capCrossings={capCrossings} onClose={() => setCapCategoryId(null)} /> : null}
       <AddRuleSheet visible={adding} doc={rules.doc} currency={currency} categories={categoryList} crossings={crossings} save={rules.save} onDismiss={() => setAdding(false)} />
     </SetupItemFrame>
   );
