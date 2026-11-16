@@ -7,12 +7,13 @@ import {
   type MonthPosition,
   type MonthTotals,
 } from '@/engine/activity';
+import { isSettlement } from '@/engine/household/settlement';
 import type { ActivityRowView, ProjectionView } from '@/data/queries/activity';
 
 type FigureSource = {
   rows: readonly Pick<
     ActivityRowView,
-    'status' | 'transfer_id' | 'is_refund' | 'original_amount' | 'amountHome'
+    'status' | 'transfer_id' | 'is_refund' | 'original_amount' | 'amountHome' | 'is_settlement'
   >[];
   projections: readonly Pick<ProjectionView, 'amount' | 'amountHome'>[];
   totals: MonthTotals;
@@ -29,6 +30,8 @@ export function monthFigureInputs(v: Pick<FigureSource, 'rows' | 'projections'>)
       isRefund: r.is_refund,
       originalAmount: r.original_amount,
       amountHome: r.amountHome,
+      // ARC-18: settlement records are neither spending nor income (one rule, engine/household).
+      isSettlement: isSettlement({ isSettlement: r.is_settlement === true }),
     })),
     projections: v.projections.map((p) => ({ amount: p.amount, amountHome: p.amountHome })),
   };

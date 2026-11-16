@@ -21,6 +21,7 @@ import { useTransactionsForMonth } from './transactions';
 import { useRecurringSeries } from './recurringSeries';
 import { useFxLatest } from './fxLatest';
 import { monthDataState, type MonthDataState } from './monthDataState';
+import { isSettlement } from '@/engine/household/settlement';
 import { homeAmountFor, projectionHomeAmount } from './homeAmount';
 
 export interface ActivityRowView extends WithPending<TransactionRow> {
@@ -178,7 +179,7 @@ export function useMonthView(
   const totals = useMemo(
     () =>
       monthTotals(
-        mappedRows.map((r) => ({ amountHome: r.amountHome, status: r.status, isTransfer: r.transfer_id !== null, isRefund: r.is_refund, ratePending: r.rate_pending })),
+        mappedRows.map((r) => ({ amountHome: r.amountHome, status: r.status, isTransfer: r.transfer_id !== null, isRefund: r.is_refund, ratePending: r.rate_pending, isSettlement: isSettlement({ isSettlement: r.is_settlement === true }) })),
         projections
       ),
     [mappedRows, projections]

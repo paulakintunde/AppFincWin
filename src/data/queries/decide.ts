@@ -1,5 +1,6 @@
 // 05-12: Decide reads. Row-derived reads nest under ['transactions', hh] (D-15). The snapshot is built in
 // memory with useMemo, never stored in the cache (it carries bigints, Pitfall 8). Stored rates only.
+import { withSettlementFlag } from './settlementFlag';
 import { useCallback, useMemo } from 'react';
 import { hashKey, keepPreviousData, useMutationState, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { serverFetchTimeOf } from '@/data/cache/persister';
@@ -462,8 +463,8 @@ export function useDecideSnapshot(): DecideSnapshotState {
       today: rc.today,
       homeCurrency: rc.homeCurrency,
       region,
-      rows: history.data ?? [],
-      upcomingRows: upcoming.data ?? [],
+      rows: withSettlementFlag(history.data ?? []),
+      upcomingRows: withSettlementFlag(upcoming.data ?? []),
       series: seriesQuery.data ?? [],
       accounts: allAccounts,
       balances: balanceRecord,
