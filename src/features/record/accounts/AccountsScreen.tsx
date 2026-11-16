@@ -4,6 +4,7 @@
 // accent tint and ends in the set's arrow, as Home's Accounts card does. The card keeps its own layout rather than Row
 // because the balance block is two lines (figure plus the one short standing / home line, D-39). D-14: a negative
 // figure is spoken "minus ...". D-24: no accounts shows the 48 tile, one sentence and one button that opens Add.
+// 08 UI-SPEC 4b: a joint account (is_shared, never a tombstone) carries the same Shared badge AccountSheet shows.
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -22,6 +23,7 @@ import { iconForAccountKind } from '@/ui/icons/iconFor';
 import { Pill } from '@/ui/Pill';
 import { Screen } from '@/ui/Screen';
 import { SyncProblemLine } from '@/shell/header/SyncProblemLine';
+import { SharedBadge } from '@/features/household/components/SharedBadge';
 import { AccountBalanceBlock, useCompactBalance } from './AccountBalanceBlock';
 import { AccountSheet } from './AccountSheet';
 
@@ -48,11 +50,14 @@ function AccountCard({
   const { colors, pairing } = useTheme();
   const kindLine = `${t(`accounts.kind.${account.kind}`)} · ${account.currency}`;
   const compact = useCompactBalance(account, balance, homeCurrency);
-  const label = [account.name, kindLine, compact.spokenLabel].filter((p): p is string => p !== null && p !== '').join(', ');
+  const shared = account.is_shared === true && !account.tombstone_of;
+  const label = [account.name, kindLine, shared ? t('household.sharing.badge') : null, compact.spokenLabel]
+    .filter((p): p is string => p !== null && p !== '')
+    .join(', ');
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={balance ? label : account.name}
+      accessibilityLabel={balance ? label : shared ? `${account.name}, ${t('household.sharing.badge')}` : account.name}
       onPress={onPress}
       style={[styles.card, { backgroundColor: colors.surface }]}
     >
@@ -66,6 +71,7 @@ function AccountCard({
       <View style={styles.text}>
         <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{account.name}</Text>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{kindLine}</Text>
+        {shared ? <SharedBadge testID={`account-shared-${account.id}`} /> : null}
       </View>
       {balance ? <AccountBalanceBlock account={account} balance={balance} homeCurrency={homeCurrency} compact /> : null}
       <Glyph name="arrowRight" size={iconSize.inline} color={colors.inkFaint} />

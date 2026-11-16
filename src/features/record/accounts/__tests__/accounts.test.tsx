@@ -445,6 +445,21 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(onOpen).toHaveBeenCalledWith('acc2');
   });
 
+  it('08 UI-SPEC 4b: a joint account row carries the Shared badge, in its label too; personal and tombstone rows do not', async () => {
+    mockAccounts = [
+      account({ id: 'j1', name: 'Joint', is_shared: true }),
+      account({ id: 'p1', name: 'Mine' }),
+      account({ id: 't1', name: 'Gone', is_shared: true, tombstone_of: 'u9', archived_at: '2026-01-01T00:00:00Z' }),
+    ];
+    mockBalances = new Map([['j1', view()], ['p1', view()]]);
+    const { getByTestId, queryByTestId, getByLabelText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
+    expect(getByTestId('account-shared-j1')).toBeTruthy();
+    expect(queryByTestId('account-shared-p1')).toBeNull();
+    expect(queryByTestId('account-shared-t1')).toBeNull();
+    expect(getByLabelText(/^Joint, Current account · GBP, Shared, /)).toBeTruthy();
+    expect(getByLabelText('Gone')).toBeTruthy();
+  });
+
   it('S-WR-14: an account card is announced with its balance and standing, not the name alone', async () => {
     mockAccounts = [account()];
     mockBalances = new Map([['acc1', view({ balance: -2500, standing: { kind: 'overdrawn-no-limit', overdrawnBy: 2500 } as never })]]);
