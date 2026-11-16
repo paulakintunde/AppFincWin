@@ -169,6 +169,22 @@ export const answer = {
     someone: 'Someone else’s money',
     saved: 'Saved: what the money is for.',
   },
+  // 05.5-29 (owner decision 1, 2026-11-16): the low-months question answered on the Answer.
+  cover: {
+    title: 'Your low months',
+    note: 'Your answer counts for this check only.',
+    yes: 'Yes, I can cover it',
+    no: 'No, I can’t',
+    yesA11y: 'Yes, I can cover it in my low months',
+    noA11y: 'No, I can’t cover it in my low months',
+    saved: 'Saved: your answer about low months.',
+  },
+  // 05.5-29 (owner Q14 = b, 2026-11-16): the check steps have no share field, so a broken split is fixed in place: count it as just mine.
+  share: {
+    justMine: 'Count it as just mine',
+    justMineA11y: 'Count this purchase as just mine',
+    saved: 'Saved: this check is just yours.',
+  },
   // 06.1-66 (FQ8, CC-2): a decided check shows what happened and links to its entry in Past decisions; no buy or save buttons.
   outcome: {
     bought: 'Bought on {{date}}.',

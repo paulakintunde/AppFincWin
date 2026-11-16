@@ -81,6 +81,17 @@ export const OTHER_KEYS_0555: readonly string[] = [
   'categories.cap.alsoRule',
   'decide.screens.sheetsHome.addRule.capExists',
   'decide.screens.sheetsHome.addRule.capExistsLink',
+  // 05.5-29 (owner decisions 1 and 3, 2026-11-16): the low-months question and "Count it as just mine".
+  'decide.screens.answer.cover.title',
+  'decide.screens.answer.cover.note',
+  'decide.screens.answer.cover.yes',
+  'decide.screens.answer.cover.no',
+  'decide.screens.answer.cover.yesA11y',
+  'decide.screens.answer.cover.noA11y',
+  'decide.screens.answer.cover.saved',
+  'decide.screens.answer.share.justMine',
+  'decide.screens.answer.share.justMineA11y',
+  'decide.screens.answer.share.saved',
 ];
 
 /** Prefixes of the outside-the-lock lines shown in the page's undo and History section. */
