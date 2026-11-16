@@ -62,6 +62,7 @@ jest.mock('@/data/queries/household', () => ({
   useHouseholdMembers: () => ({ data: mockMembers }),
   useHouseholdEvents: () => ({ events: mockEvents, unreadCount: mockEvents.length, isLoading: false }),
   useOpenInvites: (_h: unknown, isOwner: boolean) => ({ data: isOwner ? mockInvites : [] }),
+  useFormerMembers: () => ({ data: [] }),
 }));
 
 function member(id: string, name: string | null, colour: number, extra: Record<string, unknown> = {}) {
