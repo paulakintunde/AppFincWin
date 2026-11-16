@@ -69,3 +69,13 @@ A line becomes shared only through the creator's Shared switch, a bulk action wi
 `hh_line_locked` returns false until plan 08-11 re-creates it (by design, named in the plan).
 
 ## Self-Check: PASSED (commits 6ca5d0ae, ed50f0dc; files present)
+
+## Follow-up fix (owner 2026-11-15, 08-GATES item 7)
+
+"Also apply to the unsettled lines" must change only lines nobody split by hand. Edited migration 20261122000600 in place (not in production):
+
+- New column `transactions.split_manual boolean not null default false`, server-written only (no client grant). Set true by `set_line_split`, and by `share_transaction` / `bulk_share_transactions` when an explicit rule is passed (including each future line of a shared series); false when the split came from a default. `make_line_private` resets it to false.
+- `hh_rule_lines` now also excludes `split_manual` lines (it already excluded `amount` lines), so `count_unsettled_for_rule` counts exactly the lines `apply_rule_to_unsettled` changes.
+- `transactions_active` is re-created after the column is added, as before; no change needed.
+- Test 107 extended (plan 65 to 71): default re-split skips a hand-split line and an amount line, the count matches the lines changed (2), a default-split line does change, flags are f/t/t. The household-default count assertion now also excludes manual lines. Full run: Files=107, Tests=2695, PASS.
+- For plan 08-15: `split_manual` must be added to the client column list (select-only); no src/data or exportManifest edits made here.
