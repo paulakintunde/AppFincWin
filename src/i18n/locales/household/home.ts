@@ -50,7 +50,6 @@ export const home = {
     howSplit: 'How new shared lines are split',
     categoryDefaults: 'Category defaults',
     sharedAccounts: 'Shared accounts',
-    summaryLink: 'Read-only summary link',
   },
   scope: {
     mine: 'Mine',
