@@ -219,8 +219,11 @@ export function setPaidBy(client: DbClient, id: string, expectedVersion: number,
   return callRpc<{ version?: number }>(client, 'set_paid_by', { p_id: id, p_expected_version: expectedVersion, p_user: userId });
 }
 
-/** `categoryRef` null is the household default. Refusals: not_member, invalid_category, invalid_rule, version_conflict. */
-export function setSplitDefault(client: DbClient, categoryRef: string | null, rule: 'even' | 'weight' | 'mine', expectedVersion?: number) {
+/**
+ * `categoryRef` null is the household default. A null `rule` on a category removes it ("Use household default").
+ * Refusals: not_member, invalid_category, invalid_rule, version_conflict.
+ */
+export function setSplitDefault(client: DbClient, categoryRef: string | null, rule: 'even' | 'weight' | 'mine' | null, expectedVersion?: number) {
   return callRpc<{ before?: { rule: string | null } }>(client, 'set_split_default', {
     p_category_ref: categoryRef,
     p_rule: rule,
