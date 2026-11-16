@@ -1463,8 +1463,8 @@ Plans:
 - [x] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
-- [ ] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
+- [x] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
+- [x] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
 
 **Wave 8** *(blocked on Wave 7 completion)*
 - [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 15/28 | In progress | - |
+| 8. Household | 17/28 | In progress | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
