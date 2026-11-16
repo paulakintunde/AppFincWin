@@ -601,6 +601,8 @@ export function ActivityScreen({
             onMarkPaid={onBulkMarkPaid}
             onMarkUnpaid={onBulkMarkUnpaid}
             onDelete={onBulkDelete}
+            selectedRows={selectedRows}
+            onShared={() => selection.exit()}
           />
         </View>
       ) : null}

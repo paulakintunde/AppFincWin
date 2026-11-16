@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { TransactionSheet } from '../TransactionSheet';
 
 // 06-37: OccurrenceActions marks goal lines paid through useGoalLinePay; these sheets never open a goal line.
+jest.mock('@/features/household/sharing/SharedGroup', () => ({ SharedGroup: () => null, useSharedEntry: () => ({ commit: () => undefined }) })); // 08-19: the household data layer is not part of this test
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: jest.fn(() => true) }) }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) })); // 05.2-44: OccurrenceActions gates on v3
 jest.mock('react-native-safe-area-context', () => ({
