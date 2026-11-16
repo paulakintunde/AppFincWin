@@ -10,7 +10,10 @@ alter table public.transactions
   add column household_rate numeric,
   add column household_rate_pending boolean not null default false,
   add column split_rule text check (split_rule in ('even', 'weight', 'amount', 'mine')),
-  add column shared_at timestamptz;
+  add column shared_at timestamptz,
+  -- true when a member chose the split by hand (set_line_split, or an explicit rule at share time); false when it came from
+  -- a default. A default re-split (apply_rule_to_unsettled) leaves these lines alone (owner 2026-11-15).
+  add column split_manual boolean not null default false;
 alter table public.recurring_series
   add column split_rule text check (split_rule in ('even', 'weight', 'mine')),
   add column split_participants uuid[];
@@ -551,7 +554,8 @@ begin
   perform set_config('fincwin.household_rpc', 'on', true);
   update public.transactions
      set is_shared = true, shared_at = now(), household_amount = st.amount, household_currency = v_cur,
-         household_rate = st.rate, household_rate_pending = false, split_rule = v_rule
+         household_rate = st.rate, household_rate_pending = false, split_rule = v_rule,
+         split_manual = p_rule is not null
    where id = t.id;
   perform public.hh_store_splits(t.id, t.household_id, v_plan);
 
@@ -567,7 +571,7 @@ begin
         v_plan := public.hh_split_plan(f.household_id, coalesce(f.paid_by, f.created_by), case when fst.ok then fst.amount end,
                                        v_rule, p_participants, null);
         update public.transactions
-           set is_shared = true, shared_at = now(), split_rule = v_rule,
+           set is_shared = true, shared_at = now(), split_rule = v_rule, split_manual = p_rule is not null,
                household_amount = fst.amount, household_currency = case when fst.ok then v_cur end,
                household_rate = fst.rate, household_rate_pending = not fst.ok
          where id = f.id;
@@ -633,7 +637,8 @@ begin
     perform set_config('fincwin.household_rpc', 'on', true);
     update public.transactions
        set is_shared = true, shared_at = now(), household_amount = st.amount, household_currency = v_cur,
-           household_rate = st.rate, household_rate_pending = false, split_rule = v_rule
+           household_rate = st.rate, household_rate_pending = false, split_rule = v_rule,
+           split_manual = p_rule is not null
      where id = t.id;
     perform public.hh_store_splits(t.id, t.household_id, v_plan);
     perform set_config('fincwin.household_rpc', '', true);
@@ -672,7 +677,7 @@ begin
   delete from public.transaction_member_categories where transaction_id = t.id;
   update public.transactions
      set is_shared = false, shared_at = null, split_rule = null, paid_by = null, household_amount = null,
-         household_currency = null, household_rate = null, household_rate_pending = false
+         household_currency = null, household_rate = null, household_rate_pending = false, split_manual = false
    where id = t.id;
   perform set_config('fincwin.household_rpc', '', true);
   -- other clients drop the line from their cache on this notice (Realtime Pitfall 6); no name or amount travels
@@ -711,7 +716,7 @@ begin
   end;
   v_before := public.hh_split_json(t.id);
   perform set_config('fincwin.household_rpc', 'on', true);
-  update public.transactions set split_rule = p_rule where id = t.id;
+  update public.transactions set split_rule = p_rule, split_manual = true where id = t.id;
   perform public.hh_store_splits(t.id, t.household_id, v_plan);
   perform set_config('fincwin.household_rpc', '', true);
   perform public.hh_event(t.household_id, 'split_changed', null, t.id, null,
@@ -811,7 +816,7 @@ end;
 $$;
 
 -- The shared, unsettled lines a rule decides (D-35): a category default decides the lines of that category; the household
--- default decides the lines whose category has no default of its own. Lines split by hand with exact amounts are left alone.
+-- default decides the lines whose category has no default of its own. Lines a member split by hand (any rule) and lines split by exact amounts are left alone.
 create or replace function public.hh_rule_lines(p_household uuid, p_category_ref text)
 returns setof uuid
 language sql
@@ -821,7 +826,7 @@ set search_path = ''
 as $$
   select t.id from public.transactions t
    where t.household_id = p_household and t.is_shared and t.deleted_at is null
-     and t.split_rule is distinct from 'amount' and not public.hh_line_locked(t.id)
+     and t.split_rule is distinct from 'amount' and not t.split_manual and not public.hh_line_locked(t.id)
      and case when p_category_ref is not null then public.hh_category_ref(t.category_id) is not distinct from p_category_ref
               else not exists (select 1 from public.household_split_defaults d
                                 where d.household_id = p_household and d.category_ref is not null

@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(65);
+select extensions.plan(71);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 select ('' || n || n || n || n || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || n || n || n || n || n || n || n || n)::uuid,
@@ -214,9 +214,40 @@ select extensions.is(public.apply_rule_to_unsettled('builtin:Groceries') ->> 'ch
 select extensions.is((select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-000000000005'),
   '{-900,-900,-1200}'::bigint[], 'it now follows the new weights');
 select extensions.is((public.count_unsettled_for_rule(null) ->> 'count')::int,
-  (select count(*)::int from public.transactions t where t.is_shared and t.deleted_at is null and t.split_rule <> 'amount'
+  (select count(*)::int from public.transactions t where t.is_shared and t.deleted_at is null and t.split_rule <> 'amount' and not t.split_manual
      and not exists (select 1 from public.household_split_defaults d where d.category_ref is not null and d.category_ref = 'builtin:' || (select c.builtin_key from public.categories c where c.id = t.category_id))),
   'the household default decides every shared line without a category default');
+
+-- 48a. Owner 2026-11-15: re-splitting by a default leaves hand-split lines (any rule) and exact-amount lines alone.
+reset role;
+insert into public.transactions (id, household_id, created_by, account_id, original_amount, original_currency, local_date, time_zone, name, status, category_id) values
+  ('d1000000-0000-0000-0000-0000000000f1', (select h from ids), '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-00000000000a', -2000, 'USD', '2026-11-02', 'UTC', 'g1 default', 'paid', public.t107_cat('11111111-1111-1111-1111-111111111111', 'Groceries')),
+  ('d1000000-0000-0000-0000-0000000000f2', (select h from ids), '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-00000000000a', -2000, 'USD', '2026-11-02', 'UTC', 'g2 by hand', 'paid', public.t107_cat('11111111-1111-1111-1111-111111111111', 'Groceries')),
+  ('d1000000-0000-0000-0000-0000000000f3', (select h from ids), '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-00000000000a', -2000, 'USD', '2026-11-02', 'UTC', 'g3 amounts', 'paid', public.t107_cat('11111111-1111-1111-1111-111111111111', 'Groceries'));
+set local role authenticated;
+select public.t107_as('11111111-1111-1111-1111-111111111111');
+select public.share_transaction('d1000000-0000-0000-0000-0000000000f1', public.t107_ver('d1000000-0000-0000-0000-0000000000f1'));
+select public.share_transaction('d1000000-0000-0000-0000-0000000000f2', public.t107_ver('d1000000-0000-0000-0000-0000000000f2'));
+select public.set_line_split('d1000000-0000-0000-0000-0000000000f2', public.t107_ver('d1000000-0000-0000-0000-0000000000f2'), 'even',
+  array['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222']::uuid[]);
+select public.share_transaction('d1000000-0000-0000-0000-0000000000f3', public.t107_ver('d1000000-0000-0000-0000-0000000000f3'), 'amount', null,
+  '{"11111111-1111-1111-1111-111111111111": -1200, "22222222-2222-2222-2222-222222222222": -800}'::jsonb);
+create temp table t107_before as select transaction_id, array_agg(share order by position) as shares
+  from public.transaction_splits where transaction_id in ('d1000000-0000-0000-0000-0000000000f2', 'd1000000-0000-0000-0000-0000000000f3') group by transaction_id;
+grant select on t107_before to authenticated;
+select public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 50, "22222222-2222-2222-2222-222222222222": 50, "33333333-3333-3333-3333-333333333333": 0}'::jsonb);
+select extensions.is(public.count_unsettled_for_rule('builtin:Groceries') ->> 'count', '2', 'the offer counts only the lines it will change (the 2 default-split groceries lines)');
+select extensions.is(public.apply_rule_to_unsettled('builtin:Groceries') ->> 'changed_count', '2', 'applying changes the same 2 lines');
+select extensions.is((select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-0000000000f1'),
+  '{-1000,-1000,0}'::bigint[], 'a default-split line follows the new weights');
+select extensions.is((select shares from t107_before where transaction_id = 'd1000000-0000-0000-0000-0000000000f2'),
+  (select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-0000000000f2'), 'a hand-split line keeps its split');
+select extensions.is((select shares from t107_before where transaction_id = 'd1000000-0000-0000-0000-0000000000f3'),
+  (select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-0000000000f3'), 'an exact-amount line keeps its split');
+select extensions.is((select array_agg(split_manual order by id) from public.transactions where id in
+  ('d1000000-0000-0000-0000-0000000000f1', 'd1000000-0000-0000-0000-0000000000f2', 'd1000000-0000-0000-0000-0000000000f3')),
+  '{f,t,t}'::boolean[], 'only the default-split line is unmarked');
+select public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 30, "22222222-2222-2222-2222-222222222222": 30, "33333333-3333-3333-3333-333333333333": 40}'::jsonb);
 
 -- 49-52. Bulk sharing returns a count; linked lines count as skipped.
 select extensions.is(public.bulk_share_transactions(array['d1000000-0000-0000-0000-0000000000b1', 'd1000000-0000-0000-0000-0000000000b2', 'd1000000-0000-0000-0000-0000000000b3', 'd1000000-0000-0000-0000-000000000005']::uuid[]),
