@@ -15,7 +15,7 @@
  * 'spending' line, is left where it is. A refund of a payment-plan purchase is a credit to the purchase month; the
  * plan's series is untouched (D-09).
  *
- * Line amounts are positive magnitudes for both 'spending' and 'refund' lines (buildV3Inputs); the maths is bigint.
+ * Line amounts are positive magnitudes for both 'spending' and 'refund' lines (buildInputs); the maths is bigint.
  *
  * Unspent anchor note (two-date refunds, 05.2 owner decision 2026-10-28): the month view uses the purchase date, but
  * unspent's roll-forward counts the refund on the day it arrived (it reads `loggedMonths`, the months as logged). So a

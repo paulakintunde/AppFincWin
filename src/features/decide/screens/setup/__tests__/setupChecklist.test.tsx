@@ -5,7 +5,7 @@ import React from 'react';
 import { fireEvent, renderHook, screen } from '@testing-library/react-native';
 import { wrap } from '@/test/stepProps';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
-import { buildV3Inputs } from '@/features/decide/snapshot/v3/buildV3Inputs';
+import { buildInputs } from '@/features/decide/snapshot/v3/buildInputs';
 import { setupProgress, type SetupFacts } from '../../logic/setupProgress';
 import { buildBillRows, decideBillSetOf, decideBillsTotal } from '../items/itemLogic';
 import { SetupChecklist } from '../SetupChecklist';
@@ -159,7 +159,7 @@ describe('Bills page and checklist agree (DS-6, DS-7)', () => {
   const flags = { noDebts: false, netNotSet: false, noRules: false, billsRight: false };
 
   it('the same count and the same converted total, and the goal and savings payments are named elsewhere', () => {
-    const inputs = buildV3Inputs(source, null);
+    const inputs = buildInputs(source, null);
     const facts = setupFactsFrom(inputs, flags, new Map(), new Set());
     const set = decideBillSetOf(inputs);
     const rows = buildBillRows([], extra as never, set, false);
@@ -189,15 +189,15 @@ describe('useSetupProgress holds equal facts (G-72-3)', () => {
   it('a refetch that rebuilds equal inputs keeps the same progress object; a real change gives a new one', async () => {
     const refetch = () => undefined;
     const base = demoSource(TODAY);
-    mockV3 = { inputs: buildV3Inputs(base, null), evaluation: null, status: 'ready', refetch };
+    mockV3 = { inputs: buildInputs(base, null), evaluation: null, status: 'ready', refetch };
     const { result, rerender } = await renderHook(() => useSetupProgress());
     const first = result.current;
     expect(first.loading).toBe(false);
-    mockV3 = { inputs: buildV3Inputs(base, null), evaluation: null, status: 'ready', refetch };
+    mockV3 = { inputs: buildInputs(base, null), evaluation: null, status: 'ready', refetch };
     await rerender({});
     expect(result.current).toBe(first);
     const phone = { id: 'phone', account_id: 'demo-acct-everyday', amount: -4500, currency: 'USD', freq: 'monthly' as const, anchor_date: '2026-10-09', end_date: null, occurrence_count: null, category_id: null, deleted_at: null };
-    mockV3 = { inputs: buildV3Inputs({ ...base, series: [...base.series, phone] }, null), evaluation: null, status: 'ready', refetch };
+    mockV3 = { inputs: buildInputs({ ...base, series: [...base.series, phone] }, null), evaluation: null, status: 'ready', refetch };
     await rerender({});
     expect(result.current).not.toBe(first);
     expect(result.current.items.find((i) => i.id === 'bills')?.status.values).toMatchObject({ count: 1 });

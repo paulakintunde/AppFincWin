@@ -1,7 +1,7 @@
 // D-07 parity: the interim decide_settings columns and the migrated safety-net goal give Decide the same net and fund.
 import { evaluate, readStoredCheck, type CheckV2, type V3Inputs } from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '@/features/decide/__tests__/helpers/demoScenario';
-import { buildV3Inputs } from '@/features/decide/snapshot/v3/buildV3Inputs';
+import { buildInputs } from '@/features/decide/snapshot/v3/buildInputs';
 import { v3s } from '@/features/decide/snapshot/v3/__tests__/v3Fixtures';
 import { minorUnits } from '@/engine/money';
 import { safetyNetInputsOf, safetyNetPointOf } from '../index';
@@ -50,13 +50,13 @@ for (const reserve of reserves)
 
 /**
  * 06-10: the builder no longer reads the interim columns, so the OLD mapping is frozen here as a literal copy of what
- * buildV3Inputs did (05.4 FIN-01): a settings row in another currency drops the money (size and reserve), protect and locked pass
+ * buildInputs did (05.4 FIN-01): a settings row in another currency drops the money (size and reserve), protect and locked pass
  * as stored, saved is the reserve (0 when none), the fund is the reserve linked to reserve_account_id.
  */
 function oldWay(c: Cell): V3Inputs {
   const base = demoSource(TODAY);
   const source = { ...base, settings: { ...base.settings!, currency: c.currency, reserve: c.reserve } };
-  const built = buildV3Inputs(source, v3s());
+  const built = buildInputs(source, v3s());
   const usable = c.currency === HOME;
   const reserve = usable ? c.reserve : null;
   const size = usable ? c.safety_net_size : null;

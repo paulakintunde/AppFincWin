@@ -5,7 +5,7 @@ import { renderHook } from '@testing-library/react-native';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { DecideV3Scope, planLiveOf, useDecideV3 } from '../decideV3';
 
 const TODAY = '2026-10-03';

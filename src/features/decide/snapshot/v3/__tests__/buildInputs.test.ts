@@ -4,13 +4,13 @@ import { holdsMoney } from '@/features/record/accounts/accountUseSuggest';
 import { MAX_OWN_LINES, buildMonthModel, type AccountUse } from '@/engine/decide/v3';
 import { MAX_ABS_AMOUNT_MINOR } from '@/engine/money';
 import { demoSource } from '../../../__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '../../buildSnapshot';
-import { buildDecideSnapshot } from '../../buildSnapshot';
-import { buildInputs as buildV3Inputs } from "../buildInputs";
+import type { SnapshotSource } from '../../sourceTypes';
+import { buildInputs } from '../buildInputs';
 import type { V3SeriesExtra, V3SettingsSource } from '../types';
 import { v3s } from './v3Fixtures';
 
 const TODAY = '2026-10-03';
+const CASH_OF_DEMO = 1_298_000; // the demo's cash-like balances (everyday, cash, savings)
 type Row = SnapshotSource['rows'][number];
 
 const extra = (over: Partial<V3SeriesExtra> = {}): V3SeriesExtra => ({ pay_group: null, counts_as: null, income_kind: null, saving_mode: null, typical_choice: null, status: null, ...over });
@@ -40,11 +40,10 @@ function withUses(src: SnapshotSource, uses: Record<string, AccountUse>): Snapsh
   return { ...src, accounts: src.accounts.map((a) => ({ ...a, ...columns(uses[a.id]) })) as SnapshotSource['accounts'] };
 }
 const withRows = (rows: Row[], base: SnapshotSource = demoSource(TODAY)): SnapshotSource => ({ ...base, rows: [...base.rows, ...rows] });
-const lineOf = (src: SnapshotSource, id: string, v3: V3SettingsSource | null = null) => buildV3Inputs(src, v3).months.flatMap((m) => m.lines).find((l) => l.id === id);
+const lineOf = (src: SnapshotSource, id: string, v3: V3SettingsSource | null = null) => buildInputs(src, v3).months.flatMap((m) => m.lines).find((l) => l.id === id);
 
-describe('buildV3Inputs: the demo (S9)', () => {
-  const inputs = buildV3Inputs(demoSource(TODAY), null);
-  const snap = buildDecideSnapshot(demoSource(TODAY));
+describe('buildInputs: the demo (S9)', () => {
+  const inputs = buildInputs(demoSource(TODAY), null);
 
   it('turns the demo into USD inputs with six full past months', () => {
     expect(inputs.currency).toBe('USD');
@@ -62,10 +61,9 @@ describe('buildV3Inputs: the demo (S9)', () => {
     expect(s.cadence).toEqual({ unit: 'month', every: 1 });
   });
 
-  it('has the student loan with its minimum and the cash balance of the snapshot', () => {
+  it('has the student loan with its minimum and the cash balance', () => {
     expect(inputs.debts).toEqual([{ id: 'demo-debt-0', kind: 'loan', balance: 620000, minimum: 19000, apr: expect.anything(), secured: false, isHousing: false, dueDay: null }]);
-    expect(snap.kind).toBe('logged');
-    expect(inputs.balance).toBe(snap.cash);
+    expect(inputs.balance).toBe(CASH_OF_DEMO);
   });
 
   it('has null settings defaults: no unspent, no profile, no emergency, table thresholds, legacy lines off', () => {
@@ -89,7 +87,7 @@ describe('buildV3Inputs: the demo (S9)', () => {
   });
 });
 
-describe('buildV3Inputs: line roles', () => {
+describe('buildInputs: line roles', () => {
   it('classifies refunds, income and plain spending', () => {
     const src = withRows([mk('refund', EVERYDAY, 2500, { is_refund: true }), mk('gift', EVERYDAY, 900), mk('coffee', EVERYDAY, -400)]);
     expect(lineOf(src, 'refund')!.role).toBe('refund');
@@ -138,7 +136,7 @@ describe('buildV3Inputs: line roles', () => {
       [...pair('dep', EVERYDAY, SAVINGS, 5000, { in: { goal_id: 'g1' } }), ...pair('wd', SAVINGS, EVERYDAY, 2000, { out: { goal_id: 'g1' } }), ...pair('old', EVERYDAY, SAVINGS, 300, { in: { goal_id: 'g-done' } })],
       { ...demoSource(TODAY), goals }
     );
-    const inputs = buildV3Inputs(src, null);
+    const inputs = buildInputs(src, null);
     expect(lineOf(src, 'dep-out')!.role).toBe('envelope_deposit');
     expect(lineOf(src, 'dep-in')!.role).toBe('own_transfer');
     expect(lineOf(src, 'wd-in')!.role).toBe('envelope_withdrawal');
@@ -147,19 +145,19 @@ describe('buildV3Inputs: line roles', () => {
   });
 });
 
-describe('buildV3Inputs: series', () => {
+describe('buildInputs: series', () => {
   const base = demoSource(TODAY);
   const bill = (id: string, over: Partial<SnapshotSource['series'][number]> = {}): SnapshotSource['series'][number] => ({
     id, account_id: EVERYDAY, amount: -160000, currency: 'USD', freq: 'monthly', anchor_date: '2026-04-02', end_date: null, occurrence_count: null, category_id: 'cat-housing', deleted_at: null, ...over,
   });
   const src = (series: SnapshotSource['series'], more: Partial<SnapshotSource> = {}): SnapshotSource => ({ ...base, series: [...base.series, ...series], ...more });
-  const byId = (s: SnapshotSource, v3: V3SettingsSource | null = null) => Object.fromEntries(buildV3Inputs(s, v3).series.map((x) => [x.id, x]));
+  const byId = (s: SnapshotSource, v3: V3SettingsSource | null = null) => Object.fromEntries(buildInputs(s, v3).series.map((x) => [x.id, x]));
 
   it('a housing bill keeps its category and flags isHousing; extras carry over', () => {
     const v3 = v3s({ series_extra: { rent: extra({ typical_choice: 'monthly', status: 'ended', pay_group: 'g' }) }, dismissals: ['k1', 5 as unknown as string] });
     const s = byId(src([bill('rent', { end_date: '2026-12-31' })]), v3).rent!;
     expect(s).toMatchObject({ role: 'bill', amount: 160000, isHousing: true, categoryId: 'cat-housing', typicalChoice: 'monthly', status: 'ended', payGroup: 'g', countsAs: null, incomeKind: null, savingMode: null, endDate: '2026-12-31' });
-    expect(buildV3Inputs(src([]), v3).dismissedKeys).toEqual(['k1']);
+    expect(buildInputs(src([]), v3).dismissedKeys).toEqual(['k1']);
   });
 
   it('a category missing from the map is not housing', () => {
@@ -209,12 +207,12 @@ describe('buildV3Inputs: series', () => {
   });
 });
 
-describe('buildV3Inputs: v3 settings', () => {
+describe('buildInputs: v3 settings', () => {
   const src = demoSource(TODAY);
 
   it('parses the profile, anchor, override and marks; invalid values fall to null', () => {
-    const month = buildV3Inputs(src, null).months.find((m) => m.full)!.month;
-    const good = buildV3Inputs(
+    const month = buildInputs(src, null).months.find((m) => m.full)!.month;
+    const good = buildInputs(
       src,
       v3s({ income_types: ['salary', 'bogus'], variable_method: 'spread', steady_amount: 300000, hold_months: 2, unspent_anchor: 120000, unspent_anchor_at: '2026-10-01', everyday_override: 50000, month_marks: { [month]: 'half', '2020-01': 'x' } })
     );
@@ -224,13 +222,13 @@ describe('buildV3Inputs: v3 settings', () => {
     expect(good.months.find((m) => m.month === month)!.mark).toBe('half');
     expect(good.months.filter((m) => m.mark !== null)).toHaveLength(1);
 
-    const bad = buildV3Inputs(src, v3s({ income_types: [], variable_method: 'x', steady_amount: -1, hold_months: 7, unspent_anchor: 1.5, unspent_anchor_at: 'soon', everyday_override: Number.NaN, month_marks: { [month]: 'weird' } }));
+    const bad = buildInputs(src, v3s({ income_types: [], variable_method: 'x', steady_amount: -1, hold_months: 7, unspent_anchor: 1.5, unspent_anchor_at: 'soon', everyday_override: Number.NaN, month_marks: { [month]: 'weird' } }));
     expect(bad.profile).toEqual({ types: [], variable: null, steady: null, billsHorizonMonths: null, pattern: null, patternConfirmed: false });
     expect(bad.unspent).toBeNull();
     expect(bad.everydayOverride).toBeNull();
     expect(bad.months.every((m) => m.mark === null)).toBe(true);
-    expect(buildV3Inputs(src, v3s({ hold_months: 1 })).profile).toBeNull(); // income_types null = not set up
-    expect(buildV3Inputs(src, v3s({ unspent_anchor: 5 })).unspent).toBeNull(); // anchor needs its date
+    expect(buildInputs(src, v3s({ hold_months: 1 })).profile).toBeNull(); // income_types null = not set up
+    expect(buildInputs(src, v3s({ unspent_anchor: 5 })).unspent).toBeNull(); // anchor needs its date
   });
 
   it('06 D-02: emergency comes from the flagged safety-net goal, in the home currency only; the typed reserve is not read', () => {
@@ -238,16 +236,16 @@ describe('buildV3Inputs: v3 settings', () => {
       ...src,
       goals: [{ id: 'net', name: 'Safety net', kind: 'pot', check_id: null, currency: 'USD', target: null, monthly_amount: null, ready_by: null, opening_saved: 500000, done_at: null, deleted_at: null, account_id: null, is_safety_net: true, locked: true, protect: true, ...over }],
     });
-    expect(buildV3Inputs(net(), null).emergency).toEqual({ amount: 500000, accountId: null });
-    expect(buildV3Inputs(net({ account_id: SAVINGS }), v3s()).emergency).toEqual({ amount: 500000, accountId: SAVINGS }); // D-54
-    expect(buildV3Inputs(net({ currency: 'EUR' }), null).emergency).toBeNull();
-    expect(buildV3Inputs({ ...src, settings: { ...src.settings!, reserve: 500000, currency: 'USD' } }, null).emergency).toBeNull();
-    expect(buildV3Inputs({ ...src, settings: null }, null).emergency).toBeNull();
+    expect(buildInputs(net(), null).emergency).toEqual({ amount: 500000, accountId: null });
+    expect(buildInputs(net({ account_id: SAVINGS }), v3s()).emergency).toEqual({ amount: 500000, accountId: SAVINGS }); // D-54
+    expect(buildInputs(net({ currency: 'EUR' }), null).emergency).toBeNull();
+    expect(buildInputs({ ...src, settings: { ...src.settings!, reserve: 500000, currency: 'USD' } }, null).emergency).toBeNull();
+    expect(buildInputs({ ...src, settings: null }, null).emergency).toBeNull();
   });
 
   it('legacy line settings carry over on (D-13)', () => {
     const s = { ...src, settings: { ...src.settings!, dsr_line: '40', housing_line: '30', unsecured_multiple: 6 } };
-    expect(buildV3Inputs(s, null).limits.lines.map((l) => [l.id, l.on, l.source])).toEqual([['debt_share', true, 'legacy'], ['housing_share', true, 'legacy'], ['unsecured_multiple', true, 'legacy']]);
+    expect(buildInputs(s, null).limits.lines.map((l) => [l.id, l.on, l.source])).toEqual([['debt_share', true, 'legacy'], ['housing_share', true, 'legacy'], ['unsecured_multiple', true, 'legacy']]);
   });
 
   it('own lines: every kind parses; bad, duplicate, colliding and surplus lines are dropped', () => {
@@ -260,7 +258,7 @@ describe('buildV3Inputs: v3 settings', () => {
       { id: 'f', on: true, spec: { kind: 'category_income_share', categoryId: 'cat-dining', pct: '10' } },
       { id: 'g', on: true, spec: { kind: 'unspent_floor', floor: 10000 } },
     ];
-    const lines = buildV3Inputs(src, v3s({ own_lines: own })).limits.lines.filter((l) => l.source === 'own');
+    const lines = buildInputs(src, v3s({ own_lines: own })).limits.lines.filter((l) => l.source === 'own');
     expect(lines.map((l) => [l.id, l.on])).toEqual([['a', true], ['b', false], ['c', true], ['e', true], ['f', true]]); // 05.5-12 D-11: 'd' is a category cap from the rules document, which is no longer read
     expect(lines).toHaveLength(MAX_OWN_LINES);
 
@@ -283,24 +281,24 @@ describe('buildV3Inputs: v3 settings', () => {
       { id: 'ok', spec: { kind: 'unspent_floor', floor: 1 } },
       { id: 'ok', spec: { kind: 'unspent_floor', floor: 2 } },
     ];
-    expect(buildV3Inputs(src, v3s({ own_lines: bad })).limits.lines.filter((l) => l.source === 'own').map((l) => l.id)).toEqual(['ok']);
+    expect(buildInputs(src, v3s({ own_lines: bad })).limits.lines.filter((l) => l.source === 'own').map((l) => l.id)).toEqual(['ok']);
   });
 
   it('06.1-22 FIN-07: the keep-at-least line is read as minor units, and anything unreadable is none', () => {
-    expect(buildV3Inputs(src, v3s({ tight_line: 25000 })).tightLine).toBe(25000);
-    expect(buildV3Inputs(src, v3s({ tight_line: null })).tightLine).toBeNull();
-    expect(buildV3Inputs(src, v3s({ tight_line: -1 })).tightLine).toBeNull();
-    expect(buildV3Inputs(src, v3s({ tight_line: 1.5 })).tightLine).toBeNull();
-    expect(buildV3Inputs(src, null).tightLine).toBeNull();
+    expect(buildInputs(src, v3s({ tight_line: 25000 })).tightLine).toBe(25000);
+    expect(buildInputs(src, v3s({ tight_line: null })).tightLine).toBeNull();
+    expect(buildInputs(src, v3s({ tight_line: -1 })).tightLine).toBeNull();
+    expect(buildInputs(src, v3s({ tight_line: 1.5 })).tightLine).toBeNull();
+    expect(buildInputs(src, null).tightLine).toBeNull();
   });
 
   it('06.1-29 FIN-20: the tax set-aside share is whole basis points from 0 to 6000, and anything else is none', () => {
-    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 2500 })).taxSetAsideBp).toBe(2500);
-    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 0 })).taxSetAsideBp).toBe(0);
-    expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: 6000 })).taxSetAsideBp).toBe(6000);
-    for (const bad of [6001, -1, 12.5, null, '2500']) expect(buildV3Inputs(src, v3s({ tax_set_aside_bp: bad as never })).taxSetAsideBp).toBeNull();
-    expect(buildV3Inputs(src, v3s({})).taxSetAsideBp).toBeNull();
-    expect(buildV3Inputs(src, null).taxSetAsideBp).toBeNull();
+    expect(buildInputs(src, v3s({ tax_set_aside_bp: 2500 })).taxSetAsideBp).toBe(2500);
+    expect(buildInputs(src, v3s({ tax_set_aside_bp: 0 })).taxSetAsideBp).toBe(0);
+    expect(buildInputs(src, v3s({ tax_set_aside_bp: 6000 })).taxSetAsideBp).toBe(6000);
+    for (const bad of [6001, -1, 12.5, null, '2500']) expect(buildInputs(src, v3s({ tax_set_aside_bp: bad as never })).taxSetAsideBp).toBeNull();
+    expect(buildInputs(src, v3s({})).taxSetAsideBp).toBeNull();
+    expect(buildInputs(src, null).taxSetAsideBp).toBeNull();
   });
 
   it('custom options parse, and anything invalid falls back to none', () => {
@@ -315,7 +313,7 @@ describe('buildV3Inputs: v3 settings', () => {
       cadences: [{ unit: 'week', every: 3 }, { unit: 'day', every: 1 }, 'x'],
       incomeKinds: [{ id: 'k1', countsAs: 'kept' }, { id: 'k2', countsAs: 'available' }, { id: 'k3', countsAs: 'maybe' }, { id: '' }, 9],
     };
-    const parsed = buildV3Inputs(src, v3s({ custom_options: good })).custom;
+    const parsed = buildInputs(src, v3s({ custom_options: good })).custom;
     expect(parsed.itemTypes).toHaveLength(1);
     expect(parsed.purposes).toEqual([{ id: 'p1' }]);
     expect(parsed.cadences).toEqual([{ unit: 'week', every: 3 }]);
@@ -323,14 +321,14 @@ describe('buildV3Inputs: v3 settings', () => {
     expect(parsed.itemTypes[0]!.questionIds).toEqual(['fuel_monthly']);
     const own = (q: unknown) => ({ itemTypes: [{ id: 'z', base: 'general', questionIds: [], ownQuestions: [q] }] });
     for (const q of [{ id: '', label: 'a', cadence: 'yearly', cash: true }, { id: 'a', label: 3, cadence: 'yearly', cash: true }, { id: 'a', label: 'a', cadence: 'daily', cash: true }, { id: 'a', label: 'a', cadence: 'yearly', cash: 'yes' }, 'junk']) {
-      expect(buildV3Inputs(src, v3s({ custom_options: own(q) })).custom.itemTypes[0]!.ownQuestions).toEqual([]);
+      expect(buildInputs(src, v3s({ custom_options: own(q) })).custom.itemTypes[0]!.ownQuestions).toEqual([]);
     }
-    expect(buildV3Inputs(src, v3s({ custom_options: { purposes: [{ id: 'dup' }, { id: 'dup' }] } })).custom.purposes).toEqual([{ id: 'dup' }]);
-    expect(buildV3Inputs(src, v3s({ custom_options: 'nope' })).custom.purposes).toEqual([]);
+    expect(buildInputs(src, v3s({ custom_options: { purposes: [{ id: 'dup' }, { id: 'dup' }] } })).custom.purposes).toEqual([{ id: 'dup' }]);
+    expect(buildInputs(src, v3s({ custom_options: 'nope' })).custom.purposes).toEqual([]);
   });
 });
 
-describe('buildV3Inputs: thresholds and other snapshot kinds', () => {
+describe('buildInputs: thresholds and other snapshot kinds', () => {
   const RATES: FxLatestRow[] = [
     { quote: 'USD', rate: '1.1', rate_date: '2026-10-02', source: 'frankfurter-v2' },
     { quote: 'XTS', rate: '2.2', rate_date: '2026-10-02', source: 'frankfurter-v2' },
@@ -338,8 +336,8 @@ describe('buildV3Inputs: thresholds and other snapshot kinds', () => {
 
   it('a currency outside the band table uses the stored rate, else reports missing (D-26)', () => {
     const xts = { ...demoSource(TODAY), homeCurrency: 'XTS' };
-    expect(buildV3Inputs({ ...xts, rates: RATES }, null).thresholds.source).toBe('fallback');
-    expect(buildV3Inputs(xts, null).thresholds.source).toBe('missing');
+    expect(buildInputs({ ...xts, rates: RATES }, null).thresholds.source).toBe('fallback');
+    expect(buildInputs(xts, null).thresholds.source).toBe('missing');
   });
 
   it('a rough snapshot maps the rough figures; the v3 rough fields fill the rest', () => {
@@ -347,18 +345,16 @@ describe('buildV3Inputs: thresholds and other snapshot kinds', () => {
       ...demoSource(TODAY), rows: [], series: [], debts: [],
       settings: { ...demoSource(TODAY).settings!, rough_income: 400000, rough_spending: 250000 },
     };
-    expect(buildDecideSnapshot(rough).kind).toBe('rough');
-    const plain = buildV3Inputs(rough, null);
+    const plain = buildInputs(rough, null);
     expect(plain.typedEstimates).toEqual({ income: 400000, expenses: 250000, saving: 0, debt: 0, invest: 0, asOf: TODAY });
     expect(plain.months).toEqual([]);
-    const filled = buildV3Inputs(rough, v3s({ rough_saving: 1000, rough_debt: 2000, rough_invest: 3000, rough_as_of: '2026-09-15' }));
+    const filled = buildInputs(rough, v3s({ rough_saving: 1000, rough_debt: 2000, rough_invest: 3000, rough_as_of: '2026-09-15' }));
     expect(filled.typedEstimates).toEqual({ income: 400000, expenses: 250000, saving: 1000, debt: 2000, invest: 3000, asOf: '2026-09-15' });
   });
 
   it('a snapshot with nothing to go on gives empty months and no rough figures', () => {
     const none: SnapshotSource = { ...demoSource(TODAY), rows: [], series: [], debts: [], settings: null };
-    expect(buildDecideSnapshot(none).kind).toBe('none');
-    const inputs = buildV3Inputs(none, null);
+    const inputs = buildInputs(none, null);
     expect(inputs.months).toEqual([]);
     expect(inputs.typedEstimates).toBeNull();
     expect(inputs.series).toEqual([]);
@@ -372,20 +368,20 @@ describe('buildV3Inputs: thresholds and other snapshot kinds', () => {
       accounts: [...base.accounts, { id: 'card2', name: 'Card 2', kind: 'credit', currency: 'USD', archived_at: null, deleted_at: null }, { id: 'loan2', name: 'Loan 2', kind: 'loan', currency: 'USD', archived_at: null, deleted_at: null }],
       balances: { ...base.balances, card2: -50000, loan2: -90000 },
     };
-    const kinds = Object.fromEntries(buildV3Inputs(src, null).debts.map((d) => [d.id, d.kind]));
+    const kinds = Object.fromEntries(buildInputs(src, null).debts.map((d) => [d.id, d.kind]));
     expect(kinds).toMatchObject({ card2: 'card', loan2: 'loan', 'demo-debt-0': 'loan' });
   });
 
   it('a housing loan sets isHousing on its debt', () => {
     const base = demoSource(TODAY);
     const src = { ...base, debts: base.debts.map((d) => (d.id === 'demo-debt-0' ? { ...d, is_housing: true } : d)) };
-    expect(buildV3Inputs(src, null).debts.find((d) => d.id === 'demo-debt-0')!.isHousing).toBe(true);
+    expect(buildInputs(src, null).debts.find((d) => d.id === 'demo-debt-0')!.isHousing).toBe(true);
   });
 });
 
-describe('buildV3Inputs: M-07 signed unspent anchor', () => {
+describe('buildInputs: M-07 signed unspent anchor', () => {
   const src = demoSource(TODAY);
-  const anchor = (n: number) => buildV3Inputs(src, v3s({ unspent_anchor: n, unspent_anchor_at: '2026-10-01' })).unspent;
+  const anchor = (n: number) => buildInputs(src, v3s({ unspent_anchor: n, unspent_anchor_at: '2026-10-01' })).unspent;
   it('M-07: an overdrawn figure reaches the engine; out-of-range and fractional ones do not', () => {
     expect(anchor(-150000)).toEqual({ amount: -150000, at: '2026-10-01' });
     expect(anchor(-MAX_ABS_AMOUNT_MINOR - 1)).toBeNull();
@@ -393,9 +389,9 @@ describe('buildV3Inputs: M-07 signed unspent anchor', () => {
   });
 });
 
-describe('buildV3Inputs: M-09 one bad custom option drops only itself', () => {
+describe('buildInputs: M-09 one bad custom option drops only itself', () => {
   const src = demoSource(TODAY);
-  const custom = (o: unknown) => buildV3Inputs(src, v3s({ custom_options: o })).custom;
+  const custom = (o: unknown) => buildInputs(src, v3s({ custom_options: o })).custom;
   it('M-09: a bad item type leaves the other item types, purposes, cadences and income kinds', () => {
     const good = { id: 'a', base: 'general', questionIds: [], ownQuestions: [] };
     const bad = { id: 'b', base: 'general', questionIds: [], ownQuestions: [{ id: 'q', label: '  ', cadence: 'yearly', cash: true }] };
@@ -413,15 +409,15 @@ describe('buildV3Inputs: M-09 one bad custom option drops only itself', () => {
   });
 });
 
-describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', () => {
+describe('buildInputs: new inputs, accounts and sources (D-54, D-51, M-06)', () => {
   const src = demoSource(TODAY);
   it('maps the new engine inputs explicitly', () => {
-    const inputs = buildV3Inputs(src, null);
+    const inputs = buildInputs(src, null);
     expect(inputs.expectedIncome).toEqual([]);
     expect(inputs.heldBridges).toEqual([]);
     expect(inputs.payArrivals).toEqual([]);
     expect(inputs.unexplainedAnswer).toBeNull();
-    expect(buildV3Inputs(src, v3s({ income_types: ['salary'] })).profile).toMatchObject({ pattern: null, patternConfirmed: false });
+    expect(buildInputs(src, v3s({ income_types: ['salary'] })).profile).toMatchObject({ pattern: null, patternConfirmed: false });
   });
 
   it('D-54: every live money account is listed with its home balance and use null; archived and deleted ones are not', () => {
@@ -429,13 +425,13 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
     const archived = { ...base.accounts[0]!, id: 'zz-arch', archived_at: '2026-01-01T00:00:00Z' };
     const deleted = { ...base.accounts[0]!, id: 'zz-del', deleted_at: '2026-01-01T00:00:00Z' };
     const foreign = { ...base.accounts[0]!, id: 'zz-xyz', currency: 'XYZ' };
-    const inputs = buildV3Inputs({ ...base, accounts: [...base.accounts, archived, deleted, foreign], balances: { ...base.balances, 'zz-xyz': 5 } }, null);
+    const inputs = buildInputs({ ...base, accounts: [...base.accounts, archived, deleted, foreign], balances: { ...base.balances, 'zz-xyz': 5 } }, null);
     // 06.1-12 (CO-D-114): the account no rate converts stays listed, marked noRate, holding 0.
     expect(inputs.accounts!.map((a) => a.id)).toEqual([...base.accounts.filter((a) => a.kind !== 'credit' && a.kind !== 'loan').map((a) => a.id), 'zz-xyz']);
     expect(inputs.accounts!.find((a) => a.id === 'zz-xyz')).toMatchObject({ noRate: true, balance: 0 });
     expect(inputs.accounts!.every((a) => a.use === null)).toBe(true);
     expect(inputs.accounts!.find((a) => a.id === SAVINGS)!.balance).toBe(base.balances[SAVINGS]);
-    expect(buildV3Inputs({ ...base, balances: {} }, null).accounts!.every((a) => a.balance === 0)).toBe(true);
+    expect(buildInputs({ ...base, balances: {} }, null).accounts!.every((a) => a.balance === 0)).toBe(true);
   });
 
   it('D-54: an envelope with no tagged leg has accountId null; the latest tagged leg decides', () => {
@@ -449,7 +445,7 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
       ],
       { ...demoSource(TODAY), goals: [goal('g1'), goal('g2')] }
     );
-    const env = buildV3Inputs(s, null).envelopes;
+    const env = buildInputs(s, null).envelopes;
     expect(env.find((e) => e.id === 'g1')!.accountId).toBe(CASH);
     expect(env.find((e) => e.id === 'g2')!.accountId).toBeNull();
   });
@@ -458,19 +454,19 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
     const goals: SnapshotSource['goals'] = [{ id: 'g1', kind: 'pot', check_id: null, currency: 'USD', target: null, monthly_amount: null, ready_by: null, opening_saved: 0, done_at: null, deleted_at: null }];
     const src2 = withRows([...pair('u1', EVERYDAY, CASH, 1000), ...pair('u2', EVERYDAY, SAVINGS, 2000), ...pair('u3', SAVINGS, EVERYDAY, 500), ...pair('u4', EVERYDAY, CARD, 700), ...pair('u5', EVERYDAY, SAVINGS, 300, { in: { goal_id: 'g1' } })], { ...demoSource(TODAY), goals });
     const uses = { [EVERYDAY]: { kind: 'everyday' as const }, [CASH]: { kind: 'mixed' as const, extraSetAside: null }, [SAVINGS]: { kind: 'untouched' as const } };
-    const rolesWith = (u: Record<string, AccountUse>) => buildV3Inputs(withUses(src2, u), null).months.flatMap((m) => m.lines);
+    const rolesWith = (u: Record<string, AccountUse>) => buildInputs(withUses(src2, u), null).months.flatMap((m) => m.lines);
     const role = (u: Record<string, AccountUse>, id: string) => rolesWith(u).find((l) => l.id === id)!.role;
     expect(role(uses, 'u1-out')).toBe('own_transfer');
     expect(role(uses, 'u2-out')).toBe('saved_invested');
     expect(role(uses, 'u3-in')).toBe('other_in');
     expect(role(uses, 'u4-out')).toBe('debt_payment');
     expect(role(uses, 'u5-out')).toBe('envelope_deposit');
-    expect(buildV3Inputs(withUses(src2, uses), null).accounts!.find((a) => a.id === SAVINGS)!.use).toEqual({ kind: 'untouched' });
+    expect(buildInputs(withUses(src2, uses), null).accounts!.find((a) => a.id === SAVINGS)!.use).toEqual({ kind: 'untouched' });
     expect(role({ [EVERYDAY]: { kind: 'everyday' }, [SAVINGS]: { kind: 'everyday' } }, 'u2-out')).toBe('own_transfer');
     expect(role({ [EVERYDAY]: { kind: 'everyday' } }, 'u2-out')).toBe('saved_invested');
     expect(role({ [EVERYDAY]: { kind: 'everyday' }, [SAVINGS]: { kind: 'dedicated', purpose: { kind: 'emergency' } } }, 'u3-in')).toBe('other_in');
     const lone = withRows([mk('lone', EVERYDAY, -50, { transfer_id: 'lone-t' })]);
-    expect(buildV3Inputs(withUses(lone, { [EVERYDAY]: { kind: 'everyday' } }), null).months.flatMap((m) => m.lines).find((l) => l.id === 'lone')!.role).toBe('other_out');
+    expect(buildInputs(withUses(lone, { [EVERYDAY]: { kind: 'everyday' } }), null).months.flatMap((m) => m.lines).find((l) => l.id === 'lone')!.role).toBe('other_out');
   });
 
   it('D-51: a line is a statement line when its row has an import batch, else manual', () => {
@@ -481,18 +477,18 @@ describe('buildV3Inputs: new inputs, accounts and sources (D-54, D-51, M-06)', (
   });
 });
 
-describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
+describe('buildInputs: stored 05.2 answers (DSU-20)', () => {
   const base = demoSource(TODAY);
   const acct = (over: Record<string, unknown>): SnapshotSource => ({ ...base, accounts: base.accounts.map((a) => (a.id === SAVINGS ? { ...a, ...over } : a)) as SnapshotSource['accounts'] });
-  const useOf = (src: SnapshotSource) => buildV3Inputs(src, null).accounts!.find((a) => a.id === SAVINGS)!.use;
+  const useOf = (src: SnapshotSource) => buildInputs(src, null).accounts!.find((a) => a.id === SAVINGS)!.use;
   type Ans = NonNullable<V3SettingsSource['answers']>[number];
   const ans = (over: Partial<Ans>): Ans => ({ kind: 'pay_arrival', key: 'k', amount: null, bool_value: null, on_date: null, check_id: null, ...over });
 
   describe('income pattern', () => {
     it('reads the stated pattern and its confirmation; a bad pattern is null', () => {
-      expect(buildV3Inputs(base, v3s({ income_types: ['salary_or_wages'], income_pattern: 'seasonal', income_pattern_confirmed: true })).profile).toMatchObject({ types: ['salary'], pattern: 'seasonal', patternConfirmed: true });
-      expect(buildV3Inputs(base, v3s({ income_types: ['none'], income_pattern: 'odd' as never, income_pattern_confirmed: false })).profile).toMatchObject({ types: ['none'], pattern: null, patternConfirmed: false });
-      expect(buildV3Inputs(base, v3s({ income_types: ['own_business', 'pension_or_benefits'] })).profile!.types).toEqual(['freelance', 'salary']);
+      expect(buildInputs(base, v3s({ income_types: ['salary_or_wages'], income_pattern: 'seasonal', income_pattern_confirmed: true })).profile).toMatchObject({ types: ['salary'], pattern: 'seasonal', patternConfirmed: true });
+      expect(buildInputs(base, v3s({ income_types: ['none'], income_pattern: 'odd' as never, income_pattern_confirmed: false })).profile).toMatchObject({ types: ['none'], pattern: null, patternConfirmed: false });
+      expect(buildInputs(base, v3s({ income_types: ['own_business', 'pension_or_benefits'] })).profile!.types).toEqual(['freelance', 'salary']);
     });
   });
 
@@ -522,12 +518,12 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
     const goal = (id: string, over: Partial<SnapshotSource['goals'][number]> = {}): SnapshotSource['goals'][number] => ({ id, kind: 'pot', check_id: null, currency: 'USD', target: 90000, monthly_amount: 5000, ready_by: '2027-03-01', opening_saved: 0, done_at: null, deleted_at: null, ...over });
     it('a stored account wins over the transfer-leg guess, which stays as the fallback; bucket marks a saving bucket', () => {
       const s = withRows(pair('d1', EVERYDAY, SAVINGS, 100, { in: { goal_id: 'g1' } }), { ...base, goals: [goal('g1', { account_id: CASH }), goal('g2', { bucket: 'trip' }), goal('g3', { account_id: null, bucket: null })] });
-      const env = Object.fromEntries(buildV3Inputs(s, null).envelopes.map((e) => [e.id, e]));
+      const env = Object.fromEntries(buildInputs(s, null).envelopes.map((e) => [e.id, e]));
       expect(env.g1).toMatchObject({ accountId: CASH, bucket: false });
       expect(env.g2).toMatchObject({ accountId: null, bucket: true });
       expect(env.g3).toMatchObject({ accountId: null, bucket: false });
       const guess = withRows(pair('d1', EVERYDAY, SAVINGS, 100, { in: { goal_id: 'g1' } }), { ...base, goals: [goal('g1')] });
-      expect(buildV3Inputs(guess, null).envelopes[0]!.accountId).toBe(SAVINGS);
+      expect(buildInputs(guess, null).envelopes[0]!.accountId).toBe(SAVINGS);
     });
   });
 
@@ -535,8 +531,8 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
     const categories = { ...base.categories, 'cat-savings': 'Savings' };
     const saving = { id: 'sv', account_id: EVERYDAY, amount: -30000, currency: 'USD', freq: 'monthly' as const, anchor_date: '2026-04-02', end_date: null, occurrence_count: null, category_id: 'cat-savings', deleted_at: null };
     const goal = (id: string, monthly: number): SnapshotSource['goals'][number] => ({ id, kind: 'pot', check_id: null, currency: 'USD', target: null, monthly_amount: monthly, ready_by: null, opening_saved: 0, done_at: null, deleted_at: null, bucket: 'house' });
-    const setAside = (monthly: number) => buildMonthModel(buildV3Inputs({ ...base, categories, series: [...base.series, saving], goals: [goal('b1', monthly), goal('b2', monthly)] }, null)).setAside;
-    const debts = buildV3Inputs(base, null).debts.reduce((n, d) => n + d.minimum, 0);
+    const setAside = (monthly: number) => buildMonthModel(buildInputs({ ...base, categories, series: [...base.series, saving], goals: [goal('b1', monthly), goal('b2', monthly)] }, null)).setAside;
+    const debts = buildInputs(base, null).debts.reduce((n, d) => n + d.minimum, 0);
     it('two 15000 buckets inside a 30000 saving count 30000, not 60000; 25000 buckets count 50000', () => {
       expect(setAside(15000)).toBe(debts + 30000);
       expect(setAside(25000)).toBe(debts + 50000);
@@ -574,7 +570,7 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
   describe('series attributes', () => {
     const row = (id: string, over: Record<string, unknown>): SnapshotSource['series'][number] =>
       ({ id, account_id: EVERYDAY, amount: 50000, currency: 'USD', freq: 'monthly', anchor_date: '2026-04-02', end_date: null, occurrence_count: null, category_id: 'cat-income', deleted_at: null, ...over }) as SnapshotSource['series'][number];
-    const byId = (s: SnapshotSource, v3: V3SettingsSource | null = null) => Object.fromEntries(buildV3Inputs(s, v3).series.map((x) => [x.id, x]));
+    const byId = (s: SnapshotSource, v3: V3SettingsSource | null = null) => Object.fromEntries(buildInputs(s, v3).series.map((x) => [x.id, x]));
     const withSeries = (...rows: SnapshotSource['series']): SnapshotSource => ({ ...base, series: [...base.series, ...rows] });
     it('reads the attributes from the series row', () => {
       const all = byId(withSeries(row('r', { income_kind: 'rent', counts_as: 'available', pay_group: 'pg' })));
@@ -592,7 +588,7 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
   describe('answers', () => {
     const cid = '11111111-1111-1111-1111-111111111111';
     it('maps a pay arrival and ignores a bad key, date or empty answer', () => {
-      const out = buildV3Inputs(
+      const out = buildInputs(
         base,
         v3s({
           answers: [
@@ -612,7 +608,7 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
       ]);
     });
     it('maps expected income and drops incomplete ones', () => {
-      const out = buildV3Inputs(
+      const out = buildInputs(
         base,
         v3s({
           answers: [
@@ -633,29 +629,29 @@ describe('buildV3Inputs: stored 05.2 answers (DSU-20)', () => {
         ans({ kind: 'held_bridge', key: cid, amount: null, check_id: cid }),
         ans({ kind: 'pay_arrival', amount: 5, check_id: cid }),
       ];
-      expect(buildV3Inputs(base, v3s({ answers, live_bridge_check_ids: [cid] })).heldBridges).toEqual([{ id: cid, amount: 40000 }]);
-      expect(buildV3Inputs(base, v3s({ answers, live_bridge_check_ids: [] })).heldBridges).toEqual([]);
-      expect(buildV3Inputs(base, null).heldBridges).toEqual([]);
+      expect(buildInputs(base, v3s({ answers, live_bridge_check_ids: [cid] })).heldBridges).toEqual([{ id: cid, amount: 40000 }]);
+      expect(buildInputs(base, v3s({ answers, live_bridge_check_ids: [] })).heldBridges).toEqual([]);
+      expect(buildInputs(base, null).heldBridges).toEqual([]);
     });
     it('the unexplained answer needs its amount, use and date', () => {
       const full = { unexplained_amount: 12000, unexplained_use: 'spare' as const, unexplained_at: '2026-10-01' };
-      expect(buildV3Inputs(base, v3s(full)).unexplainedAnswer).toEqual({ amount: 12000, use: 'spare', at: '2026-10-01' });
-      expect(buildV3Inputs(base, v3s({ ...full, unexplained_amount: null })).unexplainedAnswer).toBeNull();
-      expect(buildV3Inputs(base, v3s({ ...full, unexplained_use: null })).unexplainedAnswer).toBeNull();
-      expect(buildV3Inputs(base, v3s({ ...full, unexplained_use: 'odd' as never })).unexplainedAnswer).toBeNull();
-      expect(buildV3Inputs(base, v3s({ ...full, unexplained_at: null })).unexplainedAnswer).toBeNull();
-      expect(buildV3Inputs(base, null).unexplainedAnswer).toBeNull();
+      expect(buildInputs(base, v3s(full)).unexplainedAnswer).toEqual({ amount: 12000, use: 'spare', at: '2026-10-01' });
+      expect(buildInputs(base, v3s({ ...full, unexplained_amount: null })).unexplainedAnswer).toBeNull();
+      expect(buildInputs(base, v3s({ ...full, unexplained_use: null })).unexplainedAnswer).toBeNull();
+      expect(buildInputs(base, v3s({ ...full, unexplained_use: 'odd' as never })).unexplainedAnswer).toBeNull();
+      expect(buildInputs(base, v3s({ ...full, unexplained_at: null })).unexplainedAnswer).toBeNull();
+      expect(buildInputs(base, null).unexplainedAnswer).toBeNull();
     });
     it('an old cached settings row without the new fields reads as nothing stored', () => {
       const old = { ...v3s(), answers: undefined, live_bridge_check_ids: undefined, unexplained_amount: undefined } as V3SettingsSource;
-      const out = buildV3Inputs(base, old);
+      const out = buildInputs(base, old);
       expect([out.payArrivals, out.expectedIncome, out.heldBridges, out.unexplainedAnswer]).toEqual([[], [], [], null]);
     });
   });
 });
 
 
-describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', () => {
+describe('buildInputs: 05.2-63 cards and loans are not V3 accounts (F-05)', () => {
   const base = demoSource(TODAY);
   const template = base.accounts[0]!;
   const money = (n: number): SnapshotSource['accounts'] =>
@@ -668,14 +664,14 @@ describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', ()
   it('5 money accounts with a use and 4 cards with none: 5 accounts, none of them a card', () => {
     const ms = money(5);
     const balances = { ...Object.fromEntries(ms.map((a, i) => [a.id, 10000 * (i + 1)])), ...Object.fromEntries(cards(4).map((a) => [a.id, -5000])) };
-    const inputs = buildV3Inputs(withUses(srcOf([...ms, ...cards(4)], balances), everydayUses(ms.map((a) => a.id))), null);
+    const inputs = buildInputs(withUses(srcOf([...ms, ...cards(4)], balances), everydayUses(ms.map((a) => a.id))), null);
     expect(inputs.accounts!.map((a) => a.id)).toEqual(ms.map((a) => a.id));
   });
 
   it('a loan is not listed; a checking account with no use is', () => {
     const loan = { ...template, id: 'l1', kind: 'loan' as const };
     const s = srcOf([loan, ...money(1)], { l1: -90000, m0: 5000 });
-    expect(buildV3Inputs(s, null).accounts!.map((a) => a.id)).toEqual(['m0']);
+    expect(buildInputs(s, null).accounts!.map((a) => a.id)).toEqual(['m0']);
   });
 
   it('the money accounts are the same with and without the cards (any balances, both signs)', () => {
@@ -686,8 +682,8 @@ describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', ()
         const mb = Object.fromEntries(ms.map((a, i) => [a.id, 25000 * (i + 1)]));
         const cs = cards(cardBalances.length);
         const cb = Object.fromEntries(cs.map((a, i) => [a.id, cardBalances[i]!]));
-        const without = buildV3Inputs(withUses(srcOf(ms, mb), uses), null);
-        const withCards = buildV3Inputs(withUses(srcOf([...ms, ...cs], { ...mb, ...cb }), uses), null);
+        const without = buildInputs(withUses(srcOf(ms, mb), uses), null);
+        const withCards = buildInputs(withUses(srcOf([...ms, ...cs], { ...mb, ...cb }), uses), null);
         expect(withCards.accounts).toEqual(without.accounts);
         expect(withCards.balance).toBe(without.balance);
       }),
@@ -699,7 +695,7 @@ describe('buildV3Inputs: 05.2-63 cards and loans are not V3 accounts (F-05)', ()
     const kinds: AccountRow['kind'][] = ['cash', 'checking', 'savings', 'credit', 'investment', 'loan', 'other'];
     for (const kind of kinds) {
       const s = srcOf([{ ...template, id: 'k', kind }], { k: 100 });
-      expect(buildV3Inputs(s, null).accounts!.length === 1).toBe(holdsMoney(kind));
+      expect(buildInputs(s, null).accounts!.length === 1).toBe(holdsMoney(kind));
     }
   });
 });

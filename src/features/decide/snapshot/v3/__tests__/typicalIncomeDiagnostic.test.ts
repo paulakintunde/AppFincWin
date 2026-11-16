@@ -4,8 +4,8 @@
 // Fixture: USD home, today 2026-10-28, GBP -> USD from stored rates only (USD 1.08 / GBP 0.86 per EUR, so 1 GBP = 1.25581 USD).
 import { monthTotals } from '@/engine/activity/totals';
 import { demoSource } from '../../../__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '../../buildSnapshot';
-import { buildV3Inputs } from '../buildV3Inputs';
+import type { SnapshotSource } from '../../sourceTypes';
+import { buildInputs } from '../buildInputs';
 import { computeV3 } from '../computeV3';
 import type { V3SettingsSource } from '../types';
 import { v3s } from './v3Fixtures';
@@ -120,7 +120,7 @@ describe('F-04 diagnosis: walkthrough-shaped fixture (characterisation, no produ
   });
 
   it('(b) currency: the GBP pay series reaches the engine converted (376,744), not as 300,000 dollars', () => {
-    const pay = buildV3Inputs(source(ALL), SALARIED).series.find((x) => x.id === 'ser-refundname');
+    const pay = buildInputs(source(ALL), SALARIED).series.find((x) => x.id === 'ser-refundname');
     expect(pay).toMatchObject({ role: 'pay', amount: GBP_PAY });
     expect(figures(source(without('salary')), SALARIED)).toMatchObject({ typicalIncome: GBP_PAY, moneyIn: GBP_PAY });
   });
@@ -166,7 +166,7 @@ describe('F-04 diagnosis: walkthrough-shaped fixture (characterisation, no produ
     const b = figures(source(without('gbpSeries')), SALARIED);
     expect(a.typicalIncome - b.typicalIncome).toBe(GBP_PAY);
     expect(a.moneyIn - b.moneyIn).toBe(GBP_PAY); // the October occurrence on the 15th, settled by its row
-    expect(buildV3Inputs(source(ALL), SALARIED).series.filter((x) => x.role === 'pay')).toHaveLength(2);
+    expect(buildInputs(source(ALL), SALARIED).series.filter((x) => x.role === 'pay')).toHaveLength(2);
   });
 
   it('typical left is typical income - bills - e - set aside, so a 21,061 dollar figure needs 21,061 dollars of typical income', () => {

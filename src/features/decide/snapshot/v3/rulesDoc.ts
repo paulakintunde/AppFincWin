@@ -99,7 +99,7 @@ export function tightLineOf(doc: RulesDoc): number | null {
 }
 
 /**
- * The own lines in the raw shape the engine builder validates (buildV3Inputs.lineSpecOf). Keep is not a line (it is the tight line),
+ * The own lines in the raw shape the engine builder validates (buildInputs.lineSpecOf). Keep is not a line (it is the tight line),
  * so it is left out here.
  */
 export function ownLinesOf(doc: RulesDoc): unknown[] {

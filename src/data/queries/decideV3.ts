@@ -3,7 +3,7 @@
 // plan links), never copied (05.1 D-53). Built in memory with useMemo; the bigint-carrying Evaluation is never cached.
 import { createContext, createElement, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import type { DecideLinkRow } from '@/db/decideLinks';
-import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
 import { emptyCheckEvaluation, preparedV3, withUnsaved } from '@/features/decide/snapshot/v3/computeV3';
 import { liveBridgeCheckIds, settingsSourceOf, type SettingsSourceInput } from '@/features/decide/snapshot/v3/settingsSource';

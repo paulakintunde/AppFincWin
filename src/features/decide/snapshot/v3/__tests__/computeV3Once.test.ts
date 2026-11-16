@@ -3,7 +3,7 @@
 import type { CheckV2, Prepared } from '@/engine/decide/v3';
 import * as engine from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '../../buildSnapshot';
+import type { SnapshotSource } from '../../sourceTypes';
 import { buildInputs } from '../buildInputs';
 import { computeV3, preparedV3 } from '../computeV3';
 import { v3s } from './v3Fixtures';
@@ -77,7 +77,7 @@ describe('preparedV3 / computeV3: build once per data change', () => {
   });
 });
 
-describe('buildV3Inputs: records date and waiting writes (D-126, D-127)', () => {
+describe('buildInputs: records date and waiting writes (D-126, D-127)', () => {
   it('passes the records date through, null when the source has none', () => {
     const source = demoSource(TODAY);
     expect(buildInputs(source, null).recordsAsOf).toBeNull();
