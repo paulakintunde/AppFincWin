@@ -1467,13 +1467,13 @@ Plans:
 - [x] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
-- [ ] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
-- [ ] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
-- [ ] 08-21-PLAN.md — Balances and settle-up UI
-- [ ] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
-- [ ] 08-23-PLAN.md — Realtime wiring in the app
-- [ ] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
+- [x] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
+- [x] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
+- [x] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
+- [x] 08-21-PLAN.md — Balances and settle-up UI
+- [x] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
+- [x] 08-23-PLAN.md — Realtime wiring in the app
+- [x] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 17/28 | In progress | - |
+| 8. Household | 24/28 | In progress | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
