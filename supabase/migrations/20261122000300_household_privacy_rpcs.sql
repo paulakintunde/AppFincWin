@@ -198,7 +198,7 @@ begin
       case
         when v_entity in ('transactions', 'recurring_series', 'accounts') then
           ' and t.household_id in (select public.user_household_ids()) and (t.is_shared or t.created_by = (select auth.uid()))'
-        when v_entity in ('debts', 'recurring_dismissals', 'income_payer_prompts') then
+        when v_entity in ('debts', 'recurring_dismissals', 'income_payer_prompts', 'decide_checks', 'decide_links', 'decide_changes', 'savings_goals', 'decide_answers', 'holdings', 'holding_lots') then
           ' and t.household_id in (select public.user_household_ids()) and t.created_by = (select auth.uid())'
         else ''
       end)
@@ -2625,11 +2625,10 @@ begin
   else
     v_id := v_in.id;
     select * into v_goal from public.savings_goals g where g.id = v_id for update;
-    if not found or v_goal.deleted_at is not null then
+    -- 08-05 follow-up: a goal the caller cannot see (another member's) is refused exactly like a missing id.
+    if not found or v_goal.deleted_at is not null
+       or v_goal.created_by is distinct from v_uid or v_goal.household_id not in (select public.user_household_ids()) then
       return jsonb_build_object('status', 'conflict');
-    end if;
-    if v_goal.created_by is distinct from v_uid or v_goal.household_id not in (select public.user_household_ids()) then
-      raise exception 'save_goal_plan: that goal is not yours' using errcode = '42501';
     end if;
     if v_goal.version <> p_expected_version then
       return jsonb_build_object('status', 'conflict');
@@ -2995,7 +2994,7 @@ end;
 $$;
 
 -- reviewed, no change: public.remove_goal (goal owner-checked; its series are the caller's own once guard_series_goal is tightened)
--- reviewed, no change: public.set_safety_net (target goal owner-checked; the old net lookup is created_by = v_uid)
+-- changed (follow-up, see the end of this file): public.set_safety_net refuses an invisible goal like a missing id
 -- reviewed, no change: public.set_net_answer_use (goal owner-checked)
 -- reviewed, no change: public.debt_balance_follows_line (follows the line's own debt_id, which guard_transaction_debt keeps to the line creator's debt)
 -- reviewed, no change: public.sync_holding_value (touches only the lot's own holding)
@@ -3147,3 +3146,97 @@ $$;
 revoke execute on function public.joint_account_balances(uuid) from public, anon;
 grant execute on function public.joint_account_balances(uuid) to authenticated;
 
+-- 08-05 follow-up (2026-11-15): set_safety_net, unchanged except the target lookup.
+create or replace function public.set_safety_net(p_goal_id uuid, p_expected_versions jsonb, p_undo_step jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uid uuid := (select auth.uid());
+  v_step_id uuid;
+  v_target public.savings_goals%rowtype;
+  v_old public.savings_goals%rowtype;
+  v_has_old boolean;
+  v_tv integer;
+  v_ov integer;
+  v_target_version integer;
+  v_old_version integer;
+  v_ops jsonb;
+begin
+  if v_uid is null then
+    raise exception 'set_safety_net: sign in first' using errcode = '42501';
+  end if;
+  v_step_id := public.grow_check_undo_step(p_undo_step, 'safetyNetChanged', 'set_safety_net', false);
+  if exists (select 1 from public.undo_log u where u.id = v_step_id and u.owner_id = v_uid) then
+    return jsonb_build_object('status', 'already-applied', 'undo_step_id', v_step_id);
+  end if;
+  if p_goal_id is null or jsonb_typeof(p_expected_versions) is distinct from 'object' then
+    raise exception 'set_safety_net: the goal and its versions are required' using errcode = '22023';
+  end if;
+
+  -- 08-05 follow-up: a goal the caller cannot see (another member's) is looked up as no row, so it is refused exactly
+  -- like a missing id (same code and message, nothing echoed), and its lock is never taken.
+  select * into v_target from public.savings_goals g
+   where g.id = p_goal_id and g.created_by = v_uid and g.household_id in (select public.user_household_ids())
+   for update;
+  if not found then
+    raise exception 'set_safety_net: that goal does not exist' using errcode = '22023';
+  end if;
+  if v_target.deleted_at is not null or v_target.kind <> 'pot' or v_target.bucket is not null then
+    raise exception 'set_safety_net: that goal cannot be the safety net' using errcode = '22023';
+  end if;
+  if v_target.is_safety_net then
+    return jsonb_build_object('status', 'unchanged', 'goal_id', v_target.id);
+  end if;
+
+  select * into v_old from public.savings_goals g
+   where g.household_id = v_target.household_id and g.created_by = v_uid and g.is_safety_net and g.deleted_at is null
+     and g.id <> v_target.id
+   for update;
+  v_has_old := found;
+
+  begin
+    v_tv := (p_expected_versions ->> v_target.id::text)::integer;
+    if v_has_old then
+      v_ov := (p_expected_versions ->> v_old.id::text)::integer;
+    end if;
+  exception when others then
+    raise exception 'set_safety_net: p_expected_versions is malformed' using errcode = '22023';
+  end;
+  if v_tv is distinct from v_target.version or (v_has_old and v_ov is distinct from v_old.version) then
+    return jsonb_build_object('status', 'conflict');
+  end if;
+
+  perform set_config('fincwin.safety_net_rpc', 'on', true);
+  if v_has_old then
+    update public.savings_goals set is_safety_net = false where id = v_old.id returning version into v_old_version;
+  end if;
+  -- net_confirmed_at: a net the user chose here is confirmed from the start (audit 4.2). Undo leaves it: it is only
+  -- read while is_safety_net is true.
+  update public.savings_goals
+     set is_safety_net = true, locked = true, protect = true, net_confirmed_at = coalesce(net_confirmed_at, now())
+   where id = v_target.id returning version into v_target_version;
+  perform set_config('fincwin.safety_net_rpc', 'off', true);
+
+  -- Undo: un-flag the target (restoring its own Locked and Protect), then put the flag back on the old net, in that order
+  -- so the one-net index holds while the ops replay.
+  v_ops := jsonb_build_array(jsonb_build_object(
+    'entity', 'savings_goals', 'id', v_target.id, 'expectedVersion', v_target_version,
+    'patch', jsonb_build_object('is_safety_net', false, 'locked', v_target.locked, 'protect', v_target.protect)));
+  if v_has_old then
+    v_ops := v_ops || jsonb_build_array(jsonb_build_object(
+      'entity', 'savings_goals', 'id', v_old.id, 'expectedVersion', v_old_version,
+      'patch', jsonb_build_object('is_safety_net', true)));
+  end if;
+  insert into public.undo_log (id, owner_id, label_key, label_params, ops, allow_system_keys)
+  values (v_step_id, v_uid, 'safetyNetChanged', coalesce(p_undo_step -> 'label_params', '{}'::jsonb), v_ops, true);
+
+  return jsonb_build_object('status', 'applied', 'goal_id', v_target.id,
+                            'previous_goal_id', case when v_has_old then v_old.id else null end,
+                            'goal_version', v_target_version, 'previous_version', v_old_version, 'undo_step_id', v_step_id);
+end;
+$$;
+revoke execute on function public.set_safety_net(uuid, jsonb, jsonb) from public, anon;
+grant execute on function public.set_safety_net(uuid, jsonb, jsonb) to authenticated;

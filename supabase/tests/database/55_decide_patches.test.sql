@@ -74,9 +74,10 @@ select extensions.throws_ok(
   '22023', null, 'status on decide_checks is refused outside replay');
 
 -- 6. Another user's check.
-select extensions.throws_ok(
-  $$select public.apply_patches('[{"entity":"decide_checks","id":"c4000000-0000-0000-0000-000000000003","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb)$$,
-  '42501', null, 'A cannot patch C''s check');
+select extensions.is(
+  public.apply_patches('[{"entity":"decide_checks","id":"c4000000-0000-0000-0000-000000000003","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb),
+  public.apply_patches('[{"entity":"decide_checks","id":"ffffffff-ffff-ffff-ffff-ffffffffffff","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb),
+  'A cannot patch C''s check (refused like a missing id)');
 
 -- 7. Debts are the creator's alone (Phase 8 D-12, 08-01/08-05; was household-scoped): B (member) cannot edit A's debt,
 -- and the refusal is the not-found one a missing id gets. A, the creator, still can.
@@ -86,12 +87,14 @@ select extensions.is(
   'conflict', 'a household member cannot patch another member''s debt (refused like a missing id)');
 
 -- 17-18 (part 2, run as B here): owner-private change and goal.
-select extensions.throws_ok(
-  $$select public.apply_patches('[{"entity":"decide_changes","id":"dc000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb)$$,
-  '42501', null, 'a member cannot patch another user''s dated change');
-select extensions.throws_ok(
-  $$select public.apply_patches('[{"entity":"savings_goals","id":"5a000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb)$$,
-  '42501', null, 'a member cannot patch another user''s savings goal');
+select extensions.is(
+  public.apply_patches('[{"entity":"decide_changes","id":"dc000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb),
+  public.apply_patches('[{"entity":"decide_changes","id":"ffffffff-ffff-ffff-ffff-ffffffffffff","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb),
+  'a member patch of another user''s dated change is refused like a missing id');
+select extensions.is(
+  public.apply_patches('[{"entity":"savings_goals","id":"5a000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb),
+  public.apply_patches('[{"entity":"savings_goals","id":"ffffffff-ffff-ffff-ffff-ffffffffffff","expectedVersion":1,"patch":{"deleted_at":"$now"}}]'::jsonb),
+  'a member patch of another user''s savings goal is refused like a missing id');
 
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 select extensions.is(

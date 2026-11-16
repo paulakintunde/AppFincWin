@@ -234,10 +234,12 @@ select extensions.is((select count(*)::int from public.savings_goals where creat
 select extensions.throws_ok($$select public.set_safety_net('9a920000-0000-0000-0000-000000000003',
   jsonb_build_object('9a920000-0000-0000-0000-000000000003', 1),
   '{"id":"57920000-0000-0000-0000-0000000000b1","label_key":"safetyNetChanged","label_params":{}}'::jsonb)$$,
-  '42501', null, 'B cannot make A''s goal a safety net');
-select extensions.throws_ok($$select public.save_goal_plan('{"id":"9a920000-0000-0000-0000-000000000002","name":"Mine now"}'::jsonb, 2, null,
-  public.t92_step('57920000-0000-0000-0000-0000000000b2', 'goalPlanChanged', '9a920000-0000-0000-0000-000000000002'))$$,
-  '42501', null, 'B cannot change A''s goal plan');
+  '22023', 'set_safety_net: that goal does not exist', 'B cannot make A''s goal a safety net (refused like a missing goal)');
+select extensions.is(public.save_goal_plan('{"id":"9a920000-0000-0000-0000-000000000002","name":"Mine now"}'::jsonb, 2, null,
+  public.t92_step('57920000-0000-0000-0000-0000000000b2', 'goalPlanChanged', '9a920000-0000-0000-0000-000000000002')),
+  public.save_goal_plan('{"id":"ffffffff-ffff-ffff-ffff-ffffffffffff","name":"Mine now"}'::jsonb, 2, null,
+  public.t92_step('57920000-0000-0000-0000-0000000000b4', 'goalPlanChanged', 'ffffffff-ffff-ffff-ffff-ffffffffffff')),
+  'B cannot change A''s goal plan (refused like a missing goal)');
 select extensions.throws_ok($$select public.confirm_goal_contribution((select id from t92_pend2), 1, null,
   public.t92_step('57920000-0000-0000-0000-0000000000b3', 'goalContributionConfirmed', '9a920000-0000-0000-0000-000000000005'))$$,
   '22023', null, 'a paid line cannot be confirmed again');

@@ -270,11 +270,10 @@ select extensions.is(public.t101_same(format($t$select public.apply_patches(json
     ('transactions', 'note', 'x', 'a1010000-0000-0000-0000-000000000006'), ('accounts', 'name', 'x', 'a1010000-0000-0000-0000-000000000001'), ('recurring_series', 'name', 'x', 'a1010000-0000-0000-0000-000000000013'),
     ('debts', 'name', 'x', 'a1010000-0000-0000-0000-000000000005'), ('income_payer_prompts', 'counts_as', 'kept', 'a1010000-0000-0000-0000-000000000017')
   ) v(tb, col, val, id);
--- The owner-private Decide and Grow entities keep their own 42501 refusal (a creator check after the lookup). Asserted: refused,
--- nothing returned, nothing written (the unchanged-rows check at the end). It is not the missing-id refusal; see the 08-07 summary.
-select extensions.ok(public.t101_probe(format($t$select public.apply_patches(jsonb_build_array(jsonb_build_object('entity',%L,'id',%L,'expectedVersion',1,'patch',jsonb_build_object(%L,%L))))$t$, v.tb, v.id, v.col, v.val))
-         ~ '^(ERR:42501|OK:\{"status": "conflict")',
-       'apply_patches on A''s personal ' || v.tb || ' row is refused')
+-- The owner-private Decide and Grow entities: refused exactly like a missing id (08-05 follow-up, 2026-11-15), the same
+-- not-found conflict, nothing echoed. Nothing written either (the unchanged-rows check at the end).
+select extensions.is(public.t101_same(format($t$select public.apply_patches(jsonb_build_array(jsonb_build_object('entity',%L,'id','@ID@','expectedVersion',1,'patch',jsonb_build_object(%L,%L))))$t$, v.tb, v.col, v.val), v.id::uuid, 'not-found'), 'same',
+       'apply_patches on A''s personal ' || v.tb || ' row is refused like a missing id')
   from (values
     ('savings_goals', 'name', 'x', 'a1010000-0000-0000-0000-000000000011'), ('holdings', 'name', 'x', 'a1010000-0000-0000-0000-000000000023'), ('holding_lots', 'note', 'x', 'a1010000-0000-0000-0000-000000000024'),
     ('decide_answers', 'amount', '1', 'a1010000-0000-0000-0000-000000000021'), ('decide_changes', 'name', 'x', 'a1010000-0000-0000-0000-000000000020'), ('decide_checks', 'deleted_at', null, 'a1010000-0000-0000-0000-000000000018'),
@@ -362,12 +361,12 @@ select extensions.is(public.t101_same($t$select public.remove_debt('@ID@'::uuid,
        'remove_debt on A''s debt is refused like a missing debt');
 select extensions.is(public.t101_same($t$select public.remove_goal('@ID@'::uuid, 1, '{"id":"a1010000-0000-0000-0000-000000000586","label_key":"goalRemoved","label_params":{}}'::jsonb)$t$, 'a1010000-0000-0000-0000-000000000011', ''), 'same',
        'remove_goal on A''s goal is refused like a missing goal');
-select extensions.ok(public.t101_probe($t$select public.save_goal_plan('{"id":"a1010000-0000-0000-0000-000000000011","name":"x"}'::jsonb, 1, null, '{"id":"a1010000-0000-0000-0000-000000000587","label_key":"goalPlanChanged","label_params":{}}'::jsonb)$t$) ~ '^ERR:42501',
-       'save_goal_plan on A''s goal is refused (42501)');
+select extensions.is(public.t101_same($t$select public.save_goal_plan('{"id":"@ID@","name":"x"}'::jsonb, 1, null, '{"id":"a1010000-0000-0000-0000-000000000587","label_key":"goalPlanChanged","label_params":{}}'::jsonb)$t$, 'a1010000-0000-0000-0000-000000000011', ''), 'same',
+       'save_goal_plan on A''s goal is refused like a missing goal');
 select extensions.is(public.t101_same($t$select public.confirm_goal_contribution('@ID@'::uuid, 1, null, '{"id":"a1010000-0000-0000-0000-000000000588","label_key":"goalContributionConfirmed","label_params":{}}'::jsonb)$t$, (select id from pend), ''), 'same',
        'confirm_goal_contribution on A''s Expected goal line is refused like a missing line');
-select extensions.ok(public.t101_probe($t$select public.set_safety_net('a1010000-0000-0000-0000-000000000012'::uuid, '{"a1010000-0000-0000-0000-000000000012":1}'::jsonb, '{"id":"a1010000-0000-0000-0000-000000000589","label_key":"safetyNetChanged","label_params":{}}'::jsonb)$t$) ~ '^ERR:42501',
-       'set_safety_net on A''s goal is refused (42501)');
+select extensions.is(public.t101_same($t$select public.set_safety_net('@ID@'::uuid, '{"@ID@":1}'::jsonb, '{"id":"a1010000-0000-0000-0000-000000000589","label_key":"safetyNetChanged","label_params":{}}'::jsonb)$t$, 'a1010000-0000-0000-0000-000000000012', ''), 'same',
+       'set_safety_net on A''s goal is refused like a missing goal');
 select extensions.is(public.t101_same($t$select public.set_net_answer_use('@ID@'::uuid, true, 1, '{"id":"a1010000-0000-0000-0000-000000000590","label_key":"safetyNetUnlocked","label_params":{}}'::jsonb)$t$, 'a1010000-0000-0000-0000-000000000012', ''), 'same',
        'set_net_answer_use on A''s net is refused like a missing goal');
 

@@ -201,8 +201,10 @@ select extensions.is(public.t69_ap('decide_answers', 'b7900000-0000-0000-0000-00
 select extensions.ok((select amount = 120000 and on_date = date '2026-10-20' from public.decide_answers where id = 'b7900000-0000-0000-0000-000000000001')
     and (select bool_value = false and deleted_at is not null from public.decide_answers where id = 'b7900000-0000-0000-0000-000000000002'),
   'the answer columns landed with their types');
-select extensions.throws_ok($$select public.t69_ap('decide_answers', 'b7900000-0000-0000-0000-000000000003', '{"amount":1}')$$,
-  '42501', null, 'another user''s answer is refused');
+select extensions.is(
+  replace(public.apply_patches('[{"entity":"decide_answers","id":"b7900000-0000-0000-0000-000000000003","expectedVersion":1,"patch":{"amount":1}}]'::jsonb)::text, 'b7900000-0000-0000-0000-000000000003', '@ID@'),
+  replace(public.apply_patches('[{"entity":"decide_answers","id":"ffffffff-ffff-ffff-ffff-ffffffffffff","expectedVersion":1,"patch":{"amount":1}}]'::jsonb)::text, 'ffffffff-ffff-ffff-ffff-ffffffffffff', '@ID@'),
+  'another user''s answer is refused like a missing id');
 
 -- ---------------------------------------------------------------------
 -- 6. undo_log_fill and the already-applied replay (49-52).
