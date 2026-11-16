@@ -1596,7 +1596,7 @@
         }
       },
       "expected": {
-        "code": "monthly_short",
+        "code": "not_yet",
         "variant": "month_already_short",
         "afterBuy": {
           "month": null,
@@ -1624,7 +1624,8 @@
       ],
       "status": "draft",
       "approvedAt": null,
-      "ownerReason": null,
+      "ownerReason": "Owner (2026-11-15, 05.5-28 Q13 option b): the app is right. Her everyday account goes below $0 by January with no overdraft recorded, so the stricter \"not yet\" wins (UP 5.3, D-28, D-38); D-63 allows either code and asks for a clear no. The headline words are the same. The draft had worked only the monthly side.",
+      "changeApproved": "2026-11-15",
       "expertNote": null,
       "plannerNote": "Engine (05.4-47 rules): needs_input (the volatile-income cover question, judge.ts D-48 gate), because the plan payment against a usual month already short is judged by FIN-06 / FIN-08 (05.4-21 / 05.4-23), as for BR-05, QE-11 and QE-12 (knownRed). Hand figures: payment $219.30 (47 x $219.30 and a last $218.96), shortfall $300 -> $519.30, interest $1,526.06 ($10,526.06 in all), price $9,000 over the $2,000 net, gap $300. Plan 47 pinned the same depletion figures on its own Riley input (depletion.test.ts)."
     },
