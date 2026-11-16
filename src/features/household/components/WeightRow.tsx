@@ -34,6 +34,10 @@ export function WeightRow({ householdId, userId, percent, onChange, role, disabl
   const { colors, pairing } = useTheme();
   const label = useMemberLabel(householdId);
   const name = label(userId);
+  const weightLabel = (): string =>
+    name === t('household.members.you')
+      ? t('household.members.weight.a11yYou', { percent })
+      : t('household.members.weight.a11y', { name, percent });
   const [typing, setTyping] = useState(false);
   const [text, setText] = useState('');
 
@@ -73,7 +77,7 @@ export function WeightRow({ householdId, userId, percent, onChange, role, disabl
       {typing ? (
         <TextInput
           testID={`weight-input-${userId}`}
-          accessibilityLabel={t('household.members.weight.a11y', { name, percent })}
+          accessibilityLabel={weightLabel()}
           keyboardType="number-pad"
           maxLength={3}
           autoFocus
@@ -86,7 +90,7 @@ export function WeightRow({ householdId, userId, percent, onChange, role, disabl
       ) : (
         <Pressable
           accessibilityRole="adjustable"
-          accessibilityLabel={t('household.members.weight.a11y', { name, percent })}
+          accessibilityLabel={weightLabel()}
           accessibilityValue={{ min: 0, max: 100, now: percent }}
           accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
           onAccessibilityAction={onAction}
