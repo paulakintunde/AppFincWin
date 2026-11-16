@@ -67,6 +67,8 @@ When done, stop Metro's node process by its port (stopping the shell task leaves
 | decide-bought, decide-check-lands, decide-first-answer, decide-safety-net, decide-save-for-it, decide-stepper-loan, decide-timing, decide-waiver, decide-write-idle | 06.1 (Decide screens) |
 | save-plan-undo, not-buying-undo, delete-plan-undo, check-periodic | 05.5-22 |
 
+Local green run: deferred to the combined 05.5-23 Pixel 6 sitting (owner, 2026-11-15). Until then the flows are checked statically only: every file parses as YAML, `--list` names 16 files that all exist, and each text and id selector was matched against `src`. The four 05.5-22 flows share `common/delete-open-check.yaml` to remove the check they create.
+
 **Switched off (D-22).** The job runs on manual dispatch only, and its first step fails with a plain message until the secret `MAESTRO_ACCOUNT_READY` is `yes`. To switch it on:
 
 1. Write `.maestro/common/sign-in.yaml` (the shared sign-in subflow each flow starts with) for the chosen account.
