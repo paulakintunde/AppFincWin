@@ -1,5 +1,5 @@
 import type { FxLatestRow } from '@/db/rows';
-import { convertCeiled, convertFloored, makeConverter } from '../conversion';
+import { convertCeiled, convertFloored, makeConverter, provisionalHomeAmount } from '../conversion';
 import { CAD_RATE, USD_RATE, customCurrency } from './helpers/sourceFixtures';
 
 const GBP_RATE: FxLatestRow = { quote: 'GBP', rate: '0.85', rate_date: '2026-10-12', source: 'open-er-api' };
@@ -124,5 +124,19 @@ describe('convertCeiled (D-101, T-05-124-01)', () => {
     expect(convertCeiled(500, 'USD', 'USD', [], [], TODAY)).toEqual({ amount: 500, rateDate: TODAY });
     expect(convertCeiled(500, 'USD', 'GBP', [USD_RATE], [], TODAY)).toBeNull();
     expect(convertCeiled(10_000_000, 'USD', 'TOK', [USD_RATE], [customCurrency({ unit_value: '0.0000000001' })], TODAY)).toBeNull();
+  });
+});
+
+describe('provisionalHomeAmount (D-69)', () => {
+  const eur = (original_amount: number) => ({ original_amount, original_currency: 'EUR' });
+
+  it('zero and home-currency amounts need no rate and carry no rate date', () => {
+    expect(provisionalHomeAmount(eur(0), 'USD', [], [], '2026-10-15')).toEqual({ amount: 0, rateDate: null });
+    expect(provisionalHomeAmount({ original_amount: 500, original_currency: 'USD' }, 'USD', [], [], '2026-10-15')).toEqual({ amount: 500, rateDate: null });
+  });
+
+  it('a foreign amount converts at the latest stored rate and says which date; no rate is null', () => {
+    expect(provisionalHomeAmount(eur(10_000), 'USD', [USD_RATE], [], '2026-10-15')).toEqual({ amount: 11_000, rateDate: '2026-10-14' });
+    expect(provisionalHomeAmount(eur(10_000), 'USD', [], [], '2026-10-15')).toBeNull();
   });
 });

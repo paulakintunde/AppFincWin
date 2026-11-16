@@ -1,7 +1,7 @@
 // 06.1-15: the four input sheets (Pick a date, Quick estimate, Installment plan, How often). Engine hook and haptics are mocked.
 import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
-import { percent } from '@/engine/decide';
+import { percent } from '@/engine/payoff';
 import type { CheckV2, QuickLine } from '@/engine/decide/v3';
 import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { showToast } from '@/state/undoToast';

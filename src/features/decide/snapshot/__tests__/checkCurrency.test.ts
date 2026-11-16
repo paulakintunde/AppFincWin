@@ -3,7 +3,7 @@ import { convertLatest } from '@/data/queries/fxConvert';
 import { emptyCheckInputs } from '../checkInputs';
 import { fromHomePatch, inHomeCurrency, sourceFor, typedCurrency } from '../checkCurrency';
 import type { CheckInputs } from '../types';
-import type { SnapshotResult } from '../buildSnapshot';
+import type { CurrencyBasis as SnapshotResult } from '../checkCurrency';
 import { TODAY, loggedSource } from './helpers/snapshotFixtures';
 
 const RATES: FxLatestRow[] = [

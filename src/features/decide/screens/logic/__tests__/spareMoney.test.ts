@@ -45,7 +45,7 @@ function thinHistory(): V3Inputs {
   });
 }
 
-/** What the sheet's "That's right" saves, read back the way buildV3Inputs reads decide_settings. */
+/** What the sheet's "That's right" saves, read back the way buildInputs reads decide_settings. */
 function confirmedAsShown(inputs: V3Inputs): V3Inputs {
   const p = prepare(inputs);
   const sum = spareSumOf(p);

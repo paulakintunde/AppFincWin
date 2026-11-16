@@ -1,8 +1,10 @@
 // 06-10: scenarios shared by the growConnect baseline and its comparison. None of them involves a safety net, so the same
 // source builds the same inputs before and after the builder reads Grow through the connection points.
 import { demoSource } from '../../../__tests__/helpers/demoScenario';
-import type { AccountUse } from '@/engine/decide/v3';
-import type { SnapshotSource } from '../../buildSnapshot';
+import type { AccountUse, V3Inputs } from '@/engine/decide/v3';
+import type { SnapshotSource } from '../../sourceTypes';
+import { buildInputs } from '../buildInputs';
+import type { V3SettingsSource } from '../types';
 import { v3s } from './v3Fixtures';
 
 export const TODAY = '2026-10-03';
@@ -38,4 +40,20 @@ export function scenarios(): { name: string; source: SnapshotSource }[] {
     { name: 'a pot with tagged savings legs', source: tagSavingsLegs({ ...base, goals: [{ ...lisbon, account_id: 'demo-acct-savings' }] }, 'g-lisbon') },
     { name: 'a done and a deleted goal', source: { ...base, goals: [{ ...lisbon, done_at: '2026-09-01T00:00:00Z' }, goal({ id: 'g-gone', deleted_at: '2026-09-02T00:00:00Z', opening_saved: 1000 })] } },
   ];
+}
+
+/** The builder reads the stored account columns only, so a test that wants stated uses writes them (the old builder took an override). */
+export function withUses(src: SnapshotSource, uses: Readonly<Record<string, AccountUse>>): SnapshotSource {
+  const columns = (u: AccountUse | undefined): Record<string, unknown> => {
+    if (u === undefined) return {};
+    if (u.kind === 'mixed') return { use: 'mixed', use_extra_set_aside: u.extraSetAside };
+    if (u.kind === 'dedicated') return u.purpose.kind === 'emergency' ? { use: 'dedicated', use_purpose: 'emergency' } : { use: 'dedicated', use_purpose: 'envelope', use_envelope_id: u.purpose.envelopeId };
+    return { use: u.kind };
+  };
+  return { ...src, accounts: src.accounts.map((a) => ({ ...a, ...columns(uses[a.id]) })) as SnapshotSource['accounts'] };
+}
+
+/** buildInputs with the shared USES written into the account columns. */
+export function buildWithUses(source: SnapshotSource, v3: V3SettingsSource | null, uses: Readonly<Record<string, AccountUse>> = USES): V3Inputs {
+  return buildInputs(withUses(source, uses), v3);
 }

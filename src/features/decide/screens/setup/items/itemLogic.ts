@@ -69,7 +69,7 @@ export function nextDateOnDay(today: string, day: number): string {
  * 06.1-75 (DS-6, DS-7): the bills Decide counts, read from the v3 inputs, so the bills page and the setup checklist show one set and one
  * total. `monthly` is each counted bill's monthly figure in the home currency (the converted amount Decide uses), keyed by series id.
  * `elsewhere` holds the series Decide counts under another role (saving or investing) or as a debt's payment. A series that feeds a live
- * goal never reaches the inputs (buildV3Inputs, ARC-15): its goal_id marks it on the page (billCountOf).
+ * goal never reaches the inputs (buildInputs, ARC-15): its goal_id marks it on the page (billCountOf).
  */
 export interface DecideBillSet {
   readonly monthly: ReadonlyMap<string, number>;

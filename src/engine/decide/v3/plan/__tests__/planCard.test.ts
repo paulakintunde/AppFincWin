@@ -1,7 +1,6 @@
 import fc from 'fast-check';
 import { minorUnits, type MinorUnits } from '../../../../money/types';
 import { ZERO_PERCENT, percent } from '../../../../payoff/types';
-import { salesTaxAmount } from '../../../checkInputs';
 import type { PlanFees, Schedule } from '../../types';
 import { MONTHLY, QUARTERLY } from '../cadence';
 import { planCard, salesTaxOf } from '../planCard';
@@ -107,12 +106,15 @@ describe('planCard', () => {
   });
 });
 
-describe('salesTaxOf parity with checkInputs.salesTaxAmount', () => {
-  it('matches for 100 samples; null is 0', () => {
+describe('salesTaxOf', () => {
+  it('rounds half up at the percent given; null is 0; a negative percent throws', () => {
+    expect(salesTaxOf(m(12345), percent('8.25'))).toBe(1018); // 1018.4625
+    expect(salesTaxOf(m(100), percent('8.25'))).toBe(8); // 8.25
+    expect(salesTaxOf(m(200), percent('0.25'))).toBe(1); // 0.5 rounds up
     fc.assert(
       fc.property(fc.integer({ min: 0, max: 100_000_000 }), (n) => {
-        const a: MinorUnits = m(n);
-        return salesTaxOf(a, percent('8.25')) === salesTaxAmount(a, percent('8.25'));
+        const t = salesTaxOf(m(n), percent('8.25'));
+        return t >= 0 && t <= n;
       }),
       { numRuns: 100 }
     );

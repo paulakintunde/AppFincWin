@@ -2,7 +2,7 @@
 // waiting-write count is laid over at judge time and gives the same Result as a full rebuild with that count.
 import type { CheckV2 } from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
-import { buildV3Inputs } from '../buildV3Inputs';
+import { buildInputs } from '../buildInputs';
 import { computeV3, emptyCheckEvaluation, preparedV3, withUnsaved } from '../computeV3';
 import { v3s } from './v3Fixtures';
 
@@ -65,7 +65,7 @@ describe('withUnsaved: the waiting-write count laid over at judge time (B-2)', (
   ])('%s judged on the overlay equals a full rebuild with the same count', (_name, stored) => {
     const source = demoSource(TODAY);
     const v3 = v3s({ income_types: ['salary'] });
-    const inputs0 = buildV3Inputs(source, v3);
+    const inputs0 = buildInputs(source, v3);
     const check = actual.readStoredCheck(stored).check as CheckV2;
     const overlay = actual.judgeCheck(withUnsaved(actual.prepare(inputs0), 2), check).result;
     const rebuilt = actual.judgeCheck(actual.prepare({ ...inputs0, unsavedWrites: 2 }), check).result;

@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react-native';
 import { DevSettings } from 'react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
-import type { SnapshotSource } from '../../snapshot/buildSnapshot';
+import type { SnapshotSource } from '../../snapshot/sourceTypes';
 import { ShadowExportDevMenu, resetDevMenuRegistration } from '../ShadowExportDevMenu';
 import { parseShadowSource, serializeShadowSource } from '../shadowExport';
 

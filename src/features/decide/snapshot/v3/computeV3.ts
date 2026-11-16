@@ -18,7 +18,7 @@ import {
 } from '@/engine/decide/v3';
 import { currencyCode } from '@/engine/money';
 import { perfMark } from '@/features/decide/perf/perfMarks';
-import type { SnapshotSource } from '../buildSnapshot';
+import type { SnapshotSource } from '../sourceTypes';
 import { parseCheckInputs } from '../checkInputs';
 import { inHomeCurrency, type CurrencyBasis } from '../checkCurrency';
 import { buildInputs } from './buildInputs';
