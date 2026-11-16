@@ -16,6 +16,7 @@ import { EMPTY_FILTER } from '@/engine/activity';
 import { FAB_CLEARANCE } from '@/shell/fab/useShellPositions';
 import { layOutSheets } from '@/test/sheetLayout';
 
+jest.mock('@/features/household/sharing/BulkShare', () => ({ BulkShare: () => null })); // 08-19: the household data layer is not part of this test
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
