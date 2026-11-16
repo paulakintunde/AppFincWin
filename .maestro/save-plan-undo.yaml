@@ -1,0 +1,50 @@
+# 05.5 APP-13 core flow. Run signed in as the sample data account. Writes one check and one goal ("Save for it" in Grow) and undoes both.
+# An answer -> Save for it -> Make the goal -> Goal made (the answer then reads "Saving for it since ...") -> Undo through
+# Profile > History ("Plan saved . Maestro plan") -> the check is deleted so Decide home keeps no "Maestro plan" item.
+appId: com.fincwin.app
+name: Save plan and undo
+---
+- runFlow: common/to-tabs.yaml
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "Maestro plan"
+      PRICE: "1200"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Save for it"
+- tapOn: "Save for it"
+- extendedWaitUntil:
+    visible: "A goal for .*"
+    timeout: 15000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Make the goal"
+- tapOn: "Make the goal"
+- extendedWaitUntil:
+    visible: "Goal made"
+    timeout: 20000
+- tapOn: "See it in Grow"
+- extendedWaitUntil:
+    visible:
+      id: "goal-saved"
+    timeout: 30000
+# Back returns to the check's answer, which now shows that the plan is saved
+- back
+- extendedWaitUntil:
+    visible:
+      id: "answer-outcome"
+    timeout: 30000
+- assertVisible: "Saving for it since .*"
+# Undo the plan through History, then delete the check itself
+- runFlow:
+    file: common/undo-latest.yaml
+    env:
+      UNDO_NAME: "Plan saved . Maestro plan"
+- runFlow:
+    file: common/delete-open-check.yaml
+    env:
+      NAME: "Maestro plan"
+- assertNotVisible: "Maestro plan, .*"

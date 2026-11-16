@@ -1,0 +1,40 @@
+# 05.5 APP-13 core flow. Run signed in as the sample data account. Writes one check and deletes it twice; the first delete is
+# undone, the second leaves nothing behind.
+# An answer -> Decide home lists the check -> Delete (toast) -> Undo on the toast -> listed again -> Delete.
+appId: com.fincwin.app
+name: Delete plan and undo
+---
+- runFlow: common/to-tabs.yaml
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "Maestro delete"
+      PRICE: "40"
+- runFlow:
+    file: common/delete-open-check.yaml
+    env:
+      NAME: "Maestro delete"
+- extendedWaitUntil:
+    visible: "Deleted: Maestro delete\\."
+    timeout: 20000
+# Undo on the delete toast brings the check back with its inputs
+- tapOn: "Undo"
+- extendedWaitUntil:
+    notVisible: "Deleted: Maestro delete\\."
+    timeout: 20000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Maestro delete, .*"
+- assertVisible: "Maestro delete, .*"
+# Delete it again: nothing remains
+- runFlow:
+    file: common/delete-open-check.yaml
+    env:
+      NAME: "Maestro delete"
+- extendedWaitUntil:
+    visible: "Deleted: Maestro delete\\."
+    timeout: 20000
+- extendedWaitUntil:
+    notVisible: "Maestro delete, .*"
+    timeout: 20000
