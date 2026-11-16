@@ -1,7 +1,7 @@
 // Notices (HH-03, UI-SPEC "Notices"): every household event the caller may see, newest first, each as one sentence with the
 // time under it. Opening the screen marks them read, which clears the count on the Household home and the You row. Names go
 // through the member resolver (D-32). Copy never says "should" or "advise".
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,6 +18,8 @@ import { useHouseholdEvents } from '@/data/queries/household';
 import { markHouseholdEventsRead } from '@/db/householdEvents';
 import { supabase } from '@/services/supabase';
 import { ChangeLine } from './components/ChangeLine';
+import { NoticeSettleActions } from './settle/PendingSettlementCard';
+import { SettleUpSheet } from './settle/SettleUpSheet';
 import { useNoticeFormat } from './noticeText';
 import { useHouseholdScope } from './useHouseholdScope';
 
@@ -30,6 +32,7 @@ export function NoticesScreen() {
   const { events } = useHouseholdEvents(scope.householdId, scope.userId ?? undefined);
   const { text, when } = useNoticeFormat(scope.householdId, scope.name);
   const { userId, online } = scope;
+  const [settleKey, setSettleKey] = useState<string | null>(null);
 
   // Opening the list is what marks it read (needs a connection; offline it is marked on the next opening).
   useFocusEffect(
@@ -55,14 +58,21 @@ export function NoticesScreen() {
             {t('household.notices.empty')}
           </Text>
         ) : (
-          events.map((e) => <ChangeLine key={e.id} householdId={scope.householdId} actorId={e.actor_id} text={text(e)} at={when(e.created_at)} />)
+          events.map((e) => (
+            <View key={e.id} style={styles.notice}>
+              <ChangeLine householdId={scope.householdId} actorId={e.actor_id} text={text(e)} at={when(e.created_at)} />
+              {scope.householdId ? <NoticeSettleActions event={e} householdId={scope.householdId} onSettleWith={setSettleKey} /> : null}
+            </View>
+          ))
         )}
       </View>
+      <SettleUpSheet visible={settleKey !== null} householdId={scope.householdId} otherKey={settleKey} onClose={() => setSettleKey(null)} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   back: { marginBottom: space.gapMd },
+  notice: { gap: step.hair },
   card: { marginTop: step.section, padding: step.card, borderRadius: radii.card, gap: step.tight },
 });

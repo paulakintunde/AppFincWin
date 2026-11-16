@@ -1,7 +1,7 @@
 // Screen 1 (HH-01, HH-03, HH-10): the Household home. Top to bottom: hero (name, people and currency), people, pending
 // invites (owner), the removal undo card (owner, 24 h), rules, recent changes, leave, footer. A household-of-one sees the
 // "Just you for now" state instead of the people and rules. Owner actions are hidden from members; the server enforces
-// them (T-08-62). Every name is rendered through the member resolver (D-32). The balances card is added by plan 08-21.
+// them (T-08-62). Every name is rendered through the member resolver (D-32). Balances (08-21) sit right after the hero.
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
@@ -39,6 +39,8 @@ import { InviteSheet } from './InviteSheet';
 import { MemberSheet } from './MemberSheet';
 import { useNoticeFormat } from './noticeText';
 import { RenameHouseholdSheet } from './RenameHouseholdSheet';
+import { BalancesSection } from './settle/BalancesCard';
+import { DepartedBalancesCard } from './settle/DepartedBalancesCard';
 import { useHouseholdScope } from './useHouseholdScope';
 import { useMemberLabel } from './useMemberLabel';
 
@@ -185,6 +187,8 @@ export function HouseholdHomeScreen() {
       </FadeIn>
 
       {/* 08-21: balances */}
+      <BalancesSection householdId={householdId} alone={alone} />
+      <DepartedBalancesCard />
 
       {alone ? (
         <FadeIn once="household-empty" style={styles.section}>

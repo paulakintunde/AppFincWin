@@ -97,3 +97,45 @@ export function useMemberSeen(
     [members],
   );
 }
+
+/**
+ * 08-21 (D-32): the name of someone in a household the viewer LEFT, for the leaver's read-only balances. The server already
+ * nulls the name when the person hid it, so a missing name reads as their colour. The person is still in that household, so
+ * there is no "(left)" suffix. Lives here so no other feature file reads the name column.
+ */
+export function useDepartedLabel(): (person: { other_id: string; other_display_name: string | null; other_colour_key: number }) => string {
+  return useCallback((person) => {
+    const label = memberLabel(
+      {
+        userId: person.other_id,
+        displayName: person.other_display_name,
+        nameHidden: person.other_display_name === null,
+        colourKey: person.other_colour_key,
+        left: false,
+      },
+      '',
+    );
+    return label.kind === 'name' || label.kind === 'colour' ? label.text : '';
+  }, []);
+}
+
+/**
+ * 08-18 (D-32): who invited the person who holds a code, for the join preview. The server nulls the name when the inviter
+ * hid it, so a missing name reads as their colour. The person joining is not a member yet, so this cannot go through the
+ * member list. Lives here so no other feature file reads the name column.
+ */
+export function useInviterLabel(): (preview: { inviter_display_name: string | null; inviter_colour_key: number }) => string {
+  return useCallback((preview) => {
+    const label = memberLabel(
+      {
+        userId: 'inviter',
+        displayName: preview.inviter_display_name,
+        nameHidden: preview.inviter_display_name === null,
+        colourKey: preview.inviter_colour_key,
+        left: false,
+      },
+      '',
+    );
+    return label.kind === 'name' || label.kind === 'colour' ? label.text : '';
+  }, []);
+}
