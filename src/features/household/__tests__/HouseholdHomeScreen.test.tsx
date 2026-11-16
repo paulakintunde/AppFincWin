@@ -180,6 +180,17 @@ describe('HouseholdHomeScreen', () => {
     expect(screen.getByText('Nothing has changed yet')).toBeTruthy();
   });
 
+  it.each([
+    ['How new shared lines are split', '/household/split-default'],
+    ['Category defaults', '/household/category-defaults'],
+    ['Shared accounts', '/household/shared-accounts'],
+  ])('the Rules card row %s opens %s', async (label, route) => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+    await setup();
+    await fireEvent.press(screen.getByText(label));
+    expect(mockPush).toHaveBeenCalledWith(route);
+  });
+
   it('writes recent changes through the member resolver', async () => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
     mockEvents = [

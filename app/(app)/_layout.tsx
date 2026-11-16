@@ -119,6 +119,10 @@ export default function AppLayout() {
                 <Stack.Screen name="grow/holding/[id]" />
                 <Stack.Screen name="grow/safety-net" />
                 <Stack.Screen name="grow/lines" />
+                {/* 08-20 (D-13): the household Rules screens, linked from Household home's Rules card; outside the Decide gate. */}
+                <Stack.Screen name="household/split-default" />
+                <Stack.Screen name="household/category-defaults" />
+                <Stack.Screen name="household/shared-accounts" />
                 {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
                 <Stack.Protected guard={DECIDE_OPEN}>
                   {/* 06.1-28 (D-05): the one Decide. Old paths (check/[id], settings, open, changes, lines, pots, setup/rough, setup/first-check) are redirect files. */}
