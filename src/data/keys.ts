@@ -25,6 +25,14 @@ export const queryKeys = {
   transactionMonths: (householdId: string) => ['transactions', householdId, 'months'] as const,
   accountBalances: (householdId: string) => ['transactions', householdId, 'balances'] as const,
   householdMembers: (householdId: string) => ['household-members', householdId] as const,
+  // 08-13: the household row, its notices, the caller's read marker and the owner's open invites
+  // full member rows; nested under householdMembers so invalidating that prefix refreshes both reads
+  householdMemberRows: (householdId: string) => ['household-members', householdId, 'rows'] as const,
+  householdDetail: (householdId: string) => ['household-detail', householdId] as const,
+  householdEvents: (householdId: string) => ['household-events', householdId] as const,
+  householdEventReads: (userId: string) => ['household-event-reads', userId] as const,
+  householdInvites: (householdId: string) => ['household-invites', householdId] as const,
+  invitePreview: (code: string) => ['invite-preview', code] as const,
   // transferIds: sorted ids joined with ',' -- also nested under transactionsRoot.
   transferLegs: (householdId: string, transferIds: string) =>
     ['transactions', householdId, 'transfer-legs', transferIds] as const,

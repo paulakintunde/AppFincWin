@@ -60,8 +60,10 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   undo_log: ['id', 'owner_id', 'label_key', 'label_params', 'status', 'refusal', 'created_at', 'resolved_at'],
   dismissed_series_offers: ['offer_key', 'created_at'],
   statement_periods: ['id', 'household_id', 'account_id', 'period_start', 'period_end', 'import_batch_id'],
-  households: ['id', 'horizon_month', 'name', 'reporting_currency'],
-  household_members: ['household_id', 'user_id', 'display_name', 'is_owner', 'role_label', 'colour_key', 'name_hidden', 'weight'],
+  households: ['id', 'horizon_month', 'name', 'reporting_currency', 'owner_id'],
+  household_members: ['household_id', 'user_id', 'display_name', 'is_owner', 'role_label', 'colour_key', 'name_hidden', 'weight', 'created_at'],
+  // 08-13 (D-02): an open invite's plain code is never exported (it is not selectable by the client); these are its dates
+  household_invites: ['id', 'household_id', 'created_by', 'expires_at', 'used_at', 'cancelled_at', 'created_at'],
   household_events: ['id', 'household_id', 'kind', 'actor_id', 'subject_id', 'ref_id', 'params', 'created_at'],
   profiles: [
     'home_currency', 'show_cents', 'lead_figure', 'region', 'region_subdivision', 'week_start', 'sample_prompt_answered_at',
@@ -135,5 +137,6 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
 export const NOT_USER_DATA: readonly string[] = [
   'transactions_active', // a view over transactions (not-deleted rows); exported through transactions
   'statement_periods_live', // a view over statement_periods; exported through statement_periods
+  'household_event_reads', // 08-13: one last-opened time per user for the notices badge; no content, erased by FK cascade
   'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
 ];

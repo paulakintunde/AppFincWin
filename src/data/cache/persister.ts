@@ -42,7 +42,8 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 05.5-21: decide_settings lost four interim columns (household share and three safety-net ones) -- bumped 9 -> 10.
 // 06.2-17: categories.icon_key -- bumped 9 -> 10.
 // Merge of 05.5 into 06.2: both sides bumped 9 -> 10 with different shapes -- bumped 10 -> 11.
-export const CACHE_SCHEMA_VERSION = '11';
+// Phase 8 08-13: household members, invites and events cached -- bumped 11 -> 12.
+export const CACHE_SCHEMA_VERSION = '12';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's
