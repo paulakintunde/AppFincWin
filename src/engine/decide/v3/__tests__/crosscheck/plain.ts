@@ -1349,9 +1349,19 @@ export function plainPlanTotal(f: RightAnswerFixture): Cents {
 }
 
 /** Every payment of a plan, in order (see plainPlanTotal). */
-export function planPayments(amount: Cents, months: number, apr: string | null, firstToday: boolean, perYear = 12n): Cents[] {
-  const bp = apr === null ? 0n : basisPoints(apr);
-  const D = 10_000n * perYear; // a rate per period of bp / D (a month by default; 05.4-22: 26 a year for a fortnight)
+export function planPayments(
+  amount: Cents,
+  months: number,
+  apr: string | null,
+  firstToday: boolean,
+  perYear = 12n,
+  country: string | null = null,
+): Cents[] {
+  // A rate per period of bp / D. Nominal (a month by default; 05.4-22: 26 a year for a fortnight): bp / (10,000 x perYear). In the
+  // UK and the EU a typed APR is the effective yearly rate (FIN-23, D-26), so the period rate is plainPeriodRate, held over S.
+  const effective = plainReadsEffective(country);
+  const bp = apr === null ? 0n : effective ? plainPeriodRate(apr, Number(perYear), country) : basisPoints(apr);
+  const D = effective ? PLAIN_RATE_SCALE : 10_000n * perYear;
   const ceil = (a: Cents, b: Cents): Cents => (a + b - 1n) / b;
   const n = BigInt(months);
   let level: Cents;
@@ -1585,7 +1595,7 @@ export function plainBorrowed(f: RightAnswerFixture): { amount: Cents; interest:
   const raw = upFront(f) - big(c.deposit);
   const amount = maxC(0n, raw);
   const due = c.firstPaymentDate !== onePeriodAfter(f);
-  const pays = planPayments(amount, c.months, c.apr, due, c.every === 'fortnight' ? 26n : 12n);
+  const pays = planPayments(amount, c.months, c.apr, due, c.every === 'fortnight' ? 26n : 12n, f.region?.country ?? null);
   return { amount, interest: pays.reduce((t, x) => t + x, 0n) - amount };
 }
 
@@ -1600,9 +1610,13 @@ export function plainExpensive(f: RightAnswerFixture): boolean {
   // D-138 (owner, 2026-11-05): "the 10% test reads the exact interest before rounding to the cent". With no rounding the level
   // payment is amount x bp x A^n / (B x (A^n - D^n)) (A = D + bp; B = A when the first payment is today, else D), so the interest
   // is at least 10% of the amount exactly when n x bp x A^n x 10,000 >= (10,000 + 1,000) x B x (A^n - D^n); the amount cancels.
-  const bp = c.apr === null ? 0n : basisPoints(c.apr);
+  // In the UK and the EU the period rate is the effective one (FIN-23, D-26): the same maths with bp / D read as r / PLAIN_RATE_SCALE.
+  const perYear = c.every === 'fortnight' ? 26 : 12;
+  const country = f.region?.country ?? null;
+  const effective = plainReadsEffective(country);
+  const bp = c.apr === null ? 0n : effective ? plainPeriodRate(c.apr, perYear, country) : basisPoints(c.apr);
   if (bp === 0n) return false;
-  const D = 10_000n * (c.every === 'fortnight' ? 26n : 12n);
+  const D = effective ? PLAIN_RATE_SCALE : 10_000n * BigInt(perYear);
   const n = BigInt(c.months);
   const An = (D + bp) ** n;
   const Dn = D ** n;
