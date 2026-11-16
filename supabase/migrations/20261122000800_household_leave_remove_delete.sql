@@ -427,6 +427,13 @@ begin
   update public.decide_settings set reserve_account_id = null
    where user_id = p_user and reserve_account_id in (select a.id from public.accounts a where a.household_id = p_household and a.is_shared);
 
+  -- c3. shared lines a personal series of the person wrote (joint account lines) stay in the household and let go of the
+  -- series, which moves with the person: no line may point across households at a series the person alone can see.
+  update public.transactions set recurring_series_id = null, occurrence_date = null
+   where household_id = p_household and is_shared
+     and recurring_series_id in (select s.id from public.recurring_series s
+                                  where s.household_id = p_household and s.created_by = p_user and not s.is_shared);
+
   -- d. the person's own rows go with them (allow-list only)
   perform public.hh_move_personal_rows(p_user, p_household, v_h2);
 
@@ -1023,6 +1030,12 @@ declare
   v_shared boolean;
 begin
   perform set_config('fincwin.household_rpc', 'on', true);
+  -- A personal series can have written shared lines (a joint account shares its outgoing lines at once). Those lines stay as
+  -- shared records, so they let go of the series that is about to be erased (transactions.recurring_series_id is RESTRICT).
+  update public.transactions set recurring_series_id = null, occurrence_date = null
+   where household_id = p_household and is_shared
+     and recurring_series_id in (select s.id from public.recurring_series s
+                                  where s.household_id = p_household and s.created_by = p_user and not s.is_shared);
   foreach t in array array['transactions', 'holding_lots', 'holdings', 'savings_goals', 'decide_answers', 'decide_changes',
                            'decide_links', 'decide_checks', 'debts', 'recurring_dismissals', 'income_payer_prompts',
                            'recurring_series', 'accounts'] loop

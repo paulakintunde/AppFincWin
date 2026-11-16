@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(87);
+select extensions.plan(88);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 select ('' || n || n || n || n || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || n || n || n || n || n || n || n || n)::uuid,
@@ -64,6 +64,14 @@ insert into public.recurring_series (id, household_id, created_by, account_id, n
 values ('e1000000-0000-0000-0000-000000000001', (select h from ids), '22222222-2222-2222-2222-222222222222',
         'b2000000-0000-0000-0000-00000000000a', 'B shared bill', -1000, 'USD', 'monthly', current_date - 10, 'UTC', true);
 
+-- B's personal series on the joint account wrote a line there (a joint account shares its outgoing lines at once, L9).
+insert into public.recurring_series (id, household_id, created_by, account_id, name, amount, currency, freq, anchor_date, time_zone)
+values ('e2000000-0000-0000-0000-000000000001', (select h from ids), '22222222-2222-2222-2222-222222222222',
+        'f0000000-0000-0000-0000-00000000000a', 'B joint bill', -300, 'USD', 'monthly', current_date, 'UTC');
+insert into public.transactions (id, household_id, created_by, account_id, original_amount, original_currency, local_date, time_zone, name, status, recurring_series_id, occurrence_date)
+values ('d1000000-0000-0000-0000-000000000009', (select h from ids), '22222222-2222-2222-2222-222222222222', 'f0000000-0000-0000-0000-00000000000a',
+        -300, 'USD', current_date, 'UTC', 'L9 joint bill', 'paid', 'e2000000-0000-0000-0000-000000000001', current_date);
+
 set local role authenticated;
 select public.t109_as('11111111-1111-1111-1111-111111111111');
 select public.share_transaction(('d1000000-0000-0000-0000-00000000000' || n)::uuid, public.t109_ver(('d1000000-0000-0000-0000-00000000000' || n)::uuid), 'even',
@@ -95,8 +103,8 @@ create temp table before_nets as select
   public.hh_pair_net((select h from ids), '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333') as ac,
   public.hh_pair_net((select h from ids), '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222') as cb;
 
-select extensions.is(public.t109_val('select count(*) from public.transaction_splits where household_id = (select h from ids)'), '10',
-  'fixture: five shared lines, two shares each (A+B x4... L1, L2, L4, A+C L5, A+D L6)');
+select extensions.is(public.t109_val('select count(*) from public.transaction_splits where household_id = (select h from ids)'), '14',
+  'fixture: five shared lines and the joint line L9, 14 shares');
 select extensions.is((select ab from before_nets), 2700::bigint, 'fixture: A owes B 2700 over the unlocked lines (L1 4200 minus L2 1500)');
 select extensions.is((select ac from before_nets), -1000::bigint, 'fixture: C owes A 1000 (L5)');
 
@@ -125,13 +133,15 @@ select extensions.is(public.t109_val('select string_agg(is_shared::text || (hous
 select extensions.is(public.t109_val('select count(*) || sum(share)::text from public.transaction_splits where transaction_id = ''d1000000-0000-0000-0000-000000000001'' and household_id = (select h from ids)'),
   '2-8400', 'L1 keeps both shares in the household, split unchanged');
 select extensions.is(public.t109_val('select count(*) from public.transaction_splits where member_id = ''22222222-2222-2222-2222-222222222222'' and household_id = (select h from ids)'),
-  '3', 'B''s three shares (L1, L2, L4) stay in the household');
+  '4', 'B''s four shares (L1, L2, L4 and the joint line L9) stay in the household');
 select extensions.is(public.t109_val('select (a.tombstone_of = ''b2000000-0000-0000-0000-00000000000a'')::text || a.is_shared::text || (a.archived_at is not null)::text || (a.household_id = (select h from ids))::text from public.accounts a join public.transactions t on t.account_id = a.id where t.id = ''d1000000-0000-0000-0000-000000000001'''),
   'truetruetruetrue', 'L1 now sits on an archived shared tombstone of BP in the household');
 select extensions.is(public.t109_val('select (a.tombstone_of is not null and a.is_shared)::text || (r.end_date <= current_date)::text from public.recurring_series r join public.accounts a on a.id = r.account_id where r.id = ''e1000000-0000-0000-0000-000000000001'''),
   'truetrue', 'B''s shared series moved onto the tombstone and ended');
 select extensions.is(public.t109_val('select count(*) from public.transactions where created_by = ''22222222-2222-2222-2222-222222222222'' and copied_from is not null'),
-  '3', 'B has three personal copies (L1, L2, L4)');
+  '4', 'B has four personal copies (L1, L2, L4, L9)');
+select extensions.is(public.t109_val('select (t.is_shared and t.recurring_series_id is null and t.household_id = (select h from ids))::text || (r.household_id = (select household_id from public.household_members where user_id = ''22222222-2222-2222-2222-222222222222''))::text from public.transactions t, public.recurring_series r where t.id = ''d1000000-0000-0000-0000-000000000009'' and r.id = ''e2000000-0000-0000-0000-000000000001'''),
+  'truetrue', 'the joint line B''s personal series wrote stays shared and lets go of the series, which moves with B');
 select extensions.is(public.t109_val('select (account_id = ''b2000000-0000-0000-0000-00000000000a'')::text || original_amount || ''/'' || copy_share from public.transactions where copied_from = ''d1000000-0000-0000-0000-000000000001'''),
   'true-8400/-4200', 'the line B paid from BP is copied in full on BP with copy_share = their share');
 select extensions.is(public.t109_val('select (a.archived_at is not null and a.tombstone_of is null)::text || t.original_amount || (t.copy_share is null)::text || (t.household_id = a.household_id)::text from public.transactions t join public.accounts a on a.id = t.account_id where t.copied_from = ''d1000000-0000-0000-0000-000000000002'''),
