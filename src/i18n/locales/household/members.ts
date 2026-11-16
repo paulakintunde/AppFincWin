@@ -41,6 +41,7 @@ export const members = {
     label: 'Weight',
     value: '{{percent}}%',
     a11y: '{{name}}’s weight, {{percent}} percent',
+    a11yYou: 'Your weight, {{percent}} percent',
   },
   avatarA11y: '{{name}}, {{role}}, {{percent}} percent',
   saveChanges: 'Save changes',
@@ -55,6 +56,20 @@ export const members = {
     evenSplit: '{{name}} joined. Weights are now split evenly.',
     stepUp: 'Add 5 percent to {{name}}',
     stepDown: 'Take 5 percent from {{name}}',
+  },
+  /** 08-16: what the member and weights sheets say when the server refuses a save (reason codes from 08-13). */
+  reasons: {
+    colour_taken: 'That colour was just taken. Pick another.',
+    invalid_role: 'A role needs 1 to 24 characters.',
+    invalid_name: 'That name can’t be saved.',
+    not_allowed: 'Only the owner can change someone else’s role.',
+    owner_label_fixed: 'The owner’s role is fixed.',
+    not_member: 'This person is no longer in the household.',
+    version_conflict: 'Someone else changed this first, so your change wasn’t saved. The latest version is shown.',
+    members_mismatch: 'The people in the household changed. Close this and open it again to see them.',
+    weights_invalid: 'The weights didn’t add up to 100. Nothing was saved.',
+    failed: 'This wasn’t saved. Try again.',
+    conflictTitle: 'Changed by someone else',
   },
   partner: {
     countInDecide: 'Count {{name}}’s money in my Decide checks',
