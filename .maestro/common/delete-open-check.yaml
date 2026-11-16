@@ -1,0 +1,31 @@
+# 05.5-22 shared: from anywhere, open Decide home, find the open check whose row starts with ${NAME} and delete it from its sheet
+# (an undoable soft delete with a toast). Used by the 05.5 core flows to leave no "Maestro" check behind.
+appId: com.fincwin.app
+---
+- runFlow: to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+# Decide home keeps its scroll position: back to the top first
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- runFlow:
+    file: scroll-to.yaml
+    env:
+      TARGET: "${NAME}, .*"
+- tapOn: "${NAME}, .*"
+- extendedWaitUntil:
+    visible: "Edit the check"
+    timeout: 30000
+- tapOn: "Delete"
+- waitForAnimationToEnd

@@ -1,0 +1,54 @@
+# 05.5 APP-13 core flow. Run signed in as the sample data account. Writes one draft check and deletes it.
+# A used car -> stepper step 3 (Running costs) -> a cost set to "Every 3 months" through its How often sheet -> the row shows
+# "every 3 months" and its "about ... a month" line -> the draft check is deleted.
+appId: com.fincwin.app
+name: Check with a periodic cost
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "used car"
+      PRICE: "2500"
+# "used car" reads as Car, so the stepper opens on step 2 (price and how you pay)
+- extendedWaitUntil:
+    visible: "Step 2 of 3"
+    timeout: 20000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Next"
+- tapOn: "Next"
+- extendedWaitUntil:
+    visible: "Step 3 of 3"
+    timeout: 15000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "How often, monthly"
+- runFlow:
+    file: common/open-sheet.yaml
+    env:
+      TAP: "How often, monthly"
+      EXPECT: "Save how often"
+- tapOn: "Every 3 months"
+- assertVisible: ".* every 3 months is about .* a month, from the day you buy\\."
+- tapOn: "Save how often"
+- extendedWaitUntil:
+    notVisible: "Save how often"
+    timeout: 15000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "How often, every 3 months"
+- assertVisible: "about .* a month"
+# Discard the draft: back to Decide home, then delete it from its sheet
+- runFlow:
+    file: common/delete-open-check.yaml
+    env:
+      NAME: "[Uu]sed car"
+- assertNotVisible: "[Uu]sed car, Draft.*"
