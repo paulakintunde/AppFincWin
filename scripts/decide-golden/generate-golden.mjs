@@ -15,13 +15,13 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import vm from 'node:vm';
-import { PAYOFF_CASES, DECIDE_SCENARIOS } from './scenarios.mjs';
+import { PAYOFF_CASES } from './scenarios.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
 const HTML_PATH = join(ROOT, 'FincWin United.dc.html');
 const PAYOFF_PATH = join(ROOT, 'src/engine/payoff/__tests__/golden/prototype-payoff.json');
-const DECIDE_PATH = join(ROOT, 'src/engine/decide/__tests__/golden/prototype-decide.json');
+// 05.5-19: the old Decide engine's golden (prototype-decide.json) is deleted with the engine; only the payoff golden is regenerated.
 
 function loadProto() {
   const lines = readFileSync(HTML_PATH, 'utf8').split(/\r?\n/);
@@ -212,13 +212,6 @@ function buildPayoff() {
 
 const files = [
   [PAYOFF_PATH, buildPayoff()],
-  [
-    DECIDE_PATH,
-    {
-      source: 'FincWin United.dc.html (dhh..dfits, evaluated via node:vm)',
-      scenarios: DECIDE_SCENARIOS.map(runScenario),
-    },
-  ],
 ].map(([p, o]) => [p, JSON.stringify(o, null, 2) + '\n']);
 
 if (process.argv.includes('--check')) {
