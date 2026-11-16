@@ -28,6 +28,8 @@ export const queryKeys = {
   // 08-13: the household row, its notices, the caller's read marker and the owner's open invites
   // full member rows; nested under householdMembers so invalidating that prefix refreshes both reads
   householdMemberRows: (householdId: string) => ['household-members', householdId, 'rows'] as const,
+  // 08-15: people who left (nested under householdMembers like the member rows)
+  householdFormerMembers: (householdId: string) => ['household-members', householdId, 'former'] as const,
   householdDetail: (householdId: string) => ['household-detail', householdId] as const,
   householdEvents: (householdId: string) => ['household-events', householdId] as const,
   householdEventReads: (userId: string) => ['household-event-reads', userId] as const,
@@ -103,6 +105,12 @@ export const queryKeys = {
   // 06.1 (CO-D-64 (6)): what Decide said on each day for one check. Owner-private; not row-derived.
   // Named decideCheckHistory because decideHistory above is the row-derived month window.
   decideCheckHistory: (userId: string, checkId: string) => ['decide-check-history', userId, checkId] as const,
+  // 08-15: who owes whom. Balances and the traced lines of one pair sit under transactionsRoot, so every transaction write
+  // (and every settle-up call, which invalidates the root's balances) refreshes them.
+  householdBalances: (householdId: string) => ['transactions', householdId, 'household-balances'] as const,
+  pairLines: (householdId: string, otherKey: string) => ['transactions', householdId, 'household-balances', 'pair', otherKey] as const,
+  splitDefaults: (householdId: string) => ['split-defaults', householdId] as const,
+  settlements: (householdId: string) => ['settlements', householdId] as const,
 };
 
 export const mutationKeys = {
@@ -208,6 +216,12 @@ export const mutationKeys = {
   safetyNetAnswer: ['decide-checks', 'safety-net-answer'] as const, // D-14 / D-28 (composes Grow's save/edit keys; reserved)
   decideAnswered: ['decide-setup', 'answered'] as const, // D-23 (reserved: the write runs on updateDecideSetup)
   decideHistory: ['decide-check-history', 'add'] as const, // CO-D-64 (6)
+  // 08-15: queued sharing writes (UI-SPEC offline rule). Settle-up calls are online-only and have no mutation key.
+  shareLine: ['household-sharing', 'share'] as const,
+  setLineSplit: ['household-sharing', 'split'] as const,
+  makeLinePrivate: ['household-sharing', 'make-private'] as const,
+  setPaidBy: ['household-sharing', 'paid-by'] as const,
+  setMyLineCategory: ['household-sharing', 'my-category'] as const,
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --

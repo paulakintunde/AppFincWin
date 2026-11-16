@@ -14,7 +14,8 @@ const MIGRATIONS = path.resolve(__dirname, '../../../supabase/migrations');
 
 function grantedUpdateColumns(): Record<string, Set<string>> {
   const out: Record<string, Set<string>> = {};
-  const re = /grant\s+update\s*\(([^)]+)\)\s+on\s+public\.(\w+)/gi;
+  // 08-15: also reads the combined form `grant insert (...), update (...) on public.t` (accounts.is_shared, 20261122000100).
+  const re = /(?:grant|,)\s*update\s*\(([^)]+)\)\s*(?:,[^;]*?)?\s+on\s+public\.(\w+)/gi;
   for (const file of fs.readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql'))) {
     const sql = fs.readFileSync(path.join(MIGRATIONS, file), 'utf8').replace(/--[^\n]*/g, '');
     for (const m of sql.matchAll(re)) {

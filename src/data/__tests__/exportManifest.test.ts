@@ -84,6 +84,22 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
     expect(EXPORT_MANIFEST.decide_checks).toContain('answer_v3');
   });
 
+  // 08-15: sharing and settling data is exported (CMP-F18); settlement_nudges is server-only and never is.
+  it('exports the sharing and settling tables and columns, and never settlement_nudges', () => {
+    for (const t of [
+      'transaction_splits', 'transaction_member_categories', 'household_split_defaults', 'settlements', 'settlement_lines',
+      'household_former_members', 'member_departures',
+    ]) {
+      expect(Object.keys(EXPORT_MANIFEST)).toContain(t);
+    }
+    expect(Object.keys(EXPORT_MANIFEST)).not.toContain('settlement_nudges');
+    for (const c of ['is_settlement', 'settlement_id', 'split_manual', 'copied_from', 'copy_share', 'paid_by_former_key', 'household_amount']) {
+      expect(EXPORT_MANIFEST.transactions).toContain(c);
+    }
+    expect(EXPORT_MANIFEST.member_departures).not.toContain('prior');
+    expect(EXPORT_MANIFEST.household_invites).not.toContain('code');
+  });
+
   it('excludes profiles.decide_v3 (an access switch, not user data)', () => {
     expect(EXPORT_MANIFEST.profiles).not.toContain('decide_v3');
   });

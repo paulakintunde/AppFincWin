@@ -28,7 +28,7 @@ jest.mock('@/db/householdMembers', () => ({
 }));
 
 let mockMembers: Record<string, unknown>[] = [];
-jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockMembers }) }));
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockMembers }), useFormerMembers: () => ({ data: [] }) }));
 
 function member(id: string, name: string, colour: number, extra: Record<string, unknown> = {}) {
   return {

@@ -40,7 +40,7 @@ export async function fetchHouseholdMembers(client: DbClient, householdId: strin
   return (data as HouseholdMemberRow[] | null) ?? [];
 }
 
-async function callRpc<T>(client: DbClient, name: string, args?: Record<string, unknown>): Promise<RpcResult<T>> {
+export async function callRpc<T>(client: DbClient, name: string, args?: Record<string, unknown>): Promise<RpcResult<T>> {
   const { data, error, status } = await client.rpc(name, args);
   if (error) throw toDbError(error, status);
   return data as RpcResult<T>;

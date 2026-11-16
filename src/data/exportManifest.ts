@@ -25,6 +25,9 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'debt_id',
     // 08 (D-12, D-18): what is shared and who paid, so an export shows it
     'is_shared', 'paid_by',
+    // 08 (08-10, 08-11, 08-14): the stamped household figure, how it was split, settle-up records and personal copies
+    'paid_by_former_key', 'household_amount', 'household_currency', 'household_rate_pending', 'split_rule', 'split_manual',
+    'is_settlement', 'settlement_id', 'copied_from', 'copy_share',
   ],
   accounts: [
     'id', 'household_id', 'created_by', 'name', 'kind', 'currency', 'opening_balance', 'archived_at', 'overdraft_limit',
@@ -36,7 +39,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // 06
     'interest_rate',
     // 08 (D-13): a joint account
-    'is_shared',
+    'is_shared', 'tombstone_of',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'icon_key', 'created_at', 'updated_at'],
   category_rules: [
@@ -65,6 +68,20 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   // 08-13 (D-02): an open invite's plain code is never exported (it is not selectable by the client); these are its dates
   household_invites: ['id', 'household_id', 'created_by', 'expires_at', 'used_at', 'cancelled_at', 'created_at'],
   household_events: ['id', 'household_id', 'kind', 'actor_id', 'subject_id', 'ref_id', 'params', 'created_at'],
+  // 08-15 (CMP-F18): sharing and settling. Export runs as the signed-in user, so RLS limits each table to what that person
+  // may see (a settle-up only to its two people). settlement_nudges is server-only rate-limit bookkeeping and is never exported.
+  transaction_splits: ['id', 'transaction_id', 'household_id', 'member_id', 'former_member_key', 'position', 'share', 'weight_snapshot', 'created_at'],
+  transaction_member_categories: ['transaction_id', 'user_id', 'household_id', 'category_id'],
+  household_split_defaults: ['id', 'household_id', 'category_ref', 'rule', 'created_at', 'updated_at'],
+  settlements: [
+    'id', 'household_id', 'kind', 'payer_id', 'receiver_id', 'payer_former_key', 'receiver_former_key', 'amount', 'currency', 'status',
+    'created_by', 'payer_account_id', 'receiver_account_id', 'payer_tx_id', 'receiver_tx_id', 'payer_fx_rate', 'receiver_fx_rate',
+    'remind_at', 'expires_at', 'confirmed_at', 'resolved_at', 'created_at', 'updated_at',
+  ],
+  settlement_lines: ['settlement_id', 'transaction_id', 'household_id', 'amount', 'live'],
+  household_former_members: ['id', 'household_id', 'user_id', 'former_key', 'display_name', 'colour_key', 'name_hidden', 'reason', 'left_at'],
+  // the client's select grant on member_departures is these columns only; the server-held copy and undo bookkeeping stay out
+  member_departures: ['id', 'household_id', 'user_id', 'actor_id', 'kind', 'undo_until', 'restored_at', 'created_at'],
   profiles: [
     'home_currency', 'show_cents', 'lead_figure', 'region', 'region_subdivision', 'week_start', 'sample_prompt_answered_at',
     // profiles.decide_v3 and profiles.decide_shadow are access switches, not user data: excluded on purpose (05.2, 05.4).

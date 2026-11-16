@@ -23,7 +23,7 @@ const mockSet = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean; reason?
 jest.mock('@/db/householdMembers', () => ({ setMemberWeights: (...a: unknown[]) => mockSet(...a) }));
 
 let mockMembers: Record<string, unknown>[] = [];
-jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockMembers }) }));
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockMembers }), useFormerMembers: () => ({ data: [] }) }));
 
 function member(id: string, name: string, weight: number, colour: number) {
   return { household_id: 'h', user_id: id, is_owner: id === 'me', role_label: 'Flatmate', weight, colour_key: colour, display_name: name, name_hidden: false, version: 1 };

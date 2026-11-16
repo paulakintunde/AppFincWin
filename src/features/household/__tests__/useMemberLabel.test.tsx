@@ -9,7 +9,13 @@ const members = [
   { household_id: 'h', user_id: 'u3', display_name: 'Pat', name_hidden: true, colour_key: 2 },
 ];
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+const former = [
+  { household_id: 'h', user_id: 'u4', former_key: 'k4', display_name: 'Lee', colour_key: 3, name_hidden: false, reason: 'left' },
+  { household_id: 'h', user_id: 'u5', former_key: 'k5', display_name: 'Kim', colour_key: 4, name_hidden: true, reason: 'removed' },
+  { household_id: 'h', user_id: null, former_key: 'k6', display_name: null, colour_key: 5, name_hidden: false, reason: 'deleted' },
+];
 jest.mock('@/db/householdMembers', () => ({ fetchHouseholdMembers: async () => members }));
+jest.mock('@/db/householdFormerMembers', () => ({ fetchFormerMembers: async () => former }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
 
 async function setup() {
@@ -33,6 +39,14 @@ describe('useMemberLabel (D-32)', () => {
     await waitFor(() => expect(result.current('u2')).toBe('Sam'));
     expect(result.current(null)).toBe('Former member');
     expect(result.current('gone')).toBe('Former member');
+  });
+
+  it('names former members from their own rows: (left) with a name or colour, Former member once deleted (D-25, D-29)', async () => {
+    const { result } = await setup();
+    await waitFor(() => expect(result.current('u4')).toBe('Lee (left)'));
+    expect(result.current('k4')).toBe('Lee (left)');
+    expect(result.current('u5')).toBe('Plum (left)');
+    expect(result.current('k6')).toBe('Former member');
   });
 
   it('adds (left) for a member marked as left', async () => {

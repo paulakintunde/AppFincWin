@@ -53,6 +53,10 @@ export class FakeSupabase {
         record('update', [patch]);
         return builder;
       },
+      delete: () => {
+        record('delete', []);
+        return builder;
+      },
       upsert: (rows: unknown, opts?: unknown) => {
         record('upsert', [rows, opts]);
         return builder;

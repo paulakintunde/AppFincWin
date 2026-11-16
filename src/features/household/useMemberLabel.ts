@@ -2,7 +2,7 @@
 // "Former member"; a member who left gets a "(left)" suffix. Reads members through useHouseholdMembers and
 // the 08-12 copy keys household.members.you / former / leftSuffix.
 import { useCallback } from 'react';
-import { useHouseholdMembers } from '@/data/queries/household';
+import { useFormerMembers, useHouseholdMembers } from '@/data/queries/household';
 import { MEMBER_COLOUR_NAMES, memberLabel } from '@/engine/household/memberLabel';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useT } from '@/i18n';
@@ -17,10 +17,27 @@ export function useMemberLabel(householdId: string | null | undefined): (userId:
   const { user } = useAuth();
   const viewerId = user?.id ?? '';
   const { data: members } = useHouseholdMembers(householdId);
+  const { data: former } = useFormerMembers(householdId);
 
   return useCallback(
     (userId, opts) => {
       const row = userId === null ? undefined : members?.find((m) => m.user_id === userId);
+      // D-25, D-29: a person found only among the former members. `userId` may be their user id (left or removed) or their
+      // stable key (stored on splits and settle-ups once their account is deleted). A deleted account has no name left.
+      if (userId !== null && !row) {
+        const gone = former?.find((f) => f.user_id === userId || f.former_key === userId);
+        if (gone) {
+          if (gone.reason === 'deleted' || (gone.display_name === null && !gone.name_hidden && gone.user_id === null)) {
+            return t('household.members.former');
+          }
+          const seen = memberLabel(
+            { userId, displayName: gone.display_name, nameHidden: gone.name_hidden, colourKey: gone.colour_key, left: true },
+            viewerId,
+          );
+          if (seen.kind === 'name' || seen.kind === 'colour') return t('household.members.leftSuffix', { name: seen.text });
+          return t('household.members.former');
+        }
+      }
       // A person who is no longer in the member list has no colour or name to show: say "Former member", not a made-up colour.
       if (userId !== null && userId !== viewerId && members && !row) return t('household.members.former');
       const label = memberLabel(
@@ -37,7 +54,7 @@ export function useMemberLabel(householdId: string | null | undefined): (userId:
       if (label.kind === 'former') return t('household.members.former');
       return label.left ? t('household.members.leftSuffix', { name: label.text }) : label.text;
     },
-    [members, viewerId, t],
+    [members, former, viewerId, t],
   );
 }
 

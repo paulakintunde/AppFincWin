@@ -5,6 +5,7 @@ import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { fetchCurrentHouseholdId, fetchHousehold } from '@/db/household';
 import { fetchHouseholdEvents, fetchEventReadMarker } from '@/db/householdEvents';
 import { fetchOpenInvites } from '@/db/householdInvites';
+import { fetchFormerMembers } from '@/db/householdFormerMembers';
 import { fetchHouseholdMembers } from '@/db/householdMembers';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
@@ -31,6 +32,15 @@ export function useHouseholdMembers(householdId: string | null | undefined) {
   return useQuery({
     queryKey: queryKeys.householdMemberRows(householdId ?? ''),
     queryFn: () => fetchHouseholdMembers(supabase, householdId as string),
+    enabled: Boolean(householdId),
+  });
+}
+
+/** 08-15: people who left, were removed or deleted their account (the labels read this for "Sam (left)" and "Former member"). */
+export function useFormerMembers(householdId: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.householdFormerMembers(householdId ?? ''),
+    queryFn: () => fetchFormerMembers(supabase, householdId as string),
     enabled: Boolean(householdId),
   });
 }
