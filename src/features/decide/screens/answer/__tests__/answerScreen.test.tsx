@@ -92,7 +92,7 @@ const mockState = {
   refetch: jest.fn(),
   // 06.1-68: the engine's "updating" flag and the live answers (decide_answers, not deleted).
   updating: false,
-  answers: [] as { kind: string; key: string }[],
+  answers: [] as { kind: string; key?: string; check_id?: string | null; bool_value?: boolean | null; deleted_at?: string | null }[],
 };
 
 jest.mock('@/features/record/useRecordContext', () => ({
