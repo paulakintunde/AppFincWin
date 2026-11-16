@@ -63,3 +63,9 @@ Shared Household building blocks (avatar, name, weight row, split rule radio lis
 None.
 
 ## Self-Check: PASSED
+
+## Follow-up fixes (owner 2026-11-15)
+
+Owner answer 13 closes deviations 3 and 4. Server: `household_members.updated_by` (stamped by trigger with the caller), `set_my_member_display` and `set_member_role` now return `updated_by` on `version_conflict`; `set_member_weights` is now `set_member_weights(p_weights jsonb, p_expected_versions jsonb)` (user id to row version, every member), refusing a stale save with `{ok:false, reason:'version_conflict', current_versions, updated_by}` (`updated_by` is the last saver of the most recently changed stale row, null if unknown); success also returns `versions` (new row versions). Client: `setMemberWeights(client, weights, expectedVersions)`; WeightsSheet sends the versions it was showing and Undo sends the returned `versions`; MemberSheet and WeightsSheet show "{{name}} changed this first" (new copy `household.members.reasons.changedFirst`, resolved through `useMemberLabel`, so a hidden name shows the colour name and the viewer sees "You"); the generic "Changed by someone else" title stays when `updated_by` is null. Tests extended in MemberSheet, WeightsSheet and db/householdMembers (503 jest tests in src/features/household and src/db pass; tsc and eslint clean).
+
+**For 08-15:** any other caller of `set_member_weights` (08-20 rules plan, onSaved flow) must pass expected versions from the members query. `rename_household` still returns `current_version` only (households have no `updated_by`).
