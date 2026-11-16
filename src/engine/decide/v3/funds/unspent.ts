@@ -76,6 +76,16 @@ export function billsAndErest(input: {
   return { bills: minorFromBigInt(bills, FN), erest: minorFromBigInt(erest, FN) };
 }
 
+/**
+ * 05.5-28 Q11 = A: does this line roll forward from the confirmed figure? Lines after the anchor day always do. A line dated on
+ * the anchor day does only when the builder marked it logged after the server-stamped confirm time (loggedAfterConfirm); without
+ * the mark (older confirms, no stamp) the anchor day stays inside the confirmed figure, as before. The one rule for unspent.ts and
+ * income/setAside.ts, so the two never disagree.
+ */
+export function afterAnchor(l: Pick<V3Line, 'date' | 'loggedAfterConfirm'>, anchor: { readonly at: string }): boolean {
+  return l.date > anchor.at || (l.date === anchor.at && l.loggedAfterConfirm === true);
+}
+
 export function rollForward(input: {
   readonly anchor: UnspentAnchor;
   readonly asOf: string;
@@ -103,7 +113,7 @@ export function rollForward(input: {
   // Everyday logged in the anchor month up to and including the anchor day: the base Erest was held back from.
   let loggedAtAnchor = 0n;
   for (const l of all) {
-    if (l.date > anchor.at || yearMonthOf(l.date) !== anchorMonth) continue;
+    if (afterAnchor(l, anchor) || yearMonthOf(l.date) !== anchorMonth) continue;
     const c = classifyLine(l, index);
     if (c === 'everyday') loggedAtAnchor += BigInt(Math.abs(l.amount));
     else if (c === 'refund') loggedAtAnchor -= BigInt(Math.abs(l.amount));
@@ -130,7 +140,7 @@ export function rollForward(input: {
   }
   const candidates: PaidLine[] = [];
   for (const l of cash) {
-    if (l.date <= anchor.at || l.date > asOf || yearMonthOf(l.date) !== anchorMonth) continue;
+    if (!afterAnchor(l, anchor) || l.date > asOf || yearMonthOf(l.date) !== anchorMonth) continue;
     const c = classifyLine(l, index);
     if (c === 'recurring_bill' || (c === 'everyday' && l.seriesId === null)) candidates.push(toPaidLine(l));
   }
@@ -147,7 +157,7 @@ export function rollForward(input: {
   let laterEveryday = 0n; // net of refunds, later months
 
   for (const l of cash) {
-    if (l.date <= anchor.at || l.date > asOf) continue;
+    if (!afterAnchor(l, anchor) || l.date > asOf) continue;
     const amt = BigInt(Math.abs(l.amount));
     const inAnchorMonth = yearMonthOf(l.date) === anchorMonth;
     if (usedLines.has(l.id)) continue; // already held back as a bill still due at the anchor

@@ -96,7 +96,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // 05.2
     'income_types', 'income_pattern', 'income_pattern_confirmed', 'variable_method', 'steady_amount', 'spread_months',
     'hold_months', 'detail', 'remind_plan', 'remind_unspent', 'setup_done_at', 'everyday_override',
-    'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'reserve_account_id', 'reserve_goal',
+    'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'unspent_anchor_set_at', 'reserve_account_id', 'reserve_goal',
     'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
     'refine_last_at', 'refine_snooze_until',
     'custom_options', // 05.3-81

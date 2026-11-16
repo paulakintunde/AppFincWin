@@ -92,7 +92,7 @@ export type SnapshotRow = Pick<
   | 'recurring_series_id'
   | 'category_id'
   | 'deleted_at'
-> & { one_off?: boolean | null; goal_id?: string | null; debt_id?: string | null; import_batch_id?: string | null; income_kind?: string | null; counts_as?: 'available' | 'kept' | null; refund_of?: string | null }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot; debt_id: 06-37 D-35, a one-off debt payment
+> & { one_off?: boolean | null; goal_id?: string | null; debt_id?: string | null; import_batch_id?: string | null; income_kind?: string | null; counts_as?: 'available' | 'kept' | null; refund_of?: string | null; created_at?: string | null /* 05.5-28 Q11 A: with unspent_anchor_set_at, marks a same-day line logged after the confirm */ }; // goal_id: D-34/D-101, a transfer leg tagged to a savings goal or pot; debt_id: 06-37 D-35, a one-off debt payment
 
 export interface SnapshotSource {
   today: string;
