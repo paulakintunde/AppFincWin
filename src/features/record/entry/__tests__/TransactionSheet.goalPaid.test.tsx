@@ -8,6 +8,7 @@ import { TransactionSheet } from '../TransactionSheet';
 // 06-37 D-39: the edit form's Paid chip on a goal's Expected line saves through the goal confirm (useGoalLinePay), so the
 // goal grows exactly once. Other edits in the same save are refused with a hint; a paid goal line may go back to Pending.
 const mockGoalPay = jest.fn((..._a: unknown[]): boolean => true);
+jest.mock('@/features/household/sharing/SharedGroup', () => ({ SharedGroup: () => null, useSharedEntry: () => ({ commit: () => undefined }) })); // 08-19: the household data layer is not part of this test
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: mockGoalPay }) }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockV3 }) })); // 05.2-44: OccurrenceActions gates on v3
 jest.mock('@/features/record/accounts/AccountSheet', () => ({ AccountSheet: () => null }));
