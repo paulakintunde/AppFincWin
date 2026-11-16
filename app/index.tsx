@@ -1,6 +1,7 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 import { APP_HOME_HREF } from '@/features/auth/appHome';
+import { peekPendingInvite } from '@/features/household/join/pendingInvite';
 import { RouteContext } from './_layout';
 
 /**
@@ -18,8 +19,30 @@ export default function IndexRoute() {
     case 'welcome':
       return <Redirect href="/welcome" />;
     case 'app':
-      return <Redirect href={APP_HOME_HREF} />;
+      return <AppEntry />;
     default:
       return null;
   }
+}
+
+/** 08-18: a signed-in person with an invite code waiting (it arrived before sign-in) lands on the join screen, not home. */
+function AppEntry() {
+  const [target, setTarget] = useState<'checking' | 'join' | 'home'>('checking');
+
+  useEffect(() => {
+    let cancelled = false;
+    void peekPendingInvite()
+      .then((code) => {
+        if (!cancelled) setTarget(code === null ? 'home' : 'join');
+      })
+      .catch(() => {
+        if (!cancelled) setTarget('home');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (target === 'checking') return null;
+  return <Redirect href={target === 'join' ? '/household/join' : APP_HOME_HREF} />;
 }
