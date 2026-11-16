@@ -48,6 +48,7 @@ describe('monthFigureInputs', () => {
       isRefund: false,
       originalAmount: -7000,
       amountHome: -7000,
+      isSettlement: false,
     });
     expect(m.projections).toEqual([{ amount: -3000, amountHome: -3000 }]);
   });
@@ -88,5 +89,15 @@ describe('paidOutText (review WR-04)', () => {
   });
   it('keeps the plus on net refunds so they never read as money spent', () => {
     expect(paidOutText(5000, fmt)).toBe('+£50.00');
+  });
+});
+
+describe('settlement records (08-30, ARC-18)', () => {
+  it('maps is_settlement through the one rule and keeps a pending settle-up out of the unpaid figure', () => {
+    const settle = row({ status: 'pending', original_amount: -9000, amountHome: -9000, is_settlement: true });
+    expect(monthFigureInputs({ rows: [settle, rows[0] as Row], projections: [] }).rows.map((r) => r.isSettlement)).toEqual([true, false]);
+    const withIt = monthPositionOf({ rows: [...rows, settle], projections, totals: monthTotals([], []) });
+    const without = monthPositionOf({ rows, projections, totals: monthTotals([], []) });
+    expect(withIt).toEqual(without);
   });
 });

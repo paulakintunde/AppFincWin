@@ -1,7 +1,7 @@
 // Screen 7 (HH-04, D-30, D-34): the weights editor. A WeightRow per member in join order; every change goes through
 // rebalanceWeights so the set always totals 100. 0% is allowed; the last positive weight cannot go to 0. Any member can save.
-// After a save the sheet toasts "Weights saved" with Undo (puts the old weights back) and calls onSaved(before) so the
-// rules plan (08-20) can open the apply-to-existing offer (D-35).
+// After a save the sheet toasts "Weights saved" with Undo (puts the old weights back), calls onSaved(before) and shows the
+// apply-to-existing offer (08-20, D-35) in its place; the sheet closes when the offer is answered.
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -28,6 +28,7 @@ import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
 import { WeightRow } from './components/WeightRow';
 import { useMemberLabel } from './useMemberLabel';
+import { ApplyToExistingSheet } from './rules/ApplyToExistingSheet';
 
 export interface WeightsSheetProps {
   visible: boolean;
@@ -74,6 +75,7 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
   const [failure, setFailure] = useState<ReasonKey | null>(null);
   const [conflict, setConflict] = useState<{ by: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [offer, setOffer] = useState(false);
   const [initial] = useState(() => (members ?? []).map((m) => m.weight));
   const dirty = useIsDirty(initial, weights);
   const title = t('household.members.weights.title');
@@ -127,7 +129,7 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
         },
       });
       onSaved?.(before);
-      onClose();
+      setOffer(true);
     } catch {
       hapticFailed();
       setFailure('household.members.reasons.failed');
@@ -135,6 +137,10 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
       setSaving(false);
     }
   };
+
+  if (offer) {
+    return <ApplyToExistingSheet householdId={householdId} categoryRef={null} primaryLabelKey="household.rules.saveWeights" onDone={onClose} />;
+  }
 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>

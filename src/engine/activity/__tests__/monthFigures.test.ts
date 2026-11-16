@@ -140,3 +140,25 @@ describe('unpaid properties', () => {
     );
   });
 });
+
+describe('settlement rows (ARC-18, 08-30)', () => {
+  it('a pending settlement is never an unpaid outflow', () => {
+    expect(isUnpaidOutflow(row({ isSettlement: true }))).toBe(false);
+    expect(isUnpaidOutflow(row({ isSettlement: false }))).toBe(true);
+  });
+
+  it('leaves settlement rows out of the unpaid total, the count and the unconverted count', () => {
+    const rows = [
+      row({ originalAmount: -5000, amountHome: -5000 }),
+      row({ originalAmount: -9000, amountHome: -9000, isSettlement: true }),
+      row({ originalAmount: -3000, amountHome: null, isSettlement: true }),
+    ];
+    expect(unpaidOutflows(rows, [])).toEqual({ total: 5000, count: 1, unconverted: 0 });
+  });
+
+  it('monthPosition ignores settlement rows in what is left', () => {
+    const totals = { paidIn: 100000, paidOut: -20000 };
+    const withSettlement = monthPosition(totals, [row({ isSettlement: true, originalAmount: -9000, amountHome: -9000 })], []);
+    expect(withSettlement).toEqual(monthPosition(totals, [], []));
+  });
+});

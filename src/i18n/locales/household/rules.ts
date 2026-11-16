@@ -18,12 +18,15 @@ export const rules = {
   leftToAssign: 'Left to assign: {{amount}}',
   saveSplit: 'Save split',
   saveDefault: 'Save default',
+  saveWeights: 'Save weights',
   changeWeights: 'Change weights',
   weightsReadOnly: 'Household weights',
   defaultSheet: {
     title: 'Household default',
     helper: 'New lines default to this when marked shared.',
     changed: '{{name}} changed the default to {{rule}}',
+    saved: 'Default saved',
+    undone: 'Default put back',
   },
   categories: {
     title: 'Category defaults',
@@ -33,6 +36,8 @@ export const rules = {
     emptyTitle: 'Using the household split for every category',
     emptyBody: 'Pick a different split for one category if you want.',
     changed: '{{name}} changed {{category}} to {{rule}}',
+    saved: 'Split saved',
+    sheetTitle: '{{category}} split',
   },
   apply: {
     title: 'Change the split?',
@@ -40,5 +45,17 @@ export const rules = {
     toggle: 'Also apply to the {{count}} unsettled lines',
     settledNote: 'Settled lines never change.',
     keep: 'Keep current split',
+    applied: 'Applied to {{count}} unsettled lines',
+    failed: 'The unsettled lines weren’t changed. Try again.',
+  },
+  failed: 'This wasn’t saved. Try again.',
+  needsConnection: 'This needs a connection. Try again when you’re back online.',
+  shared: {
+    title: 'Shared accounts',
+    balance: 'Balance {{amount}}',
+    madeBy: 'Made by {{name}}',
+    loadFailed: 'The balances couldn’t be loaded. Try again when you’re back online.',
+    hasMemberLines: 'Other members have lines on this account, so it stays joint.',
+    notCreator: 'Only the person who made this account can change whether it is joint.',
   },
 } as const;

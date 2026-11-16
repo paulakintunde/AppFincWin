@@ -22,6 +22,11 @@ jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id:
 const mockSet = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean; reason?: string; updated_by?: string | null; versions?: Record<string, number> }> => ({ ok: true }));
 jest.mock('@/db/householdMembers', () => ({ setMemberWeights: (...a: unknown[]) => mockSet(...a) }));
 
+jest.mock('@/db/transactionSplits', () => ({
+  countUnsettledForRule: async () => ({ ok: true, count: 4 }),
+  applyRuleToUnsettled: async () => ({ ok: true, changed_count: 4 }),
+}));
+
 let mockMembers: Record<string, unknown>[] = [];
 jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockMembers }), useFormerMembers: () => ({ data: [] }) }));
 
@@ -88,6 +93,24 @@ describe('WeightsSheet', () => {
     expect(toast?.onUndo).toBeTruthy();
     toast?.onUndo?.();
     await waitFor(() => expect(mockSet).toHaveBeenLastCalledWith(expect.anything(), { me: 50, u2: 50 }, {}));
+  });
+
+  it('opens the apply-to-existing offer after a save and closes once it is answered (08-20, D-35)', async () => {
+    const onClose = jest.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await render(
+      <QueryClientProvider client={client}>
+        <ThemeProvider>
+          <WeightsSheet visible householdId="h" onClose={onClose} />
+        </ThemeProvider>
+      </QueryClientProvider>,
+    );
+    await fireEvent.press(screen.getByTestId('weight-up-me'));
+    await fireEvent.press(screen.getByText('Save weights'));
+    expect(await screen.findByText('Also apply to the 4 unsettled lines')).toBeTruthy();
+    expect(onClose).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByText('Keep current split'));
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it('names who saved first when the versions are stale (08-16 deviation 4)', async () => {
