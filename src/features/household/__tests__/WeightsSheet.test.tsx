@@ -19,7 +19,7 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
 
-const mockSet = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean; reason?: string }> => ({ ok: true }));
+const mockSet = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean; reason?: string; updated_by?: string | null; versions?: Record<string, number> }> => ({ ok: true }));
 jest.mock('@/db/householdMembers', () => ({ setMemberWeights: (...a: unknown[]) => mockSet(...a) }));
 
 let mockMembers: Record<string, unknown>[] = [];
@@ -82,12 +82,29 @@ describe('WeightsSheet', () => {
     await fireEvent.press(screen.getByTestId('weight-up-me'));
     await fireEvent.press(screen.getByText('Save weights'));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith({ me: 50, u2: 50 }));
-    expect(mockSet).toHaveBeenCalledWith(expect.anything(), { me: 55, u2: 45 });
+    expect(mockSet).toHaveBeenCalledWith(expect.anything(), { me: 55, u2: 45 }, { me: 1, u2: 1 });
     const toast = getToast();
     expect(toast?.text?.key).toBe('household.members.weights.saved');
     expect(toast?.onUndo).toBeTruthy();
     toast?.onUndo?.();
-    await waitFor(() => expect(mockSet).toHaveBeenLastCalledWith(expect.anything(), { me: 50, u2: 50 }));
+    await waitFor(() => expect(mockSet).toHaveBeenLastCalledWith(expect.anything(), { me: 50, u2: 50 }, {}));
+  });
+
+  it('names who saved first when the versions are stale (08-16 deviation 4)', async () => {
+    mockSet.mockResolvedValueOnce({ ok: false, reason: 'version_conflict', updated_by: 'u2' });
+    await setup();
+    await fireEvent.press(screen.getByTestId('weight-up-me'));
+    await fireEvent.press(screen.getByText('Save weights'));
+    expect(await screen.findByText('Sam changed this first')).toBeTruthy();
+    expect(screen.queryByTestId('weights-failure')).toBeNull();
+  });
+
+  it('falls back to the plain title when the server cannot say who', async () => {
+    mockSet.mockResolvedValueOnce({ ok: false, reason: 'version_conflict', updated_by: null });
+    await setup();
+    await fireEvent.press(screen.getByTestId('weight-up-me'));
+    await fireEvent.press(screen.getByText('Save weights'));
+    expect(await screen.findByText('Changed by someone else')).toBeTruthy();
   });
 
   it('shows a reason when the server refuses', async () => {

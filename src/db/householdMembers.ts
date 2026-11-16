@@ -53,7 +53,7 @@ export interface SetMyDisplayArgs {
   displayName: string | null;
 }
 
-/** Refusals: not_member, version_conflict (current_version), invalid_name, colour_taken. */
+/** Refusals: not_member, version_conflict (current_version, updated_by), invalid_name, colour_taken. */
 export function setMyMemberDisplay(client: DbClient, a: SetMyDisplayArgs) {
   return callRpc(client, 'set_my_member_display', {
     p_expected_version: a.expectedVersion,
@@ -63,14 +63,22 @@ export function setMyMemberDisplay(client: DbClient, a: SetMyDisplayArgs) {
   });
 }
 
-/** Refusals: not_member, not_allowed, owner_label_fixed, invalid_role, version_conflict (current_version). */
+/** Refusals: not_member, not_allowed, owner_label_fixed, invalid_role, version_conflict (current_version, updated_by). */
 export function setMemberRole(client: DbClient, userId: string, roleLabel: string, expectedVersion: number) {
   return callRpc(client, 'set_member_role', { p_user_id: userId, p_role_label: roleLabel, p_expected_version: expectedVersion });
 }
 
-/** `weights` maps user id to percent. Refusals: not_member, members_mismatch, invalid_weight, all_zero, not_100. */
-export function setMemberWeights(client: DbClient, weights: Record<string, number>) {
-  return callRpc(client, 'set_member_weights', { p_weights: weights });
+/**
+ * `weights` maps user id to percent; `expectedVersions` maps user id to the member row version the screen was showing.
+ * Success returns `before` (the old weights, for Undo) and `versions` (the new row versions).
+ * Refusals: not_member, members_mismatch, invalid_weight, all_zero, not_100, version_conflict (current_versions,
+ * updated_by: who saved last, or null).
+ */
+export function setMemberWeights(client: DbClient, weights: Record<string, number>, expectedVersions: Record<string, number>) {
+  return callRpc<{ before?: Record<string, number>; versions?: Record<string, number> }>(client, 'set_member_weights', {
+    p_weights: weights,
+    p_expected_versions: expectedVersions,
+  });
 }
 
 /** Refusals: not_owner, invalid_name, version_conflict (current_version). */

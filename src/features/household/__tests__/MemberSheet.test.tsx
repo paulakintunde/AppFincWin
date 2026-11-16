@@ -19,7 +19,7 @@ jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
 
-const mockDisplay = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean; reason?: string; version?: number }> => ({ ok: true, version: 2 }));
+const mockDisplay = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean; reason?: string; version?: number; updated_by?: string | null }> => ({ ok: true, version: 2 }));
 const mockRole = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean; reason?: string }> => ({ ok: true }));
 jest.mock('@/db/householdMembers', () => ({
   setMyMemberDisplay: (...a: unknown[]) => mockDisplay(...a),
@@ -100,6 +100,14 @@ describe('MemberSheet', () => {
     await fireEvent.press(screen.getByTestId('colour-teal'));
     await fireEvent.press(screen.getByText('Save changes'));
     expect(await screen.findByText('Changed by someone else')).toBeTruthy();
+  });
+
+  it('names who saved first on version_conflict', async () => {
+    mockDisplay.mockResolvedValueOnce({ ok: false, reason: 'version_conflict', updated_by: 'u2' });
+    await setup();
+    await fireEvent.press(screen.getByTestId('colour-teal'));
+    await fireEvent.press(screen.getByText('Save changes'));
+    expect(await screen.findByText('Sam changed this first')).toBeTruthy();
   });
 
   it('offers Leave on your own row and Remove only to the owner on someone else', async () => {

@@ -70,6 +70,7 @@ export const members = {
     weights_invalid: 'The weights didn’t add up to 100. Nothing was saved.',
     failed: 'This wasn’t saved. Try again.',
     conflictTitle: 'Changed by someone else',
+    changedFirst: '{{name}} changed this first',
   },
   partner: {
     countInDecide: 'Count {{name}}’s money in my Decide checks',

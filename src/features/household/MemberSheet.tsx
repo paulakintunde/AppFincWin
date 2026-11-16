@@ -116,6 +116,7 @@ function MemberBody({
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<ReasonKey | null>(null);
   const [conflict, setConflict] = useState(false);
+  const [conflictBy, setConflictBy] = useState<string | null>(null);
 
   const roleLabel = row.is_owner
     ? t('household.members.roles.owner')
@@ -140,6 +141,7 @@ function MemberBody({
     hapticFailed();
     if (res.reason === 'version_conflict') {
       setConflict(true);
+      setConflictBy(typeof res.updated_by === 'string' ? res.updated_by : null);
       setFailure(null);
       if (householdId) void qc.invalidateQueries({ queryKey: queryKeys.householdMembers(householdId) });
     } else {
@@ -290,7 +292,12 @@ function MemberBody({
         />
 
         {conflict ? (
-          <WarningCard tone="soft" title={t('household.members.reasons.conflictTitle')} value="" body={[t('household.members.reasons.version_conflict')]} />
+          <WarningCard
+            tone="soft"
+            title={conflictBy ? t('household.members.reasons.changedFirst', { name: label(conflictBy) }) : t('household.members.reasons.conflictTitle')}
+            value=""
+            body={[t('household.members.reasons.version_conflict')]}
+          />
         ) : null}
         {failure ? (
           <Text accessibilityRole="alert" testID="member-failure" style={{ ...textRole(pairing, 'label'), color: colors.danger }}>

@@ -21,10 +21,14 @@ describe('household members db', () => {
     expect(
       await setMyMemberDisplay(client, { expectedVersion: 1, colourKey: 2, nameHidden: false, displayName: 'Sam' }),
     ).toEqual({ ok: true, version: 2 });
-    expect(await setMemberWeights(client, { a: 60, b: 50 })).toEqual({ ok: false, reason: 'not_100' });
+    expect(await setMemberWeights(client, { a: 60, b: 50 }, { a: 1, b: 1 })).toEqual({ ok: false, reason: 'not_100' });
     expect(client.calls[0]?.args).toEqual([
       'set_my_member_display',
       { p_expected_version: 1, p_colour_key: 2, p_name_hidden: false, p_display_name: 'Sam' },
+    ]);
+    expect(client.calls[1]?.args).toEqual([
+      'set_member_weights',
+      { p_weights: { a: 60, b: 50 }, p_expected_versions: { a: 1, b: 1 } },
     ]);
   });
 });

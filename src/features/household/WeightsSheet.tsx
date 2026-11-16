@@ -7,6 +7,7 @@ import { StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { Text } from '@/ui/Text';
 import { Pill } from '@/ui/Pill';
+import { WarningCard } from '@/ui/WarningCard';
 import { Sheet, SheetScroll } from '@/ui/Sheet';
 import { SheetHeader } from '@/ui/SheetHeader';
 import { StatusBadge } from '@/ui/status/StatusBadge';
@@ -26,6 +27,7 @@ import { rebalanceWeights } from '@/engine/household/weights';
 import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
 import { WeightRow } from './components/WeightRow';
+import { useMemberLabel } from './useMemberLabel';
 
 export interface WeightsSheetProps {
   visible: boolean;
@@ -60,6 +62,7 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
   const { colors, pairing } = useTheme();
   const qc = useQueryClient();
   const { data: members } = useHouseholdMembers(householdId);
+  const label = useMemberLabel(householdId);
   const ids = useMemo(() => (members ?? []).map((m) => m.user_id), [members]);
   const before = useMemo<Record<string, number>>(
     () => Object.fromEntries((members ?? []).map((m) => [m.user_id, m.weight])),
@@ -69,6 +72,7 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
   const weights = edited ?? (members ?? []).map((m) => m.weight);
   const [lastHolder, setLastHolder] = useState(false);
   const [failure, setFailure] = useState<ReasonKey | null>(null);
+  const [conflict, setConflict] = useState<{ by: string | null } | null>(null);
   const [saving, setSaving] = useState(false);
   const [initial] = useState(() => (members ?? []).map((m) => m.weight));
   const dirty = useIsDirty(initial, weights);
@@ -97,12 +101,20 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
     if (saving || !changed || householdId == null) return;
     setSaving(true);
     setFailure(null);
+    setConflict(null);
     try {
       const next = Object.fromEntries(ids.map((id, i) => [id, weights[i] as number]));
-      const res = await setMemberWeights(supabase, next);
+      // T-08-106: the row versions this screen was showing; a member row that moved on since is a clash.
+      const expected = Object.fromEntries((members ?? []).map((m) => [m.user_id, m.version]));
+      const res = await setMemberWeights(supabase, next, expected);
       if (!res.ok) {
         hapticFailed();
-        setFailure(reasonKey(res.reason));
+        if (res.reason === 'version_conflict') {
+          setConflict({ by: typeof res.updated_by === 'string' ? res.updated_by : null });
+          await qc.invalidateQueries({ queryKey: queryKeys.householdMembers(householdId) });
+        } else {
+          setFailure(reasonKey(res.reason));
+        }
         return;
       }
       await qc.invalidateQueries({ queryKey: queryKeys.householdMembers(householdId) });
@@ -111,7 +123,7 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
         kind: 'ordinary',
         text: { key: 'household.members.weights.saved' },
         onUndo: () => {
-          void setMemberWeights(supabase, before).then(() => qc.invalidateQueries({ queryKey: queryKeys.householdMembers(householdId) }));
+          void setMemberWeights(supabase, before, res.versions ?? {}).then(() => qc.invalidateQueries({ queryKey: queryKeys.householdMembers(householdId) }));
         },
       });
       onSaved?.(before);
@@ -150,6 +162,16 @@ function WeightsBody({ householdId, onClose, onSaved }: Omit<WeightsSheetProps, 
               </Text>
             </View>
           </FadeIn>
+        ) : null}
+        {conflict ? (
+          <View testID="weights-conflict">
+            <WarningCard
+              tone="soft"
+              title={conflict.by ? t('household.members.reasons.changedFirst', { name: label(conflict.by) }) : t('household.members.reasons.conflictTitle')}
+              value=""
+              body={[t('household.members.reasons.version_conflict')]}
+            />
+          </View>
         ) : null}
         {failure ? (
           <Text accessibilityRole="alert" style={{ ...textRole(pairing, 'label'), color: colors.danger }} testID="weights-failure">
