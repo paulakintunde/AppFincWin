@@ -76,3 +76,10 @@ Written by plan 05.5-06. Source: `.planning/phases/05.5-one-shared-money-model/0
 - **Backfill review.** 08-01's backfill turns user triggers off for one update; review it together with 08-05's new triggers.
 - **No household with more than 6 members** (colour_key 0-5).
 
+
+## Owner answers after wave 4 (2026-11-15)
+
+6. **Exchange rates:** a shared line in another currency is stamped once from the nearest available rate, even if the exact rate for that day is not in yet, and never moves (as built in 08-10).
+7. **Re-splitting a category:** "Also apply to the unsettled lines" changes only lines nobody split by hand. Lines a member changed by hand (any rule) and lines split by exact amounts keep their split. The count in the offer counts only the lines that will change.
+8. **Refunds into a joint account** stay personal, like any money paid in; members can share them by hand (as built).
+9. **#134 stays draft + `hold`** until Household is done and 05.5 Band B is in production (PRs merge themselves since #137).
