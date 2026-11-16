@@ -29,7 +29,7 @@ A line becomes shared only through the creator's Shared switch, a bulk action wi
 
 | Task | Commit | Result |
 |------|--------|--------|
-| 1 Migration M6 `20261122000600_household_splits.sql` | 6ca5d0ae, joint top-up fix in the final feat commit | `supabase db reset` applies it |
+| 1 Migration M6 `20261122000600_household_splits.sql` | 6ca5d0ae, joint top-up fix 28f23199 | `supabase db reset` applies it |
 | 2 pgTAP 107 (65 assertions) | ed50f0dc | passes alone and in the full run |
 
 ## What was built
