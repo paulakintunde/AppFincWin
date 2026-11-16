@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(39);
+select extensions.plan(41);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 select ('' || n || n || n || n || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || n || n || n || n || n || n || n || n)::uuid,
@@ -163,8 +163,12 @@ select set_config('request.jwt.claims', '', true);
 
 -- 4. The balances are the same afterwards (SC6) --------------------------------------------------------------------------------
 create temp table key_a as select former_key as k from public.household_former_members where household_id = (select h from ids);
-select extensions.is(public.hh_pair_net((select h from ids), '22222222-2222-2222-2222-222222222222', (select k from key_a)), (select ba from before_nets),
-  'B''s balance against A is the same after A''s account is deleted');
+select extensions.is(public.hh_pair_net((select h from ids), '22222222-2222-2222-2222-222222222222', (select k from key_a)), (select ba from before_nets) - 1000,
+  'B''s balance against A is the same after A''s account is deleted, except S3''s 1000 that the cancelled settle-up no longer holds');
+select extensions.is(public.t110_val('select status || (select count(*) from public.settlement_lines where settlement_id = s.id and live)::text from public.settlements s where s.id = ''' || (select j ->> 'settlement_id' from res where k = 'SET') || ''''),
+  'cancelled0', 'A''s waiting settle-up is cancelled when A deletes, and its line is no longer held (owner answer 10)');
+select extensions.is(public.t110_val('select count(*) || min(params ->> ''reason'') from public.household_events where kind = ''settle_departed'' and ref_id = ''' || (select j ->> 'settlement_id' from res where k = 'SET') || ''' and audience = array[''22222222-2222-2222-2222-222222222222''::uuid]'),
+  '1deleted', 'B gets exactly one settle_departed notice (reason deleted), and only B');
 select extensions.is(public.hh_pair_net((select h from ids), '33333333-3333-3333-3333-333333333333', (select k from key_a)), (select ca from before_nets),
   'C''s balance against A is the same');
 select extensions.is(public.hh_pair_net((select h from ids), '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222'), (select cb from before_nets),

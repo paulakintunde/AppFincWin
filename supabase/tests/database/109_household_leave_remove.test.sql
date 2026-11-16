@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(88);
+select extensions.plan(102);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 select ('' || n || n || n || n || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || n || n || n || n || n || n || n || n)::uuid,
@@ -114,7 +114,7 @@ select public.t109_as('22222222-2222-2222-2222-222222222222');
 insert into res select 'LEAVE', public.leave_household();
 select extensions.is(public.t109_j('LEAVE', 'ok'), 'true', 'B leaves with open balances: allowed (D-25)');
 select extensions.is(public.t109_j('LEAVE', 'open_balances,0,other_id'), '11111111-1111-1111-1111-111111111111', 'the warning names A');
-select extensions.is(public.t109_j('LEAVE', 'open_balances,0,amount'), '-2700', 'the warning amount is signed: negative, A owes B 2700');
+select extensions.is(public.t109_j('LEAVE', 'open_balances,0,amount'), '-1700', 'the warning amount is signed: negative, A owes B 1700 (B''s waiting settle-up for L4 was cancelled, so its 1000 counts again)');
 select extensions.is(jsonb_array_length((select j -> 'open_balances' from res where k = 'LEAVE'))::text, '1', 'only A is in the warning (C and D have nothing with B)');
 reset role;
 select set_config('request.jwt.claims', '', true);
@@ -170,8 +170,13 @@ select extensions.is(public.t109_val('select scope || (household_id = (select h 
   'sharedtruetrue', 'the shared rule B created stays a live shared rule of the household');
 select extensions.is(public.t109_val('select scope || (owner_id = ''22222222-2222-2222-2222-222222222222'')::text || (household_id is null)::text from public.category_rules where id = ''ab000000-0000-0000-0000-000000000001'''),
   'personaltruetrue', 'B''s personal rule is unchanged and goes with B');
-select extensions.is(public.hh_pair_net((select h from ids), '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222'), (select ab from before_nets),
-  'the A/B balance is the same after B left (D-25)');
+select extensions.is(public.hh_pair_net((select h from ids), '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222'), (select ab from before_nets) - 1000,
+  'the A/B balance is the same after B left, except L4''s 1000 that the cancelled settle-up no longer holds (D-25, owner answer 10)');
+select extensions.is(public.t109_val('select status || (select count(*) from public.settlement_lines where settlement_id = ''' || public.t109_j('S1', 'settlement_id') || ''' and live)::text from public.settlements where id = ''' || public.t109_j('S1', 'settlement_id') || ''''),
+  'cancelled0', 'B''s waiting settle-up is cancelled at departure and its line is no longer held (owner answer 10)');
+select extensions.is(public.t109_val('select public.hh_line_locked(''d1000000-0000-0000-0000-000000000004'')::text'), 'false', 'L4 is unlocked at once');
+select extensions.is(public.t109_val('select count(*) || min(params ->> ''reason'') from public.household_events where kind = ''settle_departed'' and subject_id = ''22222222-2222-2222-2222-222222222222'' and audience = array[''11111111-1111-1111-1111-111111111111''::uuid]'),
+  '1left', 'A gets exactly one settle_departed notice (reason left)');
 select extensions.is(public.hh_pair_net((select h from ids), '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333'), (select ac from before_nets),
   'the A/C balance is unchanged by B leaving');
 select extensions.is(public.hh_pair_net((select h from ids), '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222'), (select cb from before_nets),
@@ -197,12 +202,27 @@ set local role authenticated;
 select public.t109_as('22222222-2222-2222-2222-222222222222');
 insert into res select 'DEP', public.my_departed_balances();
 select extensions.is(public.t109_j('DEP', 'balances,0,other_id'), '11111111-1111-1111-1111-111111111111', 'B sees a departed balance with A');
-select extensions.is(public.t109_j('DEP', 'balances,0,amount'), '-2700', 'B sees "A owes you 2700" (negative = they owe B)');
+select extensions.is(public.t109_j('DEP', 'balances,0,amount'), '-1700', 'B sees "A owes you 1700" (negative = they owe B)');
+-- Owner answer 11: the leaver says "I paid" for L4 (they owe A 1000); A confirms it the normal way.
+select extensions.is(public.propose_leaver_payment('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '11111111-1111-1111-1111-111111111111', array['d1000000-0000-0000-0000-000000000004']::uuid[], 1000) ->> 'reason', 'not_departed', 'a household B never left is refused');
+select extensions.is(public.propose_leaver_payment((select h from ids), '55555555-5555-5555-5555-555555555555', array['d1000000-0000-0000-0000-000000000004']::uuid[], 1000) ->> 'reason', 'not_member', 'the receiver must still be a member');
+select extensions.is(public.propose_leaver_payment((select h from ids), '11111111-1111-1111-1111-111111111111', array['d1000000-0000-0000-0000-000000000004']::uuid[], 999) ->> 'reason', 'lines_changed', 'the leaver''s payment checks the amount');
+select extensions.is(public.propose_leaver_payment((select h from ids), '11111111-1111-1111-1111-111111111111', array['d1000000-0000-0000-0000-000000000001']::uuid[], 4200) ->> 'reason', 'nothing_owed', 'a line the leaver is owed rather than owes is refused');
+insert into res select 'LP', public.propose_leaver_payment((select h from ids), '11111111-1111-1111-1111-111111111111', array['d1000000-0000-0000-0000-000000000004']::uuid[], 1000);
+select extensions.is(public.t109_j('LP', 'ok') || public.t109_j('LP', 'amount'), 'true1000', 'B proposes "I paid" 1000 toward the household B left');
+insert into res select 'DEP2', public.my_departed_balances();
+select extensions.is(public.t109_j('DEP2', 'balances,0,pending_settlement_id'), public.t109_j('LP', 'settlement_id'), 'B sees the proposal waiting in their departed balances');
 select extensions.is((select count(*)::int from public.transactions where name in ('L1', 'L2') and copied_from is null), 0, 'B can no longer read the household''s lines');
 
 select public.t109_as('11111111-1111-1111-1111-111111111111');
-select extensions.is(public.confirm_settlement(public.t109_j('S1', 'settlement_id')::uuid, 'a1000000-0000-0000-0000-00000000000a') ->> 'reason', 'payer_account_gone',
-  'A''s "Got it" on B''s pending settle-up answers payer_account_gone (B''s account moved)');
+select extensions.is(public.confirm_settlement(public.t109_j('S1', 'settlement_id')::uuid, 'a1000000-0000-0000-0000-00000000000a') ->> 'reason', 'not_pending',
+  'A''s "Got it" on B''s old settle-up answers not_pending: it was cancelled at departure');
+select extensions.is(public.confirm_settlement(public.t109_j('LP', 'settlement_id')::uuid, 'a1000000-0000-0000-0000-00000000000a') ->> 'ok', 'true',
+  'A confirms the leaver''s "I paid" with "Got it"');
+select extensions.is(public.t109_val('select (payer_tx_id is null)::text || (receiver_tx_id is not null)::text || status from public.settlements where id = ''' || public.t109_j('LP', 'settlement_id') || ''''),
+  'truetrueconfirmed', 'only A''s record is written; B records the money leaving in their own app');
+select extensions.is(public.undo_settlement(public.t109_j('LP', 'settlement_id')::uuid) ->> 'reason', 'party_left',
+  'a confirmed settle-up cannot be undone once a party has left, even inside 24 hours (owner answer 12)');
 select extensions.is(public.record_paid('22222222-2222-2222-2222-222222222222', array['d1000000-0000-0000-0000-000000000001']::uuid[],
   'a1000000-0000-0000-0000-00000000000a', 1) ->> 'reason', 'lines_changed', 'recording a payment to a former member checks the amount');
 insert into res select 'PAID', public.record_paid('22222222-2222-2222-2222-222222222222', array['d1000000-0000-0000-0000-000000000001']::uuid[],
@@ -230,6 +250,8 @@ select extensions.is(public.leave_household() ->> 'reason', 'alone', 'a househol
 select public.t109_as('11111111-1111-1111-1111-111111111111');
 select extensions.is(public.remove_member('11111111-1111-1111-1111-111111111111') ->> 'reason', 'not_member', 'the owner cannot remove themselves');
 select extensions.is(public.remove_member('55555555-5555-5555-5555-555555555555') ->> 'reason', 'not_member', 'a stranger is refused like a missing member');
+insert into res select 'PD', public.propose_settlement('44444444-4444-4444-4444-444444444444', array['d1000000-0000-0000-0000-000000000006']::uuid[],
+  'a1000000-0000-0000-0000-00000000000a', 3000);
 insert into res select 'RM', public.remove_member('44444444-4444-4444-4444-444444444444');
 select extensions.is(public.t109_j('RM', 'ok'), 'true', 'A removes D');
 reset role;
@@ -237,6 +259,10 @@ select set_config('request.jwt.claims', '', true);
 insert into res select 'DNEW', jsonb_build_object('h', (select household_id from public.household_members where user_id = '44444444-4444-4444-4444-444444444444'));
 select extensions.is(public.t109_val('select (household_id = (select h from ids))::text from public.transactions where name = ''L6'''), 'true',
   'D''s shared L6 stays in the household');
+select extensions.is(public.t109_val('select status from public.settlements where id = ''' || public.t109_j('PD', 'settlement_id') || ''''), 'cancelled',
+  'a settle-up waiting on D is cancelled when A removes D (owner answer 10)');
+select extensions.is(public.t109_val('select count(*) || min(params ->> ''reason'') from public.household_events where kind = ''settle_departed'' and subject_id = ''44444444-4444-4444-4444-444444444444'' and audience = array[''11111111-1111-1111-1111-111111111111''::uuid]'),
+  '1removed', 'A gets one settle_departed notice (reason removed)');
 select extensions.is(public.t109_val('select count(*) from public.accounts where tombstone_of = ''d4000000-0000-0000-0000-00000000000a'''), '1', 'D''s account has a tombstone');
 select extensions.is(public.t109_val('select count(*) from public.transactions where copied_from = ''d1000000-0000-0000-0000-000000000006'''), '1', 'D has a personal copy of L6');
 set local role authenticated;

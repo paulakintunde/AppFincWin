@@ -314,6 +314,37 @@ end;
 $$;
 revoke execute on function public.hh_move_personal_rows(uuid, uuid, uuid) from public, anon, authenticated;
 
+-- Cancels every settle-up still waiting that names the person, at the moment they leave, are removed or delete their account
+-- (owner answer 10). The lines unlock at once and the balance remains; the other person gets one settle_departed notice
+-- (params: amount, currency, reason 'left' | 'removed' | 'deleted') when they are still in the household. Safe to call twice.
+create or replace function public.hh_cancel_pending_settlements(p_household uuid, p_user uuid, p_reason text)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  s public.settlements%rowtype;
+  v_n integer := 0;
+  v_other uuid;
+begin
+  for s in update public.settlements x set status = 'cancelled', resolved_at = now()
+            where x.household_id = p_household and x.status = 'pending' and (x.payer_id = p_user or x.receiver_id = p_user)
+            returning x.* loop
+    v_n := v_n + 1;
+    update public.settlement_lines set live = false where settlement_id = s.id;
+    v_other := case when s.payer_id = p_user then s.receiver_id else s.payer_id end;
+    if v_other is not null and exists (select 1 from public.household_members m
+                                        where m.household_id = p_household and m.user_id = v_other) then
+      perform public.hh_event(p_household, 'settle_departed', p_user, s.id, array[v_other],
+                              jsonb_build_object('amount', s.amount, 'currency', s.currency, 'reason', p_reason));
+    end if;
+  end loop;
+  return v_n;
+end;
+$$;
+revoke execute on function public.hh_cancel_pending_settlements(uuid, uuid, text) from public, anon, authenticated;
+
 -- The departure. p_kind 'left' or 'removed'; p_actor is who did it. Returns the member_departures id.
 create or replace function public.hh_depart(p_user uuid, p_household uuid, p_kind text, p_actor uuid)
 returns uuid
@@ -448,6 +479,7 @@ begin
             jsonb_build_object('role_label', v_mem.role_label, 'colour_key', v_mem.colour_key, 'weight', v_mem.weight,
                                'display_name', v_mem.display_name, 'name_hidden', v_mem.name_hidden,
                                'series_ends', v_tomb -> 'series_ends'));
+  perform public.hh_cancel_pending_settlements(p_household, p_user, case p_kind when 'left' then 'left' else 'removed' end);
   delete from public.household_members where household_id = p_household and user_id = p_user;
   v_after := public.hh_resplit_weights(p_household);
   perform public.hh_event(p_household, case p_kind when 'left' then 'left' else 'removed' end, p_user, v_dep, null,
@@ -518,6 +550,8 @@ begin
       return jsonb_build_object('ok', false, 'reason', 'not_member');
     end if;
   end if;
+  -- waiting settle-ups end now, so their lines count in the balance the warning shows (owner answer 10)
+  perform public.hh_cancel_pending_settlements(hid, uid, 'left');
   -- the warning (D-25): signed, positive = the caller owes that person
   select coalesce(jsonb_agg(jsonb_build_object('other_id', m.user_id, 'amount', n.amt) order by m.created_at), '[]'::jsonb) into v_bal
     from public.household_members m
@@ -922,6 +956,70 @@ exception when sqlstate 'HH002' then
 end;
 $$;
 
+-- Owner answer 11: the person who left says "I paid". It is a settle-up they propose toward their old household, waiting for the
+-- person who stayed (the receiver), who confirms it with confirm_settlement like any other (D-25: either person can settle).
+-- The leaver stays read-only otherwise: they must have a live departure from that household, and only lines they owe that
+-- person count, exactly as hh_pair_owed answers (a line they cannot see is refused like a missing id). No payer account is
+-- recorded in the old household (the leaver's accounts moved with them); they record the money leaving in their own app.
+create or replace function public.propose_leaver_payment(p_household uuid, p_receiver uuid, p_line_ids uuid[], p_expected_amount bigint)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := public.hh_uid();
+  v_cur text;
+  v_ids uuid[];
+  v_n integer;
+  v_sum bigint;
+  v_count integer;
+  v_id uuid := gen_random_uuid();
+  r record;
+begin
+  if p_household is null or not exists (
+       select 1 from public.member_departures d
+        where d.household_id = p_household and d.user_id = uid and d.restored_at is null)
+     or exists (select 1 from public.household_members m where m.household_id = p_household and m.user_id = uid) then
+    return jsonb_build_object('ok', false, 'reason', 'not_departed');
+  end if;
+  if p_receiver is null or p_receiver = uid or not exists (
+       select 1 from public.household_members m where m.household_id = p_household and m.user_id = p_receiver) then
+    return jsonb_build_object('ok', false, 'reason', 'not_member');
+  end if;
+  select coalesce(array_agg(distinct x), '{}') into v_ids from unnest(p_line_ids) x where x is not null;
+  v_n := coalesce(array_length(v_ids, 1), 0);
+  if v_n = 0 then return jsonb_build_object('ok', false, 'reason', 'nothing_owed'); end if;
+  for r in select distinct s.id from public.settlement_lines l join public.settlements s on s.id = l.settlement_id
+            where l.transaction_id = any(v_ids) and l.live and s.status = 'pending' and s.expires_at <= now() loop
+    perform public.hh_settlement_lapse(r.id);
+  end loop;
+  select coalesce(sum(o.amount), 0), count(*) into v_sum, v_count from public.hh_pair_owed(p_household, uid, p_receiver, v_ids) o;
+  if v_count <> v_n or v_sum <> p_expected_amount then
+    if v_count > 0 and v_sum <= 0 and v_count = v_n then
+      return jsonb_build_object('ok', false, 'reason', 'nothing_owed');
+    end if;
+    return jsonb_build_object('ok', false, 'reason', 'lines_changed', 'server_amount', v_sum);
+  end if;
+  if v_sum <= 0 then return jsonb_build_object('ok', false, 'reason', 'nothing_owed'); end if;
+
+  select h.reporting_currency into v_cur from public.households h where h.id = p_household;
+  begin
+    insert into public.settlements (id, household_id, payer_id, receiver_id, payer_former_key, receiver_former_key, amount, currency,
+                                    status, created_by, remind_at, expires_at)
+    values (v_id, p_household, uid, p_receiver, uid, p_receiver, v_sum, v_cur, 'pending', uid,
+            now() + interval '7 days', now() + interval '14 days');
+    insert into public.settlement_lines (settlement_id, transaction_id, household_id, amount)
+      select v_id, o.transaction_id, p_household, o.amount from public.hh_pair_owed(p_household, uid, p_receiver, v_ids) o;
+  exception when unique_violation then
+    return jsonb_build_object('ok', false, 'reason', 'lines_changed', 'server_amount', v_sum);
+  end;
+  perform public.hh_event(p_household, 'settle_request', uid, v_id, array[p_receiver],
+                          jsonb_build_object('amount', v_sum, 'currency', v_cur, 'from_leaver', true));
+  return jsonb_build_object('ok', true, 'settlement_id', v_id, 'amount', v_sum);
+end;
+$$;
+
 -- confirm_settlement, re-created from 20261122000700 with one change: the payer's account must still be in the settle-up's
 -- household. After the payer has left, their account has moved with them: "Got it" then answers payer_account_gone instead
 -- of failing on the account/household constraint.
@@ -935,6 +1033,7 @@ declare
   uid uuid := public.hh_uid();
   s public.settlements%rowtype;
   w jsonb;
+  v_payer_here boolean;
 begin
   select * into s from public.settlements x
    where x.id = p_id and (x.payer_id = uid or x.receiver_id = uid) and x.household_id in (select public.user_household_ids())
@@ -950,11 +1049,14 @@ begin
                   and a.household_id = s.household_id and a.deleted_at is null) then
     return jsonb_build_object('ok', false, 'reason', 'account_not_yours');
   end if;
-  if not exists (select 1 from public.accounts a where a.id = s.payer_account_id and a.deleted_at is null
-                  and a.household_id = s.household_id) then
+  -- A settle-up the leaver proposed has no payer account in this household (theirs moved with them, and they record the money
+  -- leaving in their own app); every other settle-up needs the payer's account.
+  v_payer_here := exists (select 1 from public.household_members m where m.household_id = s.household_id and m.user_id = s.payer_id);
+  if v_payer_here and not exists (select 1 from public.accounts a where a.id = s.payer_account_id and a.deleted_at is null
+                                   and a.household_id = s.household_id) then
     return jsonb_build_object('ok', false, 'reason', 'payer_account_gone');
   end if;
-  w := public.hh_write_settlement_records(s.id, s.payer_account_id, p_receiver_account);
+  w := public.hh_write_settlement_records(s.id, case when v_payer_here then s.payer_account_id end, p_receiver_account);
   if not (w ->> 'ok')::boolean then return w; end if;
   update public.settlements set status = 'confirmed', confirmed_at = now() where id = s.id;
   perform public.hh_event(s.household_id, 'settled', uid, s.id, array_remove(array[s.payer_id, s.receiver_id], null),
@@ -978,13 +1080,18 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object(
            'departure_id', d.id, 'household_id', d.household_id, 'household_name', h.name, 'kind', d.kind,
            'other_id', m.user_id, 'other_display_name', case when m.name_hidden then null else m.display_name end,
-           'other_colour_key', m.colour_key, 'amount', n.amt) order by d.created_at, m.created_at), '[]'::jsonb)
+           'other_colour_key', m.colour_key, 'amount', n.amt,
+           'pending_settlement_id', pd.id, 'pending_amount', pd.amount) order by d.created_at, m.created_at), '[]'::jsonb)
     into res
     from public.member_departures d
     join public.households h on h.id = d.household_id
     join public.household_members m on m.household_id = d.household_id
     cross join lateral (select public.hh_pair_net(d.household_id, uid, m.user_id) as amt) n
-   where d.user_id = uid and d.restored_at is null and n.amt <> 0;
+    left join lateral (select x.id, x.amount from public.settlements x
+                        where x.household_id = d.household_id and x.status = 'pending' and x.expires_at > now()
+                          and x.payer_id = uid and x.receiver_id = m.user_id
+                        order by x.created_at desc limit 1) pd on true
+   where d.user_id = uid and d.restored_at is null and (n.amt <> 0 or pd.id is not null);
   return jsonb_build_object('ok', true, 'balances', res);
 end;
 $$;
@@ -1074,6 +1181,7 @@ begin
 
     -- households this person left earlier: their splits and settle-ups there keep a stable key, their name is erased
     for f in select * from public.household_former_members where user_id = old.id loop
+      perform public.hh_cancel_pending_settlements(f.household_id, old.id, 'deleted');
       perform public.hh_stamp_former(f.household_id, old.id, f.former_key);
       update public.household_former_members set display_name = null, reason = 'deleted' where id = f.id;
     end loop;
@@ -1095,6 +1203,7 @@ begin
         perform public.hh_transfer_owner(mem.household_id, old.id, v_next, array[v_next]);
       end if;
 
+      perform public.hh_cancel_pending_settlements(mem.household_id, old.id, 'deleted');
       v_key := gen_random_uuid();
       insert into public.household_former_members (household_id, user_id, former_key, display_name, colour_key, name_hidden, reason)
         values (mem.household_id, old.id, v_key, null, mem.colour_key, mem.name_hidden, 'deleted');
@@ -1138,6 +1247,8 @@ revoke execute on function public.my_departed_balances() from public, anon;
 grant execute on function public.my_departed_balances() to authenticated;
 revoke execute on function public.account_deletion_preview() from public, anon;
 grant execute on function public.account_deletion_preview() to authenticated;
+revoke execute on function public.propose_leaver_payment(uuid, uuid, uuid[], bigint) from public, anon;
+grant execute on function public.propose_leaver_payment(uuid, uuid, uuid[], bigint) to authenticated;
 revoke execute on function public.record_paid(uuid, uuid[], uuid, bigint) from public, anon;
 grant execute on function public.record_paid(uuid, uuid[], uuid, bigint) to authenticated;
 revoke execute on function public.record_received(uuid, uuid[], uuid, bigint) from public, anon;

@@ -608,6 +608,12 @@ begin
   if now() >= s.confirmed_at + interval '24 hours' then
     return jsonb_build_object('ok', false, 'reason', 'undo_window_closed');
   end if;
+  -- no undo once a party has left, been removed or deleted their account (an account that is gone has a null id here)
+  if s.payer_id is null or s.receiver_id is null
+     or (select count(*) from public.household_members m
+          where m.household_id = s.household_id and m.user_id in (s.payer_id, s.receiver_id)) < 2 then
+    return jsonb_build_object('ok', false, 'reason', 'party_left');
+  end if;
   perform set_config('fincwin.household_rpc', 'on', true);
   update public.transactions set deleted_at = now()
    where id in (s.payer_tx_id, s.receiver_tx_id) and deleted_at is null;
