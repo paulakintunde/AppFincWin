@@ -157,6 +157,21 @@ jest.mock('@/data/mutations/moneyPrefs', () => ({ useUpdateMoneyPrefs: () => ({ 
 jest.mock('@/data/mutations/regionSubdivision', () => ({ useSetRegionSubdivision: () => jest.fn() }));
 jest.mock('@/data/queries/regionSubdivision', () => ({ useRegionSubdivision: () => null }));
 
+// 08-17: the Household row reads the household scope and the unread notices count.
+let mockHousehold: { name: string; members: unknown[]; householdId: string | null; userId: string | null } = {
+  name: 'Flat 4B',
+  members: [{}, {}, {}],
+  householdId: 'h1',
+  userId: 'u1',
+};
+let mockUnread = 0;
+jest.mock('@/features/household/useHouseholdScope', () => ({
+  useHouseholdScope: () => mockHousehold,
+}));
+jest.mock('@/data/queries/household', () => ({
+  useHouseholdEvents: () => ({ events: [], unreadCount: mockUnread, isLoading: false }),
+}));
+
 async function renderScreen() {
   return render(
     <ThemeProvider>
@@ -181,6 +196,8 @@ beforeEach(() => {
     email: 'ada@example.com',
   };
   mockConsent = 'declined';
+  mockHousehold = { name: 'Flat 4B', members: [{}, {}, {}], householdId: 'h1', userId: 'u1' };
+  mockUnread = 0;
   mockSyncStatus = { isOnline: false, queued: 3, failed: 0, conflicts: 0, lastSyncedAt: null };
   mockCheckConnection.mockResolvedValue({ ok: true, latencyMs: 42 });
   mockRequestSignOut.mockResolvedValue({ needsConfirm: false });
@@ -612,4 +629,23 @@ describe('YouScreen groups like L04 (06.2-15)', () => {
     const { queryByText } = await renderScreen();
     for (const word of ['Face ID', 'PIN lock', 'Delete account', 'Download my data']) expect(queryByText(word)).toBeNull();
   }, SLOW);
+});
+
+describe('YouScreen Household row (08-17)', () => {
+  it('shows the household name and people, opens /household, and carries the unread count', async () => {
+    mockUnread = 2;
+    const { getByText, getByLabelText } = await renderScreen();
+    expect(getByText('Household')).toBeTruthy();
+    expect(getByText('Flat 4B · 3 people')).toBeTruthy();
+    expect(getByLabelText('Notices, 2 unread')).toBeTruthy();
+    await fireEvent.press(getByText('Household'));
+    expect(mockRouterPush).toHaveBeenCalledWith('/household');
+  });
+
+  it('says Just you for a household of one and shows no count', async () => {
+    mockHousehold = { name: 'Your household', members: [{}], householdId: 'h1', userId: 'u1' };
+    const { getByText, queryByLabelText } = await renderScreen();
+    expect(getByText('Just you')).toBeTruthy();
+    expect(queryByLabelText(/unread/)).toBeNull();
+  });
 });

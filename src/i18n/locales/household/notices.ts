@@ -25,4 +25,15 @@ export const notices = {
   yesGotIt: 'Yes, I got {{amount}}',
   notYet: 'Not yet',
   undo: 'Undo',
+  /** 08-17: kinds the server writes that the first copy pass left out, and the plain fallbacks. */
+  renamed: '{{name}} renamed the household to {{newName}}',
+  currency_changed: '{{name}} set the household currency to {{code}}',
+  departure_undone: '{{name}} is back in {{household}}',
+  settle_cancelled: '{{name}} cancelled a settle-up of {{amount}}',
+  settle_undone: '{{name}} undid a settle-up of {{amount}}',
+  written_off: '{{name}} wrote off {{amount}}',
+  settled_plain: 'Settled {{amount}}',
+  split_changed_plain: '{{name}} changed how a line is split',
+  category_default_changed: '{{name}} changed a category default to {{rule}}',
+  fallback: '{{name}} changed something in {{household}}',
 } as const;

@@ -43,6 +43,9 @@ import { ConnectionStatus } from './components/ConnectionStatus';
 import { DevSyncProbe } from './components/DevSyncProbe';
 import { HapticsRow } from './components/HapticsRow';
 import { YOU_ROW_ICON, type YouRowId } from './components/youRowIcons';
+import { Chip } from '@/ui/Chip';
+import { useHouseholdEvents } from '@/data/queries/household';
+import { useHouseholdScope } from '@/features/household/useHouseholdScope';
 
 // Owner 2026-11-11: the old Pots screen is gone; the row opens the Grow goals segment.
 const GOALS_HREF = '/grow?segment=goals' as Href;
@@ -51,7 +54,13 @@ const GOALS_HREF = '/grow?segment=goals' as Href;
 // lag the route files. The statement import lives in the Add group (D-85), not here.
 const MONEY_ROWS: readonly {
   id: YouRowId;
-  label: 'you.record.activity' | 'you.record.accounts' | 'you.record.categories' | 'you.record.history' | 'grow.home.segments.goals';
+  label:
+    | 'you.record.activity'
+    | 'you.record.accounts'
+    | 'you.record.categories'
+    | 'you.record.history'
+    | 'grow.home.segments.goals'
+    | 'household.home.title';
   href: Href;
 }[] = [
   { id: 'activity', label: 'you.record.activity', href: ACTIVITY_HREF },
@@ -59,7 +68,31 @@ const MONEY_ROWS: readonly {
   { id: 'categories', label: 'you.record.categories', href: '/categories' as Href },
   { id: 'history', label: 'you.record.history', href: '/history' as Href },
   { id: 'goals', label: 'grow.home.segments.goals', href: GOALS_HREF },
+  // 08-17 (HH-01): Household sits in the Money group; its sublabel and unread count are live (see HouseholdYouRow).
+  { id: 'household', label: 'household.home.title', href: '/household' as Href },
 ];
+
+/** 08-17: the Household row. Sublabel "{{household}} · {{count}} people" or "Just you"; a small count of unread notices. */
+function HouseholdYouRow({ tile, onPress }: { tile: ReactNode; onPress: () => void }) {
+  const t = useT();
+  const scope = useHouseholdScope();
+  const { unreadCount } = useHouseholdEvents(scope.householdId, scope.userId ?? undefined);
+  const sublabel =
+    scope.members.length > 1
+      ? t('household.home.youRowSublabel', { household: scope.name, count: scope.members.length })
+      : t('household.home.youRowAlone');
+  return (
+    <Row
+      label={t('household.home.title')}
+      sublabel={sublabel}
+      leading={tile}
+      chevron
+      status={unreadCount > 0 ? <Chip label={String(unreadCount)} accessibilityLabel={t('household.home.noticesUnread', { count: unreadCount })} selected /> : undefined}
+      statusText={unreadCount > 0 ? t('household.home.noticesUnread', { count: unreadCount }) : undefined}
+      onPress={onPress}
+    />
+  );
+}
 
 // D-85 / R16.1: the Add group rows, in order. Each runs the FAB quick action with the same id.
 const ADD_ROWS: readonly {
@@ -209,15 +242,19 @@ export function YouScreen() {
       ) : null}
 
       <SettingsGroup title={t('appLife.you.groups.money')}>
-        {MONEY_ROWS.map((row) => (
-          <Row
-            key={row.id}
-            label={t(row.label)}
-            leading={tileFor(row.id)}
-            chevron
-            onPress={() => (row.href === ACTIVITY_HREF ? router.dismissTo(ACTIVITY_HREF) : pushOnce(row.href))}
-          />
-        ))}
+        {MONEY_ROWS.map((row) =>
+          row.id === 'household' ? (
+            <HouseholdYouRow key={row.id} tile={tileFor(row.id)} onPress={() => pushOnce(row.href)} />
+          ) : (
+            <Row
+              key={row.id}
+              label={t(row.label)}
+              leading={tileFor(row.id)}
+              chevron
+              onPress={() => (row.href === ACTIVITY_HREF ? router.dismissTo(ACTIVITY_HREF) : pushOnce(row.href))}
+            />
+          ),
+        )}
         {tiled('weekStart', <WeekStartRow />)}
         {tiled('homeCurrency', <HomeCurrencyRow rowRef={currencyRowRef} onRowLayout={onCurrencyRowLayout} />)}
         {tiled('region', <RegionRow rowRef={regionRowRef} onRowLayout={onRegionRowLayout} />)}
