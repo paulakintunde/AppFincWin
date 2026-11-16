@@ -1476,7 +1476,7 @@ Plans:
 - [x] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
+- [x] 08-24-PLAN.md — Leave/remove UI + removed-member notice
 
 **Wave 10** *(blocked on Wave 9 completion)*
 - [ ] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 24/28 | In progress | - |
+| 8. Household | 25/28 | In progress | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
