@@ -323,6 +323,8 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const householdId = rc.householdId;
   const linePending = useCallback((lineId: string): boolean => householdId !== null && cachedPendingLine(qc, householdId, lineId) !== null, [qc, householdId]);
   const { answered: answeredRows, mark: markAnswered } = useAnsweredRows({ rowIds, waiverKeys, linePending });
+  // 05.5-29 (owner decision 1): one write per open of the cover sheet (T-05.5-29-02); reopening clears it.
+  const coverSent = useRef(false);
 
   if (step.status === 'not_found' || (step.status === 'ready' && row === null && !checks.isLoading)) return <CheckNotFound />;
   // 06.1-49 (A-ANS-2): no check yet, so no top bar; the loading state, never a blank screen.
@@ -382,8 +384,6 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.unexplained.saved' }, stepId: saved.stepId });
   };
 
-  // 05.5-29 (owner decision 1): one write per open of the cover sheet (T-05.5-29-02); reopening clears it.
-  const coverSent = useRef(false);
   const answerCover = (covers: boolean): void => {
     setSheet(null);
     if (coverSent.current) return;
