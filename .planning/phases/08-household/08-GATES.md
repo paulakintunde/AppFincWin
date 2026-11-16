@@ -83,3 +83,10 @@ Written by plan 05.5-06. Source: `.planning/phases/05.5-one-shared-money-model/0
 7. **Re-splitting a category:** "Also apply to the unsettled lines" changes only lines nobody split by hand. Lines a member changed by hand (any rule) and lines split by exact amounts keep their split. The count in the offer counts only the lines that will change.
 8. **Refunds into a joint account** stay personal, like any money paid in; members can share them by hand (as built).
 9. **#134 stays draft + `hold`** until Household is done and 05.5 Band B is in production (PRs merge themselves since #137).
+
+## Owner answers after wave 6 (2026-11-15)
+
+10. **Waiting settle-up when someone leaves, is removed or deletes:** cancel it at departure, unlock its lines at once, and send the other person a notice. The balance remains to settle another way.
+11. **The leaver can say "I paid".** The person who stayed confirms it (same two-step as any settle-up). Either person can still settle (D-25).
+12. **No undo once a party has left.** A confirmed settle-up cannot be undone after either person leaves, is removed or deletes, even inside 24 hours.
+13. **Member edit clashes name who saved first.** The members `version_conflict` returns who changed it (`updated_by`), and weight saves check an expected version, so the UI can say "{{name}} changed this first" (08-16 deviation 3-4).
