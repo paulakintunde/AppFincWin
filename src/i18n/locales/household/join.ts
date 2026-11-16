@@ -2,6 +2,9 @@
 export const join = {
   title: 'Join a household',
   codeLabel: 'Invite code',
+  codeA11y: 'Invite code, {{spelled}}',
+  checking: 'Checking the code',
+  inviterFallback: 'the person who invited you',
   codeHelper: 'Paste the code from your invite.',
   check: 'Check code',
   preview: '{{inviter}} invited you to {{household}}',
