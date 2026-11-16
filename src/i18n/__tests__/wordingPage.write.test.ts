@@ -298,7 +298,7 @@ function templateHtml(): { html: string; lines: number } {
 }
 
 /** 06.1-83 (owner, 2026-11-14): draft cases the owner sent on instead of approving here. They stay draft; no engine change. */
-const ROUTED_CASES: Readonly<Record<string, string>> = { 'SN-18': 'Routed to engine maths review (owner, 2026-11-14). Stays a draft; not for approval on this page.' };
+const ROUTED_CASES: Readonly<Record<string, string>> = { 'SN-18': 'Engine maths review done in 05.5-28: the owner chose option (b), the app is right, and the case now expects not yet (2026-11-15). Stays a draft; not for approval on this page.' };
 
 function draftCasesHtml(): { html: string; ids: string[] } {
   const drafts = loadCases().filter((c) => c.status === 'draft');
@@ -543,10 +543,10 @@ function buildPage(): Page {
     // 06.1-33 completeness: every locked string (all LOCKED_ROOTS, decide.screens included) is on the page by its dotted key.
     const missing = Object.keys(lockedLeaves(en)).filter((k) => !html.includes(`<div class="k">${esc(k)}</div>`));
     expect(missing).toEqual([]);
-    // The draft right-answer cases the owner approves (BR-16, SN-16..SN-24).
-    for (const id of ['BR-16', 'SN-16', 'SN-17', 'SN-18', 'SN-19', 'SN-20', 'SN-21', 'SN-22', 'SN-23', 'SN-24']) expect(draftIds).toContain(id);
-    // 06.1-83: SN-18 stays a draft, marked as routed to the engine maths review.
-    expect(html).toContain('Routed to engine maths review (owner, 2026-11-14)');
+    // BR-16, SN-16, SN-17 and SN-19..SN-24 were approved at the 06.1-33 sign-off (2026-11-14); SN-18 is the one draft left.
+    expect(draftIds).toEqual(['SN-18']);
+    // 05.5-28 (Q13 b): SN-18 stays a draft, marked with the engine maths review result.
+    expect(html).toContain('Engine maths review done in 05.5-28');
     // 06.1-83: no line can read “1 months” (one forms, no count, or a number that is never 1, listed as kept).
     expect(pluralKeys).toEqual([]);
     // Every blank on the page reads filled.
