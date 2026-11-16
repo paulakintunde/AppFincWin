@@ -69,18 +69,18 @@ describe('fetchTransactionMonths', () => {
 });
 
 describe('fetchHouseholdMemberNames', () => {
-  it('selects user_id, display_name from household_members filtered by household_id', async () => {
+  it('selects user_id, display_name, name_hidden, colour_key from household_members filtered by household_id', async () => {
     const client = createFakeSupabase();
     const rows = [
-      { user_id: 'u1', display_name: 'Sam' },
-      { user_id: 'u2', display_name: null },
+      { user_id: 'u1', display_name: 'Sam', name_hidden: false, colour_key: 0 },
+      { user_id: 'u2', display_name: null, name_hidden: true, colour_key: 1 },
     ];
     client.respondWith({ data: rows, error: null, status: 200 });
 
     const result = await fetchHouseholdMemberNames(client, 'hh-1');
 
     expect(result).toEqual(rows);
-    expect(client.calls.find((c) => c.method === 'select')?.args[0]).toBe('user_id, display_name');
+    expect(client.calls.find((c) => c.method === 'select')?.args[0]).toBe('user_id, display_name, name_hidden, colour_key');
     expect(client.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'hh-1']);
   });
 

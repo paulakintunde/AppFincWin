@@ -27,6 +27,9 @@ export interface TransactionMonthRow {
 export interface HouseholdMemberNameRow {
   user_id: string;
   display_name: string | null;
+  /** 08 (D-32): when true the name is not shown to others; the colour name stands in. */
+  name_hidden: boolean;
+  colour_key: number;
 }
 
 export async function fetchAccountBalances(client: DbClient, householdId: string): Promise<AccountBalanceLegRow[]> {
@@ -46,7 +49,7 @@ export async function fetchTransactionMonths(client: DbClient, householdId: stri
 export async function fetchHouseholdMemberNames(client: DbClient, householdId: string): Promise<HouseholdMemberNameRow[]> {
   const { data, error, status } = await client
     .from('household_members')
-    .select('user_id, display_name')
+    .select('user_id, display_name, name_hidden, colour_key')
     .eq('household_id', householdId);
 
   if (error) throw toDbError(error, status);

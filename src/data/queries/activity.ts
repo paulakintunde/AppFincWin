@@ -11,6 +11,7 @@ import { fetchTransactionsSearch, fetchTransferLegs, TRANSFER_LEGS_MAX } from '@
 import { fetchAccountBalances, fetchTransactionMonths, fetchHouseholdMemberNames, type AccountBalanceLegRow } from '@/db/recordReads';
 import { accountBalance, isOverdue, monthTotals, monthsForSwitcher, type AccountBalance, type MonthTotals } from '@/engine/activity';
 import { accountStanding, type Standing } from '@/engine/accounts';
+import { memberLabel } from '@/engine/household/memberLabel';
 import { projectOccurrences } from '@/engine/recurring';
 import { minorUnits } from '@/engine/money';
 import { supabase } from '@/services/supabase';
@@ -346,7 +347,7 @@ export function useAccountBalances(
   return { balances, isLoading: query.isLoading };
 }
 
-/** Household member display names, for Activity/Accounts and undo-refusal copy; nulls omitted. */
+/** Household member labels (D-32: a hidden name is its colour name), for Activity/Accounts and undo-refusal copy. */
 export function useHouseholdMemberNames(householdId: string | null): Map<string, string> {
   const query = useQuery({
     queryKey: queryKeys.householdMembers(householdId ?? ''),
@@ -357,7 +358,12 @@ export function useHouseholdMemberNames(householdId: string | null): Map<string,
   return useMemo(() => {
     const map = new Map<string, string>();
     for (const row of query.data ?? []) {
-      if (row.display_name !== null) map.set(row.user_id, row.display_name);
+      // D-32: through the one resolver, so a hidden name shows its colour name. No viewer id: 'you' is the caller's to say.
+      const label = memberLabel(
+        { userId: row.user_id, displayName: row.display_name, nameHidden: row.name_hidden, colourKey: row.colour_key, left: false },
+        '',
+      );
+      if (label.kind === 'name' || label.kind === 'colour') map.set(row.user_id, label.text);
     }
     return map;
   }, [query.data]);
