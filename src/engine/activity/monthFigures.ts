@@ -15,6 +15,8 @@ export interface MonthFigureRow {
   isRefund?: boolean;
   originalAmount: number;
   amountHome: number | null;
+  /** ARC-18: settlement records are neither spending nor income; callers set this from engine/household isSettlement. Omitted = not a settlement. */
+  isSettlement?: boolean;
 }
 
 export interface MonthFigureProjection {
@@ -41,7 +43,11 @@ export interface MonthPosition {
 
 export function isUnpaidOutflow(row: MonthFigureRow): boolean {
   return (
-    row.status === 'pending' && !row.isTransfer && row.isRefund !== true && row.originalAmount < 0
+    row.status === 'pending' &&
+    !row.isTransfer &&
+    row.isSettlement !== true &&
+    row.isRefund !== true &&
+    row.originalAmount < 0
   );
 }
 
