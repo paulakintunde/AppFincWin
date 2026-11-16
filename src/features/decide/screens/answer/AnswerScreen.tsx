@@ -63,6 +63,8 @@ import { FactActions, type FactActionChoice } from './FactActions';
 import { MoreDetailRows, type DetailRow } from './MoreDetailRows';
 import { SpareMoneySheet } from './SpareMoneySheet';
 import { UnexplainedMoneySheet, type UnexplainedUse } from './UnexplainedMoneySheet';
+import { CoverQuestionSheet } from './CoverQuestionSheet';
+import { coverAnswerOf } from '../logic/coverAnswer';
 import { spareAnchorPatch, spareSumOf, unexplainedAsk } from '../logic/spareMoney';
 import type { OptionKey } from './OptionChips';
 import { useAnswerEffects } from './useAnswerEffects';
@@ -91,11 +93,12 @@ const FIX_ROUTE: Readonly<Record<string, string>> = {
   records_look_behind: '/decide/setup/records',
   // unspent_not_confirmed is answered on this screen (SpareMoneySheet, 06.1-84 G-61-2): Records has nothing that confirms it.
   // unexplained_money_question too (UnexplainedMoneySheet, 06.1-85 G-PD-2): nothing else in the app answers it.
+  // volatile_cover_question too (CoverQuestionSheet, 05.5-29): answered here, saved as a decide_answers row.
 };
 /** Missing figures that belong to the price and payment steps of this check. */
 const PRICE_STEP_FIXES: ReadonlySet<string> = new Set(['no_price', 'price_too_large', 'plan_count_missing', 'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'first_payment_passed']);
 
-type SheetKey = 'later' | 'cheaper' | 'fullCost' | 'monthAfter' | 'stops' | 'everyDate' | 'monthByMonth' | 'worked' | 'giveMore' | 'help' | 'about' | 'plan' | 'spare' | 'unexplained';
+type SheetKey = 'later' | 'cheaper' | 'fullCost' | 'monthAfter' | 'stops' | 'everyDate' | 'monthByMonth' | 'worked' | 'giveMore' | 'help' | 'about' | 'plan' | 'spare' | 'unexplained' | 'cover';
 
 /** The writes the shell binds (useNotBuying reaches the rate-fetch door, which features/decide may not import). */
 export interface AnswerWrites {
@@ -320,6 +323,8 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
   const householdId = rc.householdId;
   const linePending = useCallback((lineId: string): boolean => householdId !== null && cachedPendingLine(qc, householdId, lineId) !== null, [qc, householdId]);
   const { answered: answeredRows, mark: markAnswered } = useAnsweredRows({ rowIds, waiverKeys, linePending });
+  // 05.5-29 (owner decision 1): one write per open of the cover sheet (T-05.5-29-02); reopening clears it.
+  const coverSent = useRef(false);
 
   if (step.status === 'not_found' || (step.status === 'ready' && row === null && !checks.isLoading)) return <CheckNotFound />;
   // 06.1-49 (A-ANS-2): no check yet, so no top bar; the loading state, never a blank screen.
@@ -377,6 +382,23 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     if (saved === null) return;
     hapticTap();
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.unexplained.saved' }, stepId: saved.stepId });
+  };
+
+  const answerCover = (covers: boolean): void => {
+    setSheet(null);
+    if (coverSent.current) return;
+    coverSent.current = true;
+    const saved = answers.save({ kind: 'volatile_cover', checkId: id, covers });
+    if (saved === null) return;
+    hapticTap();
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.cover.saved' }, stepId: saved.stepId });
+  };
+  // 05.5-29 (owner Q14 = b): the check steps have no share field, so a broken split is fixed in place: count it as just mine.
+  const shareJustMine = (): void => {
+    const before = check.share;
+    edit((c) => ({ ...c, share: { kind: 'personal' } }));
+    hapticTap();
+    showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.share.saved' }, onUndo: () => edit((c) => ({ ...c, share: before })) });
   };
 
   const onAction = (action: AnswerAction): void => {
@@ -526,13 +548,18 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         return;
       }
       case 'changeAnswer': {
-        // 06.1-68 (CC-8): the answer is on the check itself, so Undo puts the earlier value back on the check (a local undo).
-        const before = check.volatileCover ?? null;
-        edit((c) => ({ ...c, volatileCover: c.volatileCover === false }));
+        // 05.5-29: the saved decide_answers row wins over check.volatileCover in useCheckEngine, so the flip is saved there too
+        // (06.1-68 CC-8 edited the check, which a saved row would override). Undo is the mutation's own undo step.
+        const now = coverAnswerOf(v3.v3?.answers, id, check);
+        const saved = answers.save({ kind: 'volatile_cover', checkId: id, covers: now !== true });
+        if (saved === null) return;
         hapticTap();
-        showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.coverChanged' }, onUndo: () => edit((c) => ({ ...c, volatileCover: before })) });
+        showToast({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.coverChanged' }, stepId: saved.stepId });
         return;
       }
+      case 'shareJustMine':
+        shareJustMine();
+        return;
       case 'unlockNet':
         pushOnce(asHref('/decide/safety-net'));
         return;
@@ -541,6 +568,10 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         else if (choice.code === 'account_use_question') pushOnce(accountUseFix());
         else if (choice.code === 'unspent_not_confirmed') setSheet('spare');
         else if (choice.code === 'unexplained_money_question') setSheet('unexplained');
+        else if (choice.code === 'volatile_cover_question') {
+          coverSent.current = false;
+          setSheet('cover');
+        } else if (choice.code === 'share_invalid') shareJustMine();
         else pushOnce(asHref(FIX_ROUTE[choice.code] ?? '/decide/setup'));
         return;
     }
@@ -643,6 +674,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     ) : (
       <>
         {netLine}
+        {result.code === 'not_yet' && result.reasons.includes('volatile_cover_declined') ? <FactActions code="volatile_cover_declined" onChoose={onFactChoice} /> : null}
         {told}
         <MoreDetailRows
           runningValue={runningValue}
@@ -775,6 +807,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         onDismiss={closeSheet}
       />
       <UnexplainedMoneySheet amount={unexplained === null ? null : money(unexplained.shown)} onAnswer={answerUnexplained} onDismiss={closeSheet} />
+      <CoverQuestionSheet question={sheet === 'cover' ? (lines.missing.find((l) => l.code === 'volatile_cover_question')?.text ?? null) : null} onAnswer={answerCover} onDismiss={closeSheet} />
       {sheet === 'help' ? <FreeHelpSheet country={country} onClose={closeSheet} /> : null}
       {sheet === 'about' ? <AboutSheet result={result} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
       <InstallmentPlanSheet

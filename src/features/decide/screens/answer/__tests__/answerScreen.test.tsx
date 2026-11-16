@@ -92,7 +92,7 @@ const mockState = {
   refetch: jest.fn(),
   // 06.1-68: the engine's "updating" flag and the live answers (decide_answers, not deleted).
   updating: false,
-  answers: [] as { kind: string; key: string }[],
+  answers: [] as { kind: string; key?: string; check_id?: string | null; bool_value?: boolean | null; deleted_at?: string | null }[],
 };
 
 jest.mock('@/features/record/useRecordContext', () => ({
@@ -1200,23 +1200,135 @@ describe('06.1-68 (H-7): answers show at once and can be taken back', () => {
     expect(mockToast).not.toHaveBeenCalled();
   });
 
-  it('CC-8: Change my answer flips the cover answer with "Answer changed." and an Undo that puts it back', async () => {
-    const run = ledgerRun('N02');
-    load(run, {
-      evaluation: withResult(run, (r) => ({ ...r, facts: [{ code: 'rests_on_your_answer', values: { monthly: 5000, months: 6 } }, ...r.facts] })),
-      check: { ...run.check, volatileCover: true },
+  // 05.5-29 (owner decision 1): the flip is saved through the decide_answers mutation (a saved row wins over check.volatileCover).
+  describe('05.5-29: the low-months question', () => {
+    const restsEval = (run: Run): Evaluation => withResult(run, (r) => ({ ...r, facts: [{ code: 'rests_on_your_answer', values: { monthly: 5000, months: 6 } }, ...r.facts] }));
+    const declinedEval = (run: Run): Evaluation => withResult(run, (r) => ({ ...r, code: 'not_yet', variant: null, reasons: [...r.reasons, 'volatile_cover_declined'] }));
+    const askCover = (run: Run): Evaluation => {
+      const e = withResult(run, (r) => ({ ...r, code: 'needs_input', variant: null, missing: ['volatile_cover_question'] as never }));
+      return { ...e, result: { ...e.result, notices: [...e.result.notices, { code: 'income_volatile', values: { payment: 5000, periods: 6, monthly: 5000, months: 6 } }] } };
+    };
+
+    it('CC-8: Change my answer on a saved Yes saves No through the mutation, with Undo from the save and no edit of the check', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: restsEval(run), check: { ...run.check, volatileCover: true }, answers: [{ kind: 'volatile_cover', check_id: 'c1', bool_value: true, deleted_at: null }] });
+      await open();
+      await press(screen.getByText('Change my answer'));
+      expect(mockSave).toHaveBeenCalledWith({ kind: 'volatile_cover', checkId: 'c1', covers: false });
+      expect(mockToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.coverChanged' }, stepId: 'step-ans' });
+      expect(mockState.update).not.toHaveBeenCalled();
     });
-    await open();
-    await press(screen.getByText('Change my answer'));
-    const flip = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0];
-    expect(flip({ ...run.check, volatileCover: true }).volatileCover).toBe(false);
-    const toast = mockToast.mock.calls[0]?.[0] as { kind: string; text: { key: string }; onUndo: () => void };
-    expect(toast).toEqual(expect.objectContaining({ kind: 'ordinary', text: { key: 'decide.screens.answer.fact.coverChanged' } }));
-    await act(async () => {
-      toast.onUndo();
+
+    it('an older check with no saved row but volatileCover true flips the same way', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: restsEval(run), check: { ...run.check, volatileCover: true } });
+      await open();
+      await press(screen.getByText('Change my answer'));
+      expect(mockSave).toHaveBeenCalledWith({ kind: 'volatile_cover', checkId: 'c1', covers: false });
     });
-    const back = (mockState.update.mock.calls[1] as [(c: CheckV2) => CheckV2])[0];
-    expect(back({ ...run.check, volatileCover: false }).volatileCover).toBe(true);
+
+    it('a flip that writes nothing shows no toast', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: restsEval(run), check: { ...run.check, volatileCover: true } });
+      mockSave.mockReturnValueOnce(null);
+      await open();
+      await press(screen.getByText('Change my answer'));
+      expect(mockToast).not.toHaveBeenCalled();
+    });
+
+    it('Q15 = a: a saved No shows the Change my answer link, which saves Yes', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: declinedEval(run), answers: [{ kind: 'volatile_cover', check_id: 'c1', bool_value: false, deleted_at: null }] });
+      await open();
+      await press(screen.getByTestId('answer-change-cover-no'));
+      expect(mockSave).toHaveBeenCalledWith({ kind: 'volatile_cover', checkId: 'c1', covers: true });
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.screens.answer.fact.coverChanged' }, stepId: 'step-ans' }));
+    });
+
+    it('no Change my answer link on a Not yet that is not about low months', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: withResult(run, (r) => ({ ...r, code: 'not_yet', variant: null })) });
+      await open();
+      expect(screen.queryByTestId('answer-change-cover-no')).toBeNull();
+    });
+
+    it('Fix opens the sheet, not the setup checklist; Yes saves with Undo and closes', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: askCover(run) });
+      await open();
+      await press(screen.getByTestId('answer-fix-volatile_cover_question'));
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(screen.getByTestId('cover-sheet')).toBeTruthy();
+      expect(screen.getByText(/^Can you cover \$[0-9,.]+ a month for 6 months, even in your low months\?$/)).toBeTruthy();
+      expect(screen.getByLabelText('Yes, I can cover it in my low months')).toBeTruthy();
+      await press(screen.getByLabelText('Yes, I can cover it in my low months'));
+      expect(mockSave).toHaveBeenCalledTimes(1);
+      expect(mockSave).toHaveBeenCalledWith({ kind: 'volatile_cover', checkId: 'c1', covers: true });
+      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'decide.screens.answer.cover.saved' }, stepId: 'step-ans' }));
+      expect(screen.queryByTestId('cover-sheet')).toBeNull();
+    });
+
+    it('No saves covers: false', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: askCover(run) });
+      await open();
+      await press(screen.getByTestId('answer-fix-volatile_cover_question'));
+      await press(screen.getByLabelText('No, I can’t cover it in my low months'));
+      expect(mockSave).toHaveBeenCalledWith({ kind: 'volatile_cover', checkId: 'c1', covers: false });
+    });
+
+    it('an answer already saved closes the sheet with no toast; Cancel saves nothing', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: askCover(run) });
+      mockSave.mockReturnValueOnce(null);
+      await open();
+      await press(screen.getByTestId('answer-fix-volatile_cover_question'));
+      await press(screen.getByLabelText('Yes, I can cover it in my low months'));
+      expect(mockToast).not.toHaveBeenCalled();
+      await press(screen.getByTestId('answer-fix-volatile_cover_question'));
+      await press(screen.getByText('Cancel'));
+      expect(mockSave).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId('cover-sheet')).toBeNull();
+    });
+
+    it('a second tap before the sheet reopens writes nothing more', async () => {
+      const run = ledgerRun('N02');
+      load(run, { evaluation: askCover(run) });
+      await open();
+      await press(screen.getByTestId('answer-fix-volatile_cover_question'));
+      const yes = screen.getByLabelText('Yes, I can cover it in my low months');
+      await act(async () => {
+        fireEvent.press(yes);
+        fireEvent.press(yes);
+      });
+      expect(mockSave).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // 05.5-29 (owner Q14 = b): share_invalid is fixed in place; it never opens the setup checklist.
+  describe('05.5-29: share_invalid', () => {
+    const askShare = (run: Run): Evaluation => withResult(run, (r) => ({ ...r, code: 'needs_input', variant: null, missing: ['share_invalid'] as never }));
+
+    it('share_invalid: Fix reads "Count it as just mine", counts the check as personal with Undo, and never pushes the setup checklist', async () => {
+      const run = ledgerRun('N02');
+      const split = { kind: 'split', rule: 'percent', shares: [50, 60] } as unknown as CheckV2['share'];
+      load(run, { evaluation: askShare(run), check: { ...run.check, share: split } });
+      await open();
+      expect(screen.getByText('Count it as just mine')).toBeTruthy();
+      await press(screen.getByLabelText('Count this purchase as just mine'));
+      expect(mockPush).not.toHaveBeenCalled();
+      expect(mockState.update).toHaveBeenCalledTimes(1);
+      const next = (mockState.update.mock.calls[0] as [(c: CheckV2) => CheckV2])[0]({ ...run.check, share: split });
+      expect(next.share).toEqual({ kind: 'personal' });
+      expect(mockState.flush).toHaveBeenCalled();
+      const toast = mockToast.mock.calls[0]?.[0] as { text: { key: string }; onUndo: () => void };
+      expect(toast.text).toEqual({ key: 'decide.screens.answer.share.saved' });
+      await act(async () => {
+        toast.onUndo();
+      });
+      const back = (mockState.update.mock.calls[1] as [(c: CheckV2) => CheckV2])[0]({ ...run.check, share: { kind: 'personal' } });
+      expect(back.share).toEqual(split);
+    });
   });
 
   it('a plan named in the plan sheet is stored as L0.plan_name with the pay change, in one update', async () => {
