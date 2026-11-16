@@ -22,6 +22,12 @@ describe('buildInputs: settlements, skipped rows and rows outside the window', (
     const ids = lines({ ...hh, rows: [...hh.rows, ...extra] }).map((l) => l.id);
     for (const gone of ['sav-out', 'skip', 'old']) expect(ids).not.toContain(gone);
   });
+  it('a row paid by a Savings-category series is counted as saving elsewhere, never as a line', () => {
+    const s = fxSeries({ id: 's-save', amount: -9_000, category_id: 'c-sav' });
+    const paid = fxRow({ id: 'save-paid', local_date: '2026-09-12', original_amount: -9_000, recurring_series_id: 's-save' });
+    const ids = lines({ ...hh, series: [...hh.series, s], rows: [...hh.rows, paid] }).map((l) => l.id);
+    expect(ids).not.toContain('save-paid');
+  });
   it('goal-tagged and debt-tagged single legs take their own roles', () => {
     const goals = [fxGoal({ id: 'g-live' })];
     const extra = [

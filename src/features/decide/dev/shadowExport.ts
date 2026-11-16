@@ -3,7 +3,7 @@
 // JSON string. No auth tokens, emails or other households. The file is written to the device by the dev menu, pulled by hand
 // and read only by the owner-local Jest tier; the name matches the .gitignore patterns and it is never committed.
 import type { DecideCheckRow } from '@/db/decideChecks';
-import type { SnapshotSource } from '../snapshot/buildSnapshot';
+import type { SnapshotSource } from '../snapshot/sourceTypes';
 import type { V3SettingsSource } from '../snapshot/v3/types';
 
 export const SHADOW_SOURCE_FORMAT = 'fincwin-shadow-source';

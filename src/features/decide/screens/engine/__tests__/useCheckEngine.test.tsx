@@ -3,7 +3,7 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import * as engine from '@/engine/decide/v3';
 import type { CheckV2 } from '@/engine/decide/v3';
 import { minorUnits } from '@/engine/money';

@@ -46,9 +46,16 @@ module.exports = {
       name: 'decide-engine-barrel-only',
       severity: 'error',
       comment:
-        '05-01 / DEC-12: Phase 5 reaches the Decide engine only through its public barrel (04-12). 05.1 (D-15): the v3 engine has its own barrel, v3/index.ts.',
+        '05-01 / DEC-12: Phase 5 reaches the Decide engine only through its public barrel (04-12). 05.1 (D-15): the v3 engine has its own barrel, v3/index.ts. 05.5-19: the old decide/index.ts barrel is gone.',
       from: { path: '^src/', pathNot: '^src/engine/' },
       to: { path: '^src/engine/(decide|payoff)/(?!index\\.ts$|v3/index\\.ts$)' },
+    },
+    {
+      name: 'no-old-decide-engine',
+      severity: 'error',
+      comment: '05.5-19: the old Decide engine is deleted; only v3 and the five shared leaves remain.',
+      from: {},
+      to: { path: '^src/engine/decide/[^/]+\\.ts$', pathNot: '^src/engine/decide/(share|pots|potTypes|cardRule|lineDefaults|bisectCore)\\.ts$' },
     },
     {
       name: 'decide-never-writes-accounts',

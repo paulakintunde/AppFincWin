@@ -15,6 +15,8 @@ export interface V3SettingsSource {
   hold_months: number | null;
   unspent_anchor: number | null;
   unspent_anchor_at: string | null;
+  /** 05.5-28 Q11 A: decide_settings.unspent_anchor_set_at, the server-stamped confirm time; absent or null = confirmed before the stamp. */
+  unspent_anchor_set_at?: string | null;
   everyday_override: number | null;
   month_marks: Record<string, string> | null;
   rough_saving: number | null;

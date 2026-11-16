@@ -1,6 +1,5 @@
 // PURE. 05.5-12 (ARC-03, ENG-21): the small readers behind buildInputs. Stored answers in, engine objects out. No React, no I/O.
-// Beside the old builder (buildV3Inputs.ts) until 05.5-16 switches the callers and 05.5-19 deletes the old file, so nothing here
-// imports it or the old engine. Allowed imports: the v3 engine barrel, money, payoff, recurring and the grow connection points.
+// The old builder and the old engine are deleted (05.5-19), so nothing here imports either. Allowed imports: the v3 engine barrel, money, payoff, recurring and the grow connection points.
 import {
   homeThresholds,
   validateCustomOptions,
@@ -31,7 +30,7 @@ import {
 import { MAX_ABS_AMOUNT_MINOR, currencyExponent, minorUnits } from '@/engine/money';
 import { percent, type CardMinimumTerms } from '@/engine/payoff';
 import { occurrenceDate, type RecurringFreq } from '@/engine/recurring';
-import type { SnapshotSource } from '../buildSnapshot';
+import type { SnapshotSource } from '../sourceTypes';
 import { convertFloored } from '../conversion';
 import { engineIncomeTypes } from './settingsSource';
 import { waiverOfAnswer } from './waiverKeys';

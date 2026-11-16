@@ -90,7 +90,7 @@ export function sameTypes(a: readonly string[], b: readonly string[] | null | un
 
 /**
  * 06.1-54 (A-SU-4): a live income series with no income kind. Activity makes these when a person accepts a regular payment in;
- * Decide already counts it as pay (buildV3Inputs), but it was never shown here because only income_kind 'salary' was looked for,
+ * Decide already counts it as pay (buildInputs), but it was never shown here because only income_kind 'salary' was looked for,
  * and its arrivals are linked to it so the records scan skips them. The largest one is taken.
  */
 export function unmarkedPaySeries(series: readonly RecurringSeriesRow[]): RecurringSeriesRow | null {

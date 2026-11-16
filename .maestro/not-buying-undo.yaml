@@ -1,0 +1,39 @@
+# 05.5 APP-13 core flow. Run signed in as the sample data account. Writes one check and its "Not buying" outcome and undoes both.
+# An answer -> "I'm not buying it" (back on Decide home with the toast) -> Undo through Profile > History ("Not buying . Maestro pass")
+# -> the check is open again on Decide home -> the check is deleted.
+appId: com.fincwin.app
+name: Not buying and undo
+---
+- runFlow: common/to-tabs.yaml
+- runFlow:
+    file: common/decide-new-check.yaml
+    env:
+      ITEM: "Maestro pass"
+      PRICE: "300"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "I.m not buying it"
+- tapOn: "I.m not buying it"
+- extendedWaitUntil:
+    visible: "Marked as not buying\\."
+    timeout: 20000
+- runFlow:
+    file: common/undo-latest.yaml
+    env:
+      UNDO_NAME: "Not buying . Maestro pass"
+# The check is open again
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Maestro pass, .*"
+- assertVisible: "Maestro pass, .*"
+- runFlow:
+    file: common/delete-open-check.yaml
+    env:
+      NAME: "Maestro pass"
+- assertNotVisible: "Maestro pass, .*"

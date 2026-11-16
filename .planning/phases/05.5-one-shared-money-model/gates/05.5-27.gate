@@ -1,0 +1,6 @@
+GATE_06.1_05.5-27_2026-11-15: met (06.1_SHIPPED in 05.5-PRECONDITIONS.md; PR #102 merged; deps 05.5-11 and 05.5-13 done)
+MIGRATIONS_05.5-27: 20261116000100_decide_go_end_reason.sql, 20261116000200_decide_unspent_anchor_set_at.sql (no re-date: newest applied 20261115000100, no 2026112* applied, checked 2026-11-15)
+Q10_05.5-27: now (A2_PUSH_05.5-27 in 05.5-PRECONDITIONS.md). Q11: A (second migration built)
+A2_BUILT_05.5-27_2026-11-15: pgTAP 99_decide_go_end_reason 19/19, 99_decide_unspent_anchor_set_at 13/13 (local stack, migrations in a rolled-back transaction); lint:migrations OK
+A2_PUSH_PENDING_05.5-27_2026-11-15: awaiting owner go; not pushed
+A2_PUSHED_05.5-27_2026-11-15: applied 20261116000100_decide_go_end_reason.sql and 20261116000200_decide_unspent_anchor_set_at.sql to production (ref verified = config.toml project_id = SUPABASE_PROD_PROJECT_REF); migration list --linked shows both local=remote; owner said go 2026-11-15. Note: worktree preflight failed only for a missing .env.local and the push was not blocked by it (command piped through tail); target verified after, and the preflight passes from C:\devincwin.

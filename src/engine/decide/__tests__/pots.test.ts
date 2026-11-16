@@ -1,7 +1,10 @@
 import { minorUnits as mu } from '../../money/types';
-import { MAX_POTS, MAX_SET_ASIDE_POTS, SIMULATION_MONTH_CAP } from '../constants';
+import { SIMULATION_MONTH_CAP } from '../../payoff/constants';
+import { MAX_SET_ASIDE_POTS } from '../potTypes';
 import { potSetAside, totalSetAside } from '../pots';
-import type { PotInput } from '../types';
+import type { PotInput } from '../potTypes';
+
+const MAX_POTS = 50;
 
 const ASOF = '2026-10-24';
 

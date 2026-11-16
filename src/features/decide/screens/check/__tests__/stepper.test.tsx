@@ -2,7 +2,7 @@
 import React from 'react';
 import { BackHandler, StyleSheet } from 'react-native';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react-native';
-import { percent } from '@/engine/decide';
+import { percent } from '@/engine/payoff';
 import { toStoredV2, type CheckV2 } from '@/engine/decide/v3';
 import { checkOnce } from '@/engine/decide/v3/__tests__/helpers/fixtures';
 import { interceptSwipeBack, setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';

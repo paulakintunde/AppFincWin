@@ -20,7 +20,8 @@ export type FactActionChoice =
   | { kind: 'setDueDay' }
   | { kind: 'fixMissing'; code: string }
   | { kind: 'changeAnswer' }
-  | { kind: 'unlockNet' };
+  | { kind: 'unlockNet' }
+  | { kind: 'shareJustMine' };
 
 export interface FactActionsProps {
   /** The line's code: a fact code, or a missing code when `missing` is set. */
@@ -47,6 +48,10 @@ export function FactActions({ code, values = {}, missing = false, item = '', onC
   );
   const accountId = typeof values['accountId'] === 'string' ? values['accountId'] : null;
 
+  if (missing && code === 'share_invalid') {
+    // 05.5-29 (owner Q14 = b, 2026-11-16): the check steps have no share field, so the Fix counts it as just mine, in place.
+    return link(`answer-fix-${code}`, t('decide.screens.answer.share.justMine'), { kind: 'shareJustMine' }, t('decide.screens.answer.share.justMineA11y'));
+  }
   if (missing) {
     return link(`answer-fix-${code}`, t('decide.screens.answer.missing.fix'), { kind: 'fixMissing', code }, t('decide.screens.answer.missing.fixA11y', { item }));
   }
@@ -86,6 +91,8 @@ export function FactActions({ code, values = {}, missing = false, item = '', onC
     );
   }
   if (code === 'rests_on_your_answer') return link('answer-change-answer', t('decide.screens.answer.onYourAnswer.changeAnswer'), { kind: 'changeAnswer' });
+  // 05.5-29 (owner Q15 = a): a "No" to the low-months question can be changed from the Not yet answer too (same flip as changeAnswer).
+  if (code === 'volatile_cover_declined') return link('answer-change-cover-no', t('decide.screens.answer.onYourAnswer.changeAnswer'), { kind: 'changeAnswer' });
   if (code === 'net_locked') return link('answer-unlock-net', t('decide.screens.answer.netLocked.unlockLink'), { kind: 'unlockNet' });
   return null;
 }

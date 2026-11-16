@@ -4,9 +4,9 @@
  *
  * The figure is the as-given reading's worked sum (the reading readiness reads). It no longer depends on which reading won for one
  * check, and the anchor is dated on the inputs' own day, so nothing rolls between the figure and the day it is saved.
- * Thin history: the engine also judges an all-full reading whose everyday spending to come can be 0, and it reads its unexplained
- * money against that reading's own figure. Confirming the as-given figure then still raises "What is the $X for?" there. That needs
- * an engine change (reported in 06.1-85-SUMMARY); until then the ask is answerable on the answer (unexplainedAsk).
+ * Thin history: the engine also judges an all-full reading. Since 05.5-28 (G-PD-2 root fix) that reading reads its unexplained
+ * money from the as-given reading's figure, so confirming the as-given figure no longer raises "What is the $X for?". The ask stays
+ * for money the records really do not explain, and unexplainedAsk makes it answerable where it is shown.
  */
 import { unspentSum, type Prepared, type UnspentSum } from '@/engine/decide/v3';
 

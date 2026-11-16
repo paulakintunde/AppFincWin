@@ -1,9 +1,10 @@
 import fc from 'fast-check';
 import { minorUnits as mu } from '../../money/types';
 import { occurrenceDate } from '../../recurring/schedule';
-import { MAX_POTS } from '../constants';
 import { potSetAside, totalSetAside } from '../pots';
-import type { PotInput } from '../types';
+import type { PotInput } from '../potTypes';
+
+const MAX_POTS = 50;
 
 const ASOF = '2026-10-24';
 const TARGET = fc.integer({ min: 1, max: 10_000_000_000_000 });

@@ -2,7 +2,7 @@
 // It re-judges each open check with the same computeV3 Decide uses, on a copy of the snapshot source whose flagged goal has the
 // new size (06-10 reads the net from the flagged goal), so the preview and the next real answer cannot differ.
 import { readStoredCheck, type Result } from '@/engine/decide/v3';
-import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { computeV3, preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
 import type { V3SettingsSource } from '@/features/decide/snapshot/v3/types';
 

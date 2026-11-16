@@ -9,7 +9,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'fincwin',
   owner: process.env.EXPO_OWNER ?? 'fincwin',
   scheme: 'fincwin',
-  version: '0.1.0',
+  version: '0.2.0',
   orientation: 'portrait',
   userInterfaceStyle: 'light',
   icon: './assets/icon.png',

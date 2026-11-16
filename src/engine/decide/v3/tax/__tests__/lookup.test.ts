@@ -1,7 +1,6 @@
 /**
  * 05.4 FIN-27 / ARC-25 (D-18..D-21): the region tax table and its one lookup.
  */
-import * as market from '../../../marketDefaults';
 import { percent } from '../../../../payoff/types';
 import * as defaults from '../defaults';
 import * as lookup from '../lookup';
@@ -83,9 +82,9 @@ describe('ARC-25 / 05.1 D-07: no default APR or rate field in any region-default
     }
   };
 
-  it('no exported object in tax/ or marketDefaults.ts has a key named like apr or rate', () => {
+  it('no exported object in tax/ has a key named like apr or rate', () => {
     const out: string[] = [];
-    for (const [name, mod] of Object.entries({ defaults, lookup, market })) {
+    for (const [name, mod] of Object.entries({ defaults, lookup })) {
       for (const [k, v] of Object.entries(mod)) {
         if (/apr|rate/i.test(k)) out.push(`${name}.${k}`);
         offending(v, `${name}.${k}`, out);

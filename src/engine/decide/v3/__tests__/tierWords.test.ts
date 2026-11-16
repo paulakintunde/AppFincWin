@@ -2,8 +2,7 @@
  * D-31 tier-word guard (05.4-16, FIN-25 / ENG-10 / CMP-F12). "No Rough / Fair / Firm" applies to the v3 engine and anything
  * new: no source file outside LEGACY_ALLOWLIST may name the old level type (Confidence + Level) or carry a quoted
  * 'rough' | 'fair' | 'firm'. The type name is assembled below, so this guard does not match itself.
- * The allowlist is the old engine and the old screens, dated, and can only shrink: an entry that no longer matches fails,
- * so 05.5 (old-engine removal) empties it file by file. The v3 copy carries no Rough / Fair / Firm and no bare "sure".
+ * The allowlist is empty since 05.5-19 (old-engine removal). An entry added later that does not match fails, so it cannot go stale. The v3 copy carries no Rough / Fair / Firm and no bare "sure".
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
@@ -21,15 +20,8 @@ export const TIER_WORD = new RegExp(`${LEVEL_TYPE}|['"](rough|fair|firm)['"]`);
 export const LEGACY_ALLOWLIST = {
   dated: '2026-11-02',
   emptyBy: '05.5',
-  files: [
-    // Old engine: the old level type and its rule.
-    'src/engine/decide/confidence.ts',
-    'src/engine/decide/types.ts',
-    // The old snapshot's 'rough' kind (the Grow lines breakdown moved to the v3 Prepared in 05.5-26).
-    'src/features/decide/snapshot/buildSnapshot.ts',
-    // The v3 input builder reads the old snapshot's 'rough' kind (buildSnapshot.ts); it goes when the old snapshot does.
-    'src/features/decide/snapshot/v3/buildV3Inputs.ts',
-  ],
+  // 05.5-19 (ARC-10): empty. The old engine and the old builder are deleted; no file may name the old level type.
+  files: [] as readonly string[],
 } as const;
 
 const isTest = (rel: string): boolean => rel.split('/').includes('__tests__') || /\.test\.tsx?$/.test(rel);
