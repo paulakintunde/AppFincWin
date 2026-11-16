@@ -69,3 +69,7 @@ Also noted: `account_balances` (security invoker) returns a row for A's personal
 None.
 
 ## Self-Check: PASSED
+
+## Follow-up fix (2026-11-15)
+
+The relaxed assertions are now strict. In `101_household_privacy_two_user`, apply_patches on A's savings_goals, holdings, holding_lots, decide_answers, decide_changes, decide_checks and recurring_dismissals, `save_goal_plan` and `set_safety_net` are asserted identical to the same call on a missing id (`t101_same`), no longer "42501 or conflict". Flipped in other files: two in `55_decide_patches` plus its decide_checks case (now compared to a missing id), two in `92_grow_goal_plan` (22023 "that goal does not exist" for set_safety_net, conflict identical to a missing goal for save_goal_plan), and one in `69_apply_patches_v3` (decide_answers). 103 needed no change. See 08-05-SUMMARY.md for the migration edits.

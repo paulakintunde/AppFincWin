@@ -80,3 +80,12 @@ Every security-definer path now applies "personal unless shared": `apply_patches
 None.
 
 ## Self-Check: PASSED (commits 3dd16641 and e1641d47 exist; both files present)
+
+## Follow-up fix (2026-11-15)
+
+Owner-approved. The rule "a row the caller cannot see is refused exactly like a missing id" now holds for the owner-private entities that 08-07 found still returning 42501. Edited in place in `20261122000300_household_privacy_rpcs.sql` (unpushed, no new migration):
+
+- `apply_patches`: the visibility-scoped row lookup now also covers `decide_checks`, `decide_links`, `decide_changes`, `savings_goals`, `decide_answers`, `holdings` and `holding_lots` (creator in the caller's household). Another member's row is looked up as no row, so it gets the not-found conflict (and a soft delete is skipped as already gone), exactly as a missing id does.
+- `save_goal_plan`: another member's goal returns the same `{"status":"conflict"}` as a missing goal.
+- `set_safety_net`: redefined in this migration with the target lookup restricted to the caller's own goals in their households; an invisible goal raises the same 22023 "that goal does not exist" as a missing id.
+- Nothing echoed beyond the id the caller sent. No `share_pct` added; icon_key, 261114, decide_may_use and holdings lines unchanged.
