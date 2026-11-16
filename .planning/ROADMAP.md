@@ -1158,7 +1158,7 @@ Plans:
   6. Core Maestro flows run green on the Android emulator.
   7. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
 **Notes from Phase 8 (2026-11-11):** see `05.5-NOTES-FROM-08.md` (re-scope after 06.1 plans 36/37, share_pct owner, settlement exclusion, `countsForMe` needed before 08-25).
-**Plans:** 23/28 plans executed (waves 1-5 merged via PRs #116, #120, #121, #126, #136; wave 6 (05.5-19 old engine deleted, 05.5-20 one Decide switch, 05.5-27 Stopped label + confirm time, pushed to production 2026-11-15) on phase/05.5-wave6, PR #138; plans 27 and 28 added 2026-11-15 by owner request; owner 2026-11-15: cap gap accepted until 05.5-16, Setup cap row added to 05.5-16, Grow counts standing plans only). 26 plans in 10 waves (planned 2026-11-14; revised 2026-11-14: 05.5-18 split, Grow and snapshot importers moved to 05.5-26). Wave 1 (plans 01-06) is the Phase 8 plugs PR and needs no gate; every later plan starts with the 06.1 gate (05.5-GATE.md). Migration push order: Band A 20261113000100 before Phase 8 08-27 (applied in production 2026-11-14); Band B 20261121000100..000300 after the 05.5 release. Owner 2026-11-14: add a "Stopped" label migration (record_decide_go via grow_end_series) in 05.5; ARC-24 extras (varying costs, sale/payoff, goal close) move to a later phase.
+**Plans:** 25/28 plans executed (waves 1-6 merged via PRs #116, #120, #121, #126, #136, #138; 05.5-27 migrations applied to production 2026-11-15; wave 7 (05.5-22 Maestro flows, device run deferred to the 05.5-23 sitting; 05.5-28 engine fixes, revision 06.8, owner approved changed answers and SN-18 option b 2026-11-15) on phase/05.5-wave7; plans 27 and 28 added 2026-11-15 by owner request; owner 2026-11-15: cap gap accepted until 05.5-16, Setup cap row added to 05.5-16, Grow counts standing plans only). 26 plans in 10 waves (planned 2026-11-14; revised 2026-11-14: 05.5-18 split, Grow and snapshot importers moved to 05.5-26). Wave 1 (plans 01-06) is the Phase 8 plugs PR and needs no gate; every later plan starts with the 06.1 gate (05.5-GATE.md). Migration push order: Band A 20261113000100 before Phase 8 08-27 (applied in production 2026-11-14); Band B 20261121000100..000300 after the 05.5 release. Owner 2026-11-14: add a "Stopped" label migration (record_decide_go via grow_end_series) in 05.5; ARC-24 extras (varying costs, sale/payoff, goal close) move to a later phase.
 
 Plans:
 - [x] 05.5-01-PLAN.md — countsForMe engine rule and the month-picture contract in src/engine/month (wave 1)
@@ -1633,7 +1633,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
-| 05.5 One shared money model | 23/28 | In Progress|  |
+| 05.5 One shared money model | 25/28 | In Progress|  |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |

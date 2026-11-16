@@ -23,6 +23,7 @@ import { minorUnits, type MinorUnits } from '../../../money/types';
 import { yearMonthOf } from '../dates';
 import { planOf } from '../../../month/model/incomeProfile';
 import { seriesIndex } from '../../../month/model/series';
+import { afterAnchor } from '../funds/unspent';
 import type { Fact, V3Inputs, V3Line, V3Month, V3Series } from '../types';
 
 /** 60%: the most the decide_settings.tax_set_aside_bp column holds. */
@@ -84,7 +85,7 @@ export function withTaxSetAside(raw: V3Inputs): SetAside {
       if (m.month === ym && l.status === 'paid' && l.date <= raw.asOf) {
         heldNow += share;
         thisMonthShare += share;
-        if (raw.unspent !== null && l.date <= raw.unspent.at) heldForAnchor += share;
+        if (raw.unspent !== null && !afterAnchor(l, raw.unspent)) heldForAnchor += share;
       }
       return { ...l, amount: minorUnits(l.amount - share) };
     }),
