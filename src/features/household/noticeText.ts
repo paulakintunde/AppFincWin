@@ -79,6 +79,14 @@ export function useNoticeFormat(householdId: string | null | undefined, househol
           return t('household.notices.settle_waiting', { name: subject, amount });
         case 'settle_lapsed':
           return t('household.notices.settle_lapsed', { name: subject, amount });
+        case 'settle_departed': {
+          // Owner answer 10: a waiting settle-up ends when someone leaves, is removed or deletes. params.reason says which.
+          const why = e.params.reason;
+          if (why === 'left') return t('household.notices.settle_departed_left', { name: subject, amount });
+          if (why === 'removed') return t('household.notices.settle_departed_removed', { name: subject, amount });
+          if (why === 'deleted') return t('household.notices.settle_departed_deleted', { name: subject, amount });
+          return t('household.notices.settle_departed', { name: subject, amount });
+        }
         case 'settle_not_yet':
           return t('household.notices.settle_not_yet', { name: actor });
         case 'settle_ask':

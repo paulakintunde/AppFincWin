@@ -36,6 +36,28 @@ jest.mock('@/db/memberDepartures', () => ({ fetchOpenDepartures: jest.fn(async (
 const mockMarkRead = jest.fn(async () => undefined);
 jest.mock('@/db/householdEvents', () => ({ markHouseholdEventsRead: () => mockMarkRead() }));
 
+let mockPairs: Record<string, unknown>[] = [];
+let mockOwedToMe = 0;
+let mockSettlements: Record<string, unknown>[] = [];
+let mockDeparted: Record<string, unknown>[] = [];
+jest.mock('@/data/queries/householdBalances', () => ({
+  useHouseholdBalances: () => ({ data: { pairs: mockPairs, owedToMe: mockOwedToMe } }),
+  usePairLines: () => ({ data: [] }),
+  useSettlements: () => ({ data: mockSettlements }),
+}));
+jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+jest.mock('@/db/settlements', () => ({
+  myDepartedBalances: jest.fn(async () => ({ ok: true, balances: mockDeparted })),
+}));
+jest.mock('@/data/mutations/settlements', () => {
+  const hook = () => ({ mutateAsync: jest.fn(), isPending: false });
+  return {
+    useProposeSettlement: hook, useRecordReceived: hook, useRecordPaid: hook, useUndoSettlement: hook, useConfirmSettlement: hook,
+    useRejectSettlement: hook, useCancelSettlement: hook, useSetSettlementPayerAccount: hook, useAskToSettle: hook,
+    useWriteOff: hook, useProposeLeaverPayment: hook,
+  };
+});
+
 jest.mock('../MemberSheet', () => ({
   MemberSheet: ({ visible, userId }: { visible: boolean; userId: string }) => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -87,6 +109,10 @@ beforeEach(() => {
   mockMarkRead.mockClear();
   mockInvites = [];
   mockEvents = [];
+  mockPairs = [];
+  mockOwedToMe = 0;
+  mockSettlements = [];
+  mockDeparted = [];
   mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' })];
 });
 
@@ -163,6 +189,45 @@ describe('HouseholdHomeScreen', () => {
   });
 });
 
+describe('HouseholdHomeScreen balances (08-21)', () => {
+  const two = () => [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+
+  it('says who owes whom, with the not-spendable note and a row for the pair', async () => {
+    mockMembers = two();
+    mockPairs = [{ otherKey: 'u2', net: 8400, pending: 0, lineIds: ['l1'] }];
+    mockOwedToMe = 8400;
+    await setup();
+    expect(screen.getByTestId('balances-hero').props.children).toBe('Sam owes you $84.00.');
+    expect(screen.getByText('Not spendable until it arrives')).toBeTruthy();
+    expect(screen.getByText('owes you')).toBeTruthy();
+    expect(screen.getByText('$84.00')).toBeTruthy();
+  });
+
+  it('lists a member who left with an open balance, marked (left)', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' })];
+    mockPairs = [{ otherKey: 'gone', net: -2500, pending: 0, lineIds: ['l1'] }];
+    await setup();
+    expect(screen.getByTestId('household-balances')).toBeTruthy();
+    expect(screen.getByText('you owe')).toBeTruthy();
+  });
+
+  it('says everyone is square when nothing is owed', async () => {
+    mockMembers = two();
+    await setup();
+    expect(screen.getByTestId('balances-hero').props.children).toBe('Everyone is square in Flat 4B.');
+  });
+
+  it('shows the leaver their departed balance with an I paid entry, and a waiting state without it', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' })];
+    mockDeparted = [
+      { departure_id: 'd1', household_id: 'old', household_name: 'Flat 4B', kind: 'left', other_id: 'u2', other_display_name: 'Sam', other_colour_key: 1, amount: 4000, pending_settlement_id: null, pending_amount: null },
+    ];
+    await setup();
+    expect(await screen.findByText('You owe Sam $40.00 from Flat 4B')).toBeTruthy();
+    expect(screen.getByText('I paid')).toBeTruthy();
+  });
+});
+
 describe('NoticesScreen', () => {
   it('lists events newest first and marks them read on focus', async () => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
@@ -174,6 +239,15 @@ describe('NoticesScreen', () => {
     expect(screen.getByText('Sam changed the weights')).toBeTruthy();
     expect(screen.getByText('You’re now the owner of Flat 4B')).toBeTruthy();
     expect(mockMarkRead).toHaveBeenCalled();
+  });
+
+  it('shows the settle_departed notice in its own words', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+    mockEvents = [
+      { id: 'e3', household_id: 'h', kind: 'settle_departed', actor_id: null, subject_id: 'u2', ref_id: 's1', params: { amount: 2500, currency: 'USD', reason: 'left' }, created_at: '2026-11-16T10:00:00Z' },
+    ];
+    await setup(<NoticesScreen />);
+    expect(screen.getByText('Sam left the household. The $25.00 settle-up with Sam was cancelled and the lines are owed again.')).toBeTruthy();
   });
 
   it('says there are no notices', async () => {
