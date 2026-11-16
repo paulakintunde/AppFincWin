@@ -92,3 +92,7 @@ None.
 None. Leave and remove call the existing security-definer RPCs (owner powers enforced server-side, T-08-87); the cache is dropped with `resetHouseholdScope` after leaving (T-08-88); the removed person is told once (T-08-89).
 
 ## Self-Check: PASSED
+
+## Owner answers (2026-11-16)
+- Remove with a waiting settle-up between the removed person and a third member: leave as is. The owner's confirm does not mention it, and the server still cancels it and tells that member.
+- The removed-member notice is remembered once per phone, not once per person.
