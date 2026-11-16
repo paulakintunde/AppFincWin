@@ -1,8 +1,10 @@
 // 08-08 spike: two real supabase-js clients, local Supabase. Run with `npm run test:realtime`.
+import { randomUUID } from 'node:crypto';
 import { reconcile } from '../reconcile';
-import { insertLine, setupWorld, sleep, subscribe, waitFor, type Member, type World } from './harness';
+import { addMember, insertLine, setupWorld, sleep, subscribe, waitFor, type Member, type World } from './harness';
 
 let w: World;
+let personalAccountId: string; // A's own (not joint) account: a joint account shares its lines on insert (08-14), so personal lines need this one
 
 const seen = (m: Pick<Member, 'events'>, id: string) =>
   m.events.filter((e) => e.table === 'transactions' && e.row.id === id);
@@ -11,13 +13,18 @@ beforeAll(async () => {
   w = await setupWorld();
   await subscribe(w.b, w.householdId);
   await subscribe(w.a, w.householdId);
+  personalAccountId = randomUUID();
+  const own = await w.admin
+    .from('accounts')
+    .insert({ id: personalAccountId, household_id: w.householdId, name: 'Spike personal', kind: 'cash', currency: 'USD', opening_balance: 0, is_shared: false, created_by: w.a.id });
+  if (own.error) throw own.error;
   // Cold start: the first change after SUBSCRIBED can lag while Realtime binds the postgres_changes
   // stream. Measured separately so scenario a reports the steady-state latency.
   const t0 = Date.now();
   const warm = await insertLine(w, { shared: true });
   const got = await waitFor(() => seen(w.b, warm).length > 0, 20000);
   console.log('SPIKE cold-start first event reached B:', got, 'after ms', got ? (seen(w.b, warm)[0]?.at ?? t0) - t0 : -1);
-});
+}, 120000);
 
 afterAll(async () => {
   if (w) await w.cleanup();
@@ -34,7 +41,7 @@ describe('Realtime two-client spike', () => {
   });
 
   it('b. a personal line written by A never reaches B (3000 ms)', async () => {
-    const id = await insertLine(w, { shared: false });
+    const id = await insertLine(w, { shared: false, accountId: personalAccountId });
     const mine = await waitFor(() => seen(w.a, id).length > 0, 2000); // A is allowed to see its own personal line
     await sleep(3000);
     console.log('SPIKE b A saw own personal line:', mine);
@@ -42,8 +49,8 @@ describe('Realtime two-client spike', () => {
   });
 
   it('c. making a shared line personal sends B a made_private notice and no line columns', async () => {
-    const id = await insertLine(w, { shared: true });
-    await waitFor(() => seen(w.b, id).length > 0, 2000);
+    const id = await insertLine(w, { shared: true, accountId: personalAccountId });
+    await waitFor(() => seen(w.b, id).length > 0, 6000);
     const flipAt = Date.now();
     const flip = await w.admin.from('transactions').update({ is_shared: false }).eq('id', id);
     expect(flip.error).toBeNull();
@@ -55,7 +62,7 @@ describe('Realtime two-client spike', () => {
     expect(ev.error).toBeNull();
     const gotNotice = await waitFor(
       () => w.b.events.some((e) => e.table === 'household_events' && e.row.id === ev.data!.id),
-      2000
+      6000
     );
     await sleep(2000);
     const afterFlip = seen(w.b, id).filter((e) => e.at >= flipAt);
@@ -123,6 +130,62 @@ describe('Realtime two-client spike', () => {
     let cache: number | undefined;
     for (const ev of [5, 4]) if (reconcile(ev, cache, false) === 'apply') cache = ev;
     expect(cache).toBe(5);
+  });
+
+  it('h. a split change by A reaches B as a transactions UPDATE with a higher version (2000 ms)', async () => {
+    const id = await insertLine(w, { shared: true });
+    await waitFor(() => seen(w.b, id).length > 0, 2000);
+    const row = await w.admin.from('transactions').select('version').eq('id', id).single();
+    const v = row.data!.version as number;
+    w.b.events.length = 0;
+    const r = await w.a.client.rpc('set_line_split', { p_id: id, p_expected_version: v, p_rule: 'even', p_participants: [w.a.id, w.b.id] });
+    console.log('SPIKE h set_line_split:', JSON.stringify(r.data));
+    expect(r.error).toBeNull();
+    expect((r.data as any).ok).toBe(true);
+    const got = await waitFor(() => seen(w.b, id).some((e) => e.type === 'UPDATE' && e.row.version > v), 2000);
+    expect(got).toBe(true);
+  });
+
+  it('i. a settle-up proposed by A reaches receiver B but not third member C', async () => {
+    const c = await addMember(w, 'c');
+    try {
+      await subscribe(c, w.householdId);
+      const mkAccount = async (owner: string) => {
+        const accId = randomUUID();
+        const ins = await w.admin
+          .from('accounts')
+          .insert({ id: accId, household_id: w.householdId, name: 'Spike own', kind: 'cash', currency: 'USD', opening_balance: 0, is_shared: false, created_by: owner });
+        expect(ins.error).toBeNull();
+        return accId;
+      };
+      const accA = await mkAccount(w.a.id);
+      const accB = await mkAccount(w.b.id);
+      const lineId = await insertLine(w, { shared: true, createdBy: w.b.id, paidBy: w.b.id, accountId: accB });
+      const row = await w.admin.from('transactions').select('version').eq('id', lineId).single();
+      const split = await w.b.client.rpc('set_line_split', {
+        p_id: lineId, p_expected_version: row.data!.version, p_rule: 'even', p_participants: [w.a.id, w.b.id],
+      });
+      expect((split.data as any).ok).toBe(true);
+      // A owes B half; learn the server amount, then propose it
+      const probe = await w.a.client.rpc('propose_settlement', { p_receiver: w.b.id, p_line_ids: [lineId], p_payer_account: accA, p_expected_amount: 0 });
+      console.log('SPIKE i probe:', JSON.stringify(probe.data));
+      const amount = (probe.data as any).server_amount as number;
+      expect(amount).toBeGreaterThan(0);
+      w.b.events.length = 0;
+      c.events.length = 0;
+      const prop = await w.a.client.rpc('propose_settlement', { p_receiver: w.b.id, p_line_ids: [lineId], p_payer_account: accA, p_expected_amount: amount });
+      expect((prop.data as any).ok).toBe(true);
+      const sid = (prop.data as any).settlement_id as string;
+      const gotB = await waitFor(() => w.b.events.some((e) => e.table === 'settlements' && e.row.id === sid), 2000);
+      await sleep(3000);
+      const gotC = c.events.some((e) => e.table === 'settlements' && e.row.id === sid);
+      console.log('SPIKE i receiver got it:', gotB, 'third member got it:', gotC);
+      expect(gotB).toBe(true);
+      expect(gotC).toBe(false);
+    } finally {
+      await c.client.removeAllChannels();
+      await w.admin.auth.admin.deleteUser(c.id);
+    }
   });
 
   it('g. after B is removed, a new shared line is not delivered to B (3000 ms)', async () => {

@@ -10,6 +10,14 @@ export interface LocalStack {
 }
 
 export function readStack(): LocalStack {
+  // Slow machines: `supabase status` can take over a minute, so the three values may be passed in (local stack only).
+  const sUrl = process.env.SPIKE_URL;
+  const sAnon = process.env.SPIKE_ANON;
+  const sService = process.env.SPIKE_SERVICE;
+  if (sUrl && sAnon && sService) {
+    if (!/^http:\/\/(127\.0\.0\.1|localhost)/.test(sUrl)) throw new Error('spike refuses a non-local stack: ' + sUrl);
+    return { url: sUrl, anon: sAnon, service: sService };
+  }
   const raw = execFileSync('npx', ['supabase', 'status', '-o', 'json'], { encoding: 'utf8', shell: true });
   const json = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
   const url = String(json.API_URL ?? 'http://127.0.0.1:54321');
@@ -41,7 +49,7 @@ export interface World {
   cleanup: () => Promise<void>;
 }
 
-const TABLES = ['transactions', 'accounts', 'household_events'] as const;
+const TABLES = ['transactions', 'accounts', 'household_events', 'settlements'] as const;
 
 export function subscribe(member: Member, householdId: string): Promise<void> {
   const channel = member.client.channel('hh:' + householdId + ':' + randomUUID());
@@ -75,7 +83,7 @@ export async function waitFor(predicate: () => boolean, ms: number): Promise<boo
 
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function makeMember(stack: LocalStack, admin: SupabaseClient, label: string): Promise<Member> {
+export async function makeMember(stack: LocalStack, admin: SupabaseClient, label: string): Promise<Member> {
   const email = `spike-${label}-${randomUUID().slice(0, 8)}@test.local`;
   const password = 'spike-' + randomUUID();
   const created = await admin.auth.admin.createUser({ email, password, email_confirm: true });
@@ -116,13 +124,13 @@ export async function setupWorld(): Promise<World> {
 /** Inserts a line by service role (the sharing RPCs arrive in plan 08-10). */
 export async function insertLine(
   w: World,
-  opts: { shared: boolean; createdBy?: string; paidBy?: string | null; note?: string }
+  opts: { shared: boolean; createdBy?: string; paidBy?: string | null; note?: string; accountId?: string }
 ): Promise<string> {
   const id = randomUUID();
   const r = await w.admin.from('transactions').insert({
     id,
     household_id: w.householdId,
-    account_id: w.accountId,
+    account_id: opts.accountId ?? w.accountId,
     created_by: opts.createdBy ?? w.a.id,
     original_amount: -1234,
     original_currency: 'USD',
@@ -134,4 +142,13 @@ export async function insertLine(
   });
   if (r.error) throw r.error;
   return id;
+}
+
+/** A third member C of the world's household (weight 0), signed in; subscribing is left to the test. */
+export async function addMember(w: World, label: string): Promise<Member> {
+  const m = await makeMember(w.stack, w.admin, label);
+  const join = await w.admin.from('household_members').insert({ household_id: w.householdId, user_id: m.id, is_owner: false, weight: 0 });
+  if (join.error) throw join.error;
+  await m.client.auth.refreshSession();
+  return m;
 }

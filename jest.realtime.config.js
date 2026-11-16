@@ -8,6 +8,6 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/src/data/realtime'],
   testMatch: ['**/__spike__/**/*.realtime.test.ts'],
-  testTimeout: 30000,
+  testTimeout: 60000,
   forceExit: true,
 };

@@ -28,10 +28,21 @@ import { Screen } from '@/ui/Screen';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { useHouseholdId } from '@/data/queries/household';
+import { useHouseholdRealtime } from '@/data/realtime/useHouseholdRealtime';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
   useNotificationObserver(enabled);
+  return null;
+}
+
+// 08-23 (HH-11): one live channel for the signed-in household; mounted after the consent redirect.
+function HouseholdRealtimeHost() {
+  const { user } = useAuth();
+  const { data: householdId } = useHouseholdId(user?.id);
+  useHouseholdRealtime(householdId, user?.id);
   return null;
 }
 
@@ -153,6 +164,7 @@ export default function AppLayout() {
                   quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id] (a redirect to the answer). */}
               <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
+              <HouseholdRealtimeHost />
               <DeviceHomeCurrencyDefault />
             </View>
           </FabProvider>

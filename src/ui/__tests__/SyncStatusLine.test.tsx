@@ -3,6 +3,7 @@ import { act, render } from '@testing-library/react-native';
 import { SyncStatusLine } from '../SyncStatusLine';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
+import { setRealtimeStatus } from '@/data/realtime/realtimeStatus';
 
 jest.mock('@/data/sync/useSyncStatus', () => ({
   useSyncStatus: jest.fn(),
@@ -44,6 +45,17 @@ describe('SyncStatusLine', () => {
     lastSyncedAt: Date.now(),
     oldestPendingAt: null,
     inFlightOldestAt: null,
+  });
+
+  it('shows "Live updates paused. Reconnecting." while the household channel is down, and only then', async () => {
+    mockUseSyncStatus.mockReturnValue(syncedNow());
+    setRealtimeStatus('paused');
+    const paused = await renderWithTheme(<SyncStatusLine />);
+    expect(paused.getByText('Live updates paused. Reconnecting.')).toBeTruthy();
+    await paused.unmount();
+    setRealtimeStatus('live');
+    const live = await renderWithTheme(<SyncStatusLine />);
+    expect(live.toJSON()).toBeNull();
   });
 
   it('shows nothing on the line when all is synced', async () => {
