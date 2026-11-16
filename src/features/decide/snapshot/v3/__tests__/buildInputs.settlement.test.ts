@@ -8,6 +8,8 @@ import { household, row as fxRow } from '../../__tests__/helpers/sourceFixtures'
 import { buildInputs } from '../buildInputs';
 import type { InputsSource } from '../buildInputsParts';
 
+type Row = InputsSource['rows'][number] & { is_settlement?: boolean };
+
 describe('buildInputs: settlement rows set from the database flag', () => {
   const hh = household();
   const settlements = [
@@ -15,16 +17,16 @@ describe('buildInputs: settlement rows set from the database flag', () => {
     { ...fxRow({ id: 'settle-in', local_date: '2026-09-13', original_amount: 9_000 }), is_settlement: true },
   ];
   const plain = fxRow({ id: 'plain', local_date: '2026-09-14', original_amount: -2_000 });
-  const withSettle = (): InputsSource => ({ ...hh, rows: withSettlementFlag([...hh.rows, plain, ...settlements]) });
-  const without = (): InputsSource => ({ ...hh, rows: withSettlementFlag([...hh.rows, plain]) });
+  const withSettle = (): InputsSource => ({ ...hh, rows: withSettlementFlag<Row>([...hh.rows, plain, ...settlements]) });
+  const without = (): InputsSource => ({ ...hh, rows: withSettlementFlag<Row>([...hh.rows, plain]) });
 
   it('flags only the rows the database marks as settlements', () => {
-    const rows = withSettlementFlag([plain, ...settlements]);
+    const rows = withSettlementFlag<Row>([plain, ...settlements]);
     expect(rows.map((r) => (r as { isSettlement?: boolean }).isSettlement === true)).toEqual([false, true, true]);
   });
 
   it('hands the same array back when no row is a settlement, so the memoised source keeps its identity', () => {
-    const rows = [plain];
+    const rows: Row[] = [plain];
     expect(withSettlementFlag(rows)).toBe(rows);
   });
 
