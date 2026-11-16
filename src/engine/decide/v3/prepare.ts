@@ -247,10 +247,10 @@ export function openFlowsOf(r: Reading): readonly LabelledFlow[] {
   return openCashFlows(openInputOf(r.inputs, r.month).input).flows;
 }
 
-function readingOf(inputs: V3Inputs): Reading {
+function readingOf(inputs: V3Inputs, asGivenSuggested?: MinorUnits): Reading {
   const built = buildMonthModel(inputs);
   // the funds do not depend on the check except for the purchase's own envelope, which judgeReading swaps in
-  const funds = buildFunds(inputs, built, null);
+  const funds = buildFunds(inputs, built, null, asGivenSuggested);
   const { input, hp, paid, debts } = openInputOf(inputs, built);
   const histDates = hp?.dates ?? [];
   const ym = yearMonthOf(inputs.asOf);
@@ -476,7 +476,8 @@ export function prepare(raw: V3Inputs): Prepared {
   const ym = yearMonthOf(inputs.asOf);
   const thin = inputs.months.some((m) => m.month < ym && !m.full);
   const first = readingOf(inputs);
-  const readings = thin ? [first, readingOf({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) })] : [first];
+  // G-PD-2 (05.5-28): unexplained money is read from the as-given reading only, like readiness (06.1-85)
+  const readings = thin ? [first, readingOf({ ...inputs, months: inputs.months.map((m) => (m.month < ym ? { ...m, full: true } : m)) }, first.funds.suggested)] : [first];
   // 05.4 FIN-25: no complete month of records before this one, read from the months as given (never the all-full reading).
   const noFullMonth = !inputs.months.some((m) => m.month < ym && m.full);
   return { inputs, readings, readiness: readinessOf(inputs, first.month), recordsSynced: recordsSynced(inputs), noFullMonth, unrated, taxSetAside: aside.fact };
