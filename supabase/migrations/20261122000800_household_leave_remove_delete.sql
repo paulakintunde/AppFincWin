@@ -1066,7 +1066,9 @@ end;
 $$;
 
 -- What the leaver still owes or is owed in each household they left (read-only: "You owe Paul $40"). Recomputed live.
--- Signed per person, positive = the caller owes them. Names respect "hide my name".
+-- Signed per person, positive = the caller owes them. Names respect "hide my name". Each row carries the old household's
+-- currency and line_ids: the open lines between the caller and that person, the exact set propose_leaver_payment checks
+-- (hh_pair_owed over every live shared line, caller as payer), so "I paid" can send them back with the amount unchanged.
 create or replace function public.my_departed_balances()
 returns jsonb
 language plpgsql
@@ -1080,13 +1082,17 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object(
            'departure_id', d.id, 'household_id', d.household_id, 'household_name', h.name, 'kind', d.kind,
            'other_id', m.user_id, 'other_display_name', case when m.name_hidden then null else m.display_name end,
-           'other_colour_key', m.colour_key, 'amount', n.amt,
+           'other_colour_key', m.colour_key, 'amount', n.amt, 'currency', h.reporting_currency, 'line_ids', to_jsonb(n.ids),
            'pending_settlement_id', pd.id, 'pending_amount', pd.amount) order by d.created_at, m.created_at), '[]'::jsonb)
     into res
     from public.member_departures d
     join public.households h on h.id = d.household_id
     join public.household_members m on m.household_id = d.household_id
-    cross join lateral (select public.hh_pair_net(d.household_id, uid, m.user_id) as amt) n
+    cross join lateral (select coalesce(sum(o.amount), 0)::bigint as amt,
+                               coalesce(array_agg(o.transaction_id order by o.transaction_id), '{}'::uuid[]) as ids
+                          from public.hh_pair_owed(d.household_id, uid, m.user_id,
+                                 (select coalesce(array_agg(t.id), '{}') from public.transactions t
+                                   where t.household_id = d.household_id and t.is_shared and t.deleted_at is null)) o) n
     left join lateral (select x.id, x.amount from public.settlements x
                         where x.household_id = d.household_id and x.status = 'pending' and x.expires_at > now()
                           and x.payer_id = uid and x.receiver_id = m.user_id

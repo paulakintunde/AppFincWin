@@ -6,7 +6,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(102);
+select extensions.plan(108);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 select ('' || n || n || n || n || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || n || n || n || n || n || n || n || n)::uuid,
@@ -203,6 +203,16 @@ select public.t109_as('22222222-2222-2222-2222-222222222222');
 insert into res select 'DEP', public.my_departed_balances();
 select extensions.is(public.t109_j('DEP', 'balances,0,other_id'), '11111111-1111-1111-1111-111111111111', 'B sees a departed balance with A');
 select extensions.is(public.t109_j('DEP', 'balances,0,amount'), '-1700', 'B sees "A owes you 1700" (negative = they owe B)');
+select extensions.is(public.t109_j('DEP', 'balances,0,currency'), 'USD', 'each departed balance carries the old household''s currency');
+select extensions.is((select string_agg(x, ',' order by x) from res, jsonb_array_elements_text(res.j #> '{balances,0,line_ids}') x where res.k = 'DEP'),
+  'd1000000-0000-0000-0000-000000000001,d1000000-0000-0000-0000-000000000002,d1000000-0000-0000-0000-000000000004',
+  'line_ids are the open lines between B and A (L1, L2, L4)');
+select extensions.is(public.propose_leaver_payment((select h from ids), '11111111-1111-1111-1111-111111111111',
+  (select array_agg(x::uuid) from res, jsonb_array_elements_text(res.j #> '{balances,0,line_ids}') x where res.k = 'DEP'), -1700) ->> 'reason', 'nothing_owed',
+  'propose_leaver_payment accepts the server line_ids and amount as one set (refused only because A owes B)');
+select extensions.ok(not exists (select 1 from res, jsonb_array_elements(res.j -> 'balances') b where res.k = 'DEP'
+  and (b ->> 'other_id' = '22222222-2222-2222-2222-222222222222' or b ->> 'household_id' <> (select h from ids)::text)),
+  'B''s rows only pair B with others in the household B left');
 -- Owner answer 11: the leaver says "I paid" for L4 (they owe A 1000); A confirms it the normal way.
 select extensions.is(public.propose_leaver_payment('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '11111111-1111-1111-1111-111111111111', array['d1000000-0000-0000-0000-000000000004']::uuid[], 1000) ->> 'reason', 'not_departed', 'a household B never left is refused');
 select extensions.is(public.propose_leaver_payment((select h from ids), '55555555-5555-5555-5555-555555555555', array['d1000000-0000-0000-0000-000000000004']::uuid[], 1000) ->> 'reason', 'not_member', 'the receiver must still be a member');
@@ -212,6 +222,12 @@ insert into res select 'LP', public.propose_leaver_payment((select h from ids), 
 select extensions.is(public.t109_j('LP', 'ok') || public.t109_j('LP', 'amount'), 'true1000', 'B proposes "I paid" 1000 toward the household B left');
 insert into res select 'DEP2', public.my_departed_balances();
 select extensions.is(public.t109_j('DEP2', 'balances,0,pending_settlement_id'), public.t109_j('LP', 'settlement_id'), 'B sees the proposal waiting in their departed balances');
+select extensions.is((select string_agg(x, ',' order by x) from res, jsonb_array_elements_text(res.j #> '{balances,0,line_ids}') x where res.k = 'DEP2'),
+  'd1000000-0000-0000-0000-000000000001,d1000000-0000-0000-0000-000000000002',
+  'L4, now held by the waiting proposal, leaves line_ids');
+select public.t109_as('11111111-1111-1111-1111-111111111111');
+select extensions.is(public.my_departed_balances() -> 'balances', '[]'::jsonb, 'A, who never left, sees no departed balances (rows only involve the caller)');
+select public.t109_as('22222222-2222-2222-2222-222222222222');
 select extensions.is((select count(*)::int from public.transactions where name in ('L1', 'L2') and copied_from is null), 0, 'B can no longer read the household''s lines');
 
 select public.t109_as('11111111-1111-1111-1111-111111111111');

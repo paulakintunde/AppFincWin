@@ -49,12 +49,14 @@ jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) 
 jest.mock('@/db/settlements', () => ({
   myDepartedBalances: jest.fn(async () => ({ ok: true, balances: mockDeparted })),
 }));
+const mockLeaverPay = jest.fn(async (_v: Record<string, unknown>): Promise<Record<string, unknown>> => ({ ok: true, settlement_id: 's1', amount: 4000 }));
 jest.mock('@/data/mutations/settlements', () => {
   const hook = () => ({ mutateAsync: jest.fn(), isPending: false });
   return {
     useProposeSettlement: hook, useRecordReceived: hook, useRecordPaid: hook, useUndoSettlement: hook, useConfirmSettlement: hook,
     useRejectSettlement: hook, useCancelSettlement: hook, useSetSettlementPayerAccount: hook, useAskToSettle: hook,
-    useWriteOff: hook, useProposeLeaverPayment: hook,
+    useWriteOff: hook,
+    useProposeLeaverPayment: () => ({ mutateAsync: (v: Record<string, unknown>) => mockLeaverPay(v), isPending: false }),
   };
 });
 
@@ -220,11 +222,31 @@ describe('HouseholdHomeScreen balances (08-21)', () => {
   it('shows the leaver their departed balance with an I paid entry, and a waiting state without it', async () => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' })];
     mockDeparted = [
-      { departure_id: 'd1', household_id: 'old', household_name: 'Flat 4B', kind: 'left', other_id: 'u2', other_display_name: 'Sam', other_colour_key: 1, amount: 4000, pending_settlement_id: null, pending_amount: null },
+      { departure_id: 'd1', household_id: 'old', household_name: 'Flat 4B', kind: 'left', other_id: 'u2', other_display_name: 'Sam', other_colour_key: 1, amount: 4000, currency: 'USD', line_ids: ['l1', 'l4'], pending_settlement_id: null, pending_amount: null },
     ];
     await setup();
     expect(await screen.findByText('You owe Sam $40.00 from Flat 4B')).toBeTruthy();
     expect(screen.getByText('I paid')).toBeTruthy();
+  });
+
+  it('I paid sends the server line ids and amount, and a refusal says the lines changed', async () => {
+    mockDeparted = [
+      { departure_id: 'd1', household_id: 'old', household_name: 'Flat 4B', kind: 'left', other_id: 'u2', other_display_name: 'Sam', other_colour_key: 1, amount: 4000, currency: 'USD', line_ids: ['l1', 'l4'], pending_settlement_id: null, pending_amount: null },
+    ];
+    mockLeaverPay.mockResolvedValueOnce({ ok: false, reason: 'lines_changed', server_amount: 3000 });
+    await setup();
+    await fireEvent.press(await screen.findByText('I paid'));
+    expect(mockLeaverPay).toHaveBeenCalledWith(expect.objectContaining({ household: 'old', receiver: 'u2', lineIds: ['l1', 'l4'], expectedAmount: 4000 }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+  });
+
+  it('shows a departed balance in the old household currency, not the current one', async () => {
+    mockDeparted = [
+      { departure_id: 'd1', household_id: 'old', household_name: 'Old flat', kind: 'left', other_id: 'u2', other_display_name: 'Sam', other_colour_key: 1, amount: -2500, currency: 'EUR', line_ids: ['l1'], pending_settlement_id: null, pending_amount: null },
+    ];
+    await setup();
+    expect(await screen.findByText(/Sam owes you .*€.*25\.00|Sam owes you .*25\.00.*€/)).toBeTruthy();
+    expect(screen.queryByText(/\$25\.00/)).toBeNull();
   });
 });
 

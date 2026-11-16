@@ -67,6 +67,10 @@ export interface DepartedBalance {
   other_colour_key: number;
   /** Signed: positive means the leaver owes them, negative means they owe the leaver (hh_pair_net). */
   amount: number;
+  /** The old household's currency: the amount is in it, not in the viewer's current household's. */
+  currency: string;
+  /** The open lines between the caller and this person, the exact set propose_leaver_payment checks; "I paid" sends them back. */
+  line_ids: string[];
   /** The leaver's own "I paid" waiting for a Got it, if there is one. */
   pending_settlement_id: string | null;
   pending_amount: number | null;

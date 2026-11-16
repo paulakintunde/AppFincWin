@@ -99,8 +99,10 @@ describe('settlement RPC wrappers', () => {
 
   it('carries the pending "I paid" fields of a departed balance', async () => {
     const client = createFakeSupabase();
-    client.respondWith(ok({ ok: true, balances: [{ other_id: 'o', amount: 1700, pending_settlement_id: 's9', pending_amount: 1700 }] }));
+    client.respondWith(ok({ ok: true, balances: [{ other_id: 'o', amount: 1700, currency: 'GBP', line_ids: ['l1', 'l2'], pending_settlement_id: 's9', pending_amount: 1700 }] }));
     const res = await myDepartedBalances(client);
     expect(res.ok && res.balances?.[0]?.pending_settlement_id).toBe('s9');
+    expect(res.ok && res.balances?.[0]?.currency).toBe('GBP');
+    expect(res.ok && res.balances?.[0]?.line_ids).toEqual(['l1', 'l2']);
   });
 });

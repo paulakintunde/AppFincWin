@@ -16,30 +16,15 @@ import { fontSize, textRole } from '@/theme/typography';
 import { showToast } from '@/state/undoToast';
 import { useProposeLeaverPayment } from '@/data/mutations/settlements';
 import { myDepartedBalances, type DepartedBalance } from '@/db/settlements';
-import type { DbClient } from '@/db/rows';
 import { supabase } from '@/services/supabase';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useDepartedLabel } from '../useMemberLabel';
-import { useRefusalText, useSettleMoney } from './settleHelpers';
+import { money } from '@/engine/money';
+import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { useRefusalText } from './settleHelpers';
 
 const DEPARTED_KEY = (userId: string) => ['household-departed', userId] as const;
-
-/**
- * The lines behind a departed balance, as far as the leaver can see them: each shared line they were on has a personal copy
- * in their own household that remembers the original line's id. The server re-checks the set against its own answer.
- */
-export async function fetchCopiedLineIds(client: DbClient, userId: string): Promise<string[]> {
-  const { data, error } = await client
-    .from('transactions')
-    .select('copied_from')
-    .eq('created_by', userId)
-    .not('copied_from', 'is', null)
-    .is('deleted_at', null);
-  if (error) throw error;
-  const ids = ((data as { copied_from: string | null }[] | null) ?? []).map((r) => r.copied_from);
-  return [...new Set(ids.filter((x): x is string => x !== null))];
-}
 
 export function DepartedBalancesCard() {
   const t = useT();
@@ -72,12 +57,12 @@ export function DepartedBalancesCard() {
     setBusyId(b.departure_id);
     setFailures((f) => ({ ...f, [b.departure_id]: '' }));
     try {
-      const lineIds = await fetchCopiedLineIds(supabase, userId);
+      // The server's own open lines with this person (my_departed_balances), the set propose_leaver_payment checks.
       const res = await pay.mutateAsync({
         householdId: b.household_id,
         household: b.household_id,
         receiver: b.other_id,
-        lineIds,
+        lineIds: b.line_ids,
         expectedAmount: b.amount,
       });
       if (!res.ok) {
@@ -142,8 +127,9 @@ interface RowProps {
 function DepartedRow({ b, name, household, abs, online, busy, failure, onPaid, meta }: RowProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  // The old household's currency is not in the departed row, so amounts read in the currency of the viewer's current household.
-  const { fmt } = useSettleMoney();
+  // Amounts read in the old household's own currency, which the row carries.
+  const { formatMoney } = useMoneyFormatter(true);
+  const fmt = (minor: number): string => formatMoney(money(minor, b.currency));
   const owe = b.amount > 0;
   const waiting = b.pending_settlement_id !== null;
   const text = owe
