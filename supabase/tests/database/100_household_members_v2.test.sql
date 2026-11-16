@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(28);
+select extensions.plan(34);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -40,13 +40,13 @@ select is(public.set_member_role('22222222-2222-2222-2222-222222222222', 'Lodger
 select is(public.set_member_role('22222222-2222-2222-2222-222222222222', repeat('x', 25), 3) ->> 'reason', 'invalid_role', 'a 25 character label is refused');
 select is(public.set_member_role('11111111-1111-1111-1111-111111111111', 'Partner', 1) ->> 'ok', 'false', 'B cannot relabel the owner');
 
-create temp table w1 as select public.set_member_weights('{"11111111-1111-1111-1111-111111111111":60,"22222222-2222-2222-2222-222222222222":40}'::jsonb) as r;
+create temp table w1 as select public.set_member_weights('{"11111111-1111-1111-1111-111111111111":60,"22222222-2222-2222-2222-222222222222":40}'::jsonb, (select jsonb_object_agg(m.user_id::text, m.version) from public.household_members m where m.household_id in (select m2.household_id from public.household_members m2 where m2.user_id = (select auth.uid())))) as r;
 grant select on w1 to authenticated;
 select is((select r ->> 'ok' from w1), 'true', 'weights 60/40 accepted');
 select ok((select r -> 'before' from w1) is not null, 'weights call returns the before map for Undo');
-select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":0,"22222222-2222-2222-2222-222222222222":0}'::jsonb) ->> 'reason', 'all_zero', 'all zero refused');
-select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":70,"22222222-2222-2222-2222-222222222222":40}'::jsonb) ->> 'reason', 'not_100', 'sum other than 100 refused');
-select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":100,"22222222-2222-2222-2222-222222222222":0}'::jsonb) ->> 'ok', 'true', '100/0 accepted: a weight of 0 is allowed');
+select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":0,"22222222-2222-2222-2222-222222222222":0}'::jsonb, (select jsonb_object_agg(m.user_id::text, m.version) from public.household_members m where m.household_id in (select m2.household_id from public.household_members m2 where m2.user_id = (select auth.uid())))) ->> 'reason', 'all_zero', 'all zero refused');
+select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":70,"22222222-2222-2222-2222-222222222222":40}'::jsonb, (select jsonb_object_agg(m.user_id::text, m.version) from public.household_members m where m.household_id in (select m2.household_id from public.household_members m2 where m2.user_id = (select auth.uid())))) ->> 'reason', 'not_100', 'sum other than 100 refused');
+select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":100,"22222222-2222-2222-2222-222222222222":0}'::jsonb, (select jsonb_object_agg(m.user_id::text, m.version) from public.household_members m where m.household_id in (select m2.household_id from public.household_members m2 where m2.user_id = (select auth.uid())))) ->> 'ok', 'true', '100/0 accepted: a weight of 0 is allowed');
 
 -- Rename: B is not the owner.
 select is(public.rename_household('B''s place', 1) ->> 'reason', 'not_owner', 'non-owner cannot rename');
@@ -61,6 +61,18 @@ select throws_ok($$update public.household_members set weight = 1$$, '42501', nu
 -- A renames.
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 select is(public.rename_household('The Flat', (select version from public.households where owner_id = '11111111-1111-1111-1111-111111111111')) ->> 'ok', 'true', 'owner renames');
+
+-- Owner answer 13: a clash names who saved first (updated_by), for member edits and weight saves.
+create temp table t100_old as select jsonb_object_agg(user_id::text, version) as v from public.household_members
+  where household_id = (select household_id from public.household_members where user_id = '22222222-2222-2222-2222-222222222222');
+grant select on t100_old to authenticated;
+select is(public.set_member_role('22222222-2222-2222-2222-222222222222', 'Partner', (select version from public.household_members where user_id = '22222222-2222-2222-2222-222222222222')) ->> 'ok', 'true', 'A relabels B');
+select is((select updated_by from public.household_members where user_id = '22222222-2222-2222-2222-222222222222'), '11111111-1111-1111-1111-111111111111'::uuid, 'the member row records who saved last');
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+select is(public.set_my_member_display(1, 2::smallint, true, 'Bobby') ->> 'updated_by', '11111111-1111-1111-1111-111111111111', 'a stale member edit names who saved first');
+select is(public.set_member_role('22222222-2222-2222-2222-222222222222', 'Lodger', 1) ->> 'updated_by', '11111111-1111-1111-1111-111111111111', 'a stale role edit names who saved first');
+select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":50,"22222222-2222-2222-2222-222222222222":50}'::jsonb, (select v from t100_old)) ->> 'reason', 'version_conflict', 'a weight save on stale versions is refused');
+select is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111":50,"22222222-2222-2222-2222-222222222222":50}'::jsonb, (select v from t100_old)) ->> 'updated_by', '11111111-1111-1111-1111-111111111111', 'the weight clash names who saved first');
 
 reset role;
 select is((select count(*) from public.household_events where kind = 'renamed'), 1::bigint, 'exactly one renamed event');
@@ -78,7 +90,7 @@ select throws_ok(
   $t$do $x$ begin update public.household_members set weight = 0; set constraints all immediate; end $x$$t$,
   '23514', null, 'all weights at 0 is refused');
 
-select ok(not has_function_privilege('anon', 'public.set_member_weights(jsonb)', 'execute'), 'anon cannot execute set_member_weights');
+select ok(not has_function_privilege('anon', 'public.set_member_weights(jsonb, jsonb)', 'execute'), 'anon cannot execute set_member_weights');
 
 select * from extensions.finish();
 rollback;

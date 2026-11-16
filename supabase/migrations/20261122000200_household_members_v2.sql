@@ -7,7 +7,27 @@ alter table public.household_members
   add column is_owner boolean not null default false,
   add column role_label text not null default 'Flatmate' check (char_length(btrim(role_label)) between 1 and 24),
   add column colour_key smallint check (colour_key between 0 and 5),
-  add column name_hidden boolean not null default false;
+  add column name_hidden boolean not null default false,
+  add column updated_by uuid references auth.users(id) on delete set null;   -- who saved this row last (names the clash, D-32)
+
+-- Whoever changes a member row is recorded on it; a change with no session (a job, an admin delete) keeps the old value.
+create or replace function public.stamp_member_updated_by()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  -- an explicit change (the foreign key nulling a deleted user) is left alone
+  if new.updated_by is not distinct from old.updated_by then
+    new.updated_by := coalesce((select auth.uid()), old.updated_by);
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function public.stamp_member_updated_by() from public, anon, authenticated;
+create trigger stamp_member_updated_by before update on public.household_members
+  for each row execute function public.stamp_member_updated_by();
 
 update public.household_members
   set is_owner = (role = 'owner'),
@@ -138,7 +158,7 @@ revoke execute on function public.handle_new_user() from public, anon, authentic
 create table public.household_events (
   id uuid primary key default gen_random_uuid(),
   household_id uuid not null references public.households(id) on delete cascade,
-  kind text not null check (kind in ('joined','left','removed','departure_undone','made_private','split_changed','weights_changed','default_changed','category_default_changed','settle_request','settle_reminder','settle_lapsed','settle_not_yet','settled','settle_undone','settle_cancelled','settle_ask','written_off','owner_changed','renamed','currency_changed')),
+  kind text not null check (kind in ('joined','left','removed','departure_undone','made_private','split_changed','weights_changed','default_changed','category_default_changed','settle_request','settle_reminder','settle_lapsed','settle_not_yet','settled','settle_undone','settle_cancelled','settle_departed','settle_ask','written_off','owner_changed','renamed','currency_changed')),
   actor_id uuid references auth.users(id) on delete set null,
   subject_id uuid references auth.users(id) on delete set null,
   ref_id uuid,
@@ -213,7 +233,7 @@ begin
   select * into m from public.household_members where user_id = uid order by created_at limit 1 for update;
   if not found then return jsonb_build_object('ok', false, 'reason', 'not_member'); end if;
   if m.version <> p_expected_version then
-    return jsonb_build_object('ok', false, 'reason', 'version_conflict', 'current_version', m.version);
+    return jsonb_build_object('ok', false, 'reason', 'version_conflict', 'current_version', m.version, 'updated_by', m.updated_by);
   end if;
   if p_display_name is not null and (nm is null or char_length(nm) > 60) then
     return jsonb_build_object('ok', false, 'reason', 'invalid_name');
@@ -258,14 +278,17 @@ begin
     return jsonb_build_object('ok', false, 'reason', 'invalid_role');
   end if;
   if t.version <> p_expected_version then
-    return jsonb_build_object('ok', false, 'reason', 'version_conflict', 'current_version', t.version);
+    return jsonb_build_object('ok', false, 'reason', 'version_conflict', 'current_version', t.version, 'updated_by', t.updated_by);
   end if;
   update public.household_members set role_label = lbl where household_id = t.household_id and user_id = p_user_id;
   return jsonb_build_object('ok', true, 'version', t.version + 1);
 end;
 $$;
 
-create or replace function public.set_member_weights(p_weights jsonb)
+-- p_expected_versions: {"<user id>": <version>} for every member, the versions the caller's screen was showing. Any member row
+-- that has moved on since is a clash: version_conflict names the person who saved last (updated_by) and returns the current
+-- versions so the screen can reload.
+create or replace function public.set_member_weights(p_weights jsonb, p_expected_versions jsonb)
 returns jsonb
 language plpgsql
 security definer
@@ -280,6 +303,8 @@ declare
   total int := 0;
   biggest int := 0;
   n int := 0;
+  cur jsonb;
+  stale uuid;
 begin
   select household_id into hid from public.household_members where user_id = uid order by created_at limit 1;
   if hid is null then return jsonb_build_object('ok', false, 'reason', 'not_member'); end if;
@@ -297,6 +322,20 @@ begin
   if n <> (select count(*) from public.household_members where household_id = hid) then
     return jsonb_build_object('ok', false, 'reason', 'members_mismatch');
   end if;
+  -- lock the rows, then compare versions: any stale row is a clash
+  perform 1 from public.household_members where household_id = hid order by user_id for update;
+  select jsonb_object_agg(user_id::text, version) into cur from public.household_members where household_id = hid;
+  if p_expected_versions is null or jsonb_typeof(p_expected_versions) <> 'object' then
+    return jsonb_build_object('ok', false, 'reason', 'version_conflict', 'current_versions', cur, 'updated_by', null);
+  end if;
+  select m.user_id into stale from public.household_members m
+    where m.household_id = hid
+      and (p_expected_versions -> m.user_id::text) is distinct from to_jsonb(m.version)
+    order by m.updated_at desc, m.user_id limit 1;
+  if stale is not null then
+    return jsonb_build_object('ok', false, 'reason', 'version_conflict', 'current_versions', cur,
+      'updated_by', (select m.updated_by from public.household_members m where m.household_id = hid and m.user_id = stale));
+  end if;
   for k, v in select * from jsonb_each(p_weights) loop
     if jsonb_typeof(v) <> 'number' or v::text !~ '^[0-9]{1,3}$' or (v::text)::int > 100 then
       return jsonb_build_object('ok', false, 'reason', 'invalid_weight');
@@ -311,7 +350,8 @@ begin
   update public.household_members m set weight = (p_weights ->> m.user_id::text)::int where m.household_id = hid;
   perform public.hh_event(hid, 'weights_changed', null, null, null,
     jsonb_build_object('before', before_w, 'after', p_weights));
-  return jsonb_build_object('ok', true, 'before', before_w);
+  return jsonb_build_object('ok', true, 'before', before_w,
+    'versions', (select jsonb_object_agg(user_id::text, version) from public.household_members where household_id = hid));
 end;
 $$;
 
@@ -384,8 +424,8 @@ revoke execute on function public.set_my_member_display(int, smallint, boolean, 
 grant execute on function public.set_my_member_display(int, smallint, boolean, text) to authenticated;
 revoke execute on function public.set_member_role(uuid, text, int) from public, anon;
 grant execute on function public.set_member_role(uuid, text, int) to authenticated;
-revoke execute on function public.set_member_weights(jsonb) from public, anon;
-grant execute on function public.set_member_weights(jsonb) to authenticated;
+revoke execute on function public.set_member_weights(jsonb, jsonb) from public, anon;
+grant execute on function public.set_member_weights(jsonb, jsonb) to authenticated;
 revoke execute on function public.rename_household(text, int) from public, anon;
 grant execute on function public.rename_household(text, int) to authenticated;
 revoke execute on function public.set_household_currency(text) from public, anon;

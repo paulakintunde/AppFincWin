@@ -206,7 +206,7 @@ select extensions.is((select split_rule from public.transactions where id = 'd10
 -- 43-48. D-35: new weights apply to new lines only; the offer counts exact lines and can re-split them.
 select extensions.is((select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-000000000005'),
   '{-1800,-1200,0}'::bigint[], 'the groceries line was split 60/40/0');
-select extensions.is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 30, "22222222-2222-2222-2222-222222222222": 30, "33333333-3333-3333-3333-333333333333": 40}'::jsonb) ->> 'ok', 'true', 'weights change');
+select extensions.is(public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 30, "22222222-2222-2222-2222-222222222222": 30, "33333333-3333-3333-3333-333333333333": 40}'::jsonb, (select jsonb_object_agg(m.user_id::text, m.version) from public.household_members m where m.household_id in (select m2.household_id from public.household_members m2 where m2.user_id = (select auth.uid())))) ->> 'ok', 'true', 'weights change');
 select extensions.is((select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-000000000005'),
   '{-1800,-1200,0}'::bigint[], 'the existing split does not move');
 select extensions.is(public.count_unsettled_for_rule('builtin:Groceries') ->> 'count', '1', 'the offer counts the one groceries line');
@@ -235,7 +235,7 @@ select public.share_transaction('d1000000-0000-0000-0000-0000000000f3', public.t
 create temp table t107_before as select transaction_id, array_agg(share order by position) as shares
   from public.transaction_splits where transaction_id in ('d1000000-0000-0000-0000-0000000000f2', 'd1000000-0000-0000-0000-0000000000f3') group by transaction_id;
 grant select on t107_before to authenticated;
-select public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 50, "22222222-2222-2222-2222-222222222222": 50, "33333333-3333-3333-3333-333333333333": 0}'::jsonb);
+select public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 50, "22222222-2222-2222-2222-222222222222": 50, "33333333-3333-3333-3333-333333333333": 0}'::jsonb, (select jsonb_object_agg(m.user_id::text, m.version) from public.household_members m where m.household_id in (select m2.household_id from public.household_members m2 where m2.user_id = (select auth.uid()))));
 select extensions.is(public.count_unsettled_for_rule('builtin:Groceries') ->> 'count', '2', 'the offer counts only the lines it will change (the 2 default-split groceries lines)');
 select extensions.is(public.apply_rule_to_unsettled('builtin:Groceries') ->> 'changed_count', '2', 'applying changes the same 2 lines');
 select extensions.is((select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-0000000000f1'),
@@ -247,7 +247,7 @@ select extensions.is((select shares from t107_before where transaction_id = 'd10
 select extensions.is((select array_agg(split_manual order by id) from public.transactions where id in
   ('d1000000-0000-0000-0000-0000000000f1', 'd1000000-0000-0000-0000-0000000000f2', 'd1000000-0000-0000-0000-0000000000f3')),
   '{f,t,t}'::boolean[], 'only the default-split line is unmarked');
-select public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 30, "22222222-2222-2222-2222-222222222222": 30, "33333333-3333-3333-3333-333333333333": 40}'::jsonb);
+select public.set_member_weights('{"11111111-1111-1111-1111-111111111111": 30, "22222222-2222-2222-2222-222222222222": 30, "33333333-3333-3333-3333-333333333333": 40}'::jsonb, (select jsonb_object_agg(m.user_id::text, m.version) from public.household_members m where m.household_id in (select m2.household_id from public.household_members m2 where m2.user_id = (select auth.uid()))));
 
 -- 49-52. Bulk sharing returns a count; linked lines count as skipped.
 select extensions.is(public.bulk_share_transactions(array['d1000000-0000-0000-0000-0000000000b1', 'd1000000-0000-0000-0000-0000000000b2', 'd1000000-0000-0000-0000-0000000000b3', 'd1000000-0000-0000-0000-000000000005']::uuid[]),
