@@ -310,6 +310,15 @@ export function YouScreen() {
             void handleSignOut();
           }}
         />
+        {/* 08-22 (D-40): the one row without a tile: red words, no icon, no animation (06.2 L04). Store-mandatory in-app deletion. */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('household.account.title')}
+          onPress={() => pushOnce('/delete-account' as Href)}
+          style={styles.deleteRow}
+        >
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('household.account.title')}</Text>
+        </Pressable>
         {__DEV__ ? <DevSyncProbe /> : null}
       </SettingsGroup>
 
@@ -329,6 +338,7 @@ export function YouScreen() {
 }
 
 const styles = StyleSheet.create({
+  deleteRow: { minHeight: rowHeight.one, justifyContent: 'center' },
   back: { marginBottom: space.gapMd },
   title: {
     fontSize: fontSize.heading,

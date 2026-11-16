@@ -234,6 +234,17 @@ describe('YouScreen money rows (05.4-34 APP-11)', () => {
   });
 });
 
+describe('YouScreen Delete my account row (08-22, D-40)', () => {
+  it('sits in the Account group and opens /delete-account', async () => {
+    const { getByRole } = await renderScreen();
+    const row = getByRole('button', { name: 'Delete my account' });
+    await act(async () => {
+      fireEvent.press(row);
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/delete-account')).toHaveLength(1);
+  });
+});
+
 describe('YouScreen accent switcher', () => {
   it("pressing the Navy swatch calls setAccent('navy') and updates the ring colour live", async () => {
     const { getByLabelText, getByTestId } = await renderScreen();
