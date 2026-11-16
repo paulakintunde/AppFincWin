@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(64);
+select extensions.plan(65);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 select ('' || n || n || n || n || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || '-' || n || n || n || n || n || n || n || n || n || n || n || n)::uuid,
@@ -159,6 +159,9 @@ insert into public.transactions (id, household_id, created_by, account_id, origi
 select extensions.ok((select is_shared and split_rule = 'even' and household_amount = -6000 from public.transactions where id = 'd1000000-0000-0000-0000-0000000000a1'), 'a line on a joint account is shared and stamped on arrival');
 select extensions.is((select array_agg(share order by position) from public.transaction_splits where transaction_id = 'd1000000-0000-0000-0000-0000000000a1'),
   '{-2000,-2000,-2000}'::bigint[], 'it is split over all members with the household default');
+insert into public.transactions (id, household_id, created_by, account_id, original_amount, original_currency, local_date, time_zone, name, status) values
+  ('d1000000-0000-0000-0000-0000000000a3', (select h from ids), '11111111-1111-1111-1111-111111111111', 'a1000000-0000-0000-0000-00000000000b', 5000, 'USD', '2026-11-02', 'UTC', 'top-up', 'paid');
+select extensions.is((select is_shared from public.transactions where id = 'd1000000-0000-0000-0000-0000000000a3'), false, 'money paid into a joint account is not auto-shared (D-17)');
 set local role authenticated;
 select public.t107_as('11111111-1111-1111-1111-111111111111');
 select extensions.is(public.make_line_private('d1000000-0000-0000-0000-0000000000a1', public.t107_ver('d1000000-0000-0000-0000-0000000000a1')) ->> 'reason', 'joint_account_line', 'a joint-account line cannot be made private');

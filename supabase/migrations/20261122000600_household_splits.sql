@@ -415,7 +415,9 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_joint boolean := new.account_id is not null
+  -- Money going out of a joint account is shared at once. Money going in (a top-up or pay into it) is not tracked (D-17) and
+  -- stays the person's own line.
+  v_joint boolean := new.account_id is not null and new.original_amount < 0
     and exists (select 1 from public.accounts a where a.id = new.account_id and a.is_shared);
   v_srule text;
   v_cur text;
