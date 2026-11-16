@@ -102,7 +102,6 @@ export const home = {
   pendingInvites: 'Pending invites',
   linkCopied: 'Link copied',
   restoreFailed: 'The invite couldn’t be brought back. Make a new one.',
-  departureTitle: 'Removed in the last 24 hours',
   reasons: {
     not_owner: 'Only the owner can do this.',
     full: '{{household}} already has 6 people. Remove someone before inviting another.',
