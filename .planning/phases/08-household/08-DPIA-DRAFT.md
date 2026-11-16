@@ -80,6 +80,8 @@ Special-category data (Art. 9) is not collected on purpose. Free-text notes on a
 | `household_former_members` | Kept while the household's shared records exist; display name erased on account deletion. |
 | Shared lines and settle-ups | Follow the app's existing record retention (soft delete, then the retention purge). |
 
+Owner 2026-11-16: the keep-for periods for household_events, redeem_attempts and member_departures are left to the Phase 11 legal review. No purge is built in Phase 8.
+
 ## 9. Processors
 
 - **Supabase** (database, Auth, Realtime, Edge Functions, Storage), project hosted with Supabase. DPA with Supabase to be confirmed in Phase 11.
