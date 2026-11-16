@@ -58,6 +58,8 @@ jest.mock('@/shell/fab/FabProvider', () => {
 });
 jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeCurrencyDefault: () => null }));
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
+// 08-23: the layout opens the household live channel; wiring only here.
+jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1' }),
