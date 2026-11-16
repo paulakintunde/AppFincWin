@@ -68,6 +68,13 @@ describe('suggestItemType', () => {
     ['Cardigan', 'general'],
     ['', 'general'],
     ['car-loan', 'loan_repayment'],
+    ['House deposit', 'property'],
+    ['Down payment', 'property'],
+    ['Car down payment', 'vehicle'],
+    ['Gift cards', 'cash_equivalent'],
+    ['Bitcoin', 'cash_equivalent'],
+    ['University tuition', 'tuition'],
+    ['School fees', 'tuition'],
   ])('%j -> %s', (name, expected) => {
     expect(suggestItemType(name)).toBe(expected);
   });
