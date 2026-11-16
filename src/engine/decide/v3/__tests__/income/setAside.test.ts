@@ -91,6 +91,16 @@ describe('FIN-20 withTaxSetAside', () => {
     expect(inputs.unspent?.amount).toBe(300_000);
   });
 
+  it('05.5-28 Q11 A: freelance pay dated on the confirm day is inside the figure unless it was logged after the confirm', () => {
+    const at = (flag: boolean) => {
+      const f = v3Line({ id: 'f10', date: '2026-10-01', amount: 400_000, role: 'income', ...(flag ? { loggedAfterConfirm: true } : {}) });
+      const months = [monthOf('2026-10', [f], { full: false })];
+      return withTaxSetAside(base({ months, unspent: { amount: mu(300_000), at: '2026-10-01' } })).inputs.unspent?.amount;
+    };
+    expect(at(false)).toBe(200_000);
+    expect(at(true)).toBe(300_000);
+  });
+
   it('FIN-20 salary is never cut; the profile\'s own variable income is, and the fact names this month\'s share with no steady figure', () => {
     const months = [
       monthOf('2026-10', [

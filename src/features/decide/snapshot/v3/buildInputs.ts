@@ -309,6 +309,14 @@ export function buildInputs(source: InputsSource, settings: V3SettingsSource | n
     };
     const seriesById = new Map(series.map((s) => [s.id, s]));
     const marks = v3?.month_marks ?? null;
+    // 05.5-28 Q11 A: a line dated on the confirm day counts as logged after the confirm when the server stamped the confirm earlier
+    // than the row was created. No stamp (confirmed before it existed) or an unreadable time = never marked (the anchor day stays inside).
+    const confirmDay = dateOf(v3?.unspent_anchor_at);
+    const confirmedAtMs = v3?.unspent_anchor_set_at == null ? Number.NaN : Date.parse(v3.unspent_anchor_set_at);
+    const loggedAfterConfirm = (row: InputsRow): boolean => {
+      if (confirmDay === null || row.local_date !== confirmDay || row.created_at == null) return false;
+      return Date.parse(row.created_at) > confirmedAtMs; // NaN on either side compares false
+    };
     months = monthKeys.map((m) => {
       const mark = marks === null ? undefined : marks[m];
       return {
@@ -334,6 +342,7 @@ export function buildInputs(source: InputsSource, settings: V3SettingsSource | n
             incomeKind: role === 'income' ? (incomeKindOf(str(row.income_kind)) ?? (s !== undefined ? s.incomeKind : null)) : null,
             countsAs: role === 'income' ? (row.counts_as ?? (s !== undefined ? s.countsAs : null)) : null,
             refundOf: str(row.refund_of),
+            ...(loggedAfterConfirm(row) ? { loggedAfterConfirm: true } : {}),
           };
         }),
       };

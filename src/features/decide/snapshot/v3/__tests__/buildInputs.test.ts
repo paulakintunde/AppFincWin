@@ -389,6 +389,35 @@ describe('buildInputs: M-07 signed unspent anchor', () => {
   });
 });
 
+describe('buildInputs: 05.5-28 same-day lines logged after the confirm (Q11 A)', () => {
+  const DAY = '2026-10-01';
+  const SET_AT = '2026-10-01T10:00:00.000+00:00';
+  const rows = [
+    mk('after', EVERYDAY, -900000, { local_date: DAY, created_at: '2026-10-01T10:00:00.500+00:00' }),
+    mk('before', EVERYDAY, -5000, { local_date: DAY, created_at: '2026-10-01T09:59:59.000+00:00' }),
+    mk('nextday', EVERYDAY, -5000, { local_date: '2026-10-02', created_at: '2026-10-02T09:00:00.000+00:00' }),
+    mk('nostamp', EVERYDAY, -5000, { local_date: DAY }),
+  ];
+  const src = withRows(rows);
+  const settings = (setAt: string | null | undefined) =>
+    v3s({ unspent_anchor: 100000, unspent_anchor_at: DAY, ...(setAt === undefined ? {} : { unspent_anchor_set_at: setAt }) });
+  const flag = (id: string, setAt: string | null | undefined) => lineOf(src, id, settings(setAt))?.loggedAfterConfirm;
+  it('marks only a line dated on the confirm day and created after the server-stamped confirm time', () => {
+    expect(flag('after', SET_AT)).toBe(true);
+    expect(flag('before', SET_AT)).toBeUndefined();
+    expect(flag('nextday', SET_AT)).toBeUndefined(); // later days roll forward anyway
+    expect(flag('nostamp', SET_AT)).toBeUndefined(); // no created_at: never marked
+  });
+  it('a confirm with no stamp (older ones) or an unreadable one marks nothing', () => {
+    expect(flag('after', null)).toBeUndefined();
+    expect(flag('after', undefined)).toBeUndefined();
+    expect(flag('after', 'not a time')).toBeUndefined();
+  });
+  it('no anchor at all marks nothing', () => {
+    expect(lineOf(src, 'after', v3s({}))?.loggedAfterConfirm).toBeUndefined();
+  });
+});
+
 describe('buildInputs: M-09 one bad custom option drops only itself', () => {
   const src = demoSource(TODAY);
   const custom = (o: unknown) => buildInputs(src, v3s({ custom_options: o })).custom;

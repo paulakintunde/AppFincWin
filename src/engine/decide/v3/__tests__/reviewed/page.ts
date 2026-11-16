@@ -285,11 +285,24 @@ function copyKeyFor(group: 'fact' | 'notice', code: string, v: Values): string {
   return base;
 }
 
+/**
+ * 05.5-28: the app's own rule (sayResult.ts pluralCount, 06.1-83): when the key has a `_one` form and the first number blank
+ * before a counted word holds 1, the `_one` copy is the line. Null = the base copy stands.
+ */
+const COUNTED_BLANK = /\{\{(\w+)\}\}[ \u00a0](?:[a-z]+[ \u00a0])?(?:months|payments|days|entries|times|steps|changes|lines|weeks|years|goals|bills|rules|checks|items|answers|estimates)\b/;
+function oneFormOf(key: string, template: string, v: Values): string | null {
+  const one = copyAt(`${key}_one`);
+  if (one === null) return null;
+  const blank = COUNTED_BLANK.exec(template)?.[1];
+  return blank !== undefined && v[blank] === 1 ? one : null;
+}
+
 /** One fact or notice in the app's own words, every {{key}} filled. A missing copy key prints `code { json }`. */
 export function sayLine(group: 'fact' | 'notice', item: Fact | Notice, inputs: V3Inputs): string {
   const v = item.values as Values;
   const key = copyKeyFor(group, item.code, v);
-  const text = copyAt(key);
+  const many = copyAt(key);
+  const text = many === null ? null : oneFormOf(key, many, v) ?? many;
   if (text === null) return `${item.code} ${JSON.stringify(v)}`;
   const names = new Map(inputs.series.map((s) => [s.id, s.name ?? s.id]));
   const filled: Values = {};
