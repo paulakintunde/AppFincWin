@@ -7,7 +7,14 @@ const root = path.join(__dirname, '..', '..', '..', '..');
 const layout = fs.readFileSync(path.join(root, 'app', '(app)', '_layout.tsx'), 'utf8');
 const gate = layout.indexOf('<Stack.Protected');
 
-const ROUTES = ['household/split-default', 'household/category-defaults', 'household/shared-accounts'] as const;
+const ROUTES = [
+  'household/split-default',
+  'household/category-defaults',
+  'household/shared-accounts',
+  // 08-24: leaving and removing
+  'household/leave',
+  'household/remove',
+] as const;
 
 describe('Household Rules routes', () => {
   it.each(ROUTES)('%s has a route file', (name) => {

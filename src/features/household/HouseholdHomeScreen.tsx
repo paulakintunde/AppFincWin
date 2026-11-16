@@ -2,7 +2,7 @@
 // invites (owner), the removal undo card (owner, 24 h), rules, recent changes, leave, footer. A household-of-one sees the
 // "Just you for now" state instead of the people and rules. Owner actions are hidden from members; the server enforces
 // them (T-08-62). Every name is rendered through the member resolver (D-32). Balances (08-21) sit right after the hero.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -36,6 +36,7 @@ import { DepartureCard } from './DepartureCard';
 import { householdIcons } from './glyphs';
 import { HouseholdCurrencySheet } from './HouseholdCurrencySheet';
 import { InviteSheet } from './InviteSheet';
+import { onReinvite } from './leave/reinviteRequest';
 import { MemberSheet } from './MemberSheet';
 import { useNoticeFormat } from './noticeText';
 import { RenameHouseholdSheet } from './RenameHouseholdSheet';
@@ -68,6 +69,16 @@ export function HouseholdHomeScreen() {
   const [inviteCode, setInviteCode] = useState<{ code: string; expiresAt: string } | null>(null);
   const [renameOpen, setRenameOpen] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
+
+  // 08-24 (D-28): Undo on the "Sam removed" toast brings a reinvite code here; the InviteSheet shows it.
+  useEffect(
+    () =>
+      onReinvite(({ code, expiresAt }) => {
+        setInviteCode({ code, expiresAt });
+        setInviteOpen(true);
+      }),
+    [],
+  );
 
   const alone = members.length <= 1;
   const full = members.length >= HOUSEHOLD_CAP;
