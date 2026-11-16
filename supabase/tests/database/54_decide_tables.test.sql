@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(38);
+select extensions.plan(39);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -223,13 +223,18 @@ reset role;
 select extensions.lives_ok(
   $$delete from auth.users where id = '11111111-1111-1111-1111-111111111111'$$,
   'deleting A succeeds');
+-- Phase 8 (08-14, D-29): the card account was made joint above, and a joint account the person created is a shared record that
+-- stays with the household, so its statement period stays with it. Every personal Decide row is purged.
 select extensions.is(
   (select count(*)::int from public.decide_checks where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'))
   + (select count(*)::int from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111')
   + (select count(*)::int from public.decide_links where created_by = '11111111-1111-1111-1111-111111111111')
-  + (select count(*)::int from public.debts where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'))
-  + (select count(*)::int from public.statement_periods where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')),
+  + (select count(*)::int from public.debts where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')),
   0, 'deleting A purges every Decide row');
+select extensions.is(
+  (select count(*)::int from public.statement_periods where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')
+     and account_id in (select id from public.accounts where is_shared)),
+  1, 'the statement period of the joint card account stays with the joint account (D-29)');
 
 select * from extensions.finish();
 rollback;
