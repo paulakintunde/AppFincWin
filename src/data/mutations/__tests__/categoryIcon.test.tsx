@@ -85,12 +85,12 @@ beforeEach(() => {
 });
 
 describe('categories.icon_key shape', () => {
-  it('is selected, insertable, patchable and exported; the cache version moved to 10 (11 at the 05.5 merge, 12 at 08-13)', () => {
+  it('is selected, insertable, patchable and exported; the cache version moved to 10 (11 at the 05.5 merge, 12 at 08-13, 13 at 08-15)', () => {
     expect(CATEGORY_COLUMNS.split(', ')).toContain('icon_key');
     expect(CATEGORY_INSERT_KEYS).toContain('icon_key');
     expect(CATEGORY_PATCH_KEYS).toContain('icon_key');
     expect(EXPORT_MANIFEST.categories).toContain('icon_key');
-    expect(CACHE_SCHEMA_VERSION).toBe('12');
+    expect(CACHE_SCHEMA_VERSION).toBe('13');
   });
 
   it('assertIconKey allows null and names in our set, and refuses emoji, free text and unknown names', () => {

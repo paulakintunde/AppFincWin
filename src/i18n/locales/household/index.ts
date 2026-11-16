@@ -8,6 +8,7 @@ import { join } from './join';
 import { leave } from './leave';
 import { members } from './members';
 import { notices } from './notices';
+import { reasons } from './reasons';
 import { rules } from './rules';
 import { settle } from './settle';
 import { sharing } from './sharing';
@@ -22,4 +23,5 @@ export const household = {
   leave,
   account,
   notices,
+  reasons,
 } as const;

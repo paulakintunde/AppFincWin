@@ -13,6 +13,11 @@ export const notices = {
   settle_request: '{{name}} says they paid you {{amount}}',
   settle_waiting: 'Waiting on {{name}} to confirm {{amount}}',
   settle_lapsed: 'The {{amount}} settle-up with {{name}} lapsed. The lines are owed again.',
+  // 08-14 follow-up 10: a waiting settle-up ends when someone leaves, is removed or deletes. params: amount, currency, reason.
+  settle_departed: 'The {{amount}} settle-up with {{name}} was cancelled. The lines are owed again.',
+  settle_departed_left: '{{name}} left the household. The {{amount}} settle-up with {{name}} was cancelled and the lines are owed again.',
+  settle_departed_removed: '{{name}} was removed from the household. The {{amount}} settle-up with {{name}} was cancelled and the lines are owed again.',
+  settle_departed_deleted: '{{name}} deleted their account. The {{amount}} settle-up with {{name}} was cancelled and the lines are owed again.',
   settle_not_yet: '{{name}} hasn’t received it yet',
   settled: 'Settled {{amount}} with {{name}}',
   settle_ask: '{{name}} asked you to settle up {{amount}}',

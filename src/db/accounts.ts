@@ -161,3 +161,20 @@ export async function fetchAccountUsageCounts(
 
   return { liveLineCount: lines.count ?? 0, activeSeriesCount: (open.count ?? 0) + (future.count ?? 0) };
 }
+
+/**
+ * 08-15 (D-17): ids of the household's joint accounts. A line paid from one creates no owing. A tombstone account (08-14) is
+ * shared only so a departed member's lines keep a home; it is NOT joint for owing, so it is left out here. Soft-deleted
+ * accounts are kept: a line on one is still a line on a joint account.
+ */
+export async function fetchJointAccountIds(client: DbClient, householdId: string): Promise<string[]> {
+  const { data, error, status } = await client
+    .from('accounts')
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('is_shared', true)
+    .is('tombstone_of', null);
+
+  if (error) throw toDbError(error, status);
+  return ((data as { id: string }[] | null) ?? []).map((r) => r.id);
+}

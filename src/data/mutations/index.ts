@@ -47,6 +47,7 @@ import { registerRecordBoughtMutations } from './boughtWrite';
 import { registerGrowGoalMutations } from './growGoals';
 import { registerGrowDebtMutations } from './growDebts';
 import { registerGrowHoldingMutations } from './growHoldings';
+import { registerHouseholdSharingMutations } from './householdSharing';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -112,4 +113,6 @@ export function registerMutationDefaults(qc: QueryClient): void {
   // 06.1-12: Decide's safety-net unlock and the per-check history.
   registerDecideNetUseMutations(qc);
   registerDecideHistoryMutations(qc);
+  // 08-15: share a line, change a split, change who paid, make a line private, own category on a shared line.
+  registerHouseholdSharingMutations(qc);
 }

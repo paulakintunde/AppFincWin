@@ -105,10 +105,9 @@ export const queryKeys = {
   // 06.1 (CO-D-64 (6)): what Decide said on each day for one check. Owner-private; not row-derived.
   // Named decideCheckHistory because decideHistory above is the row-derived month window.
   decideCheckHistory: (userId: string, checkId: string) => ['decide-check-history', userId, checkId] as const,
-  // 08-15: who owes whom. Balances and the traced lines of one pair sit under transactionsRoot, so every transaction write
+  // 08-15: who owes whom. One read serves both the balances and the traced lines of one pair (usePairLines selects from it). It sits under transactionsRoot, so every transaction write
   // (and every settle-up call, which invalidates the root's balances) refreshes them.
   householdBalances: (householdId: string) => ['transactions', householdId, 'household-balances'] as const,
-  pairLines: (householdId: string, otherKey: string) => ['transactions', householdId, 'household-balances', 'pair', otherKey] as const,
   splitDefaults: (householdId: string) => ['split-defaults', householdId] as const,
   settlements: (householdId: string) => ['settlements', householdId] as const,
 };
