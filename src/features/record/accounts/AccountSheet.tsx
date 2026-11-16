@@ -3,6 +3,8 @@
 // never has to accept a minus sign. Limits are optional and per kind. Archive / Restore is an
 // edit with undo. Copy is declarative, never advice.
 // 06.2 (ranked change 9): the kind picker shows each kind's icon (Glyph 20) beside its word.
+// 08-20 (D-13): in a household of two or more, the person who made an account can mark it Joint (accounts.is_shared only; the
+// overdraft limit and account purpose stay owned by this sheet, 05.5 D-10). Anyone else sees a Shared badge, no toggle.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -20,6 +22,7 @@ import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { getAnalytics } from '@/services/analytics';
 import { showToast } from '@/state/undoToast';
+import { hapticFailed } from '@/ui/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { iconSize, radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
@@ -38,10 +41,14 @@ import { accountUseText, holdsMoney } from '@/features/record/accounts/accountUs
 import { accountUseOfRow } from '@/data/mutations/accountUseModel';
 import { useAccountBalances } from '@/data/queries/activity';
 import { usePots } from '@/data/queries/decide';
+import { useHouseholdMembers } from '@/data/queries/household';
+import { SharedBadge } from '@/features/household/components/SharedBadge';
+import { countMemberLinesOnAccount } from '@/features/household/rules/jointAccounts';
+import { ToggleRow } from '@/ui/ToggleRow';
 
 export type AccountKind = AccountRow['kind'];
 export type AccountSheetMode =
-  | { kind: 'new'; context: 'onboarding' | 'later' }
+  | { kind: 'new'; context: 'onboarding' | 'later'; /** 08-20: open with Joint account already on (the shared accounts list). */ joint?: boolean }
   | { kind: 'edit'; account: AccountRow };
 
 export interface AccountSheetProps {
@@ -135,6 +142,12 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   const { edit } = useEditAccount();
   const { set: setRate } = useSetAccountRate();
   const account = mode.kind === 'edit' ? mode.account : null;
+  // 08-20 (D-13): the Joint account row exists for the creator in a household of two or more; never on a tombstone account.
+  const memberCount = useHouseholdMembers(rc.householdId ?? undefined).data?.length ?? 0;
+  const isCreator = account === null || (rc.userId !== null && account.created_by === rc.userId);
+  const canJoint = memberCount >= 2 && isCreator && !(account && account.tombstone_of);
+  const [joint, setJoint] = useState<boolean>(account ? account.is_shared === true : mode.kind === 'new' && mode.joint === true);
+  const [jointRefused, setJointRefused] = useState(false);
 
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
   const magnitude = (minor: number, code: string): string =>
@@ -166,8 +179,8 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   const [picker, setPicker] = useState<PickerKey>(null);
   const [submitted, setSubmitted] = useState(false);
   // D-26: unsaved work = any field differs from what the sheet opened with.
-  const [initial] = useState(() => ({ name, kind, pickedCurrency, openingText, signChoice, limitText, rateText }));
-  const dirty = useIsDirty(initial, { name, kind, pickedCurrency, openingText, signChoice, limitText, rateText });
+  const [initial] = useState(() => ({ name, kind, pickedCurrency, openingText, signChoice, limitText, rateText, joint }));
+  const dirty = useIsDirty(initial, { name, kind, pickedCurrency, openingText, signChoice, limitText, rateText, joint });
   const hasRate = kindHasRate(kind);
   const rateFailure = hasRate && !validRateInput(rateText);
 
@@ -194,6 +207,23 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
     setSubmitted(true);
     if (!canSubmit || nameTrimmed === '' || nameTrimmed.length > NAME_MAX) return;
     if (openingFailure || limitFailure || rateFailure) return;
+    // D-13: turning Joint off while other members have lines on the account is refused by the server; say so here first.
+    if (account && canJoint && account.is_shared === true && !joint && account.created_by !== null) {
+      void countMemberLinesOnAccount(account.id, account.created_by)
+        .then((n) => {
+          if (n > 0) {
+            setJoint(true);
+            setJointRefused(true);
+            hapticFailed();
+          } else commit();
+        })
+        .catch(() => commit()); // the server still refuses it if members have lines
+      return;
+    }
+    commit();
+  };
+
+  const commit = () => {
     const ownerId = rc.userId;
     const newRate = hasRate ? rateToStore(rateText) : null;
     if (account === null) {
@@ -209,6 +239,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           ...(limits === 'overdraft' ? { overdraft_limit: limitMinor } : {}),
           ...(limits === 'credit' ? { credit_limit: limitMinor } : {}),
           ...(newRate !== null ? { interest_rate: newRate } : {}),
+          ...(canJoint && joint ? { is_shared: true } : {}),
         },
         { stepId, ownerId },
         currency !== rc.homeCurrency
@@ -227,6 +258,7 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
     if (signedOpening !== account.opening_balance) patch.opening_balance = signedOpening;
     if (limits === 'overdraft' && limitMinor !== account.overdraft_limit) patch.overdraft_limit = limitMinor;
     if (limits === 'credit' && limitMinor !== account.credit_limit) patch.credit_limit = limitMinor;
+    if (canJoint && joint !== (account.is_shared === true)) patch.is_shared = joint;
     // S-WR-12: a limit the new kind no longer has is cleared, not left behind on the row.
     if (limits !== 'overdraft' && account.overdraft_limit !== null) patch.overdraft_limit = null;
     if (limits !== 'credit' && account.credit_limit !== null) patch.credit_limit = null;
@@ -361,6 +393,30 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           </>
         ) : null}
 
+        {canJoint ? (
+          <>
+            <ToggleRow
+              label={t('household.sharing.joint.toggle')}
+              sub={t('household.sharing.joint.helper')}
+              value={joint}
+              onChange={(next) => {
+                setJointRefused(false);
+                setJoint(next);
+              }}
+            />
+            {jointRefused ? (
+              <Text accessibilityRole="alert" testID="joint-refused" style={errorStyle}>
+                {t('household.rules.shared.hasMemberLines')}
+              </Text>
+            ) : null}
+          </>
+        ) : account && account.is_shared === true && !account.tombstone_of ? (
+          <View style={styles.badgeRow}>
+            <SharedBadge />
+            <Text style={helpStyle}>{t('household.sharing.jointNote')}</Text>
+          </View>
+        ) : null}
+
         {account ? <AccountUseRow account={account} /> : null}
 
         {canSubmit ? null : <Text style={helpStyle}>{t('accounts.sheet.notReady')}</Text>}
@@ -461,6 +517,11 @@ const styles = StyleSheet.create({
   },
   chips: {
     flexDirection: 'row',
+    gap: space.gapSm,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: space.gapSm,
   },
   input: {
