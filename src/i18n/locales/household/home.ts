@@ -69,6 +69,7 @@ export const home = {
     title: 'Household currency',
     helper: 'Shared amounts are shown and settled in this currency.',
     save: 'Save currency',
+    saved: 'Household currency set to {{code}}',
     sharedLinesExist:
       'The currency can’t change while shared lines exist. Shared lines are recorded in {{currency}}, and changing it would alter what people owe.',
   },
@@ -94,4 +95,24 @@ export const home = {
     retry: 'Try again',
   },
   back: 'Back',
+  /** 08-17: the home screen and owner sheets. */
+  unnamed: 'Your household',
+  noticesUnread: 'Notices, {{count}} unread',
+  roleOwner: 'Owner',
+  pendingInvites: 'Pending invites',
+  linkCopied: 'Link copied',
+  restoreFailed: 'The invite couldn’t be brought back. Make a new one.',
+  departureTitle: 'Removed in the last 24 hours',
+  reasons: {
+    not_owner: 'Only the owner can do this.',
+    full: '{{household}} already has 6 people. Remove someone before inviting another.',
+    try_again: 'A code couldn’t be made just now. Try again.',
+    version_conflict: 'Someone else changed this first, so your change wasn’t saved. The latest is shown.',
+    invalid_name: 'A name needs 1 to 60 characters.',
+    unknown_currency: 'That currency isn’t available.',
+    not_found: 'This invite is no longer there.',
+    window_closed: 'The 24 hours to invite again have passed.',
+    already_restored: 'This person is already back.',
+    failed: 'This wasn’t saved. Try again.',
+  },
 } as const;
