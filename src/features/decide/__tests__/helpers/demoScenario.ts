@@ -1,7 +1,7 @@
 // D-19 / DCU-11: the demo scenario's single source. scripts/check-decide-demo-mirror.mjs (05-51) compares it with the SQL seed.
 // Pure test helper: whole-unit figures live in demoScenario.json and become integer minor units (x100, USD) here.
 import { emptyCheckInputs } from '../../snapshot/checkInputs';
-import type { DebtSource, SnapshotSource } from '../../snapshot/buildSnapshot';
+import type { DebtSource, SnapshotSource } from '../../snapshot/sourceTypes';
 import type { CheckInputs, InputLine } from '../../snapshot/types';
 import raw from './demoScenario.json';
 

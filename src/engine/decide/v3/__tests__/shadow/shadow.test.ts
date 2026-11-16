@@ -208,8 +208,8 @@ describe('near-the-line refund generator (05.2-31)', () => {
 });
 
 describe('D-17 synthetic only', () => {
-  it('compare.ts and generate.ts import no file-system module', () => {
-    for (const f of ['compare.ts', 'generate.ts', 'generateRefunds.ts']) {
+  it('the generators import no file-system module', () => {
+    for (const f of ['generate.ts', 'generateRefunds.ts']) {
       const src = fs.readFileSync(path.join(__dirname, f), 'utf8');
       expect(src).not.toMatch(/from ['"](node:)?(fs|path)['"]/);
       expect(src).not.toMatch(/require\(['"](node:)?fs['"]\)/);

@@ -1,16 +1,15 @@
 // 06.1-12 (D-20, CO-D-114): the builder maps Decide's own unlock onto the engine's safety-net lock; unrated accounts reach the engine.
 import { prepare, type V3Inputs } from '@/engine/decide/v3';
 import { demoSource } from '../../../__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '../../buildSnapshot';
-import { buildV3Inputs } from '../buildV3Inputs';
-import { SETTINGS, TODAY, USES } from './growScenarios';
+import type { SnapshotSource } from '../../sourceTypes';
+import { SETTINGS, TODAY, buildWithUses } from './growScenarios';
 
 type Goal = SnapshotSource['goals'][number];
 const net = (over: Partial<Goal> = {}): Goal => ({
   id: 'net', name: 'Safety net', kind: 'pot', check_id: null, currency: 'USD', target: 230000, monthly_amount: null, ready_by: null,
   opening_saved: 130000, done_at: null, deleted_at: null, account_id: 'demo-acct-savings', is_safety_net: true, locked: true, protect: true, ...over,
 });
-const build = (source: SnapshotSource): V3Inputs => buildV3Inputs(source, SETTINGS, undefined, USES);
+const build = (source: SnapshotSource): V3Inputs => buildWithUses(source, SETTINGS);
 const withGoals = (goals: Goal[]): SnapshotSource => ({ ...demoSource(TODAY), goals });
 
 describe('06.1-12 D-20 decide_may_use drives SafetyNet.locked', () => {

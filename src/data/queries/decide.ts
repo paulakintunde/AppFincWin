@@ -22,7 +22,7 @@ import { fetchGoalLines, fetchSavingsGoals, type SavingsGoalRow } from '@/db/sav
 import { fetchStatementPeriods, type StatementPeriodRow } from '@/db/statementPeriods';
 import { fetchTransactionsInRange } from '@/db/transactions';
 import { monthOf, monthRange } from '@/engine/time';
-import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { recordsAsOfOf, rollForward } from '@/features/decide/snapshot/offlineFallback';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';

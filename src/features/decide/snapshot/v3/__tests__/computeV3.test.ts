@@ -2,8 +2,8 @@ import type { FxLatestRow } from '@/db/rows';
 import { readStoredCheck, seenOf, toStoredV2 } from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
 import { emptyCheckInputs } from '../../checkInputs';
-import type { SnapshotSource } from '../../buildSnapshot';
-import { buildV3Inputs } from '../buildV3Inputs';
+import type { SnapshotSource } from '../../sourceTypes';
+import { buildInputs } from '../buildInputs';
 import { computeV3, reanswerSaved, resultForCheck, resultForHome, resultForSavedPlan } from '../computeV3';
 import { v3s } from './v3Fixtures';
 
@@ -42,7 +42,7 @@ describe('computeV3 (S9: one Result)', () => {
     expect(r.code).toBe('needs_input');
     // D-54, D-59 (05.1-44): the engine asks account_use_question first, and every account reaches it with use null.
     expect(r.missing[0]).toBe('account_use_question');
-    expect(buildV3Inputs(source(), null).accounts!.every((a) => a.use === null)).toBe(true);
+    expect(buildInputs(source(), null).accounts!.every((a) => a.use === null)).toBe(true);
   });
 
   it('D-54: once every account use is stated that question is gone', () => {

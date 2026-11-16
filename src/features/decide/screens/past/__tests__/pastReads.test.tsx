@@ -7,7 +7,7 @@ import { act, render, waitFor } from '@testing-library/react-native';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { queryKeys } from '@/data/keys';
 import { usePastDecisions, type PastDecisionsModel } from '../data/usePastDecisions';

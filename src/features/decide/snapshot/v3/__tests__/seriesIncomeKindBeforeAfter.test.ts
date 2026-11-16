@@ -1,10 +1,10 @@
 // 05.2-56 (F-10, D-11): before / after the series income type reaches the engine line. "Before" is the inputs with every
-// income line's incomeKind reset to what the old code produced (the row's own tag only); "after" is buildV3Inputs now.
+// income line's incomeKind reset to what the old code produced (the row's own tag only); "after" is buildInputs now.
 import type { CheckV2, V3Inputs } from '@/engine/decide/v3';
 import { demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '../../buildSnapshot';
+import type { SnapshotSource } from '../../sourceTypes';
 import { computeV3 } from '../computeV3';
-import { buildV3Inputs } from '../buildV3Inputs';
+import { buildInputs } from '../buildInputs';
 import * as engine from '@/engine/decide/v3';
 import { v3s } from './v3Fixtures';
 
@@ -98,7 +98,7 @@ describe('F-10 before / after: the series income type on the engine line', () =>
         seen.length = 0;
         computeV3(source, v3, sofaInputs);
         const check = { ...seen[0]!, price: price as CheckV2['price'] } as CheckV2;
-        const after = buildV3Inputs(source, v3);
+        const after = buildInputs(source, v3);
         const beforeInputs = before(source, after);
         // the fixture really does exercise the change: some income line differs between before and after
         const differs = after.months.some((m, i) => m.lines.some((l, j) => l.incomeKind !== beforeInputs.months[i]!.lines[j]!.incomeKind));

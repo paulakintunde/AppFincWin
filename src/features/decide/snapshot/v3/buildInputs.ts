@@ -1,6 +1,6 @@
 // PURE. 05.5-12 (ARC-03, ENG-21): the one snapshot path. buildInputs(source, settings) turns database rows straight into V3Inputs,
-// with no step through the old engine's snapshot. Built beside buildV3Inputs.ts; callers switch in 05.5-16 after the owner reviews
-// every difference (D-07), and the old builder goes in 05.5-19. Stored rates only (never the FX fetch door). FX stays here (D-09).
+// with no step through the old engine's snapshot (the old builder and the old engine were deleted in 05.5-19; the owner approved every
+// difference in 05.5-16, D-07). Stored rates only (never the FX fetch door). FX stays here (D-09).
 //
 // What it reads, in the order it reads it: the logged months (full-month rule, used months, lines and their roles), the series (bills,
 // pay, other income, Savings series), cash and accounts, debts (recorded loans and the debts derived from cards and loans), goals

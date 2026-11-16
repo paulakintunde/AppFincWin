@@ -3,11 +3,10 @@ import { evaluate, readStoredCheck, type CheckV2, type V3Inputs } from '@/engine
 import { debtToV3Debt, envelopesOf, goalPointsOf } from '@/features/grow/connect';
 import { makeConverter } from '../../conversion';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '../../buildSnapshot';
-import { buildV3Inputs } from '../buildV3Inputs';
+import type { SnapshotSource } from '../../sourceTypes';
 import type { V3SettingsSource } from '../types';
 import baseline from './growConnect.baseline.json';
-import { scenarios, SETTINGS, TODAY, USES } from './growScenarios';
+import { scenarios, SETTINGS, TODAY, buildWithUses } from './growScenarios';
 
 type Goal = SnapshotSource['goals'][number];
 const NEW_FACTS = new Set(['locked_goals_kept', 'net_and_goals_kept', 'unlocked_goals_counted']);
@@ -23,7 +22,7 @@ const net = (over: Partial<Goal> = {}): Goal => ({
   opening_saved: 130000, done_at: null, deleted_at: null, account_id: 'demo-acct-savings', is_safety_net: true, locked: true, protect: true, ...over,
 });
 const withGoals = (goals: Goal[], base: SnapshotSource = demoSource(TODAY)): SnapshotSource => ({ ...base, goals });
-const build = (source: SnapshotSource, v3: V3SettingsSource = SETTINGS): V3Inputs => buildV3Inputs(source, v3, undefined, USES);
+const build = (source: SnapshotSource, v3: V3SettingsSource = SETTINGS): V3Inputs => buildWithUses(source, v3);
 
 describe('06-10 the builder keeps every existing answer (T-06-10-03)', () => {
   it.each(scenarios().map((s) => [s.name, s] as const))('%s: same numbers, code and variant; only the three D-06 facts may be added', (name, s) => {

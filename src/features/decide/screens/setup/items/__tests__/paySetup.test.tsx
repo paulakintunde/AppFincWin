@@ -1,12 +1,12 @@
 // 06.1-54 (G-6: C-3, A-SU-4, C-21, DC-8): Pay and payday ticks once saved. "How are you paid?" chips, income_types written on Save
 // pay details (also with no other edit), the found pay from an unmarked Activity series, the day picker and the missing-part line.
-// The integration case runs the saved income_types through settingsSourceOf and buildV3Inputs into setupFactsFrom.
+// The integration case runs the saved income_types through settingsSourceOf and buildInputs into setupFactsFrom.
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
 import { wrap } from '@/test/stepProps';
 import { EMPTY_DECIDE_SETTINGS } from '@/db/decideSettings';
 import { demoSource } from '@/features/decide/__tests__/helpers/demoScenario';
-import { buildV3Inputs } from '@/features/decide/snapshot/v3/buildV3Inputs';
+import { buildInputs } from '@/features/decide/snapshot/v3/buildInputs';
 import { settingsSourceOf } from '@/features/decide/snapshot/v3/settingsSource';
 import { setupFactsFrom } from '../../useSetupProgress';
 import { PaySetup, firstNeed, sameTypes, toggledTypes, unmarkedPaySeries } from '../PaySetup';
@@ -150,12 +150,12 @@ describe('PaySetup income types (C-3, GQ4)', () => {
     expect(lastPatch()).toEqual({ income_types: ['freelance'] });
   });
 
-  it('after the save lands, the setup facts say Pay is done (settingsSourceOf + buildV3Inputs)', () => {
+  it('after the save lands, the setup facts say Pay is done (settingsSourceOf + buildInputs)', () => {
     const source = demoSource('2026-10-28');
     const flags = { noDebts: false, netNotSet: false, noRules: false, billsRight: false };
     const factsWith = (incomeTypes: string[] | null) => {
       const v3 = settingsSourceOf({ settings: { ...EMPTY_DECIDE_SETTINGS, user_id: 'u1', income_types: incomeTypes }, answers: [], dismissals: [], checks: [], planLive: () => true });
-      return setupFactsFrom(buildV3Inputs(source, v3), flags, new Map(), new Set());
+      return setupFactsFrom(buildInputs(source, v3), flags, new Map(), new Set());
     };
     const before = factsWith(null);
     expect(before.payAmountMinor).not.toBeNull();

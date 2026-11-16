@@ -176,6 +176,15 @@ try {
     expect('depcruise fails on Decide importing the account-use writer', depcruise.status !== 0);
     expect('depcruise output names decide-never-writes-accounts', depcruise.output.includes('decide-never-writes-accounts'));
   }
+
+  console.log('Probe 11: importing a deleted old Decide engine file (05.5-19)');
+  writeProbe('src/engine/decide/__gate_probe__old.ts', 'export const old = 1;\n');
+  writeProbe('src/features/decide/__gate_probe__/oldEngine.ts', "import { old } from '@/engine/decide/__gate_probe__old';\nexport const y = old;\n");
+  {
+    const depcruise = run('npx depcruise src --config .dependency-cruiser.cjs');
+    expect('depcruise fails on a file that imports an old Decide engine path', depcruise.status !== 0);
+    expect('depcruise output names no-old-decide-engine', depcruise.output.includes('no-old-decide-engine'));
+  }
 } finally {
   cleanup();
 }

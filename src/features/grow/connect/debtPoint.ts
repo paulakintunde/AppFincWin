@@ -8,7 +8,7 @@ import type { DebtPoint, DebtSourceRow } from './types';
 /** FIN-04: a due day is a whole number 1..31; anything else is "not set". */
 const dueDayOf = (x: unknown): number | null => (typeof x === 'number' && Number.isInteger(x) && x >= 1 && x <= 31 ? x : null);
 
-/** The builder's debt record (a snapshot debt) mapped to the engine's debt: exactly the mapping buildV3Inputs used. */
+/** The builder's debt record (a snapshot debt) mapped to the engine's debt: exactly the mapping buildInputs used. */
 export function debtToV3Debt(
   d: { id: string; balance: V3Debt['balance']; minimumPayment: V3Debt['minimum']; apr: Percent | null; secured: boolean },
   row: DebtSourceRow | undefined,
