@@ -11,6 +11,22 @@ describe('cardEligibility', () => {
     expect(cardEligibility(t, null)).toEqual({ eligibility: e, note: null });
   });
 
+  it('property and cash_equivalent are blocked', () => {
+    expect(cardEligibility('property', null)).toEqual({ eligibility: 'blocked', note: null });
+    expect(cardEligibility('cash_equivalent', 'US')).toEqual({ eligibility: 'blocked', note: null });
+  });
+
+  it('tax is blocked in GB only (any case, trimmed) and otherwise permitted with a processor-fee note', () => {
+    expect(cardEligibility('tax', 'GB')).toEqual({ eligibility: 'blocked', note: 'tax_gb' });
+    expect(cardEligibility('tax', ' gb ')).toEqual({ eligibility: 'blocked', note: 'tax_gb' });
+    expect(cardEligibility('tax', 'US')).toEqual({ eligibility: 'permitted', note: 'tax_processing_fee' });
+    expect(cardEligibility('tax', null)).toEqual({ eligibility: 'permitted', note: 'tax_processing_fee' });
+  });
+
+  it('tuition is permitted with a fee note', () => {
+    expect(cardEligibility('tuition', null)).toEqual({ eligibility: 'permitted', note: 'tuition_fee' });
+  });
+
   it('covers every item type', () => {
     expect(ITEM_TYPES).toEqual([
       'vehicle',
