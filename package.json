@@ -46,7 +46,7 @@
     "lottie-react-native": "~7.3.8",
     "posthog-react-native": "4.86.0",
     "react": "19.2.3",
-    "react-i18next": "17.0.15",
+    "react-i18next": "18.0.1",
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-get-random-values": "~1.11.0",
