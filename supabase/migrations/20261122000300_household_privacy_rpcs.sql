@@ -162,7 +162,7 @@ begin
       when 'decide_settings' then array['currency', 'rough_income', 'rough_spending', 'reserve', 'dsr_line', 'housing_line',
         'unsecured_multiple', 'investing_floor', 'saving_floor', 'basis_override',
         'income_types', 'income_pattern', 'income_pattern_confirmed', 'variable_method', 'steady_amount', 'spread_months',
-        'hold_months', 'share_pct', 'detail', 'remind_plan', 'remind_unspent', 'setup_done_at', 'everyday_override',
+        'hold_months', 'detail', 'remind_plan', 'remind_unspent', 'setup_done_at', 'everyday_override',
         'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'reserve_account_id', 'reserve_goal',
         'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
         'refine_last_at', 'refine_snooze_until', 'custom_options',
@@ -429,7 +429,6 @@ begin
         when 'decide_settings.unsecured_multiple' then 'integer'  -- 05.2
         when 'decide_settings.spread_months' then 'smallint'  -- 05.2
         when 'decide_settings.hold_months' then 'smallint'  -- 05.2
-        when 'decide_settings.share_pct' then 'smallint'  -- 05.2
         when 'decide_settings.income_pattern_confirmed' then 'boolean'  -- 05.2
         when 'decide_settings.remind_plan' then 'boolean'  -- 05.2
         when 'decide_settings.remind_unspent' then 'boolean'  -- 05.2
