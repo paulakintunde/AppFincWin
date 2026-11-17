@@ -14,8 +14,8 @@ select set_config('request.jwt.claims', '{"role":"anon"}', true);
 
 select extensions.results_eq(
   $$select value from public.app_config where key = 'min_supported_version'$$,
-  $$values ('0.1.0'::text)$$,
-  'anon reads min_supported_version = 0.1.0'
+  $$values ('0.2.0'::text)$$,
+  'anon reads min_supported_version = 0.2.0 (05.5 Band B, D-21)'
 );
 select extensions.throws_ok(
   $$insert into public.app_config (key, value) values ('x', 'y')$$,
