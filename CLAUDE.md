@@ -204,7 +204,8 @@ Do not make direct repo edits outside a GSD workflow unless the user explicitly 
 
 - There is one Supabase project, `Fincwin United`, ref `cohmcbdfgqmiwykztrdg`, and it is production. The repo pins it in `supabase/config.toml`.
 - Its ref lives in `SUPABASE_PROD_PROJECT_REF` in `.env.local`, which is gitignored and never committed. There is no dev ref.
-- `supabase db push` targets production. Run `npm run supabase:preflight` first, or use `npm run supabase:db:push`, which chains the check. The preflight asserts that `config.toml`'s `project_id` matches `SUPABASE_PROD_PROJECT_REF`.
+- `supabase db push --remote` targets production. Run `npm run supabase:preflight` first, or use `npm run supabase:db:push`, which chains the check. The preflight asserts that `config.toml`'s `project_id` matches `SUPABASE_PROD_PROJECT_REF`.
+- **Supabase CLI 3 (from 2026-11-17):** a command with no target (`db push`, `db pull`, `db dump`, `gen types`, `inspect`, `storage`) runs against the **local** stack. Pass `--remote` for production; `--linked` and `--project-ref` still work but are deprecated. A command that changes production (`functions deploy`, `secrets set/unset`, `db push --remote`) needs `--yes` when nobody is at the prompt (agent runs), and Enter now answers No. `secrets unset` needs `--all` to remove every secret. `--remote` reads the link state in `supabase/.temp/`, which only the main checkout has; in a worktree it stops with ProjectRefNotLinkedError, so run remote commands from `C:devincwin` (verified with `migration list --remote` on 2026-11-17).
 
 <!-- GSD:profile-start -->
 ## Developer Profile
