@@ -26,7 +26,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations (completed 2026-10-29)
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
 - [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
-- [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
+- [x] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
@@ -1158,7 +1158,7 @@ Plans:
   6. Core Maestro flows run green on the Android emulator.
   7. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
 **Notes from Phase 8 (2026-11-11):** see `05.5-NOTES-FROM-08.md` (re-scope after 06.1 plans 36/37, share_pct owner, settlement exclusion, `countsForMe` needed before 08-25).
-**Plans:** 27/29 plans executed (waves 1-7 merged via PRs #116, #120, #121, #126, #136, #138, #139; wave 8: 05.5-23 Tasks 1-3 (owner chose build-0.2.0, signed the spec re-sync and wording 2026-11-16) and 05.5-29 (low-months question, "Count it as just mine") on phase/05.5-wave8, version 0.2.0; 05.5-27 migrations applied to production 2026-11-15; wave 7 (05.5-22 Maestro flows, device run deferred to the 05.5-23 sitting; 05.5-28 engine fixes, revision 06.8, owner approved changed answers and SN-18 option b 2026-11-15) on phase/05.5-wave7; plans 27 and 28 added 2026-11-15 by owner request; owner 2026-11-15: cap gap accepted until 05.5-16, Setup cap row added to 05.5-16, Grow counts standing plans only). 26 plans in 10 waves (planned 2026-11-14; revised 2026-11-14: 05.5-18 split, Grow and snapshot importers moved to 05.5-26). Wave 1 (plans 01-06) is the Phase 8 plugs PR and needs no gate; every later plan starts with the 06.1 gate (05.5-GATE.md). Migration push order: Band A 20261113000100 before Phase 8 08-27 (applied in production 2026-11-14); Band B 20261121000100..000300 after the 05.5 release. Owner 2026-11-14: add a "Stopped" label migration (record_decide_go via grow_end_series) in 05.5; ARC-24 extras (varying costs, sale/payoff, goal close) move to a later phase.
+**Plans:** 29/29 plans complete. Closed 2026-11-16 (owner). Merged via PRs #116, #120, #121, #126, #136, #138, #139, #140, #141, #142, #143 and the close PR. Released as 0.2.0 (EAS c8adcb4c) plus preview OTA 3c05624c. Production: A2 (20261116*) and Band B (20261121*) applied, min_supported_version 0.2.0. Carried to the post-05.5 test audit (PR #135): 05.4-43 mutation score, 05.4-45 three green nightlies, device-matrix rows, TalkBack, Maestro CLI run. Evidence: 05.5-CLOSE-GATE.md.
 
 Plans:
 - [x] 05.5-01-PLAN.md — countsForMe engine rule and the month-picture contract in src/engine/month (wave 1)
@@ -1175,18 +1175,18 @@ Plans:
 - [x] 05.5-12-PLAN.md — [gated] New input builder from rows beside the old, with a parity harness (wave 2)
 - [x] 05.5-13-PLAN.md — [gated] Costs that stop end the Activity bill; record-as-bought write contract (wave 3)
 - [x] 05.5-14-PLAN.md — [gated] Home small "left after the month's plans" line; Home and Decide parity (wave 3)
-- [ ] 05.5-15-PLAN.md — [gated] One cap: Decide cap rules are the Activity cap; CategorySheet note (wave 4)
-- [ ] 05.5-16-PLAN.md — [gated] Swap Decide onto the new builder; owner reviews every changed answer (wave 5)
+- [x] 05.5-15-PLAN.md — [gated] One cap: Decide cap rules are the Activity cap; CategorySheet note (wave 4)
+- [x] 05.5-16-PLAN.md — [gated] Swap Decide onto the new builder; owner reviews every changed answer (wave 5)
 - [x] 05.5-17-PLAN.md — [gated] Shared pay and bill forms; account purpose via AccountSheet; owner approves Activity changes (wave 3)
-- [ ] 05.5-18-PLAN.md — [gated] Move the type and helper importers (charts, journal, Decide screen helpers) off the old engine (wave 4)
-- [ ] 05.5-19-PLAN.md — [gated] Delete the old engine and old builder; empty the tier-word allowlist; lock with depcruise (wave 6)
-- [ ] 05.5-20-PLAN.md — [gated] Remove the v2 Decide switch; one Decide route test; release-check doc (wave 6)
+- [x] 05.5-18-PLAN.md — [gated] Move the type and helper importers (charts, journal, Decide screen helpers) off the old engine (wave 4)
+- [x] 05.5-19-PLAN.md — [gated] Delete the old engine and old builder; empty the tier-word allowlist; lock with depcruise (wave 6)
+- [x] 05.5-20-PLAN.md — [gated] Remove the v2 Decide switch; one Decide route test; release-check doc (wave 6)
 - [x] 05.5-21-PLAN.md — [gated] Stop writing and reading the four old decide_settings columns; cache version bump (wave 3)
-- [ ] 05.5-22-PLAN.md — [gated] Four new Maestro core flows; local emulator green run (wave 7)
-- [ ] 05.5-23-PLAN.md — The one 05.5 release: release shape, ARC-26 docs, UX-31 re-sync, sign-offs, device matrix (wave 8)
-- [ ] 05.5-24-PLAN.md — Band B: floor raise to 0.2.0, apply_patches without share_pct, drop the four columns (wave 9)
-- [ ] 05.5-25-PLAN.md — Phase close gate: carried-in 05.4-43 and 05.4-45 met; criterion 2 reworded to D-19; evidence per success criterion (wave 10)
-- [ ] 05.5-26-PLAN.md — [gated] Grow lines onto v3; check inputs, stacking, snapshot types and decideGoAhead off the old engine (wave 4)
+- [x] 05.5-22-PLAN.md — [gated] Four new Maestro core flows; local emulator green run (wave 7)
+- [x] 05.5-23-PLAN.md — The one 05.5 release: release shape, ARC-26 docs, UX-31 re-sync, sign-offs, device matrix (wave 8)
+- [x] 05.5-24-PLAN.md — Band B: floor raise to 0.2.0, apply_patches without share_pct, drop the four columns (wave 9)
+- [x] 05.5-25-PLAN.md — Phase close gate: carried-in 05.4-43 and 05.4-45 met; criterion 2 reworded to D-19; evidence per success criterion (wave 10)
+- [x] 05.5-26-PLAN.md — [gated] Grow lines onto v3; check inputs, stacking, snapshot types and decideGoAhead off the old engine (wave 4)
 - Carried in from 05.4 (D-182, owner 2026-11-06): 05.4-43 (mutation score to 90% and locked, pending and knownRed lists proved empty) and 05.4-45 (three consecutive green nightly runs) run on main after the 05.4 merge, before 05.5's own plans close. Their plan files stay in the 05.4 phase folder.
 
 ### Phase 6: Grow
@@ -1633,7 +1633,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
-| 05.5 One shared money model | 27/29 | In Progress|  |
+| 05.5 One shared money model | 29/29 | Complete | 2026-11-16 |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
