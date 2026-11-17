@@ -31,7 +31,7 @@ import { debtExtraModel } from './recordCalcModels';
 export const EXTRA_CHIP_UNITS = [0, 25, 50, 100] as const;
 
 export function DebtExtraCalculator({ id }: { id: string }) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const read = useDebtsRead();
   const fmt = useDebtFormat();

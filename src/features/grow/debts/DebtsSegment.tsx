@@ -53,7 +53,7 @@ export interface DebtsSegmentProps {
 
 
 export function DebtsSegment({ addOpen = false, onAddClosed }: DebtsSegmentProps) {
-  const t = useT() as (key: string, options?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const read = useDebtsRead();
   const fmt = useDebtFormat();
@@ -107,7 +107,7 @@ export function DebtsSegment({ addOpen = false, onAddClosed }: DebtsSegmentProps
 }
 
 function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; fmt: DebtFormat }) {
-  const t = useT() as (key: string, options?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const { model, today, userId, householdId } = read;
   const month = useDebtMonth();

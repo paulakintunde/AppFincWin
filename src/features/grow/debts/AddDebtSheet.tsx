@@ -100,7 +100,7 @@ function initialOf(debt: DebtRow | undefined): Fields {
 }
 
 export function AddDebtSheet({ visible, onClose, debt }: AddDebtSheetProps) {
-  const t = useT() as (key: string, options?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const fmt = useDebtFormat();

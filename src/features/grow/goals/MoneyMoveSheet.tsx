@@ -78,7 +78,7 @@ export function MoneyMoveSheet(props: MoneyMoveSheetProps) {
 }
 
 function MoveForm({ goal, kind, onClose, onMoved, onChooseAccount }: Omit<MoneyMoveSheetProps, 'visible' | 'goal'> & { goal: SavingsGoalRow }) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const { userId, householdId, today, ctx } = usePastContext();
   const fmt = useMoneyFormatter(false, ctx.home);

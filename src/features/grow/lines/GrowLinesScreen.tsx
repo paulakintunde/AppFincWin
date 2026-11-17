@@ -80,7 +80,7 @@ export function isWholeAmount(minor: number, currency: string): boolean {
 }
 
 export function GrowLinesScreen() {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const money = useGoalMoney();

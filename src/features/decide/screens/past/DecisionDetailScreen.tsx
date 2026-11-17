@@ -68,7 +68,7 @@ function chipOf(row: DecideCheckHistoryRow, once: boolean): { word: string; tone
 }
 
 export function DecisionDetailScreen({ id }: { id: string | null }) {
-  const t = useT() as T;
+  const t = useT() as unknown as T;
   const { colors, pairing } = useTheme();
   const model = usePastDecisions();
   const del = useDeleteDecision();
