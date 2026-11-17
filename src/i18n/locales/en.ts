@@ -50,6 +50,7 @@
  */
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
 import { appLife } from './appLife';
+import { household } from './household';
 import { decideScreens } from './decideScreens';
 
 const en = {
@@ -255,6 +256,8 @@ const en = {
     conflict_one: '{{count}} edit couldn’t save — changed elsewhere',
     conflict_other: '{{count}} edits couldn’t save — changed elsewhere',
     pendingRow: 'queued',
+    // 08-23 (HH-11): shown while the household's live channel is down and reconnecting
+    livePaused: 'Live updates paused. Reconnecting.',
     // 05-88 (D-88, R16.4): the status line says "waiting" and "Saving…"; the older "queued" wording is retired (05-109)
     saving: 'Saving…',
     waiting_one: '{{count}}\u00A0change waiting',
@@ -3249,6 +3252,8 @@ const en = {
   },
   // 06.2: App life words (calm and confident); area files owned per plan
   appLife: appLife,
+  // Phase 8 Household copy, one file per area so parallel UI plans never edit the same file. Source: 08-UI-SPEC.md. Declarative, never advice.
+  household: household,
 } as const;
 
 export default en;

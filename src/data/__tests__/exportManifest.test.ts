@@ -84,11 +84,45 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
     expect(EXPORT_MANIFEST.decide_checks).toContain('answer_v3');
   });
 
+  // 08-15: sharing and settling data is exported (CMP-F18); settlement_nudges is server-only and never is.
+  it('exports the sharing and settling tables and columns, and never settlement_nudges', () => {
+    for (const t of [
+      'transaction_splits', 'transaction_member_categories', 'household_split_defaults', 'settlements', 'settlement_lines',
+      'household_former_members', 'member_departures',
+    ]) {
+      expect(Object.keys(EXPORT_MANIFEST)).toContain(t);
+    }
+    expect(Object.keys(EXPORT_MANIFEST)).not.toContain('settlement_nudges');
+    for (const c of ['is_settlement', 'settlement_id', 'split_manual', 'copied_from', 'copy_share', 'paid_by_former_key', 'household_amount']) {
+      expect(EXPORT_MANIFEST.transactions).toContain(c);
+    }
+    expect(EXPORT_MANIFEST.member_departures).not.toContain('prior');
+    expect(EXPORT_MANIFEST.household_invites).not.toContain('code');
+  });
+
   it('excludes profiles.decide_v3 (an access switch, not user data)', () => {
     expect(EXPORT_MANIFEST.profiles).not.toContain('decide_v3');
   });
 
   it('never lists internal version columns', () => {
     for (const cols of Object.values(EXPORT_MANIFEST)) expect(cols).not.toContain('version');
+  });
+
+  // 08-07 (CMP-F18, T-08-24): the SC7 two-user privacy suite names every exported table between two marker comments.
+  it('every exported table is covered by the two-user privacy test', () => {
+    const file = path.resolve(__dirname, '../../../supabase/tests/database/101_household_privacy_two_user.test.sql');
+    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+    const start = lines.findIndex((l) => l.trim() === '-- export-tables:');
+    const end = lines.findIndex((l) => l.trim() === '-- end-export-tables');
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const listed = new Set(
+      lines
+        .slice(start + 1, end)
+        .map((l) => l.replace(/^--\s*/, '').replace(/\s*\(\d+\)\s*$/, '').trim())
+        .filter((l) => l.length > 0),
+    );
+    const missing = Object.keys(EXPORT_MANIFEST).filter((t) => !listed.has(t));
+    expect(missing).toEqual([]);
   });
 });

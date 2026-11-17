@@ -17,7 +17,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(19);
+select extensions.plan(20);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -31,8 +31,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household, so B's later deletion is a non-owner member leaving.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
@@ -95,6 +95,9 @@ insert into public.debts (id, household_id, created_by, name, kind, currency, is
 values ('d1000000-0000-0000-0000-0000000000d1', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
         '11111111-1111-1111-1111-111111111111', 'Mortgage', 'loan', 'USD', true);
 
+-- Phase 8 (D-13, 08-05): B may only use own or joint accounts, so A's Savings account is made joint for B's series below.
+update public.accounts set is_shared = true where id = 'a1000000-0000-0000-0000-000000000002';
+
 -- B (a non-owner member) also authors a series and a row in A's household.
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
@@ -126,16 +129,21 @@ select extensions.ok(
   'fixture: A has live and soft-deleted rows, two series, undo steps and an import profile'
 );
 
--- 1. Deleting a non-owner member keeps the household's data; their
--- authored series simply loses created_by.
+-- 1. Deleting a non-owner member keeps the household's shared data. Phase 8 (08-14, D-29): their PERSONAL rows are erased
+-- (the series below is not shared, so it goes instead of staying with created_by cleared); shared rows stay.
 select extensions.lives_ok(
   $$delete from auth.users where id = '22222222-2222-2222-2222-222222222222'$$,
   'deleting a non-owner member succeeds'
 );
 select extensions.is(
-  (select created_by from public.recurring_series where id = 'c6000000-0000-0000-0000-000000000006'),
-  null,
-  'the departed member''s series stays, with created_by cleared'
+  (select count(*)::int from public.recurring_series where id = 'c6000000-0000-0000-0000-000000000006'),
+  0,
+  'the departed member''s personal series is erased (Phase 8: nothing personal survives a deletion)'
+);
+select extensions.is(
+  (select count(*)::int from public.recurring_series where id = 'c5000000-0000-0000-0000-000000000005'),
+  1,
+  'the owner''s series is untouched by the member''s deletion'
 );
 select extensions.is(
   (select count(*)::int from public.category_rules where id = 'ab000000-0000-0000-0000-000000000001'),

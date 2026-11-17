@@ -69,6 +69,10 @@ jest.mock('@/data/mutations/transactions', () => ({ useMarkPaid: () => ({ markPa
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: (...a: unknown[]) => mockGoalPay(...a) }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [{ id: 's-lisbon', goal_id: 'g1' }] }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
+// 08-20: AccountSheet reads the household's members (Joint account row) and checks member lines before turning Joint off.
+let mockHouseholdMembers: unknown[] = [];
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockHouseholdMembers }) }));
+jest.mock('@/features/household/rules/jointAccounts', () => ({ countMemberLinesOnAccount: jest.fn(async () => 0) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/activity', () => ({
   useAccountBalances: () => ({ balances: mockBalances, isLoading: false }),

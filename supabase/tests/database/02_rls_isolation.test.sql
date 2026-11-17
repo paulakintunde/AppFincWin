@@ -42,10 +42,10 @@ select extensions.is(
   'A sees only own membership row; B''s membership is invisible'
 );
 select extensions.is(
-  (select role from public.household_members), 'owner', 'A''s visible membership has role owner'
+  (select is_owner from public.household_members), true, 'A''s visible membership is the owner (is_owner)'
 );
 select extensions.is(
-  (select weight from public.household_members)::int, 1, 'A''s visible membership has weight 1'
+  (select weight from public.household_members)::int, 100, 'A''s visible membership has weight 100'
 );
 
 select extensions.results_eq(

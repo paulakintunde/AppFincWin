@@ -15,6 +15,7 @@ import { impliedRate } from '@/engine/statement';
 import { categoryName } from '@/features/record/categoryName';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import type { TransactionRow } from '@/db/rows';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -30,6 +31,29 @@ import { detailRowsFor, statusActionFor } from './detailRows';
 import { kindNameKey } from './IncomeTagChip';
 import { LinkRow, RefundOfRow, RefundsGroup, type RefundDetailCallbacks } from './RefundDetailRows';
 import { formatStatementMoney } from './statementMoney';
+
+type SharedModule = typeof import('@/features/household/sharing/SharedLineDetail');
+
+/** 08-19: loaded the first time a shared line is opened, so personal lines never touch the household data layer. */
+function sharedModule(): SharedModule {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate lazy load (see above)
+  return require('@/features/household/sharing/SharedLineDetail') as SharedModule;
+}
+
+function SharedGate({ row, action, children }: { row: TransactionRow; action: 'edit' | 'delete'; children: React.ReactNode }) {
+  if (row.is_shared !== true) return <>{children}</>;
+  const { SharedActionGate } = sharedModule();
+  return (
+    <SharedActionGate row={row} action={action}>
+      {children}
+    </SharedActionGate>
+  );
+}
+
+function SharedDetail({ row, onMakeChangeAgain }: { row: TransactionRow; onMakeChangeAgain: () => void }) {
+  const { SharedLineDetail } = sharedModule();
+  return <SharedLineDetail row={row} onMakeChangeAgain={onMakeChangeAgain} />;
+}
 
 export interface TransactionDetailSheetProps {
   row: ActivityRowView | null;
@@ -164,12 +188,17 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
       actions={
         <>
           {action !== null ? <Pill label={t(`activity.detail.${action.key}`)} variant="primary" onPress={() => onStatus(action.next)} /> : null}
-          <Pill label={t('activity.detail.edit')} variant="secondary" onPress={onEdit} />
+          <SharedGate row={row} action="edit">
+            <Pill label={t('activity.detail.edit')} variant="secondary" onPress={onEdit} />
+          </SharedGate>
           {!isTransfer ? <Pill label={t('activity.detail.clone')} variant="secondary" onPress={onClone} /> : null}
-          <Pill label={t('activity.detail.delete')} variant="danger" onPress={onDelete} />
+          <SharedGate row={row} action="delete">
+            <Pill label={t('activity.detail.delete')} variant="danger" onPress={onDelete} />
+          </SharedGate>
         </>
       }
     >
+      {row.is_shared === true ? <SharedDetail row={row} onMakeChangeAgain={onEdit} /> : null}
       {specs.map((spec) => {
         const label = t(spec.labelKey as never);
         if (spec.action !== undefined && refundCallbacks !== undefined) {

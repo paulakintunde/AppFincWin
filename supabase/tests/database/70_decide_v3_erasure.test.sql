@@ -18,8 +18,8 @@ create temp table hh as select owner_id, id from public.households;
 create temp table a_hh as select id from hh where owner_id = '11111111-1111-1111-1111-111111111111';
 
 -- B joins A's household as a member.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', false, 1);
 
 -- ---------------------------------------------------------------------
 -- Fixtures, written as the table owner.

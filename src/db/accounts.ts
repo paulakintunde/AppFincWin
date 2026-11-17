@@ -29,6 +29,7 @@ export const ACCOUNT_INSERT_KEYS = [
   'use_extra_set_aside',
   'overdraft_rate',
   'interest_rate',
+  'is_shared', // 08-01 grant (joint account, D-13)
 ] as const satisfies readonly (keyof NewAccount)[];
 
 export const ACCOUNT_PATCH_KEYS = [
@@ -45,10 +46,11 @@ export const ACCOUNT_PATCH_KEYS = [
   'use_extra_set_aside',
   'overdraft_rate',
   'interest_rate',
+  'is_shared',
 ] as const satisfies readonly (keyof AccountPatch)[];
 
 export const ACCOUNT_COLUMNS =
-  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, updated_by, overdraft_limit, credit_limit, use, use_purpose, use_envelope_id, use_extra_set_aside, overdraft_rate, interest_rate, deleted_at, is_sample, version, created_at, updated_at';
+  'id, household_id, created_by, name, kind, currency, opening_balance, archived_at, updated_by, overdraft_limit, credit_limit, use, use_purpose, use_envelope_id, use_extra_set_aside, overdraft_rate, interest_rate, is_shared, tombstone_of, deleted_at, is_sample, version, created_at, updated_at';
 
 const ENTITY = 'accounts' as const;
 
@@ -67,6 +69,7 @@ export async function fetchAccounts(client: DbClient, householdId: string): Prom
     .select(ACCOUNT_COLUMNS)
     .eq('household_id', householdId)
     .is('deleted_at', null)
+    .is('tombstone_of', null) // 08-14: an account that only holds a departed member's shared lines never shows in a list or picker
     .order('name', { ascending: true });
 
   if (error) throw toDbError(error, status);
@@ -157,4 +160,21 @@ export async function fetchAccountUsageCounts(
   if (future.error) throw toDbError(future.error, future.status);
 
   return { liveLineCount: lines.count ?? 0, activeSeriesCount: (open.count ?? 0) + (future.count ?? 0) };
+}
+
+/**
+ * 08-15 (D-17): ids of the household's joint accounts. A line paid from one creates no owing. A tombstone account (08-14) is
+ * shared only so a departed member's lines keep a home; it is NOT joint for owing, so it is left out here. Soft-deleted
+ * accounts are kept: a line on one is still a line on a joint account.
+ */
+export async function fetchJointAccountIds(client: DbClient, householdId: string): Promise<string[]> {
+  const { data, error, status } = await client
+    .from('accounts')
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('is_shared', true)
+    .is('tombstone_of', null);
+
+  if (error) throw toDbError(error, status);
+  return ((data as { id: string }[] | null) ?? []).map((r) => r.id);
 }

@@ -24,9 +24,11 @@ export interface SegmentedToggleProps {
   onChange: (key: string) => void;
   accessibilityLabel: string;
   dark?: boolean;
+  /** UI-SPEC 08 Screen 9: a scope switch moves no haptic. Default true (the tick every other toggle gives). */
+  haptic?: boolean;
 }
 
-export function SegmentedToggle({ options, value, onChange, accessibilityLabel, dark = false }: SegmentedToggleProps) {
+export function SegmentedToggle({ options, value, onChange, accessibilityLabel, dark = false, haptic = true }: SegmentedToggleProps) {
   const { colors, pairing } = useTheme();
   const selectedBg = dark ? colors.surface : colors.ink;
   const selectedText = dark ? colors.ink : colors.surface;
@@ -49,7 +51,7 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
               disabled={readOnly ? true : undefined}
               onPress={() => {
                 if (selected) return;
-                hapticTick();
+                if (haptic) hapticTick();
                 onChange(option.key);
               }}
               style={styles.listRow}
@@ -84,7 +86,7 @@ export function SegmentedToggle({ options, value, onChange, accessibilityLabel, 
             disabled={readOnly ? true : undefined}
             onPress={() => {
               if (selected) return;
-              hapticTick();
+              if (haptic) hapticTick();
               onChange(option.key);
             }}
             style={[styles.segment, { backgroundColor: selected ? selectedBg : 'transparent' }]}

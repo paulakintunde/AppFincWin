@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { act, renderHook } from '@testing-library/react-native';
 import { queryKeys } from '@/data/keys';
 import { resetActivityFocusForTests } from '@/state/activityFocus';
@@ -22,7 +23,7 @@ const preparedFixture = prepare(
     balance: minorUnits(250_000),
   }),
 );
-const mockDecide = { prepared: preparedFixture as typeof preparedFixture | null };
+const mockDecide = { prepared: preparedFixture as typeof preparedFixture | null, source: null as unknown };
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => mockDecide }));
 
 const mock = {
@@ -64,6 +65,27 @@ const mock = {
 };
 
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => mock.rc }));
+// 08-25: members, household currency and stored splits for the Mine / Household scope.
+const mockHh = {
+  members: [{ user_id: 'u1' }] as unknown[],
+  currency: 'EUR',
+  splits: undefined as Map<string, { memberKey: string | null; share: number }[]> | undefined,
+  splitsEnabled: false,
+};
+jest.mock('@/data/queries/household', () => ({
+  useHouseholdMembers: () => ({ data: mockHh.members }),
+  useHousehold: () => ({ data: { reporting_currency: mockHh.currency } }),
+}));
+jest.mock('@/data/queries/householdBalances', () => ({
+  useSharedSplits: (_h: unknown, enabled: boolean) => {
+    mockHh.splitsEnabled = enabled;
+    return { data: enabled ? mockHh.splits : undefined };
+  },
+}));
+jest.mock('@/data/queries/figureScope', () => ({
+  ...jest.requireActual('@/data/queries/figureScope'),
+  householdLeftAfterPlans: jest.fn(() => -12_345),
+}));
 jest.mock('@/data/queries/activity', () => ({
   useMonthView: () => mock.monthView,
   useTransactionMonths: () => ({ months: ['2026-10', '2026-09'], counts: new Map(), isLoading: false }),
@@ -82,7 +104,8 @@ jest.mock('@/ui/money/useMoneyFormatter', () => ({
   useMoneyFormatter: () => ({ formatMoney: () => '', formatDate: () => '', locale: 'en-GB' }),
 }));
 
-beforeEach(() => {
+beforeEach(async () => {
+  await AsyncStorage.clear();
   resetActivityFocusForTests();
   mock.rc.ready = true;
   mock.rc.householdId = 'hh1';
@@ -102,6 +125,9 @@ beforeEach(() => {
   mock.monthView.projections = [];
   mock.accountsLoading = false;
   mock.balancesLoading = false;
+  mockHh.members = [{ user_id: 'u1' }];
+  mockHh.splits = undefined;
+  mockDecide.source = null;
 });
 
 describe('useHomeViewModel', () => {
@@ -177,5 +203,69 @@ describe('useHomeViewModel', () => {
     const again = await renderHook(() => useHomeViewModel());
     expect(again.result.current.afterPlans).toBeNull();
     mockDecide.prepared = preparedFixture;
+  });
+
+  describe('08-25 Mine / Household scope (HH-09)', () => {
+    const row = (over: Record<string, unknown>) => ({
+      status: 'paid',
+      transfer_id: null,
+      is_refund: false,
+      local_date: '2026-10-05',
+      name: 'Line',
+      ...over,
+    });
+
+    it('is hidden for a household of one and always Mine there', async () => {
+      const { result } = await renderHook(() => useHomeViewModel());
+      expect(result.current.showScope).toBe(false);
+      await act(async () => result.current.setScope('household'));
+      expect(result.current.scope).toBe('mine');
+      expect(result.current.figureCurrency).toBe('GBP');
+    });
+
+    it('Mine counts my stored share of a partner’s shared line and leaves out their personal line', async () => {
+      mockHh.members = [{ user_id: 'u1' }, { user_id: 'u2' }];
+      mockHh.splits = new Map([['s1', [{ memberKey: 'u1', share: -2_000 }, { memberKey: 'u2', share: -6_000 }]]]);
+      mock.monthView.rows = [
+        row({ id: 'm1', created_by: 'u1', original_amount: -1_000, amountHome: -1_000 }),
+        row({ id: 's1', created_by: 'u2', is_shared: true, household_amount: -8_000, household_currency: 'GBP', original_amount: -8_000, amountHome: -8_000 }),
+        row({ id: 'p1', created_by: 'u2', original_amount: -50_000, amountHome: -50_000 }),
+      ];
+      const { result } = await renderHook(() => useHomeViewModel());
+      expect(result.current.showScope).toBe(true);
+      expect(result.current.scope).toBe('mine');
+      expect(mockHh.splitsEnabled).toBe(true);
+      expect(result.current.position.paidOut).toBe(-3_000);
+      expect(result.current.totals.paidOut).toBe(-3_000);
+      expect(result.current.afterPlans).toEqual({ left: monthPicture(preparedFixture).leftAfterPlans });
+    });
+
+    it('Mine waits for the splits before showing figures', async () => {
+      mockHh.members = [{ user_id: 'u1' }, { user_id: 'u2' }];
+      mock.monthView.rows = [row({ id: 's1', created_by: 'u2', is_shared: true, household_amount: -8_000, original_amount: -8_000, amountHome: -8_000 })];
+      const { result } = await renderHook(() => useHomeViewModel());
+      expect(result.current.dataState).toBe('loading');
+    });
+
+    it('Household moves both figures to shared lines only, in the household currency', async () => {
+      mockHh.members = [{ user_id: 'u1' }, { user_id: 'u2' }];
+      mockHh.splits = new Map();
+      mockDecide.source = { stand: 'in' };
+      mock.monthView.rows = [
+        row({ id: 'm1', created_by: 'u1', original_amount: -1_000, amountHome: -1_000 }),
+        row({ id: 's1', created_by: 'u2', is_shared: true, household_amount: -9_000, household_currency: 'EUR', original_amount: -8_000, amountHome: -8_000 }),
+      ];
+      const { result } = await renderHook(() => useHomeViewModel());
+      await act(async () => result.current.setScope('household'));
+      expect(result.current.scope).toBe('household');
+      expect(result.current.figureCurrency).toBe('EUR');
+      expect(result.current.position.paidOut).toBe(-9_000);
+      expect(result.current.position.paidIn).toBe(0);
+      // owner 2026-11-17: no small line in Household scope
+      expect(result.current.afterPlans).toBeNull();
+      // a past month shows no small line in either scope
+      await act(async () => result.current.setMonth('2026-09'));
+      expect(result.current.afterPlans).toBeNull();
+    });
   });
 });

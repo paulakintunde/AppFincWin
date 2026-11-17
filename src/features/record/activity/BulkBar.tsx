@@ -11,6 +11,8 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { Pill } from '@/ui/Pill';
+import { BulkShare } from '@/features/household/sharing/BulkShare';
+import type { TransactionRow } from '@/db/rows';
 
 export interface BulkBarProps {
   /** Shown after an action with nothing to act on. */
@@ -18,9 +20,13 @@ export interface BulkBarProps {
   onMarkPaid: () => void;
   onMarkUnpaid: () => void;
   onDelete: () => void;
+  /** 08-19 (D-13): the selected lines. Given, a household of 2 or more gets a Share action that counts before it asks. */
+  selectedRows?: readonly TransactionRow[];
+  /** Called after lines were shared, so the screen can leave select mode. */
+  onShared?: () => void;
 }
 
-export function BulkBar({ hint = null, onMarkPaid, onMarkUnpaid, onDelete }: BulkBarProps) {
+export function BulkBar({ hint = null, onMarkPaid, onMarkUnpaid, onDelete, selectedRows, onShared }: BulkBarProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   return (
@@ -33,6 +39,7 @@ export function BulkBar({ hint = null, onMarkPaid, onMarkUnpaid, onDelete }: Bul
       <View style={styles.actions}>
         <Pill label={t('activity.bulkMarkPaid')} variant="secondary" onPress={onMarkPaid} />
         <Pill label={t('activity.bulkMarkUnpaid')} variant="secondary" onPress={onMarkUnpaid} />
+        {selectedRows !== undefined ? <BulkShare rows={selectedRows} onShared={onShared} /> : null}
         <Pill label={t('activity.bulkDelete')} variant="danger" onPress={onDelete} />
       </View>
     </View>

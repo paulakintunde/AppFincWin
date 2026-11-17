@@ -67,3 +67,26 @@ Written by plan 05.5-06. Source: `.planning/phases/05.5-one-shared-money-model/0
 1. **Gate (e): push order.** 05.5 Band A, `20261113000100_decide_rule_caps_to_categories.sql`, is pushed before 08-27 or any Phase 8 push. If `npx supabase migration list --linked` already shows any `2026112*` applied, Band A is re-dated to the next minute after the latest applied file (05.5-GATE.md records the new name). Add Band A to the 08-27 gate list. ~~Phase 8's `20261120000100..000900` push second; 05.5 Band B (`20261121000100`, `20261121000200`, `20261121000300`) pushes last, after the 05.5 release is installed.~~ Replaced by gate (g).
 2. **share_pct removal moved to 05.5.** Phase 8's planned migration `20261120001100_decide_settings_share_from_household.sql` and pgTAP `112_*` are no longer Phase 8 or 08.1 work. 05.5 Band B `20261121000300` drops `decide_settings.share_pct` (with `safety_net_protect`, `safety_net_size`, `safety_net_locked`). Household's share rules start clean. `08.1-CARRY-OVER-08-29.md` carries the matching note. ROADMAP Phase 8 success criterion 9 says so.
 3. **Where the plugs live.** `countsForMe` is at `src/engine/month/countsForMe.ts`. The BO-07 contract tests are the todo files `src/engine/month/__tests__/bo07.*.contract.test.ts`. When 08-25 turns a todo on, it keeps the exact test title, because 05.5's frozen manifest (`src/test/contracts/contractManifest.test.ts`) pins the titles.
+
+## Before the Phase 8 production push (added 2026-11-15 after 08-05)
+
+- **share_pct in 08-05's apply_patches.** `20261122000300_household_privacy_rpcs.sql` was copied from 06.2's `20261115000100` body, which still lists `share_pct` (allow-list and type map). 05.5 Band B (`20261121000300`) drops the column and lands first (owner answer 3). After merging Band B into `phase/08-household`, re-copy Band B's `apply_patches` body into 08-05's migration (keep the Phase 8 changes) so the two `share_pct` lines are gone. 08-27 must check: `grep -c share_pct supabase/migrations/202611220*` is 0. **DONE 2026-11-17:** main (Band B, #143) merged into `phase/08-household`; the two `share_pct` lines removed, the rest of 08-05's `apply_patches` now differs from Band B's body only by the Phase 8 privacy changes; the grep gives 0.
+- **Null `created_by` rows.** After the 08-01 backfill, count rows with null `created_by` in transactions, accounts and recurring_series in production. They become invisible by design; the count should be 0.
+- **`is_shared` all false** in production until 08-10 ships.
+- **Backfill review.** 08-01's backfill turns user triggers off for one update; review it together with 08-05's new triggers.
+- **No household with more than 6 members** (colour_key 0-5).
+
+
+## Owner answers after wave 4 (2026-11-15)
+
+6. **Exchange rates:** a shared line in another currency is stamped once from the nearest available rate, even if the exact rate for that day is not in yet, and never moves (as built in 08-10).
+7. **Re-splitting a category:** "Also apply to the unsettled lines" changes only lines nobody split by hand. Lines a member changed by hand (any rule) and lines split by exact amounts keep their split. The count in the offer counts only the lines that will change.
+8. **Refunds into a joint account** stay personal, like any money paid in; members can share them by hand (as built).
+9. **#134 stays draft + `hold`** until Household is done and 05.5 Band B is in production (PRs merge themselves since #137).
+
+## Owner answers after wave 6 (2026-11-15)
+
+10. **Waiting settle-up when someone leaves, is removed or deletes:** cancel it at departure, unlock its lines at once, and send the other person a notice. The balance remains to settle another way.
+11. **The leaver can say "I paid".** The person who stayed confirms it (same two-step as any settle-up). Either person can still settle (D-25).
+12. **No undo once a party has left.** A confirmed settle-up cannot be undone after either person leaves, is removed or deletes, even inside 24 hours.
+13. **Member edit clashes name who saved first.** The members `version_conflict` returns who changed it (`updated_by`), and weight saves check an expected version, so the UI can say "{{name}} changed this first" (08-16 deviation 3-4).

@@ -26,9 +26,10 @@ create function public.t82_ap(e text, i uuid, p jsonb) returns text language sql
     'entity', e, 'id', i, 'expectedVersion', public.t82_ver(e, i), 'patch', p))) ->> 'status');
 $$;
 
-insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
-  ('a8200000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0),
-  ('a8200000-0000-0000-0000-000000000002', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), 'Other checking', 'checking', 'USD', 0);
+-- Phase 8 (D-12, 08-01): an account is its creator's unless shared, so the fixture accounts carry created_by.
+insert into public.accounts (id, household_id, name, kind, currency, opening_balance, created_by) values
+  ('a8200000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0, '11111111-1111-1111-1111-111111111111'),
+  ('a8200000-0000-0000-0000-000000000002', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), 'Other checking', 'checking', 'USD', 0, '33333333-3333-3333-3333-333333333333');
 insert into public.debts (id, household_id, created_by, name, kind, currency) values
   ('d8200000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '11111111-1111-1111-1111-111111111111', 'Card', 'card', 'USD'),
   ('d8200000-0000-0000-0000-000000000002', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), '33333333-3333-3333-3333-333333333333', 'Other card', 'card', 'USD');

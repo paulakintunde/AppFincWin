@@ -1,5 +1,8 @@
 // 05-12: Decide reads. Row-derived reads nest under ['transactions', hh] (D-15). The snapshot is built in
 // memory with useMemo, never stored in the cache (it carries bigints, Pitfall 8). Stored rates only.
+import { withSettlementFlag } from './settlementFlag';
+import { mineSnapshotRows, rowsNeedSplits, type SplitsByLine } from './figureScope';
+import { useSharedSplits } from './householdBalances';
 import { useCallback, useMemo } from 'react';
 import { hashKey, keepPreviousData, useMutationState, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { serverFetchTimeOf } from '@/data/cache/persister';
@@ -250,6 +253,7 @@ const SNAPSHOT_READ_NAMES = [
 ] as const;
 
 const countWrite = (): 1 => 1;
+const NO_SPLITS: SplitsByLine = new Map();
 
 // D-88 (R16.4 item 1): one source per source key. Every consumer (quick check, open-checks chips, the flow) builds its own
 // `source` from the same cached reads; this memo hands them all the first one built, so preparedV3 (keyed on the source) runs once.
@@ -395,11 +399,25 @@ export function useDecideSnapshot(): DecideSnapshotState {
     writtenQuery,
     subdivisionQuery,
   ];
-  const missing = reads.some((q) => q.data === undefined);
+  // 08-25 (HH-09): Decide always reads the Mine scope. When any row is not the viewer's own plain line (a shared line, or a
+  // departure copy), the stored splits are a required read too; a household of one never makes this read.
+  const historyRows = history.data;
+  const upcomingRowsData = upcoming.data;
+  const needsSplits = useMemo(
+    () => rowsNeedSplits(historyRows ?? [], userId) || rowsNeedSplits(upcomingRowsData ?? [], userId),
+    [historyRows, upcomingRowsData, userId]
+  );
+  const splitsQuery = useSharedSplits(hh, needsSplits);
+  const splitsMissing = needsSplits && splitsQuery.data === undefined;
+  const splits = needsSplits ? splitsQuery.data : undefined;
+
+  const missing = reads.some((q) => q.data === undefined) || splitsMissing;
   // 'error' only when a required read failed with nothing cached; a cached copy (offline) is 'ready'.
-  const failed = reads.some((q) => q.data === undefined && q.isError);
-  const missingReads = SNAPSHOT_READ_NAMES.filter((_, i) => reads[i]?.data === undefined);
-  const errorKind: DbErrorKind | null = failed ? classifyReadError(reads.find((q) => q.data === undefined && q.isError)?.error) : null;
+  const splitsFailed = splitsMissing && splitsQuery.isError;
+  const failed = reads.some((q) => q.data === undefined && q.isError) || splitsFailed;
+  const missingReads = [...SNAPSHOT_READ_NAMES.filter((_, i) => reads[i]?.data === undefined), ...(splitsMissing ? ['sharedSplits'] : [])];
+  const readFailure = reads.find((q) => q.data === undefined && q.isError);
+  const errorKind: DbErrorKind | null = failed ? classifyReadError(readFailure !== undefined ? readFailure.error : splitsQuery.error) : null;
 
   // 05.4 APP-06 (D-126): "records up to" = the local day of the oldest real server fetch among the record reads used (last
   // month's reads while their placeholder shows); null when any is unknown. dataUpdatedAt keys the memo so a refetch that
@@ -458,12 +476,14 @@ export function useDecideSnapshot(): DecideSnapshotState {
 
   const source = useMemo<SnapshotSource | null>(() => {
     if (!rc.ready || missing) return null;
+    const scopeOf = { homeCurrency: rc.homeCurrency, rates: fxQuery.data ?? [], customCurrencies: customQuery.data ?? [] };
     return {
       today: rc.today,
       homeCurrency: rc.homeCurrency,
       region,
-      rows: history.data ?? [],
-      upcomingRows: upcoming.data ?? [],
+      // 08-25: Mine scope (my share of shared lines) through the one adapter, then 08-30's settlement flag.
+      rows: withSettlementFlag(mineSnapshotRows(history.data ?? [], splits ?? NO_SPLITS, userId, scopeOf)),
+      upcomingRows: withSettlementFlag(mineSnapshotRows(upcoming.data ?? [], splits ?? NO_SPLITS, userId, scopeOf)),
       series: seriesQuery.data ?? [],
       accounts: allAccounts,
       balances: balanceRecord,
@@ -490,6 +510,8 @@ export function useDecideSnapshot(): DecideSnapshotState {
     region,
     history.data,
     upcoming.data,
+    splits,
+    userId,
     seriesQuery.data,
     allAccounts,
     balanceRecord,
@@ -508,9 +530,9 @@ export function useDecideSnapshot(): DecideSnapshotState {
     subdivisionQuery.data,
   ]);
 
-  const sourceKey = [hh ?? '', rc.today, rc.homeCurrency, region ?? ''].join('|');
+  const sourceKey = [hh ?? '', userId ?? '', rc.today, rc.homeCurrency, region ?? ''].join('|');
   // 06.1-46 (B-2): the checks read keys by its (id, kind) signature (see paymentLinks), not by its rows.
-  const sourceDeps = [...reads.map((q) => (q === checksQuery ? checkKindSig : q.data)), recordsAsOf];
+  const sourceDeps = [...reads.map((q) => (q === checksQuery ? checkKindSig : q.data)), recordsAsOf, splits];
   const shared = useMemo(
     () => (source === null ? null : sharedSnapshot(sourceKey, sourceDeps, source)),
     // sourceDeps is rebuilt each render from the same references; `source` and the key say when they changed.
@@ -519,8 +541,8 @@ export function useDecideSnapshot(): DecideSnapshotState {
   );
   const sharedSource = shared === null ? null : shared.source;
 
-  const refetches = reads.map((q) => q.refetch);
-  const failedFlags = reads.map((q) => q.isError).join(',');
+  const refetches = [...reads.map((q) => q.refetch), splitsQuery.refetch];
+  const failedFlags = [...reads.map((q) => q.isError), splitsFailed].join(',');
   const retry = useCallback(() => {
     const flags = failedFlags.split(',');
     refetches.forEach((refetch, i) => {

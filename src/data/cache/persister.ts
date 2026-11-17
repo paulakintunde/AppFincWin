@@ -43,7 +43,10 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 06.2-17: categories.icon_key -- bumped 9 -> 10.
 // Merge of 05.5 into 06.2: both sides bumped 9 -> 10 with different shapes -- bumped 10 -> 11.
 // 05.5-28: decide_settings.unspent_anchor_set_at (server-stamped confirm time, Q11 A) -- bumped 11 -> 12.
-export const CACHE_SCHEMA_VERSION = '12';
+// Phase 8 08-13: household members, invites and events cached -- bumped 11 -> 12.
+// Phase 8 08-15: transactions and accounts gained sharing and settlement columns -- bumped 12 -> 13.
+// Merge of 05.5 (05.5-28, 12) into Phase 8 (13): both bumped from 11 with different shapes -- bumped to 14.
+export const CACHE_SCHEMA_VERSION = '14';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

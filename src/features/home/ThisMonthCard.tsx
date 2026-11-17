@@ -12,7 +12,7 @@ import { money } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { FONT_PAIRINGS } from '@/theme/fonts';
-import { radii, size, space } from '@/theme/layout';
+import { radii, size, space, step } from '@/theme/layout';
 import { DURATION, EASING, useMotion } from '@/theme/motion';
 import { shadows } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
@@ -44,6 +44,10 @@ export interface ThisMonthCardProps {
   state: MonthDataState;
   /** 05.5-14 (D-19): the shared left-after-plans figure, current month only. */
   afterPlans?: { left: number | bigint } | null;
+  /** 08-25 (HH-09): the Mine / Household switch, drawn at the top of the card (2+ people only). */
+  scopeSwitch?: React.ReactNode;
+  /** 08-25: what the figures cover, under the big figure ("Your records plus your share of shared lines"). */
+  scopeNote?: string | null;
 }
 
 // 06.2 D-18: a segment is a full-width bar stretched by scaleX from its left edge, never a width animation. On the
@@ -107,6 +111,8 @@ export function ThisMonthCard({
   currentMonth,
   state,
   afterPlans = null,
+  scopeSwitch = null,
+  scopeNote = null,
 }: ThisMonthCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -133,12 +139,15 @@ export function ThisMonthCard({
   const stacked = useShouldStack(longestFigure);
 
   const header = (
-    <View style={styles.header}>
-      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
-        {headingText}
-      </Text>
-      <MonthChips months={months} selected={month} locale={formatter.locale} onChange={onMonthChange} />
-    </View>
+    <>
+      {scopeSwitch === null ? null : <View style={styles.scopeSwitch}>{scopeSwitch}</View>}
+      <View style={styles.header}>
+        <Text accessibilityRole="header" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+          {headingText}
+        </Text>
+        <MonthChips months={months} selected={month} locale={formatter.locale} onChange={onMonthChange} />
+      </View>
+    </>
   );
 
   const container = [styles.card, { backgroundColor: colors.surface }, shadows.card];
@@ -213,6 +222,11 @@ export function ThisMonthCard({
         </Text>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('home.month.caption')}</Text>
       </View>
+      {scopeNote === null ? null : (
+        <Text testID="home-scope-note" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+          {scopeNote}
+        </Text>
+      )}
       {plansLeft === null ? null : (
         <Text testID="home-after-plans" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, marginTop: space.gapSm }}>
           {t(plansShort ? 'home.month.afterPlansShort' : 'home.month.afterPlans', { amount: plansAmount })}
@@ -276,6 +290,7 @@ export function ThisMonthCard({
 }
 
 const styles = StyleSheet.create({
+  scopeSwitch: { marginBottom: step.row },
   card: {
     marginHorizontal: space.cardPad,
     marginTop: space.cardPad,

@@ -18,8 +18,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household as a member; C stays in a household of their own.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 -- One check for A (household 1) and one for C (household 2), written as the table owner.
 insert into public.decide_checks (id, household_id, created_by, kind, name, inputs) values
@@ -144,9 +144,10 @@ select extensions.is(
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
 select extensions.is(
   (select count(*)::int from public.decide_answers), 0, 'a household member cannot read another member''s answers');
-select extensions.ok(
-  (select count(*) from public.recurring_dismissals where household_id = (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')) >= 1,
-  'a household member can read the household''s dismissals');
+-- Phase 8 (D-12, 08-01): dismissals are the creator's alone (was readable by the household).
+select extensions.is(
+  (select count(*)::int from public.recurring_dismissals where household_id = (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')),
+  0, 'a household member cannot read another member''s dismissals');
 
 select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
 select extensions.is(

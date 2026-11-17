@@ -25,6 +25,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 ## Current Position
 
+Phase: 08 (household) — COMPLETE 2026-11-17, 28/28 plans. Migrations 20261122000100..000900 in production (08-PUSH-LOG.md); delete-account Edge Function v1 deployed. Owner device sign-off on preview APK 167f43e3 (adds expo-clipboard). 08-25 ran before 08-27 by owner choice. PR #134 (branch phase/08-household, worktree C:/dev/fincwin-hh) to leave draft/hold and merge. Open: iPhone XR check with the next iOS build; DPIA retention left to Phase 11.
 Phase: 05.5 (one-shared-money-model) — EXECUTING
 Phase: 06.1 (Decide screens from the prototype) — MERGED 2026-11-14 (PR #102, main 9472c6f3); shipped as preview Android build 051b0232 (owner confirmed 2026-11-14).
 Phase: 06 (grow) — COMPLETE 2026-11-11, 37/37 plans. Code review: 73 findings fixed (06-REVIEW-FIX.md). VERIFICATION passed 10/10 (Create from Decide deferred by owner override). Owner device check approved; the goal/debt 'removed' flash fixed and owner-confirmed. Migrations through 20261110000200 in production. Full jest 991 suites / 40,030 tests pass. PR #101 on feat/06-grow (C:/dev/fincwin-g6). Follow-ups: GL-04 lock-or-leave prompt, Create from Decide button, 06-REVIEW-FIX.md items 2-5, owner observations after merge.

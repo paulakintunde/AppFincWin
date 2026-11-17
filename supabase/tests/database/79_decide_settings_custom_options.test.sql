@@ -18,8 +18,8 @@ create temp table a_hh as select id from hh where owner_id = '11111111-1111-1111
 grant select on hh, a_hh to authenticated;
 
 -- B joins A's household as a member.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', false, 1);
 
 -- A pre-existing settings row for A.
 insert into public.decide_settings (user_id, currency) values ('11111111-1111-1111-1111-111111111111', 'USD');

@@ -7,6 +7,7 @@ import type { AccountBalanceView } from '@/data/queries/activity';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { minorUnits } from '@/engine/money';
 import { AccountSheet } from '../AccountSheet';
+import { countMemberLinesOnAccount } from '@/features/household/rules/jointAccounts';
 import { AccountBalanceBlock } from '../AccountBalanceBlock';
 import { AccountsScreen } from '../AccountsScreen';
 import { AccountDetailScreen } from '../AccountDetailScreen';
@@ -56,6 +57,10 @@ jest.mock('@/data/mutations/transactions', () => ({ useMarkPaid: () => ({ markPa
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: (...a: unknown[]) => mockGoalPay(...a) }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => ({ data: [{ id: 's-lisbon', goal_id: 'g1' }] }) }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: mockTrack }) }));
+// 08-20: AccountSheet reads the household's members (Joint account row) and checks member lines before turning Joint off.
+let mockHouseholdMembers: unknown[] = [];
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockHouseholdMembers }) }));
+jest.mock('@/features/household/rules/jointAccounts', () => ({ countMemberLinesOnAccount: jest.fn(async () => 0) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
 jest.mock('@/data/queries/activity', () => ({
   useAccountBalances: () => ({ balances: mockBalances, isLoading: false }),
@@ -146,6 +151,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   resetToastForTests();
   mockAccounts = [];
+  mockHouseholdMembers = [];
   mockBalances = new Map();
   mockRegion = 'GB';
   mockHome = 'GBP';
@@ -297,6 +303,68 @@ describe('AccountSheet edit', () => {
   });
 });
 
+describe('AccountSheet joint account (08-20, D-13)', () => {
+  const two = [{ user_id: 'u1' }, { user_id: 'u2' }];
+
+  it('offers no Joint row to someone living alone', async () => {
+    const { queryByText } = await wrap(<AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />);
+    expect(queryByText('Joint account')).toBeNull();
+  });
+
+  it('a new account marked Joint is stored shared and nothing else about overdraft or purpose is written', async () => {
+    mockHouseholdMembers = two;
+    const { getByLabelText, getByText, getByRole } = await wrap(
+      <AccountSheet visible mode={{ kind: 'new', context: 'later' }} onClose={jest.fn()} />
+    );
+    expect(getByText('New lines start shared and members can see the balance.')).toBeTruthy();
+    await fireEvent.changeText(getByLabelText('Name'), 'Bills');
+    await fireEvent.press(getByRole('switch'));
+    await fireEvent.press(getByText('Save account'));
+    const [input] = mockAdd.mock.calls[0] as unknown as [Record<string, unknown>];
+    expect(input).toMatchObject({ name: 'Bills', is_shared: true });
+    expect(input).not.toHaveProperty('use');
+    expect(input).not.toHaveProperty('use_purpose');
+  });
+
+  it('opens with Joint already on from the shared accounts list', async () => {
+    mockHouseholdMembers = two;
+    const { getByRole } = await wrap(<AccountSheet visible mode={{ kind: 'new', context: 'later', joint: true }} onClose={jest.fn()} />);
+    expect(getByRole('switch').props.accessibilityState).toMatchObject({ checked: true });
+  });
+
+  it('the creator can switch an account to Joint with a patch of is_shared only', async () => {
+    mockHouseholdMembers = two;
+    const { getByText, getByRole } = await wrap(
+      <AccountSheet visible mode={{ kind: 'edit', account: account({ created_by: 'u1' }) }} onClose={jest.fn()} />
+    );
+    await fireEvent.press(getByRole('switch'));
+    await fireEvent.press(getByText('Save changes'));
+    const [vars] = mockEdit.mock.calls[0] as unknown as [{ patch: Record<string, unknown> }];
+    expect(vars.patch).toEqual({ is_shared: true });
+  });
+
+  it('says why when other members have lines on a joint account being switched off', async () => {
+    mockHouseholdMembers = two;
+    (countMemberLinesOnAccount as jest.Mock).mockResolvedValueOnce(3);
+    const { getByText, getByRole, findByTestId } = await wrap(
+      <AccountSheet visible mode={{ kind: 'edit', account: account({ created_by: 'u1', is_shared: true }) }} onClose={jest.fn()} />
+    );
+    await fireEvent.press(getByRole('switch'));
+    await fireEvent.press(getByText('Save changes'));
+    expect(await findByTestId('joint-refused')).toBeTruthy();
+    expect(mockEdit).not.toHaveBeenCalled();
+  });
+
+  it('a member who did not make the account sees a Shared badge and no toggle', async () => {
+    mockHouseholdMembers = two;
+    const { queryByRole, getByTestId } = await wrap(
+      <AccountSheet visible mode={{ kind: 'edit', account: account({ created_by: 'u2', is_shared: true }) }} onClose={jest.fn()} />
+    );
+    expect(queryByRole('switch')).toBeNull();
+    expect(getByTestId('shared-badge')).toBeTruthy();
+  });
+});
+
 describe('AccountBalanceBlock', () => {
   it('shows a warn1 standing sentence with the sentence as its accessibility label for an exceeded tier', async () => {
     const standing = { kind: 'overdrawn-beyond', overdrawnBy: minorUnits(64000), limit: minorUnits(50000), beyondBy: minorUnits(14000) } as const;
@@ -375,6 +443,21 @@ describe('AccountsScreen and AccountDetailScreen', () => {
     expect(getByText('Archived')).toBeTruthy();
     await fireEvent.press(getByLabelText('Old'));
     expect(onOpen).toHaveBeenCalledWith('acc2');
+  });
+
+  it('08 UI-SPEC 4b: a joint account row carries the Shared badge, in its label too; personal and tombstone rows do not', async () => {
+    mockAccounts = [
+      account({ id: 'j1', name: 'Joint', is_shared: true }),
+      account({ id: 'p1', name: 'Mine' }),
+      account({ id: 't1', name: 'Gone', is_shared: true, tombstone_of: 'u9', archived_at: '2026-01-01T00:00:00Z' }),
+    ];
+    mockBalances = new Map([['j1', view()], ['p1', view()]]);
+    const { getByTestId, queryByTestId, getByLabelText } = await wrap(<AccountsScreen onOpenAccount={jest.fn()} />);
+    expect(getByTestId('account-shared-j1')).toBeTruthy();
+    expect(queryByTestId('account-shared-p1')).toBeNull();
+    expect(queryByTestId('account-shared-t1')).toBeNull();
+    expect(getByLabelText(/^Joint, Current account · GBP, Shared, /)).toBeTruthy();
+    expect(getByLabelText('Gone')).toBeTruthy();
   });
 
   it('S-WR-14: an account card is announced with its balance and standing, not the name alone', async () => {

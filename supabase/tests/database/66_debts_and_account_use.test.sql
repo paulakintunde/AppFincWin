@@ -17,10 +17,11 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- Fixtures, written as the table owner.
-insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
-  ('a6600000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0),
-  ('a6600000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Savings', 'savings', 'USD', 0),
-  ('a6600000-0000-0000-0000-000000000003', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), 'Other', 'checking', 'USD', 0);
+-- Phase 8 (D-12, 08-01): an account is its creator's unless shared, so the fixture accounts carry created_by.
+insert into public.accounts (id, household_id, name, kind, currency, opening_balance, created_by) values
+  ('a6600000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0, '11111111-1111-1111-1111-111111111111'),
+  ('a6600000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Savings', 'savings', 'USD', 0, '11111111-1111-1111-1111-111111111111'),
+  ('a6600000-0000-0000-0000-000000000003', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), 'Other', 'checking', 'USD', 0, '33333333-3333-3333-3333-333333333333');
 
 insert into public.savings_goals (id, household_id, created_by, kind, name, currency, target, ready_by) values
   ('b6600000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),

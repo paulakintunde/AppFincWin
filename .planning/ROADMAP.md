@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
-- [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
+- [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
@@ -1436,56 +1436,56 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
-- [ ] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
-- [ ] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
-- [ ] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
-- [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
+- [x] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
+- [x] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
+- [x] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
+- [x] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
+- [x] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
+- [x] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
-- [ ] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
-- [ ] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
+- [x] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
+- [x] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
+- [x] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
-- [ ] 08-10-PLAN.md — Shared lines: stored splits, FX stamping, joint accounts, series, defaults
+- [x] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
+- [x] 08-10-PLAN.md — Shared lines: stored splits, FX stamping, joint accounts, series, defaults
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 08-11-PLAN.md — Settle-up state machine, locks, lapse/reminder cron, undo, write-off
-- [ ] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
+- [x] 08-11-PLAN.md — Settle-up state machine, locks, lapse/reminder cron, undo, write-off
+- [x] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
-- [ ] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
+- [x] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
+- [x] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
-- [ ] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
+- [x] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
+- [x] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
-- [ ] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
-- [ ] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
-- [ ] 08-21-PLAN.md — Balances and settle-up UI
-- [ ] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
-- [ ] 08-23-PLAN.md — Realtime wiring in the app
-- [ ] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
+- [x] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
+- [x] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
+- [x] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
+- [x] 08-21-PLAN.md — Balances and settle-up UI
+- [x] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
+- [x] 08-23-PLAN.md — Realtime wiring in the app
+- [x] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
+- [x] 08-24-PLAN.md — Leave/remove UI + removed-member notice
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
+- [x] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
+- [x] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 08-25-PLAN.md — [05.5 gate met 2026-11-15] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
+- [x] 08-25-PLAN.md — [05.5 gate met 2026-11-15] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
 
 **Moved to Phase 08.1** *(2026-11-11, owner decision; re-plan on the 06.1 screens)*
 - 08-28 — Partner opt-in, shared safety net, caveat, couples note -> `08.1-CARRY-OVER-08-28.md`
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 0/TBD | Not started | - |
+| 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |

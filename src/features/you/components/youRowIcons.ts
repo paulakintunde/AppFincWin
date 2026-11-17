@@ -15,6 +15,7 @@ export type YouRowId =
   | 'categories'
   | 'history'
   | 'goals'
+  | 'household'
   | 'weekStart'
   | 'homeCurrency'
   | 'region'
@@ -36,6 +37,7 @@ export const YOU_ROW_ICON: Record<YouRowId, IconName> = {
   categories: 'categories',
   history: 'history',
   goals: 'savings',
+  household: 'household',
   weekStart: 'calendar',
   homeCurrency: 'accounts',
   region: 'view',

@@ -60,6 +60,7 @@ import { useActivitySelection } from './useActivitySelection';
 import { debtFilterOf, matchesDebt } from './debtFilter';
 import type { DeletePrompt, RowActions } from './useRowActions';
 import { showToast } from '@/state/undoToast';
+import { isSettlement } from '@/engine/household/settlement';
 import { consumeActivityFilterIntent, useActivityFilterIntent, useSelectedMonth } from '@/state/activityFocus';
 
 export type { ActivityView } from './activityViewPrefs';
@@ -273,6 +274,7 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
               isTransfer: r.transfer_id !== null,
               isRefund: r.is_refund,
               ratePending: r.rate_pending,
+              isSettlement: isSettlement({ isSettlement: r.is_settlement === true }),
             })),
             unpaidProjections
           )

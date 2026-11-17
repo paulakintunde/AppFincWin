@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(37);
+select extensions.plan(39);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -17,8 +17,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household; C stays alone.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 -- An account and a transaction in A's and in C's household.
 set local role authenticated;
@@ -181,7 +181,7 @@ select extensions.throws_ok(
   $$insert into public.statement_periods (id, household_id, account_id, period_start, period_end)
     values ('5a000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
             'a3333333-3333-3333-3333-333333333333', '2026-08-01', '2026-08-31')$$,
-  '23503', null, 'a period on another household''s account is refused');
+  '42501', null, 'a period on another household''s account is refused');  -- Phase 8 (D-43, 08-01): RLS on the card account refuses it before the composite FK (was 23503)
 reset role;
 
 -- ---------------------------------------------------------------- As B (A's household member)
@@ -190,12 +190,21 @@ select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-2222222
 select extensions.is(
   (select count(*)::int from public.decide_checks) + (select count(*)::int from public.decide_links),
   0, 'B sees none of A''s checks or links (owner-private)');
+-- Phase 8 (D-12, 08-01): debts are the creator's alone, and a statement period follows its card account (D-43).
 select extensions.is(
   (select count(*)::int from public.debts where id = 'de000000-0000-0000-0000-000000000001'),
-  1, 'B reads A''s household debt');
+  0, 'B does not read A''s debt (owner-only)');
 select extensions.is(
   (select count(*)::int from public.statement_periods),
-  1, 'B reads the household''s statement period');
+  0, 'B does not read the statement period of A''s personal card account');
+reset role;
+select set_config('request.jwt.claims', '', true);
+update public.accounts set is_shared = true where id = 'a1111111-1111-1111-1111-111111111111';
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+select extensions.is(
+  (select count(*)::int from public.statement_periods),
+  1, 'B reads the statement period once the card account is joint (D-43)');
 reset role;
 
 -- ---------------------------------------------------------------- As C
@@ -214,13 +223,18 @@ reset role;
 select extensions.lives_ok(
   $$delete from auth.users where id = '11111111-1111-1111-1111-111111111111'$$,
   'deleting A succeeds');
+-- Phase 8 (08-14, D-29): the card account was made joint above, and a joint account the person created is a shared record that
+-- stays with the household, so its statement period stays with it. Every personal Decide row is purged.
 select extensions.is(
   (select count(*)::int from public.decide_checks where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'))
   + (select count(*)::int from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111')
   + (select count(*)::int from public.decide_links where created_by = '11111111-1111-1111-1111-111111111111')
-  + (select count(*)::int from public.debts where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'))
-  + (select count(*)::int from public.statement_periods where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')),
+  + (select count(*)::int from public.debts where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')),
   0, 'deleting A purges every Decide row');
+select extensions.is(
+  (select count(*)::int from public.statement_periods where household_id in (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')
+     and account_id in (select id from public.accounts where is_shared)),
+  1, 'the statement period of the joint card account stays with the joint account (D-29)');
 
 select * from extensions.finish();
 rollback;

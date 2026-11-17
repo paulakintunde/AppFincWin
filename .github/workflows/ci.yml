@@ -78,6 +78,7 @@ jobs:
       # runners ("toomanyrequests"); pull from the CLI's default public ECR instead.
       - run: supabase db start
         env: { SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws }
+      # SC7 (Phase 8): 101_household_privacy_two_user must pass before invite-flow changes merge; it runs in this step.
       - run: supabase test db
         env: { SUPABASE_INTERNAL_IMAGE_REGISTRY: public.ecr.aws }
   deno:

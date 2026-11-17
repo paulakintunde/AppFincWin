@@ -18,15 +18,17 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 
-insert into public.accounts (id, household_id, name, kind, currency, opening_balance) values
-  ('a1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0),
-  ('a1000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Savings', 'checking', 'USD', 0);
+-- Phase 8 (D-13, 08-05): B writes a line on Checking below, and a member may only use an own or joint account, so
+-- Checking is joint (is_shared) and Savings stays A's personal account.
+insert into public.accounts (id, household_id, name, kind, currency, opening_balance, is_shared) values
+  ('a1000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Checking', 'checking', 'USD', 0, true),
+  ('a1000000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'Savings', 'checking', 'USD', 0, false);
 
 insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name, transfer_id) values
   ('70000000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), 'a1000000-0000-0000-0000-000000000001', -1000, 'USD', current_date, 'UTC', 'r1', null),

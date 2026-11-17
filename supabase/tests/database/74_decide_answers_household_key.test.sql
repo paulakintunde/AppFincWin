@@ -15,8 +15,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- A moves: A keeps the old household H1 and joins C's household H2.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), '11111111-1111-1111-1111-111111111111', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'), '11111111-1111-1111-1111-111111111111', false, 1);
 
 select extensions.has_index('public', 'decide_answers', 'decide_answers_live_key_household', 'household-keyed live index exists');
 select extensions.hasnt_index('public', 'decide_answers', 'decide_answers_live_key', 'old live index is gone');

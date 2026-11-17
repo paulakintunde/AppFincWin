@@ -2,6 +2,7 @@
 // optional home figure, status tags and a one-tap Mark paid. A transfer leg is an ordinary
 // row with the Transfer category's tile and a dimmed figure; it never offers Mark paid
 // (D-51, D-56). A projection is muted, tagged Expected and opens a read-only detail (D-42).
+// 08-19: a shared line adds its household cue (SharedRowCue draws the SharedBadge, Settled, "logged by").
 // 06.2 (D-07, D-12..D-14, L02): the tile shows the category's own icon (letter only as fallback); only exceptions carry
 // a StatusBadge (overdue > over cap > due > expected), so a normal day stays quiet; spending is ink, never red; swipe
 // actions show an icon above the word.
@@ -32,6 +33,16 @@ import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { IncomeTagChip, type IncomeChipState } from './IncomeTagChip';
 import { RefundTag, type RefundTagModel } from './RefundTag';
 import { WashUnderlay } from './NewRowWash';
+
+/**
+ * 08-19: the household cue is loaded the first time a shared line is drawn, so a screen with only personal lines never
+ * pulls the household data layer into its module graph.
+ */
+function SharedCue(props: { row: ActivityRowView; hasBadge: boolean }) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- deliberate lazy load (see above)
+  const { SharedRowCue } = require('@/features/household/sharing/SharedRowCue') as typeof import('@/features/household/sharing/SharedRowCue');
+  return <SharedRowCue {...props} />;
+}
 
 /** Where a row sits in its run of rows: a section is one grouped card (UI-SPEC list-row cards). */
 export type CardPosition = CardPositionOf;
@@ -168,7 +179,8 @@ export function ActivityRow({
     else if (row.original_amount < 0) name = t('activity.transferTo', { account: other });
     else name = t('activity.transferFrom', { account: other });
   } else {
-    name = row.name ?? categoryLabel;
+    // 08-19: a settle-up record reads as a settle-up, not as spending.
+    name = row.is_settlement === true ? (row.name ?? t('household.settle.settled')) : (row.name ?? categoryLabel);
   }
 
   const swatchKey: CategorySwatchKey = (category?.color_key as CategorySwatchKey | undefined) ?? 'slate';
@@ -259,9 +271,12 @@ export function ActivityRow({
   // buttons stay reachable by assistive tech (the row's label replaces its children). Nothing for unflagged accounts.
   const showChip = v3 && !selectable && incomeChip !== null && onIncomeChipPress !== undefined;
   const showRefund = v3 && !selectable && refundTag !== null && onRefundTagPress !== undefined;
+  // 08-19 (D-13): a shared line carries its household cue (Settled, then Shared, with "logged by" when the viewer paid).
+  const showShared = !selectable && row.is_shared === true;
   const extras =
-    showChip || showRefund ? (
+    showChip || showRefund || showShared ? (
       <View style={styles.extras}>
+        {showShared ? <SharedCue row={row} hasBadge={badge !== null} /> : null}
         {showChip ? <IncomeTagChip state={incomeChip} onPress={() => onIncomeChipPress(row)} /> : null}
         {showRefund ? (
           <RefundTag model={refundTag} row={row} formatter={formatter} onPress={() => onRefundTagPress(refundTag.purchase.id)} />

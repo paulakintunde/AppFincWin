@@ -10,7 +10,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(26);
+select extensions.plan(27);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -178,14 +178,17 @@ select extensions.throws_ok(
 
 -- (f) a member of another household is refused
 select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
-select extensions.throws_ok(
-  format($$select public.apply_patches(jsonb_build_array(jsonb_build_object('entity', 'recurring_series', 'id', '5e730000-0000-0000-0000-000000000003', 'expectedVersion', %s, 'patch', jsonb_build_object('end_date', current_date - 1, 'end_reason', 'stopped'))))$$,
-    public.t73_ver('5e730000-0000-0000-0000-000000000003')),
-  '42501', null, 'another household cannot stop the series through apply_patches');
-select extensions.throws_ok(
-  format($$select public.edit_recurring_series_from('5e730000-0000-0000-0000-000000000003'::uuid, %s, jsonb_build_object('end_date', current_date - 1, 'end_reason', 'stopped'), current_date)$$,
-    public.t73_ver('5e730000-0000-0000-0000-000000000003')),
-  '42501', null, 'another household cannot stop the series through edit_recurring_series_from');
+-- Phase 8 (D-14, 08-05): a series the caller cannot see is refused exactly like a missing id (apply_patches: status
+-- conflict, reason not-found; edit_recurring_series_from: status not-found), no longer with 42501; the series is untouched.
+create temp table v73 as select public.t73_ver('5e730000-0000-0000-0000-000000000003') as v;
+select extensions.is(
+  (public.apply_patches(jsonb_build_array(jsonb_build_object('entity', 'recurring_series', 'id', '5e730000-0000-0000-0000-000000000003', 'expectedVersion', (select v from v73), 'patch', jsonb_build_object('end_date', current_date - 1, 'end_reason', 'stopped')))) ->> 'status')
+    || ':' || (public.apply_patches(jsonb_build_array(jsonb_build_object('entity', 'recurring_series', 'id', '5e730000-0000-0000-0000-000000000003', 'expectedVersion', (select v from v73), 'patch', jsonb_build_object('end_date', current_date - 1, 'end_reason', 'stopped')))) -> 'conflict' ->> 'reason'),
+  'conflict:not-found', 'another household cannot stop the series through apply_patches (refused as not-found)');
+select extensions.is(
+  public.edit_recurring_series_from('5e730000-0000-0000-0000-000000000003'::uuid, (select v from v73), jsonb_build_object('end_date', current_date - 1, 'end_reason', 'stopped'), current_date) ->> 'status',
+  'not-found', 'another household cannot stop the series through edit_recurring_series_from (refused as not-found)');
+select extensions.is(public.t73_ver('5e730000-0000-0000-0000-000000000003'), (select v from v73), 'the refused stops left the series untouched');
 
 reset role;
 select * from extensions.finish();

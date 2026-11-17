@@ -24,6 +24,7 @@
     "expo-application": "~57.0.3",
     "expo-asset": "~57.0.18",
     "expo-blur": "~57.0.3",
+    "expo-clipboard": "~57.0.2",
     "expo-constants": "~57.0.19",
     "expo-crypto": "~57.0.3",
     "expo-dev-client": "~57.0.19",
@@ -84,7 +85,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "test:deno": "deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts",
+    "test:deno": "deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts supabase/functions/delete-account/delete.test.ts",
     "fixtures:pdf:snapshot": "deno run --allow-read --allow-write --node-modules-dir=none supabase/functions/_fixtures/tools/snapshot-pdf-extractions.ts",
     "start": "expo start",
     "android": "expo run:android",
@@ -106,6 +107,7 @@
     "check:recurring-mirror": "node scripts/gen-recurring-mirror-test.mjs --check",
     "check:decide-demo-mirror": "node scripts/check-decide-demo-mirror.mjs --check",
     "test:engine": "jest -c jest.engine.config.js",
+    "test:realtime": "jest -c jest.realtime.config.js --runInBand",
     "test:mutation": "stryker run",
     "check:stryker-disables": "node scripts/check-stryker-disables.mjs",
     "rightanswers:page": "node scripts/right-answers/build-page.mjs",
