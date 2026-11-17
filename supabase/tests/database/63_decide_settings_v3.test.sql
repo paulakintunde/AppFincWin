@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(66);
+select extensions.plan(62);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -28,7 +28,7 @@ select extensions.has_column('public','decide_settings','variable_method','varia
 select extensions.has_column('public','decide_settings','steady_amount','steady_amount exists');
 select extensions.has_column('public','decide_settings','spread_months','spread_months exists');
 select extensions.has_column('public','decide_settings','hold_months','hold_months exists');
-select extensions.has_column('public','decide_settings','share_pct','share_pct exists');
+select extensions.hasnt_column('public','decide_settings','share_pct','share_pct is dropped (05.5 Band B)');
 select extensions.has_column('public','decide_settings','detail','detail exists');
 select extensions.has_column('public','decide_settings','remind_plan','remind_plan exists');
 select extensions.has_column('public','decide_settings','remind_unspent','remind_unspent exists');
@@ -59,8 +59,6 @@ select extensions.lives_ok($$update public.decide_settings set income_pattern = 
 select extensions.lives_ok($$update public.decide_settings set variable_method = 'spread' where user_id = '11111111-1111-1111-1111-111111111111'$$, 'variable_method spread');
 select extensions.lives_ok($$update public.decide_settings set spread_months = 0 where user_id = '11111111-1111-1111-1111-111111111111'$$, 'spread_months 0');
 select extensions.lives_ok($$update public.decide_settings set hold_months = 3 where user_id = '11111111-1111-1111-1111-111111111111'$$, 'hold_months 3');
-select extensions.lives_ok($$update public.decide_settings set share_pct = 100 where user_id = '11111111-1111-1111-1111-111111111111'$$, 'share_pct 100');
-select extensions.lives_ok($$update public.decide_settings set share_pct = 1 where user_id = '11111111-1111-1111-1111-111111111111'$$, 'share_pct 1');
 select extensions.lives_ok($$update public.decide_settings set detail = 'full' where user_id = '11111111-1111-1111-1111-111111111111'$$, 'detail full');
 select extensions.lives_ok($$update public.decide_settings set month_marks = '{"2026-01":"odd"}'::jsonb where user_id = '11111111-1111-1111-1111-111111111111'$$, 'month_marks object');
 select extensions.lives_ok($$update public.decide_settings set unspent_anchor = -10000000000000 where user_id = '11111111-1111-1111-1111-111111111111'$$, 'unspent_anchor lower bound');
@@ -73,8 +71,6 @@ select extensions.throws_ok($$update public.decide_settings set income_types = a
 select extensions.throws_ok($$update public.decide_settings set income_pattern = 'other' where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'income_pattern other refused');
 select extensions.throws_ok($$update public.decide_settings set variable_method = 'x' where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'variable_method x refused');
 select extensions.throws_ok($$update public.decide_settings set hold_months = 4 where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'hold_months 4 refused');
-select extensions.throws_ok($$update public.decide_settings set share_pct = 0 where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'share_pct 0 refused');
-select extensions.throws_ok($$update public.decide_settings set share_pct = 101 where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'share_pct 101 refused');
 select extensions.throws_ok($$update public.decide_settings set detail = 'long' where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'detail long refused');
 select extensions.throws_ok($$update public.decide_settings set month_marks = '[]'::jsonb where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'month_marks array refused');
 select extensions.throws_ok($$update public.decide_settings set month_marks = jsonb_build_object('k', repeat('x', 5000)) where user_id = '11111111-1111-1111-1111-111111111111'$$, '23514', null, 'month_marks over 4096 bytes refused');
@@ -87,9 +83,9 @@ select extensions.throws_ok($$update public.decide_settings set id = gen_random_
 select extensions.throws_ok($$insert into public.decide_settings (user_id, id) values ('11111111-1111-1111-1111-111111111111', gen_random_uuid())$$, '42501', null, 'id cannot be inserted');
 select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
 select extensions.is((select count(*)::int from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'), 0, 'another user cannot read the row');
-update public.decide_settings set share_pct = 50 where user_id = '11111111-1111-1111-1111-111111111111';
+update public.decide_settings set hold_months = 1 where user_id = '11111111-1111-1111-1111-111111111111';
 reset role;
-select extensions.is((select share_pct from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'), 1::smallint, 'another user update touched nothing');
+select extensions.is((select hold_months from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'), 3::smallint, 'another user update touched nothing');
 delete from public.accounts where id = 'a6300000-0000-0000-0000-000000000001';
 select extensions.is((select reserve_account_id from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'), null, 'deleting the account nulls reserve_account_id');
 
