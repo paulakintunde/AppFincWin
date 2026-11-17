@@ -1,9 +1,12 @@
 // D-04/D-14/D-19: the large tab-root header: optional date eyebrow, 26/700 heading-role title that
 // wraps (no numberOfLines) at large text sizes, optional screen-owned controls, and the avatar.
+// 05.5 device fix (Pixel 6): at a large font scale, screen-owned controls take their own row above the title, so the title keeps the
+// full width ("Can I afford it?" broke over three lines beside Decide's Past decisions pill).
 import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
+import { useFontScale } from '@/theme/FontScaleProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space, useScreenInsets } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
@@ -26,10 +29,22 @@ export interface TabHeaderProps {
   titleRole?: 'display' | 'heading';
 }
 
+/** At or above this font scale, a header with screen-owned controls stacks them above the title. */
+export const TAB_HEADER_STACK_SCALE = 1.3;
+
 export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, showBack, titleRole = 'heading' }: TabHeaderProps): React.JSX.Element {
   const { colors, fonts, pairing } = useTheme();
   const insets = useScreenInsets();
   const { canGoBack, goBack } = useBackHistory();
+  const fontScale = useFontScale();
+  const stacked = trailing != null && fontScale >= TAB_HEADER_STACK_SCALE;
+  const back = showBack ?? canGoBack ? <BackButton variant="compact" onPress={goBack} /> : null;
+  const controls = (
+    <View testID="tab-header-controls" style={{ flexDirection: 'row', alignItems: 'center', gap: space.gapSm }}>
+      {trailing}
+      {showAvatar !== false ? <AvatarButton /> : null}
+    </View>
+  );
   return (
     <View
       testID="tab-header"
@@ -37,14 +52,21 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, show
         paddingTop: insets.headerTop,
         paddingHorizontal: space.screenH,
         paddingBottom: space.tabHeaderPadBottom,
-        flexDirection: 'row',
-        alignItems: 'flex-start',
+        flexDirection: stacked ? 'column' : 'row',
+        alignItems: stacked ? 'stretch' : 'flex-start',
         justifyContent: 'space-between',
         gap: space.tabHeaderGap,
       }}
     >
-      {showBack ?? canGoBack ?<BackButton variant="compact" onPress={goBack} /> : null}
-      <View style={{ flex: 1, minWidth: 0 }}>
+      {stacked ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: back === null ? 'flex-end' : 'space-between' }}>
+          {back}
+          {controls}
+        </View>
+      ) : (
+        back
+      )}
+      <View style={stacked ? { minWidth: 0 } : { flex: 1, minWidth: 0 }}>
         {eyebrow ? (
           <Text
             importantForAccessibility="no"
@@ -72,10 +94,7 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, show
           {title}
         </Text>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.gapSm }}>
-        {trailing}
-        {showAvatar !== false ? <AvatarButton /> : null}
-      </View>
+      {stacked ? null : controls}
     </View>
   );
 }

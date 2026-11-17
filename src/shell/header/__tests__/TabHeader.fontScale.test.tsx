@@ -33,3 +33,29 @@ describe('TabHeader font scale (D-19)', () => {
     expect(screen.getByText('Overview').props.numberOfLines).toBeUndefined();
   });
 });
+
+// 05.5 device fix (Pixel 6): at a large font scale, screen-owned controls sit on their own row so the title keeps the full width.
+describe('TabHeader controls at large text', () => {
+  function renderWithTrailing(scale: number) {
+    return renderWithShellProviders(
+      <FontScaleProvider value={scale}>
+        <TabHeader title="Can I afford it?" trailing={<React.Fragment />} />
+      </FontScaleProvider>,
+    );
+  }
+
+  it('keeps title and controls on one row at normal size', async () => {
+    await renderWithTrailing(1);
+    expect(StyleSheet.flatten(screen.getByTestId('tab-header').props.style).flexDirection).toBe('row');
+  });
+
+  it('stacks the controls above the title from 1.3x', async () => {
+    await renderWithTrailing(1.3);
+    expect(StyleSheet.flatten(screen.getByTestId('tab-header').props.style).flexDirection).toBe('column');
+  });
+
+  it('a header without screen-owned controls never stacks', async () => {
+    await renderAt(2);
+    expect(StyleSheet.flatten(screen.getByTestId('tab-header').props.style).flexDirection).toBe('row');
+  });
+});
