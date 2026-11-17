@@ -19,6 +19,7 @@ import { useT } from '@/i18n';
 import { useSetDecideAnswered } from '@/data/mutations/decideSetup';
 import { useCategories } from '@/data/queries/categories';
 import { CategorySheet } from '@/features/record/categories/CategorySheet';
+import { categoryName as categoryDisplayName } from '@/features/record/categoryName';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { showToast } from '@/state/undoToast';
@@ -74,7 +75,8 @@ export function RulesSetup() {
   const v3 = useDecideV3();
   const flags = useSetDecideAnswered(userId);
   const categories = useCategories(rc.userId ?? undefined).data;
-  const categoryList = useMemo(() => (categories ?? []).map((c) => ({ id: c.id, name: c.name ?? '' })), [categories]);
+  // 05.5 device fix (Pixel 6): built-in categories are named from their key, as Activity shows them.
+  const categoryList = useMemo(() => (categories ?? []).map((c) => ({ id: c.id, name: categoryDisplayName(c, t) })), [categories, t]);
   const categoryName = useCallback((id: string): string => categoryList.find((c) => c.id === id)?.name ?? '', [categoryList]);
   // D-11, D-17: the capped user categories, newest rules last as on Decide home (the same filter as DecideHome's caps).
   const caps = useMemo(
