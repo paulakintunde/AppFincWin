@@ -52,6 +52,8 @@ export const home = {
     sharedAccounts: 'Shared accounts',
   },
   scope: {
+    /** 08-25: the switch's group name for screen readers. */
+    a11y: 'Whose figures to show',
     mine: 'Mine',
     household: 'Household',
     mineLabel: 'Your records plus your share of shared lines',

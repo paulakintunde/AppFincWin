@@ -19,12 +19,26 @@ import { monthOf } from '@/engine/time';
 import { monthPicture } from '@/engine/month';
 import type { MinorUnits } from '@/engine/money';
 import { useDecideV3 } from '@/data/queries/decideV3';
+import {
+  figureTotalsOf,
+  householdLeftAfterPlans,
+  householdMonthRows,
+  mineMonthRows,
+  rowsNeedSplits,
+  type FigureScope,
+  type SplitsByLine,
+} from '@/data/queries/figureScope';
+import { useHousehold, useHouseholdMembers } from '@/data/queries/household';
+import { useSharedSplits } from '@/data/queries/householdBalances';
 import { useRecordContext, type RecordContext } from '@/features/record/useRecordContext';
 import { useRowFlow } from '@/features/record/activity/useActivityViewModel';
 import { useRowActions, type RowActions } from '@/features/record/activity/useRowActions';
 import { useSelectedMonth } from '@/state/activityFocus';
 import { useMoneyFormatter, type MoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { selectComingUp, type ComingUpItem } from './comingUp';
+import { useFigureScope } from './useFigureScope';
+
+const NO_SPLITS: SplitsByLine = new Map();
 
 export function useHomeViewModel(): {
   rc: RecordContext;
@@ -47,6 +61,13 @@ export function useHomeViewModel(): {
   refreshKeys: readonly QueryKey[];
   /** 05.5-14 (D-19): the month picture's leftAfterPlans, current month only; null otherwise. */
   afterPlans: { left: MinorUnits } | null;
+  /** 08-25 (HH-09): the scope both figures read. Always 'mine' while the switch is hidden. */
+  scope: FigureScope;
+  setScope(scope: FigureScope): void;
+  /** The Mine / Household switch shows only for a household of 2+ people. */
+  showScope: boolean;
+  /** The currency the card's figures are in: the household currency in Household scope, else home. */
+  figureCurrency: string;
 } {
   const rc = useRecordContext();
   const formatter = useMoneyFormatter(rc.showCents);
@@ -66,15 +87,32 @@ export function useHomeViewModel(): {
   );
   const { balances, isLoading: balancesLoading } = useAccountBalances(rc.householdId, allAccounts);
 
-  const position = useMemo(
-    () =>
-      monthPositionOf({
-        rows: monthView.rows,
-        projections: monthView.projections,
-        totals: monthView.totals,
-      }),
-    [monthView.rows, monthView.projections, monthView.totals]
-  );
+  // 08-25 (HH-09): Mine is your records plus your stored share of shared lines; Household is shared lines only, in the
+  // household currency. Both go through the engine's one adapter (data/queries/figureScope); this screen adds no filter.
+  const [chosenScope, setScope] = useFigureScope('home');
+  const members = useHouseholdMembers(rc.householdId).data;
+  const showScope = (members?.length ?? 0) >= 2;
+  const scope: FigureScope = showScope ? chosenScope : 'mine';
+  const householdCurrency = useHousehold(rc.householdId).data?.reporting_currency ?? rc.homeCurrency;
+  const figureCurrency = scope === 'household' ? householdCurrency : rc.homeCurrency;
+
+  const needsSplits = useMemo(() => rowsNeedSplits(monthView.rows, rc.userId), [monthView.rows, rc.userId]);
+  const splitsQuery = useSharedSplits(rc.householdId, scope === 'mine' && needsSplits);
+  const splitsWaiting = scope === 'mine' && needsSplits && splitsQuery.data === undefined;
+  const splits = splitsQuery.data ?? NO_SPLITS;
+
+  const figures = useMemo(() => {
+    if (scope === 'household') {
+      const rows = householdMonthRows(monthView.rows);
+      return { rows, projections: [], totals: figureTotalsOf(rows, []) };
+    }
+    const rows = rc.userId === null ? monthView.rows : mineMonthRows(monthView.rows, splits, rc.userId, rc.homeCurrency);
+    // the viewer's own lines only: the month view's own totals, unchanged (03.1 D-47 parity with Activity)
+    if (rows === monthView.rows) return { rows, projections: monthView.projections, totals: monthView.totals };
+    return { rows, projections: monthView.projections, totals: figureTotalsOf(rows, monthView.projections) };
+  }, [scope, monthView.rows, monthView.projections, monthView.totals, splits, rc.userId, rc.homeCurrency]);
+
+  const position = useMemo(() => monthPositionOf(figures), [figures]);
 
   const coming = useMemo(
     () => selectComingUp(monthView.rows, monthView.projections),
@@ -97,13 +135,15 @@ export function useHomeViewModel(): {
 
   const hh = rc.householdId;
   const refreshKeys = useMemo(() => monthRefreshKeys(hh, month), [hh, month]);
-  const { prepared } = useDecideV3();
+  const { prepared, source = null } = useDecideV3();
   const currentMonth = monthOf(rc.today);
-  const afterPlans = useMemo(
-    () => (month === currentMonth && prepared !== null ? { left: monthPicture(prepared).leftAfterPlans } : null),
-    [month, currentMonth, prepared]
-  );
-  const dataState: MonthDataState = rc.ready ? monthView.dataState : 'loading';
+  const afterPlans = useMemo(() => {
+    if (month !== currentMonth) return null;
+    // Household: the same builder and month picture over the shared-lines-only source (no second sum).
+    if (scope === 'household') return source === null ? null : { left: householdLeftAfterPlans(source, householdCurrency) };
+    return prepared !== null ? { left: monthPicture(prepared).leftAfterPlans } : null;
+  }, [month, currentMonth, prepared, scope, source, householdCurrency]);
+  const dataState: MonthDataState = rc.ready && !splitsWaiting ? monthView.dataState : 'loading';
 
   return {
     rc,
@@ -111,7 +151,7 @@ export function useHomeViewModel(): {
     month,
     setMonth,
     months,
-    totals: monthView.totals,
+    totals: figures.totals,
     position,
     loading: dataState === 'loading',
     dataState,
@@ -125,5 +165,9 @@ export function useHomeViewModel(): {
     flow,
     refreshKeys,
     afterPlans,
+    scope,
+    setScope,
+    showScope,
+    figureCurrency,
   };
 }

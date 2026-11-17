@@ -15,6 +15,7 @@ import { owedToMeTotal, pairBalances, type PairBalance, type SharedLineForBalanc
 import { minorUnits, type MinorUnits } from '@/engine/money/types';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
+import { splitsByLineOf, type SplitsByLine } from './figureScope';
 
 /** What one read of the household's shared lines returns. Plain data only, so the persisted cache can hold it. */
 export interface BalanceInputs {
@@ -149,6 +150,22 @@ export function useHouseholdBalances(householdId: string | null | undefined, vie
     enabled: Boolean(householdId) && Boolean(viewerId),
     select: (inputs: BalanceInputs): HouseholdBalances => computeBalances(inputs, viewerId as string),
   });
+}
+
+/**
+ * 08-25 (HH-09): the stored splits of the household's shared lines, by line, from the same cached read as the balances (one
+ * fetch, one key). Mine figures read the viewer's share from these; enabled only when some row on screen needs them.
+ */
+export function useSharedSplits(householdId: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    ...balanceQuery(householdId),
+    enabled: Boolean(householdId) && enabled,
+    select: selectSplitsByLine,
+  });
+}
+
+function selectSplitsByLine(inputs: BalanceInputs): SplitsByLine {
+  return splitsByLineOf(inputs.splits);
 }
 
 /** The lines behind one pair's balance (the pair sheet). `otherKey` is a user id, or a former key once deleted. */

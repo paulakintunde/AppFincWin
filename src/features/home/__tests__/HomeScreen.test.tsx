@@ -1,5 +1,7 @@
 import React from 'react';
-import { render, within } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
+import { ThemeProvider } from '@/theme/ThemeProvider';
+import { hapticTick } from '@/ui/haptics';
 import { router } from 'expo-router';
 import { HomeScreen } from '../HomeScreen';
 
@@ -31,12 +33,17 @@ const mockVm = {
     answerDelete: jest.fn(),
   },
   refreshKeys: mockRefreshKeys,
+  scope: 'mine' as 'mine' | 'household',
+  setScope: jest.fn(),
+  showScope: false,
+  figureCurrency: 'GBP',
 };
 
 jest.mock('../useHomeViewModel', () => ({ useHomeViewModel: () => mockVm }));
 jest.mock('@/data/queries/categories', () => ({ useCategoryLookup: () => ({ byId: new Map() }) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
 jest.mock('expo-router', () => ({ router: { navigate: jest.fn() } }));
+jest.mock('@/ui/haptics', () => ({ ...jest.requireActual('@/ui/haptics'), hapticTick: jest.fn() }));
 jest.mock('@/features/auth/appHome', () => ({ ACTIVITY_HREF: '/activity-href' }));
 jest.mock('@/state/activityFocus', () => ({ requestActivityFocus: jest.fn() }));
 
@@ -143,4 +150,46 @@ describe('HomeScreen', () => {
     (mockSeen.coming?.onSeeAll as () => void)();
     expect(router.navigate).toHaveBeenCalledWith('/activity-href');
   });
+
+  describe('08-25 Mine / Household switch (HH-09)', () => {
+    afterEach(() => {
+      mockVm.showScope = false;
+      mockVm.scope = 'mine';
+      mockVm.figureCurrency = 'GBP';
+    });
+
+    it('is hidden for a household of one: no switch, no note, home currency', async () => {
+      await render(<HomeScreen />);
+      expect(mockSeen.month?.scopeSwitch).toBeNull();
+      expect(mockSeen.month?.scopeNote).toBeNull();
+      expect(mockSeen.month?.homeCurrency).toBe('GBP');
+    });
+
+    it('Mine: the switch and the Mine note', async () => {
+      mockVm.showScope = true;
+      await render(<HomeScreen />);
+      expect(mockSeen.month?.scopeSwitch).toBeTruthy();
+      expect(mockSeen.month?.scopeNote).toBe('Your records plus your share of shared lines');
+    });
+
+    it('Household: the note names the household currency and the card formats in it', async () => {
+      mockVm.showScope = true;
+      mockVm.scope = 'household';
+      mockVm.figureCurrency = 'EUR';
+      await render(<HomeScreen />);
+      expect(mockSeen.month?.scopeNote).toBe('Shared lines only, in EUR');
+      expect(mockSeen.month?.homeCurrency).toBe('EUR');
+    });
+
+    it('switching sets the scope with no haptic (UI-SPEC: none for a scope switch)', async () => {
+      mockVm.showScope = true;
+      await render(<HomeScreen />);
+      const toggle = await render(<ThemeProvider>{mockSeen.month?.scopeSwitch as React.ReactElement}</ThemeProvider>);
+      fireEvent.press(toggle.getByLabelText('Household'));
+      expect(mockVm.setScope).toHaveBeenCalledWith('household');
+      expect(hapticTick).not.toHaveBeenCalled();
+      expect(toggle.getByLabelText('Whose figures to show')).toBeTruthy();
+    });
+  });
 });
+
