@@ -27,7 +27,7 @@ export function changeRowLabel(row: ChangeRow, t: Translate): string {
 }
 
 export function ChangeRows({ rows }: { rows: readonly ChangeRow[] }) {
-  const t = useT() as Translate;
+  const t = useT() as unknown as Translate;
   const { colors, pairing } = useTheme();
   return (
     <View>

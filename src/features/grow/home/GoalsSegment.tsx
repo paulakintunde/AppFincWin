@@ -39,7 +39,7 @@ export interface GoalsSegmentProps {
 export { useGoalMoney };
 
 export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: GoalsSegmentProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const read = useGoalsRead();
   const money = useGoalMoney();

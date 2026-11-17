@@ -40,7 +40,7 @@ interface Fields {
 }
 
 export function SaleSheet({ visible, debt, onClose }: SaleSheetProps) {
-  const t = useT() as (key: string, options?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const fmt = useDebtFormat();

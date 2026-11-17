@@ -85,7 +85,7 @@ export function goalIconName(name: string): IconName | null {
 }
 
 export function GoalRow({ goal, reachesOn, money, animate = true, pending = 0, actions, icon = null }: GoalRowProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const percent = goalPercent(goal.saved, goal.target);
   const monthly = goal.monthlyAmount !== null && goal.monthlyAmount > 0 ? goal.monthlyAmount : null;

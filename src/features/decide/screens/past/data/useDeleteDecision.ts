@@ -28,7 +28,7 @@ export function writtenCount(links: readonly DecideLinkRow[] | undefined): numbe
 }
 
 export function useDeleteDecision() {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { remove } = useRemoveDecision();
 
   const confirmCopy = (decision: DecideCheckRow, written: number, kept: KeptRecord | null = null): DeleteConfirmCopy => {

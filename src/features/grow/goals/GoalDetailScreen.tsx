@@ -53,7 +53,7 @@ function ordinal(n: number): string {
 }
 
 export function GoalDetailScreen({ id }: { id: string }) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const { userId, householdId, today, formatDate, ctx } = usePastContext();
   const calc = useCalcFormat();
