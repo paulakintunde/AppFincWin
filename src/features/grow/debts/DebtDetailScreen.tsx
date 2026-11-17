@@ -64,7 +64,7 @@ export const DETAIL_CHIPS: readonly RevealChip[] = [
 const FIRST_CHIP = 'extra-50';
 
 export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
-  const t = useT() as (key: string, options?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const read = useDebtsRead();
   const rows = useDebtRows(read.householdId);

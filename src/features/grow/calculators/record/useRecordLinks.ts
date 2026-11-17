@@ -13,7 +13,7 @@ import { useCalcFormat } from '../typed/CalcFields';
 import type { RecordLink } from '../typed/CalculatorsScreen';
 
 export function useRecordLinks(): RecordLink[] {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const calc = useCalcFormat();
   const money = useDebtFormat();
   const goals = useGoalsRead();

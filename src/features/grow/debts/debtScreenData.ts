@@ -92,7 +92,7 @@ export function useDebtFormat(): DebtFormat {
     },
     [locale]
   );
-  const ordinal = useCallback((day: number) => formatOrdinal(day, locale, t as (key: string, options?: Record<string, unknown>) => string), [locale, t]);
+  const ordinal = useCallback((day: number) => formatOrdinal(day, locale, t as unknown as (key: string, options?: Record<string, unknown>) => string), [locale, t]);
   const rate = useCallback(
     (apr: string | null) => {
       if (apr === null || apr === '' || Number.isNaN(Number(apr))) return null;

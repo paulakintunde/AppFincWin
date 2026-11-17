@@ -76,7 +76,7 @@ export function NewGoalSheet(props: NewGoalSheetProps) {
 type Lock = 'yes' | 'no' | null;
 
 function GoalForm({ onClose, goal, saved = 0, prefill }: NewGoalSheetProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const { userId, householdId, today, ctx } = usePastContext();
   const calc = useCalcFormat();

@@ -82,7 +82,7 @@ export function soonerText(t: T, months: number | null): string | null {
 export function PayoffPlanCard(props: PayoffPlanCardProps) {
   const { scenarios, oneDebt, firstCleared, order, onOrder, open, onOpen, extra, onExtra, lump, onLump, savedExtra, lumpDebt } = props;
   const { startDates, onUseExtra, onStopExtra, onUseOnce, left, fmt, currency, extraIsPlan = false, onceRecorded = false } = props;
-  const t = useT() as T;
+  const t = useT() as unknown as T;
   const { colors, pairing } = useTheme();
   const [typing, setTyping] = useState(false);
   const exp = currencyExponent(currency);

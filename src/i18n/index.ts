@@ -1,4 +1,4 @@
-import i18next from 'i18next';
+import i18next, { type ParseKeys, type TFunction } from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
 import { getLocales } from 'expo-localization';
 import en from './locales/en';
@@ -40,3 +40,12 @@ i18next.services.formatter?.add('ordinal', (value, lng) =>
 export { i18next as i18n };
 
 export const useT = () => useTranslation().t;
+
+/**
+ * i18next 27 checks each key in a union on its own but cannot resolve a union in a single t() call
+ * (TS2345). K is still limited to real catalogue keys (ParseKeys), so an unknown key fails to compile;
+ * only the overload choice is skipped. Use it where the key is a union type (FailedReasonKey, SyncLabelKey).
+ */
+export function tOneOf<K extends ParseKeys<'common'>>(t: TFunction<'common'>, key: K, options?: Record<string, unknown>): string {
+  return (t as unknown as (k: string, o?: Record<string, unknown>) => string)(key, options);
+}

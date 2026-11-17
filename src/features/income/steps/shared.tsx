@@ -29,7 +29,7 @@ import type { RecurringSeriesRow } from '@/db/rows';
 export type Copy = (key: string, options?: Record<string, unknown>) => string;
 export function useCopy(): Copy {
   const t = useT();
-  return (key, options) => String((t as (k: ParseKeys, o?: Record<string, unknown>) => unknown)(key as ParseKeys, options));
+  return (key, options) => String((t as unknown as (k: ParseKeys, o?: Record<string, unknown>) => unknown)(key as ParseKeys, options));
 }
 
 /** The copy key that explains why Continue is off on a needed step (UI-SPEC: "At least one is needed to continue."). */

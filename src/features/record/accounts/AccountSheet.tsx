@@ -106,7 +106,7 @@ function AccountUseRowBody({ account }: { account: AccountRow }) {
     use_envelope_id: account.use_envelope_id ?? null,
     use_extra_set_aside: account.use_extra_set_aside ?? null,
   });
-  const text = use === null ? null : accountUseText(use, (k, o) => String((t as (k: string, o?: unknown) => unknown)(k, o)), (id) => pots?.live.find((g) => g.id === id)?.name);
+  const text = use === null ? null : accountUseText(use, (k, o) => String((t as unknown as (k: string, o?: unknown) => unknown)(k, o)), (id) => pots?.live.find((g) => g.id === id)?.name);
   const bal = balances.get(account.id);
   return (
     <>
