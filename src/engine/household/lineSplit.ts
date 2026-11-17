@@ -1,5 +1,6 @@
 import { memberParts, type SplitRule } from '../decide/share';
 import { minorUnits, type MinorUnits } from '../money/types';
+export type { SplitRule } from '../decide/share';
 
 /** One person on a shared line, in household join order (HH-05). */
 export interface LineParticipant {

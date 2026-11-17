@@ -1,8 +1,7 @@
 // 08-19 (HH-05, T-08-70): what the split sheet shows is what the server will store, because the figures come from the
 // engine's splitLine (08-03) and nowhere else. No second split maths lives here: this file only maps the sheet's state
 // (rule key, who is in, typed amounts) onto the engine's inputs and the engine's answer back onto rows.
-import { splitLine, type LineParticipant } from '@/engine/household/lineSplit';
-import type { SplitRule as EngineRule } from '@/engine/decide/share';
+import { splitLine, type LineParticipant, type SplitRule as EngineRule } from '@/engine/household/lineSplit';
 import { minorUnits, type MinorUnits } from '@/engine/money/types';
 import type { SplitRuleKey } from '../components/SplitRuleList';
 
