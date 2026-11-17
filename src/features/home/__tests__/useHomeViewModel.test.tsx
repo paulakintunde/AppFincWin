@@ -261,7 +261,8 @@ describe('useHomeViewModel', () => {
       expect(result.current.figureCurrency).toBe('EUR');
       expect(result.current.position.paidOut).toBe(-9_000);
       expect(result.current.position.paidIn).toBe(0);
-      expect(result.current.afterPlans).toEqual({ left: -12_345 });
+      // owner 2026-11-17: no small line in Household scope
+      expect(result.current.afterPlans).toBeNull();
       // a past month shows no small line in either scope
       await act(async () => result.current.setMonth('2026-09'));
       expect(result.current.afterPlans).toBeNull();

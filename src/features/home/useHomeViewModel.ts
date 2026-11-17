@@ -21,7 +21,6 @@ import type { MinorUnits } from '@/engine/money';
 import { useDecideV3 } from '@/data/queries/decideV3';
 import {
   figureTotalsOf,
-  householdLeftAfterPlans,
   householdMonthRows,
   mineMonthRows,
   rowsNeedSplits,
@@ -135,14 +134,15 @@ export function useHomeViewModel(): {
 
   const hh = rc.householdId;
   const refreshKeys = useMemo(() => monthRefreshKeys(hh, month), [hh, month]);
-  const { prepared, source = null } = useDecideV3();
+  const { prepared } = useDecideV3();
   const currentMonth = monthOf(rc.today);
   const afterPlans = useMemo(() => {
     if (month !== currentMonth) return null;
-    // Household: the same builder and month picture over the shared-lines-only source (no second sum).
-    if (scope === 'household') return source === null ? null : { left: householdLeftAfterPlans(source, householdCurrency) };
+    // Owner 2026-11-17: the small line is hidden in Household scope. Shared lines rarely carry income, so it would mostly
+    // read as a shortfall equal to the shared plans. Household shows the big figure only.
+    if (scope === 'household') return null;
     return prepared !== null ? { left: monthPicture(prepared).leftAfterPlans } : null;
-  }, [month, currentMonth, prepared, scope, source, householdCurrency]);
+  }, [month, currentMonth, prepared, scope]);
   const dataState: MonthDataState = rc.ready && !splitsWaiting ? monthView.dataState : 'loading';
 
   return {

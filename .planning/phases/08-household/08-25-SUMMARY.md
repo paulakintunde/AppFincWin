@@ -117,3 +117,10 @@ None. No new endpoint or table; the adapter only narrows what RLS already lets t
 ## Self-Check: PASSED
 
 Files exist (myShare.ts, countsForMeInput.ts, figureScope.ts, useFigureScope.ts and tests); commits 6260bfbc, a6883bd5, 9cbfc1fd, 7968239d are in `git log`.
+
+## Owner answers (2026-11-17)
+
+1. Activity's month total keeps adding every listed line at full amount. "Your share" lives on Home.
+2. The small "left after the month's plans" line is hidden in Household scope, so Household shows the big figure only. `householdLeftAfterPlans` stays in figureScope.ts with its test and nothing on screen uses it. Changed in useHomeViewModel.ts and its test.
+3. Accepted for now: a leaver's copy in a different currency shows unconverted. Noted for later.
+4. Accepted for now: a shared line waiting for an exchange rate is left out of the figures until the rate arrives.
