@@ -11,7 +11,7 @@ import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'rea
 import { Text } from '@/ui/Text';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { useRealtimeStatus } from '@/data/realtime/realtimeStatus';
-import { useT } from '@/i18n';
+import { tOneOf, useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { space } from '@/theme/layout';
@@ -62,7 +62,7 @@ export function SyncStatusLine({ detail = false, wrapperStyle, wrapperTestID }: 
 
   const line = (
     <View style={styles.column}>
-      {primary ? <Text style={labelStyle}>{t(primary.key, { count: primary.count })}</Text> : null}
+      {primary ? <Text style={labelStyle}>{tOneOf(t, primary.key, { count: primary.count })}</Text> : null}
       {livePaused ? <Text style={labelStyle}>{t('sync.livePaused')}</Text> : null}
       {failed > 0 ? (
         <Pressable accessibilityRole="button" accessibilityHint={t('sync.failedSheet.openHint')} onPress={() => setListOpen(true)} style={styles.button}>

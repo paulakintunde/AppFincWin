@@ -45,7 +45,7 @@ export function NetSizeSheet(props: NetSizeSheetProps) {
 }
 
 function PreviewRow({ row }: { row: NetPreviewRow }) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const money = useGoalMoney();
   const before = t(`grow.safetyNet.sizeSheet.states.${row.before}`);
@@ -63,7 +63,7 @@ function PreviewRow({ row }: { row: NetPreviewRow }) {
 }
 
 function SizeForm({ net, saved, onClose, onSaved }: NetSizeSheetProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const { userId, householdId, ctx } = usePastContext();
   const money = useGoalMoney();

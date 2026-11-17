@@ -34,7 +34,7 @@ export interface GrowthIllustrationProps {
 }
 
 export function GrowthIllustration({ start: startParam, rate: rateParam, monthly: monthlyParam, asOf: asOfParam }: GrowthIllustrationProps = {}) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const f = useCalcFormat();
   const { today, formatDate } = usePastContext();

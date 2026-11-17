@@ -29,7 +29,7 @@ export function NetAccountSheet(props: NetAccountSheetProps) {
 }
 
 function AccountForm({ net, saved, ownerId, householdId, onClose, onSaved }: NetAccountSheetProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const accountsQ = useAccounts(householdId ?? undefined);
   const { edit } = useEditGoal();
   const accounts = useMemo(

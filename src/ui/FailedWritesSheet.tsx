@@ -21,7 +21,7 @@ import {
   type FailedWrite,
 } from "@/data/sync/failedWrites";
 import { useShouldStack } from "./textFit";
-import { useT } from "@/i18n";
+import { tOneOf, useT } from "@/i18n";
 import { useDeviceLocale } from "@/services/locale/deviceLocale";
 import { clockText } from "./clockText";
 import { useTheme } from "@/theme/ThemeProvider";
@@ -108,7 +108,7 @@ export function FailedWritesSheet({
                   <View style={styles.text}>
                     <Text style={{ ...body, fontWeight: "600" }}>{what}</Text>
                     <Text style={meta}>{whenText(entry.at, locale)}</Text>
-                    <Text style={body}>{t(failedReasonKey(entry))}</Text>
+                    <Text style={body}>{tOneOf(t, failedReasonKey(entry))}</Text>
                   </View>
                   <View style={stacked ? styles.actionsStacked : styles.actions}>
                     {recoverableCheckCreate(entry) !== null ? (

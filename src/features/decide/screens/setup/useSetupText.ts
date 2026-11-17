@@ -19,7 +19,7 @@ export function useSetupText(currency: string): SetupText {
   const t = useT();
   const fmt = useMoneyFormatter(false);
   const ordinal = useCallback(
-    (day: number) => formatOrdinal(day, fmt.locale, t as (key: string, options?: Record<string, unknown>) => string),
+    (day: number) => formatOrdinal(day, fmt.locale, t as unknown as (key: string, options?: Record<string, unknown>) => string),
     [fmt.locale, t],
   );
   const amount = useCallback((minor: number) => fmt.formatMoney(money(minor, currency)), [fmt, currency]);

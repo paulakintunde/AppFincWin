@@ -33,7 +33,7 @@ export function StatusBadge({ status, label, params, accessibilityLabel, testID 
   const { colors, pairing } = useTheme();
   const def = STATUS[status];
   // The map's keys are a union whose placeholders differ (percent, amount, date); callers pass the params a word needs.
-  const word = label ?? (t as (key: string, options?: Record<string, string | number>) => string)(def.wordKey, params);
+  const word = label ?? (t as unknown as (key: string, options?: Record<string, string | number>) => string)(def.wordKey, params);
   const tone = def.tone === 'neutral' ? null : stateColors[def.tone];
   const background = tone ? tone.tint : colors.fill1;
   const ink = tone ? tone.color : colors.inkDim;
