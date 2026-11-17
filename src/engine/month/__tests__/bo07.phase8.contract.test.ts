@@ -1,6 +1,9 @@
-// BO-07 Phase 8 contract todos. Owners: 08-30 (settlements), 08.1 (income profile), 08-25 (visibility).
+// BO-07 Phase 8 contracts. Owners: 08-30 (settlements, on), 08-25 (visibility, on), 08.1 (income profile, still a todo).
 // Switching a todo on keeps the exact title. The frozen list lives in src/test/contracts/contractManifest.test.ts.
+import { readFileSync, readdirSync } from 'fs';
+import { join } from 'path';
 import { minorUnits } from '../../money/types';
+import { countsLineOf, mineAmountOf, type ScopeLine } from '../../household/countsForMeInput';
 import { monthTotals } from '../../activity/totals';
 import { excludeSettlements, isSettlement } from '../../household/settlement';
 import { countsForMe } from '../countsForMe';
@@ -44,5 +47,26 @@ describe('BO-07 Phase 8 contracts (settlements, income profile, visibility)', ()
     expect(rows.filter(isSettlement)).toHaveLength(1);
   });
   test.todo("one income profile per member; a partner's pay never overwrites mine");
-  test.todo('database rules gate reading; countsForMe gates counting; no screen adds its own filter');
+  it('database rules gate reading; countsForMe gates counting; no screen adds its own filter', () => {
+    // Counting: whatever the database let the viewer read, the Mine figure is exactly countsForMe over the adapter's line.
+    const lines: ScopeLine[] = [
+      { id: 'a', createdBy: 'me', isShared: false, amount: minorUnits(-1_000), amountHome: minorUnits(-1_000), householdAmount: null, householdCurrency: null },
+      { id: 'b', createdBy: 'sam', isShared: true, amount: minorUnits(-4_000), amountHome: minorUnits(-4_000), householdAmount: minorUnits(-4_000), householdCurrency: 'USD' },
+      { id: 'c', createdBy: 'me', isShared: false, isSettlement: true, amount: minorUnits(-700), amountHome: minorUnits(-700), householdAmount: null, householdCurrency: null },
+    ];
+    const splits = [{ memberKey: 'me', share: minorUnits(-1_500) }];
+    for (const l of lines) {
+      const c = countsLineOf(l, splits, 'me', 'USD');
+      expect(c).not.toBeNull();
+      expect(mineAmountOf(l, splits, 'me', 'USD')).toEqual({ amountHome: countsForMe((c as { line: CountsLine }).line) });
+    }
+    // No screen adds its own filter: Home's source files never test sharing or the creator themselves.
+    const dir = join(__dirname, '..', '..', '..', 'features', 'home');
+    const files = readdirSync(dir).filter((f) => /\.tsx?$/.test(f));
+    expect(files.length).toBeGreaterThan(0);
+    for (const f of files) {
+      const text = readFileSync(join(dir, f), 'utf8');
+      expect({ f, hit: /(is_shared|created_by|isShared|createdBy)/.test(text) }).toEqual({ f, hit: false });
+    }
+  });
 });
