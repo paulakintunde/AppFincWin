@@ -1151,7 +1151,7 @@ Plans:
 **Depends on:** Phase 05.4
 **Success Criteria** (what must be TRUE):
   1. The snapshot builder reads database rows directly and no import of the old engine remains; a shadow comparison on test accounts and goldens shows only approved differences; coverage stays at 100%.
-  2. Home and Decide read one month picture with two named figures ("left so far" and "left after the month's plans").
+  2. Home keeps its own 'left after everything' figure and shows the shared 'left after the month's plans' line; Decide leads with that same figure (D-19).
   3. One recurring-bill detector and one date calendar, proven identical by a property test; one cap per category; one confidence module.
   4. Contract tests exist for the safety net, debt facts, household scope, settlements, income profile and visibility, each marked "to do" until its phase turns it on.
   5. Theme N: six connection points with one owner each are written and tested (month picture, Grow goal, safety net, Grow debt, Activity bills, household scope); the move of the safety-net, debt, savings and share columns out of `decide_settings` is planned; only one Decide remains in the app's routes.

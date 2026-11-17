@@ -19,3 +19,5 @@ Reproduce: `CROSSCHECK_SEED=730688518 npx jest src/engine/decide/v3/__tests__/cr
 ## Solution
 
 Find which side is wrong (engine borrowing path vs calculator). Likely areas: irregular pay, deposit plus fees on the first payment, or the userLine floor. Fix it, then pin this seed's fixture as a fixed regression case.
+
+Resolution (2026-11-16): fixed by PR #133 (plain borrowing reads UK/EU APR as effective; fixed default CROSSCHECK_SEED).
