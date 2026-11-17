@@ -21,8 +21,8 @@ key-files:
     - src/data/realtime/__tests__/channel.test.ts
   modified:
     - supabase/tests/database/104_household_realtime_publication.test.sql
-    - src/data/realtime/__spike__/harness.ts
-    - src/data/realtime/__spike__/twoClients.realtime.test.ts
+    - tests/realtime/harness.ts
+    - tests/realtime/twoClients.realtime.test.ts
     - jest.realtime.config.js
     - src/ui/SyncStatusLine.tsx
     - src/ui/__tests__/SyncStatusLine.test.tsx

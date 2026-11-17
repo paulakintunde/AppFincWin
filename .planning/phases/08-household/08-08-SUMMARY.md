@@ -12,8 +12,8 @@ key-files:
     - supabase/tests/database/104_household_realtime_publication.test.sql
     - src/data/realtime/reconcile.ts
     - src/data/realtime/__tests__/reconcile.test.ts
-    - src/data/realtime/__spike__/harness.ts
-    - src/data/realtime/__spike__/twoClients.realtime.test.ts
+    - tests/realtime/harness.ts
+    - tests/realtime/twoClients.realtime.test.ts
     - jest.realtime.config.js
     - .planning/phases/08-household/08-REALTIME-SPIKE.md
   modified: [jest.config.js, package.json]

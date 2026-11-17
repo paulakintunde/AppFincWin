@@ -1,6 +1,6 @@
 // 08-08 spike: two real supabase-js clients, local Supabase. Run with `npm run test:realtime`.
 import { randomUUID } from 'node:crypto';
-import { reconcile } from '../reconcile';
+import { reconcile } from '@/data/realtime/reconcile';
 import { addMember, insertLine, setupWorld, sleep, subscribe, waitFor, type Member, type World } from './harness';
 
 let w: World;
