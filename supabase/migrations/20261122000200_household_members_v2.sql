@@ -57,9 +57,15 @@ update public.household_members m
   from public.profiles p
   where p.id = m.user_id and m.display_name is null;
 
+-- 0.2.0 never inserts household_members (rows come from handle_new_user, which sets colour_key below) and reads only household_id, user_id, display_name.
+-- contract-ok: min_version >= 0.2.0
+-- squawk-ignore adding-not-nullable-field
 alter table public.household_members alter column colour_key set not null;
 create unique index household_members_colour_uniq on public.household_members (household_id, colour_key);
 create unique index household_members_one_owner on public.household_members (household_id) where is_owner;
+-- 0.2.0 never reads household_members.role (it selects household_id, user_id, display_name only); is_owner replaces it.
+-- contract-ok: min_version >= 0.2.0
+-- squawk-ignore ban-drop-column
 alter table public.household_members drop column role;
 
 -- weights: percent, 0 allowed. Households of one become 100; multi-member rows keep their values (relative).
@@ -127,6 +133,9 @@ update public.households h
   from public.profiles p where p.id = h.owner_id;
 update public.households set name = 'My household' where name is null;
 alter table public.households alter column name set default 'My household';
+-- 0.2.0 never inserts households (handle_new_user does, with a name; the column also has a default) and reads only horizon_month.
+-- contract-ok: min_version >= 0.2.0
+-- squawk-ignore adding-not-nullable-field
 alter table public.households alter column name set not null;
 
 -- 3. handle_new_user: owner flag, 100 percent, colour 0, first name (body otherwise as 20260926000100) -----------
