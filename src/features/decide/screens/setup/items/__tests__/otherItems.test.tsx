@@ -276,6 +276,13 @@ describe('RulesSetup (D36)', () => {
       expect(screen.queryByTestId('rules-none')).toBeNull();
     });
 
+    // 05.5 device fix (Pixel 6): a built-in category has no stored name; the row read " at most" until it took the key's name.
+    it('a built-in category with no stored name is named from its key', async () => {
+      mockCategories = [cat('c9', null as unknown as string, { builtin_key: 'Groceries', monthly_cap: 30000 })];
+      await wrap(<RulesSetup />);
+      expect(screen.getByTestId('rule-cap_c9')).toHaveTextContent(/Groceries at most/);
+    });
+
     it('tapping the row opens that category in the category sheet, in edit mode', async () => {
       const dining = cat('c1', 'Dining', { monthly_cap: 40000 });
       mockCategories = [dining];

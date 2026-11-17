@@ -99,9 +99,9 @@ select extensions.is(public.t69_ap('decide_settings', (select id from sid), '{"u
   'applied', 'date and bigint anchors are accepted');
 select extensions.is((select unspent_anchor_at::text || '/' || unspent_anchor::text from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'),
   '2026-10-03/1234', 'unspent_anchor_at landed as a date');
-select extensions.is(public.t69_ap('decide_settings', (select id from sid), '{"spread_months":6,"hold_months":2,"share_pct":50,"remind_plan":true,"remind_unspent":false,"setup_done_at":"$now"}'),
+select extensions.is(public.t69_ap('decide_settings', (select id from sid), '{"spread_months":6,"hold_months":2,"remind_plan":true,"remind_unspent":false,"setup_done_at":"$now"}'),
   'applied', 'smallint, boolean and timestamptz settings are accepted');
-select extensions.ok((select spread_months = 6 and share_pct = 50 and remind_plan and not remind_unspent and setup_done_at is not null
+select extensions.ok((select spread_months = 6 and remind_plan and not remind_unspent and setup_done_at is not null
     from public.decide_settings where user_id = '11111111-1111-1111-1111-111111111111'),
   'smallint, boolean and $now timestamptz landed');
 select extensions.is(public.t69_ap('decide_settings', (select id from sid), '{"reserve_account_id":"a6900000-0000-0000-0000-000000000001","rough_saving":100,"unexplained_use":"spare","unexplained_at":"2026-10-02"}'),
@@ -120,6 +120,8 @@ select extensions.is(public.t69_ap('decide_settings', (select id from sid), '{"r
 -- ---------------------------------------------------------------------
 select extensions.throws_ok($$select public.t69_ap('decide_settings', (select id from sid), '{"id":"a6900000-0000-0000-0000-0000000000ff"}')$$,
   '22023', null, 'decide_settings.id is refused');
+select extensions.throws_ok($$select public.t69_ap('decide_settings', (select id from sid), '{"share_pct":50}')$$,
+  '22023', null, 'decide_settings.share_pct is refused (dropped in 05.5 Band B)');
 select extensions.throws_ok($$select public.t69_ap('decide_settings', (select id from sid), '{"seeded":true}')$$,
   '22023', null, 'decide_settings.seeded is refused');
 select extensions.throws_ok($$select public.t69_ap('decide_settings', (select id from sid), '{"user_id":"33333333-3333-3333-3333-333333333333"}')$$,

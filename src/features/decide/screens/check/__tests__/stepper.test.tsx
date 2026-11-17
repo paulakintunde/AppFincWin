@@ -13,7 +13,7 @@ import { withFromAnswer } from '../../logic/decideNav';
 import { CostsStep } from '../CostsStep';
 import { KindStep } from '../KindStep';
 import { PriceStep } from '../PriceStep';
-import { StepFrame } from '../StepFrame';
+import { StepFrame, stepEntrance } from '../StepFrame';
 import { KEY_DEALER_FEES } from '../oneOffPresets';
 import { KEY_PLAN_NAME } from '../planName';
 import { KEY_KIND, KEY_SKIPPED, stepHref } from '../useStepCheck';
@@ -241,19 +241,22 @@ describe('CostsStep', () => {
 });
 
 describe('StepFrame motion and progress', () => {
-  it('slides in the direction of travel', async () => {
-    seed('Used car');
-    await wrap(<PriceStep id={ID} />);
-    const slide = (await screen.findByTestId('step-frame')).props.entering as { getDuration?: () => number };
-    expect(slide.getDuration?.()).toBe(220);
+  it('slides 220 ms in the direction of travel', () => {
+    expect(stepEntrance('fwd', false)).toEqual({ kind: 'slide', duration: 220, from: 1 });
+    expect(stepEntrance('back', false)).toEqual({ kind: 'slide', duration: 220, from: -1 });
   });
 
-  it('cross-fades under Reduce Motion', async () => {
+  it('cross-fades 150 ms under Reduce Motion', () => {
+    expect(stepEntrance('fwd', true)).toEqual({ kind: 'fade', duration: 150, from: 1 });
+  });
+
+  // 05.5 device fix (Pixel 6): a layout animation on the frame left it at its mount size on Android, so taps on "See the answer"
+  // below that size were dropped. The frame animates by style only, with or without Reduce Motion.
+  it.each([false, true])('the step frame never carries a layout (entering) animation (reduced motion: %s)', async (reduced) => {
     seed('Used car');
-    mockReduced = true;
+    mockReduced = reduced;
     await wrap(<PriceStep id={ID} />);
-    const fade = (await screen.findByTestId('step-frame')).props.entering as { getDuration?: () => number };
-    expect(fade.getDuration?.()).toBe(150);
+    expect((await screen.findByTestId('step-frame')).props.entering).toBeUndefined();
   });
 
   it('shows a three-segment progressbar with the step name', async () => {
