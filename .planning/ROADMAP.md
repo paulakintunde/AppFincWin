@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
-- [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
+- [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
@@ -1482,7 +1482,7 @@ Plans:
 - [x] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
+- [x] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
 
 **Wave 12** *(blocked on Wave 11 completion)*
 - [x] 08-25-PLAN.md — [05.5 gate met 2026-11-15] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 27/28 | In progress | - |
+| 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |

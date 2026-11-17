@@ -86,11 +86,14 @@ pgTAP 111 and 112 are no longer Phase 8 files (share_pct removal moved to 05.5 B
 
 ## Manual-Only Verifications
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Invite link opens the app and joins on a real phone | HH-01/02 | Deep link + sign-in on device | Send invite from Pixel 9 to Pixel 6, open link, sign in, confirm household shown |
-| Shared line appears on the other phone without refresh | HH-11 | Two real devices on a network | Log a shared line on device A; device B shows it within seconds |
-| Haptics and calm motion on settle-up | HH-08 | Physical feel | Settle up on device; confirm one haptic, no jank |
+| Behavior | Requirement | Why Manual | Test Instructions | Result |
+|----------|-------------|------------|-------------------|--------|
+| Invite link opens the app and joins on a real phone | HH-01/02 | Deep link + sign-in on device | Send invite from Pixel 9 to Pixel 6, open link, sign in, confirm household shown | ✅ owner 2026-11-17 (build 167f43e3, production) |
+| Shared line appears on the other phone without refresh | HH-11 | Two real devices on a network | Log a shared line on device A; device B shows it within seconds | ✅ owner 2026-11-17 (build 167f43e3, production) |
+| Haptics and calm motion on settle-up | HH-08 | Physical feel | Settle up on device; confirm one haptic, no jank | ✅ owner 2026-11-17 (build 167f43e3, production) |
+
+
+**Owner sign-off 2026-11-17: all good.** Preview APK 167f43e3 ran against production after the Phase 8 push. These were checked: invite and join, shared versus personal with live updates, settle up (confirm, one haptic, Undo, Settled), the Home Mine/Household switch, and Delete my account with a throwaway account (Former member kept, balances unchanged). Leave/remove and offline were optional.
 
 ---
 
