@@ -2,7 +2,7 @@
 // wraps (no numberOfLines) at large text sizes, optional screen-owned controls, and the avatar.
 // 05.5 device fix (Pixel 6): at a large font scale, screen-owned controls take their own row above the title, so the title keeps the
 // full width ("Can I afford it?" broke over three lines beside Decide's Past decisions pill).
-import React from 'react';
+import React, { useState } from 'react';
 import { View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
@@ -37,7 +37,11 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, show
   const insets = useScreenInsets();
   const { canGoBack, goBack } = useBackHistory();
   const fontScale = useFontScale();
-  const stacked = trailing != null && fontScale >= TAB_HEADER_STACK_SCALE;
+  // Also stacks once the title is seen to wrap beside the controls (the Pixel 6 at 1.15x wrapped "Can I afford it?" onto three
+  // lines). Sticky for this title and scale, so the full-width title (now one line) never flips it back.
+  const wrapKey = `${title}|${fontScale}`;
+  const [wrappedFor, setWrappedFor] = useState<string | null>(null);
+  const stacked = trailing != null && (fontScale >= TAB_HEADER_STACK_SCALE || wrappedFor === wrapKey);
   const back = showBack ?? canGoBack ? <BackButton variant="compact" onPress={goBack} /> : null;
   const controls = (
     <View testID="tab-header-controls" style={{ flexDirection: 'row', alignItems: 'center', gap: space.gapSm }}>
@@ -84,6 +88,9 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, show
         <Text
           ref={titleRef}
           accessibilityRole="header"
+          onTextLayout={(e) => {
+            if (!stacked && trailing != null && e.nativeEvent.lines.length > 1) setWrappedFor(wrapKey);
+          }}
           accessibilityLabel={eyebrow ? `${title}, ${eyebrow}` : undefined}
           style={{
             ...textRole(pairing, titleRole),
