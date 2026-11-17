@@ -55,7 +55,7 @@ Blocks testers: **Yes** (must be closed before testers), **If fails** (blocks on
 Sources: 61 = 06.1-61-SUMMARY; 74 = 06.1-74-SUMMARY; 82-85 = 06.1-82..85-SUMMARY; CO = 06.1 deferred-items "06.1 close-out
 (2026-11-14)"; 62D = 06.2 deferred-items; FA = 06.1-FLOW-AUDIT section 6.
 
-### E. Engine items routed to 05.5 (none of these is in a 05.5 plan on main today; see Risks R-1)
+### E. Engine items routed to 05.5 (3 of 4 landed in 05.5-28 on main; SN-18 still open; see Risks R-1)
 
 | Id | Source | What to check | Where | Blocks testers |
 |---|---|---|---|---|
@@ -298,6 +298,8 @@ Or, if the owner picks P-12b, delete the whole test account in-app (the in-app d
 | R-9 | Emulator timing is slow (swiftshader) and Maestro adds overhead | Only phone numbers are judged |
 | R-10 | Other sessions switch branches in `C:\dev\fincwin` | Work in a separate worktree |
 | R-11 | Owner fatigue past 45 minutes | Checklist is 40 lines; timing runs hands-off; stop at 45 minutes and log the rest as "not reached" |
+
+> **R-1 status, 2026-11-17 (checked on origin/main):** G-PD-2 root fix, same-day roll-forward (Q11 A) and the `sayLine` `_one` forms landed in 05.5-28 (f5c1802e, `DECIDE_ENGINE_REVISION` 06.8; owner approved the changed answers 2026-11-15). **SN-18 is still open:** it is a draft case in phaseGate.test.ts and the owner Q13 choice in 05.5-28-SUMMARY.md (a: engine gives "Short each month"; b: accept the answer, fix the case; c: leave it to this audit) is not recorded. Stage C asks it. PA-01 is now a confirm, not a fix.
 
 ## Out of scope
 
