@@ -36,19 +36,22 @@ The existing component text-fit tests are the fast guard (for example `src/featu
 
 Mark each cell Pass, Fail (with a note) or n/a. Date and build id at the top of each run.
 
+**Run 2026-11-16, preview build 0.2.0 (EAS c8adcb4c, main 49e64d08) plus OTA 3c05624c (#141, #142):** the owner tested on the Pixel 6 at its own width (about 411 dp) and font scale 1.15, and once at the largest font. Results are on the phone test page (https://claude.ai/artifact/TsQBPzaMGAZAwwKD3TY6TF): 26 of 27 pass, and the test-harness flow is skipped because a preview build has no harness. Found and fixed: See the answer ignored taps on an untouched car step 3 (the step frame's layout animation), cap rows missing built-in category names, and the Decide title wrapping beside its controls. All three were re-checked on the Pixel 6 after the OTA. Rows not run in this sitting are marked "audit" and go to the post-05.5 test audit (PR #135), as the owner decided (device tests after 05.5).
+
 | Phone | Width | Font scale | TalkBack | Home card | Decide home | A Decide check | Setup items | CategorySheet | Shared pay form | Shared bill form |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Pixel 9 | 402 dp | 1.0 | off | | | | | | | |
-| Pixel 9 | 402 dp | 1.3 | off | | | | | | | |
-| Pixel 9 | 402 dp | 2.0 | off | | | | | | | |
-| Pixel 9 | 320 dp | 1.0 | off | | | | | | | |
-| Pixel 9 | 320 dp | 1.3 | off | | | | | | | |
-| Pixel 9 | 320 dp | 2.0 | off | | | | | | | |
-| Pixel 9 | 402 dp | 1.0 | on | | | | | | | |
-| Pixel 9 | 402 dp | 2.0 | on | | | | | | | |
-| Pixel 6 | 402 dp | 1.0 | off | | | | | | | |
-| Pixel 6 | 402 dp | 2.0 | off | | | | | | | |
-| Pixel 6 | 320 dp | 1.0 | off | | | | | | | |
-| Pixel 6 | 320 dp | 2.0 | off | | | | | | | |
-| Pixel 6 | 402 dp | 1.0 | on | | | | | | | |
-| Pixel 6 | 402 dp | 2.0 | on | | | | | | | |
+| Pixel 9 | 402 dp | 1.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 9 | 402 dp | 1.3 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 9 | 402 dp | 2.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 9 | 320 dp | 1.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 9 | 320 dp | 1.3 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 9 | 320 dp | 2.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 9 | 402 dp | 1.0 | on | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 9 | 402 dp | 2.0 | on | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 6 | ~411 dp (own width) | 1.15 | off | Pass | Pass (after #142) | Pass (after #141) | Pass | Pass | audit | Pass |
+| Pixel 6 | 402 dp | 1.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 6 | 402 dp | 2.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 6 | 320 dp | 1.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 6 | 320 dp | 2.0 | off | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 6 | 402 dp | 1.0 | on | audit | audit | audit | audit | audit | audit | audit |
+| Pixel 6 | 402 dp | 2.0 | on | audit | audit | audit | audit | audit | audit | audit |

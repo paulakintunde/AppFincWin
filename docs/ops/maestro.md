@@ -69,6 +69,8 @@ When done, stop Metro's node process by its port (stopping the shell task leaves
 
 Local green run: deferred to the combined 05.5-23 Pixel 6 sitting (owner, 2026-11-15). Until then the flows are checked statically only: every file parses as YAML, `--list` names 16 files that all exist, and each text and id selector was matched against `src`. The four 05.5-22 flows share `common/delete-open-check.yaml` to remove the check they create.
 
+Local green run (manual), 2026-11-16, Pixel 6, preview 0.2.0: the owner walked all 16 core flows by hand, step by step, on the phone test page (https://claude.ai/artifact/TsQBPzaMGAZAwwKD3TY6TF). 15 of 16 pass; `record-as-bought` is n/a on a preview build because it has no dev harness. A Maestro CLI run (2.12.1 is installed on the dev PC) against a signed-in device is left to the post-05.5 test audit (PR #135).
+
 **Switched off (D-22).** The job runs on manual dispatch only, and its first step fails with a plain message until the secret `MAESTRO_ACCOUNT_READY` is `yes`. To switch it on:
 
 1. Write `.maestro/common/sign-in.yaml` (the shared sign-in subflow each flow starts with) for the chosen account.
