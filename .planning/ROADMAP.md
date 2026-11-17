@@ -1485,7 +1485,7 @@ Plans:
 - [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 08-25-PLAN.md — [05.5 gate met 2026-11-15] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
+- [x] 08-25-PLAN.md — [05.5 gate met 2026-11-15] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
 
 **Moved to Phase 08.1** *(2026-11-11, owner decision; re-plan on the 06.1 screens)*
 - 08-28 — Partner opt-in, shared safety net, caveat, couples note -> `08.1-CARRY-OVER-08-28.md`
@@ -1637,7 +1637,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 26/28 | In progress | - |
+| 8. Household | 27/28 | In progress | - |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
