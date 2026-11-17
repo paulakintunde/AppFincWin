@@ -935,6 +935,14 @@ export function judge(j: JudgeInput): Result {
     readyBy = monthlyLeads ? (mon as MonthlyPart).readyBy : one.readyBy;
     // 05.4 FIN-05: a Not yet plan waits until it could start (planReadyBy); spare money counts the extra savings above the net's size.
     if (purchase.schedule !== null) readyBy = planReadyBy(month, purchase, j.inputs.asOf, unspentValue === null ? null : unspentValue + spareSavings(net), readyBy);
+    // SN-27 (owner 2026-11-17, option a): a plan whose own payment makes the usual month short (the plan_makes_short condition, D-60b:
+    // payment above the usual leftover) stays short for as long as it runs, so waiting never makes it fit: no ready-by date (like D-63's
+    // already-short month), and so no ready_without_interest line. Not a plan whose last payment lands inside the 90 days (planReadyBy's
+    // "inside": saving its whole cost first does work, BR-12, BR-19, BR-20), and not a usual month that still has room after the payment
+    // (BR-06: only this month is heading below 0, so the next payday is a fair date).
+    const s = purchase.schedule;
+    const endsInside = s !== null && lastPaymentBefore(s, addDays(j.inputs.asOf, CASH_PATH_DAYS_V3));
+    if (s !== null && !endsInside && month.typicalLeft !== null && purchase.monthly > month.typicalLeft) readyBy = null;
   }
 
   // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, yearly bills, emergency, envelope, plan, low month,
