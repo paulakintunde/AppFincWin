@@ -73,3 +73,12 @@ Skipped-answer defaults, the answer-to-level mapping, the entitlement data model
 
 ## Deferred Ideas
 Coach (999.4), Bank Sync (v1.1), Apple Small Business Program (Phase 11), the iOS purchase test (after enrolment).
+
+## Follow-up 2026-11-18: seat price and cheating
+
+The owner was concerned about people gaming household plans and asked about $4 to $5 per extra seat. Claude looked at what other apps charge (YNAB covers up to 6 for $14.99; Monarch includes a partner free; Spotify Family $21.99 for 6 against Individual $12.99; 1Password Families $5.99 against $3.99). Because household records are private by default, sharing a plan with strangers costs nothing in privacy.
+
+| Question | Options | Answer |
+|---|---|---|
+| Seat price | $2.99 for 3–6, $3.99 for 7–12 (rec); $3.99 flat; $4.99 flat | Recommended (D-07 revised) |
+| Switch rule | Join a new household once a year (rec); none | Yes (D-39) |
