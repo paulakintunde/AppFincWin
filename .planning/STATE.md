@@ -9,7 +9,7 @@ last_activity: "2026-11-17 -- Phase 8 merged (PR #134); docs tidy (quick 261117-
 progress:
   total_phases: 30
   completed_phases: 16
-  total_plans: 778
+  total_plans: 781
   completed_plans: 765
   percent: 98
 ---
