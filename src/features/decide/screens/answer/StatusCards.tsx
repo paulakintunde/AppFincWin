@@ -55,6 +55,24 @@ export function ErrorCard({ item, onRetry }: { item: string; onRetry: () => void
   );
 }
 
+/**
+ * 08.1-05 (APP-21, UI-SPEC section 8): shown in place of Decide while app_config decide_off is 'true'. The error card's look and
+ * glyph, no figures and no retry (a retry cannot help). A failed read never reaches here (fail-open).
+ */
+export function DecidePausedCard() {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  return (
+    <Card testID="decide-paused">
+      <StateGlyph name="sQuestion" color={stateColors.notYet.color} size={22} />
+      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+        {t('decide.screens.common.paused.title')}
+      </Text>
+      <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.screens.common.paused.body')}</Text>
+    </Card>
+  );
+}
+
 export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
   /** 06.1-44 (C-2): the named readiness items with their fixes and answers (readinessFixRows). */
   rows: readonly ReadinessFixRow[];
