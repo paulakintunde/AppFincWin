@@ -1,7 +1,7 @@
 // 05.4-43 (D-172): the full mutation run is split into parts with about the same number of mutants. node --test.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { safeCuts, splitFile, planParts, rangeOf, inRange } from '../mutation-shards.mjs';
+import { safeCuts, splitFile, planParts, planOnly, rangeOf, inRange } from '../mutation-shards.mjs';
 
 // A mutant is { start, end }: 0-based first and last line, as Stryker's instrumenter reports them.
 const m = (start, end = start) => ({ start, end });
@@ -86,4 +86,60 @@ test('a file with no mutants is left out of every part', () => {
   const plan = planParts([{ name: 'types.ts', lines: 50, mutants: [] }, { name: 'b.ts', lines: 5, mutants: [m(1)] }], 4);
   assert.ok(plan.parts.every((p) => !p.mutate.includes('types.ts')));
   assert.equal(plan.files['types.ts'], 0);
+});
+
+// 2026-11-18: re-run only the parts of a full run that hit the time limit, cut finer.
+test('--only: every mutant inside the entries is planned exactly once, and none outside them', () => {
+  const big = { name: 'judge.ts', lines: 200, mutants: [] };
+  for (let line = 0; line < 200; line++) big.mutants.push(m(line), m(line));
+  big.mutants.push(m(120, 125)); // a wide mutant inside the range
+  big.mutants.push(m(98, 101)); // straddles the range start: Stryker would not keep it for 100-160, so neither do we
+  const small = { name: 'settle.ts', lines: 30, mutants: [m(1), m(2), m(3)] };
+  const other = { name: 'untouched.ts', lines: 10, mutants: [m(1)] };
+  const entries = ['judge.ts:100-160', 'settle.ts'];
+  const plan = planOnly([big, small, other], entries, 6);
+  const wanted = [
+    ...big.mutants.filter((mu) => inRange('judge.ts:100-160', mu)).map((mu) => ['judge.ts', mu]),
+    ...small.mutants.map((mu) => ['settle.ts', mu]),
+  ];
+  assert.equal(plan.total, wanted.length);
+  assert.deepEqual(plan.files, { 'judge.ts': wanted.length - 3, 'settle.ts': 3 });
+  const pieces = plan.parts.flatMap((p) => p.mutate.split(','));
+  for (const [file, mu] of wanted) {
+    const owners = pieces.filter((e) => rangeOf(e).file === file && inRange(e, mu));
+    assert.equal(owners.length, 1, `${file} ${mu.start}-${mu.end}`);
+  }
+  // nothing outside the entries: judge.ts pieces stay inside 100-160, untouched.ts is never named
+  for (const e of pieces) {
+    const r = rangeOf(e);
+    assert.notEqual(r.file, 'untouched.ts');
+    if (r.file === 'judge.ts') assert.ok(r.from >= 100 && r.to <= 160, e);
+  }
+  assert.equal(plan.parts.reduce((s, p) => s + p.count, 0), plan.total);
+  assert.ok(plan.parts.length > 1, 'the range is cut into more than one part');
+});
+
+test('--only: a file outside the mutation scope is refused', () => {
+  assert.throws(() => planOnly([{ name: 'a.ts', lines: 5, mutants: [m(1)] }], ['b.ts:1-5'], 2), /outside the mutation scope/);
+});
+
+test('--only: a function-wide BlockStatement is split off so the rest of the stretch can be cut', () => {
+  const b = (start, end) => ({ start, end, name: 'BlockStatement' });
+  const c = (line) => ({ start: line, end: line, name: 'ConditionalExpression' });
+  const mutants = [b(10, 89), b(20, 22), ...Array.from({ length: 80 }, (_, i) => c(10 + i))];
+  const plan = planOnly([{ name: 'judge.ts', lines: 100, mutants }], ['judge.ts:11-90'], 4);
+  const blockOnly = plan.parts.filter((p) => p.exclude && p.exclude !== 'BlockStatement');
+  const rest = plan.parts.filter((p) => p.exclude === 'BlockStatement');
+  assert.equal(blockOnly.length, 1);
+  assert.equal(blockOnly[0].mutate, 'judge.ts:11-90');
+  assert.equal(blockOnly[0].count, 2);
+  assert.ok(!blockOnly[0].exclude.split(',').includes('BlockStatement'));
+  assert.ok(rest.length > 1, 'the stretch without BlockStatement is cut into several parts');
+  // each mutant picked exactly once once excluded mutators are taken into account
+  for (const mu of mutants) {
+    const picks = plan.parts.filter(
+      (p) => !(p.exclude ?? '').split(',').includes(mu.name) && p.mutate.split(',').some((e) => inRange(e, mu)),
+    );
+    assert.equal(picks.length, 1, `${mu.name} ${mu.start}-${mu.end}`);
+  }
 });
