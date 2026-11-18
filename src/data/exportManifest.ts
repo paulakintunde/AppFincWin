@@ -148,6 +148,9 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   decide_answers: [
     'id', 'household_id', 'created_by', 'kind', 'key', 'amount', 'bool_value', 'on_date', 'check_id', 'deleted_at', 'created_at', 'updated_at',
   ],
+  // 08.1-03/07 (CMP-F19): who counts whose money in their own checks, and which of my safety nets I share
+  decide_partner_optins: ['household_id', 'owner_id', 'partner_id', 'enabled', 'updated_at'],
+  safety_net_shares: ['household_id', 'goal_id', 'owner_id', 'enabled', 'rounded_saved', 'updated_at'],
 };
 
 /** Tables src/db reads that hold no user data of their own, each with the reason. */
@@ -155,5 +158,6 @@ export const NOT_USER_DATA: readonly string[] = [
   'transactions_active', // a view over transactions (not-deleted rows); exported through transactions
   'statement_periods_live', // a view over statement_periods; exported through statement_periods
   'household_event_reads', // 08-13: one last-opened time per user for the notices badge; no content, erased by FK cascade
+  'partner_figures', // 08.1-03: a derived, rounded "left so far" the owner's device publishes; no client read grant (RPC only); erased with the opt-in and by FK cascade
   'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
 ];
