@@ -2492,7 +2492,8 @@
           "overdraft_carried_in",
           "net_lasts",
           "net_lasts_without",
-          "net_used"
+          "net_used",
+          "below_zero_without"
         ]
       },
       "why": "The car is the only reason her account goes below $0: without it she never does ($150, $250, $350 at the ends of November, December and January); with it every month is $119.30 short ($100 - $219.30) and the account is $88.60 below $0 on 31 January, with no overdraft recorded. So \"Not yet\" (UP 5.3, D-28, D-38), and no ready-by date: the plan makes her usual month short for all 48 months, so waiting never makes it fit (owner 2026-11-17, SN-27 option a). Re-checked on 1 December she would still go $203.58 below $0, and even once the cash path clears (about March 2027) the best answer is \"Short each month\". The depletion lines lead (D-54, D-60c): the plan makes her usual month about $119.30 short; the $9,000 price is more than her $2,000 safety net; the plan costs interest; a usual month with room for the payment balances it.",
@@ -2505,6 +2506,392 @@
       "ownerReason": "Owner (2026-11-17, SN-27 option a): no ready-by date when the plan itself makes the usual month short; waiting never makes it fit. Shown the hand figures, the engine trace and the re-checks on later dates (08.1-PROPOSED-SN-27.md).",
       "expertNote": null,
       "plannerNote": null
+    },
+    {
+      "id": "SN-28",
+      "topic": "safety-net",
+      "persona": "Sam, a one-off buy that fits a month later (invented, D-05)",
+      "situation": "Sam's usual month ends $100 over: pay $2,500 on the 1st, bills $1,500, everyday spending $900 ($500 of it on essentials). Today is 15 November 2026. November so far: $2,500 in, bills $1,500 paid and $450 of everyday spending, with $450 more still to come. His everyday account holds $600 today, so about $150 at the end of November. His safety net holds $2,000, its full size, locked (the default); no overdraft is recorded. He looks at a $300 item, paid in one go today.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 60000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 30000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": -20000,
+          "usualMonth": null
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "below_zero_without"
+        ]
+      },
+      "why": "Without the item his account never goes below $0: it ends November, December and January at $150, $250 and $350. With it, $300 comes off every one of those lows, so it is $150 below $0 on 30 November. Re-checking on each payday (the 1st) and asking whether the next 90 days stay above $0: on 1 December the lowest day is 31 December at $250 - $300 = -$50 (below $0); on 1 January the lowest day is 31 January at $350 - $300 = +$50, and the days after are higher ($450, $550 less $300). So the first date that holds is 1 January 2027, shown as January 2027 (D-05). The app already gives this answer today; the case locks it in as the worked one-off example.",
+      "fixIds": [
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
+      "expertNote": null,
+      "plannerNote": "Hand re-check table in 08.1-CASES-D05-D07.md. Engine today (revision 06.9) already answers not_yet, not_covered, readyBy 2027-01, afterBuy.month -$200; the case is a regression lock for D-05 on a one-off, not a knownRed entry."
+    },
+    {
+      "id": "SN-29",
+      "topic": "safety-net",
+      "persona": "Jo, a plan that does not make the month short (invented, D-05, BR-13 style)",
+      "situation": "Jo's usual month ends $400 over: pay $2,500 on the 1st, bills $1,500, everyday spending $600 ($400 of it on essentials). Today is 15 November 2026. November so far: $2,500 in, bills $1,500 paid and $300 of everyday spending, with $300 more still to come. Her everyday account holds $900 today, so about $600 at the end of November. Her safety net holds $2,000, its full size, locked (the default); no overdraft is recorded. She looks at a $2,150 item on a 12-payment plan at 0%: $950 down today, then $100 a month, first payment on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 60000,
+          "essentialEveryday": 40000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 30000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 90000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 215000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 12,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 95000,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": -55000,
+          "usualMonth": 30000
+        },
+        "readyBy": "2027-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "below_zero_without",
+          "plan_makes_short"
+        ]
+      },
+      "why": "The plan does not make her month short: $400 over becomes $300 over with the $100 payment, so a date is fair (the SN-27 rule does not apply). Without the plan her month-end balances are $600 (30 Nov), $1,000 (31 Dec), $1,400 (31 Jan), $1,800 (28 Feb), $2,200 (31 Mar). Start on 1 December: the $950 down payment comes off, and the first $100 payment on 15 December, so 31 December is $1,000 - $950 - $100 = -$50 (below $0). The first payment is covered on 1 December ($1,600 on the day), so a date that only means 'the first payment is covered' would say 1 December; D-05 asks for 'stays above $0 for 90 days' and 1 December fails it. Start on 1 January: 31 January is $1,400 - $950 - $100 = $350; 28 February $1,800 - $950 - $200 = $650; 31 March $2,200 - $950 - $300 = $950. All above $0, so the first date that holds is 1 January 2027, shown as January 2027. The usual month after the payment is $400 - $100 = $300 over. This month is $400 - $950 = -$550. The app already gives this answer today; the case locks it in.",
+      "fixIds": [
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
+      "expertNote": null,
+      "plannerNote": "Hand re-check table in 08.1-CASES-D05-D07.md. Engine today (revision 06.9) already answers not_yet, not_covered, readyBy 2027-01, afterBuy {-$550, +$300}; regression lock, not a knownRed entry."
+    },
+    {
+      "id": "SN-30",
+      "topic": "safety-net",
+      "persona": "Sam, a buy that takes a year and a half (invented, D-06)",
+      "situation": "Sam's usual month ends $100 over (as SN-28). Today is 15 November 2026, his everyday account holds $600, safety net $2,000 locked. He looks at a $2,000 item, paid in one go today.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 60000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": -190000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "not_within_year"
+        ],
+        "mustNotHaveFacts": [
+          "ready_without_interest",
+          "below_zero_without"
+        ]
+      },
+      "why": "His month-end lows grow $100 a month: $150 (30 Nov 2026), $250, $350, ... so the low of the month that starts a check is $150 + $100 for each month after November. For $2,000 off every low he needs a low of more than $2,000: $2,050, the low of June 2028 (19 months on). On 1 May 2028 the low is $1,950 - $2,000 = -$50 (below $0); on 1 June 2028 it is $2,050 - $2,000 = +$50. So the D-05 date is 1 June 2028, more than 12 months from 15 November 2026 (the limit is 15 November 2027, 12 calendar months, D-06). So no date is shown. The answer says it is not within a year at his current pace (fact not_within_year leads) and points to a cheaper version and to Save for it.",
+      "fixIds": [
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
+      "expertNote": null,
+      "plannerNote": "Engine today answers readyBy 2028-06 (the right date, but past the limit); plan 06 removes it and adds the not_within_year fact. Goes into knownRed on approval (fix FIN-05). The cheaper option and the Save for it offer are checked in the screen tests, not in this table."
+    },
+    {
+      "id": "SN-31",
+      "topic": "safety-net",
+      "persona": "Riley, below $0 even without a $50 item (invented, D-07, sister of SN-18)",
+      "situation": "Riley is SN-18's Riley: her usual month ends $300 short (pay $2,500, bills $1,500, everyday spending $1,300), and she started November with $650. Today is 15 November 2026. Her everyday account holds $1,000 today and will be about $350 at the end of November. Safety net $2,000, locked; no overdraft is recorded. She looks at a $50 item, paid in one go today.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 130000,
+          "essentialEveryday": 70000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 65000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 5000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "month_already_short",
+        "afterBuy": {
+          "month": -35000,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "usual_month_short",
+          "below_zero_without"
+        ],
+        "mustNotHaveFacts": [
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "Her usual month is already short, so the answer is the SN-18 one: Not yet, no date. The new line (D-07) tells her the part the item does not cause: even without it her account goes below $0. Without the item: $1,000 today, $350 at the end of November (30 November), $50 on 31 December, -$250 on 31 January. She is paid $1,000 net on the 1st and spends $1,300 a month, about $42 a day: on 1 January she has $1,050 and reaches $0 after about 25 days, so the first day below $0 is 26 January 2027 and the lowest day is 31 January, $250 below $0. The line names the first day below $0 (owner question Q3 default): 'Your account goes below $0 by 26 January even without this.' The $50 item is not in this path.",
+      "fixIds": [
+        "FIN-05"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
+      "expertNote": null,
+      "plannerNote": "Engine today answers not_yet, month_already_short, afterBuy.month -$350 (right) but has no below_zero_without fact. Goes into knownRed on approval. The fact's date (2027-01-26) is asserted in the plan 06 unit test, because the table checks fact codes only. SN-27 gains a mustNotHaveFacts below_zero_without after approval (its no-purchase path never goes below $0)."
     }
   ]
 }
