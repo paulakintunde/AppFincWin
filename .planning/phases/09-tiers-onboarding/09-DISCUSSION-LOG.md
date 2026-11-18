@@ -109,3 +109,12 @@ The owner pasted two outside reviews and asked for clarifying questions, along w
 | Locked view | Plus free-help links (rec); only the four | Plus free help |
 | Price shown | Listing + paywall, not welcome (rec); also welcome | Recommended |
 | Testers | Free until a set date (rec); free for good; normal trial | Free until a set date; owner free |
+
+## Addendum 2026-11-18: moving out, going Solo, downgrading
+
+| Question | Options | Answer |
+|---|---|---|
+| Member leaves a paid home | 7 days' full access (rec); read-only at once; until the household's billing period ends | 7 days (D-41) |
+| Payer moves out | Plan follows the payer (rec); payer can sponsor the old home | Plan follows the payer (D-42) |
+| Solo inside a lapsed home | Solo means leaving (rec); personal cover inside | Solo means leaving (D-43) |
+| Long-locked data | Decide in Phase 11 DPIA (rec); set a limit now | Phase 11 (D-45) |
