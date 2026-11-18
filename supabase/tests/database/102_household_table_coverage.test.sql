@@ -26,6 +26,7 @@ insert into classified (table_name, class, parent) values
   ('dismissed_series_offers', 'owner', null), ('holdings', 'owner', null), ('holding_lots', 'owner', null),
   -- owner (later Phase 8 tables)
   ('household_invites', 'owner', null), ('transaction_member_categories', 'owner', null),
+  ('decide_partner_optins', 'owner', null), ('partner_figures', 'owner', null), ('safety_net_shares', 'owner', null),
   -- shared_or_owner
   ('transactions', 'shared_or_owner', null), ('accounts', 'shared_or_owner', null), ('recurring_series', 'shared_or_owner', null),
   -- account_derived, derived, party
