@@ -155,7 +155,8 @@ describe('pairBalances', () => {
           for (const p of mine) {
             total += p.net;
             const theirs = pairBalances(ls, p.otherKey).find((q) => q.otherKey === x);
-            expect(theirs?.net ?? 0).toBe(-p.net);
+            // Sum, not toBe(-p.net): a pair that nets to 0 would compare 0 with -0, which Object.is treats as different.
+            expect((theirs?.net ?? 0) + p.net).toBe(0);
           }
         }
         expect(total).toBe(0);
