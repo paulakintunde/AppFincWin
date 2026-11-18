@@ -33,6 +33,8 @@ export interface ActivitySummaryCardProps {
   loading: boolean;
   /** CR-01 / T-03-22-01: a core read failed or is offline with nothing cached; no figure shows. */
   unavailable?: 'error' | 'offline' | null;
+  /** 08.1-04 (D-04): true in a household of 2+, where the month figure counts the viewer's share of shared lines. */
+  shareNote?: boolean;
   formatter: MoneyFormatter;
   homeCurrency: string;
 }
@@ -44,6 +46,7 @@ export function ActivitySummaryCard({
   balanceNote,
   loading,
   unavailable = null,
+  shareNote = false,
   formatter,
   homeCurrency,
 }: ActivitySummaryCardProps) {
@@ -118,6 +121,8 @@ export function ActivitySummaryCard({
     label += ' ' + t('activity.summary.a11yStillToCome', { amount: fmt(position.unpaid) });
   }
 
+  if (shareNote) label += ' ' + t('activity.summary.shareNote');
+
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta };
 
   return (
@@ -135,6 +140,11 @@ export function ActivitySummaryCard({
             {figure}
           </Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{caption}</Text>
+          {shareNote ? (
+            <Text testID="activity-summary-share-note" style={{ ...small, color: colors.inkMuted }}>
+              {t('activity.summary.shareNote')}
+            </Text>
+          ) : null}
         </View>
         {stillText !== null ? (
           <Text testID="activity-summary-still" style={{ ...small, color: colors.warn1 }}>
