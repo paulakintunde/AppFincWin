@@ -354,7 +354,7 @@ export interface RecurringSeriesRow {
   goal_id?: string | null; // 06: the goal a saving series feeds; read-only here (20261106000100)
   end_reason?: 'stopped' | 'paused' | null; // 05.2 D-24: read only while end_date is set; written through apply_patches
   /** 08.1-02 (20261123000100): 'expected' marks a varying running cost; every older row reads 'exact'. */
-  amount_kind: SeriesAmountKind;
+  amount_kind?: SeriesAmountKind;
   version: number;
   created_at: string;
   updated_at: string;
