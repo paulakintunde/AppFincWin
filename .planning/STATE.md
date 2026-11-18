@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_to_plan
-stopped_at: "Post-05.5 test audit under way (plan merged as PR #135): full mutation run 44223181226 started 2026-11-18 02:25 UTC on main e3f10b46 (05.4-43); preview APK 95fa2fc5 (engine 06.9) awaiting owner phone checks. Next: mutation score and survivors, 05.4-45, then Phase 08.1"
+stopped_at: "Post-05.5 test audit under way (plan merged as PR #135): full mutation run 44223181226 started 2026-11-18 02:25 UTC on main e3f10b46 (05.4-43); preview APK 95fa2fc5 (engine 06.9) awaiting owner phone checks. Next: mutation score and survivors, 05.4-45, then plan Phase 08.1 (context gathered 2026-11-18: 08.1-CONTEXT.md, 16 decisions)"
 last_updated: "2026-11-18T04:45:00.000Z"
 last_activity: 2026-11-18 -- PRs #148-#154 merged (SN-27 fix, Sentry note closed, flake fixes, min-version gate); full mutation run started
 progress:
