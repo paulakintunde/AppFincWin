@@ -14,6 +14,9 @@ import {
   useTransactionsSearch,
   type ActivityRowView,
 } from '@/data/queries/activity';
+import { useHouseholdMembers } from '@/data/queries/household';
+import { useSharedSplits } from '@/data/queries/householdBalances';
+import { figureTotalsOf, mineMonthRows, rowsNeedSplits, type SplitsByLine } from '@/data/queries/figureScope';
 import { useFxLatest } from '@/data/queries/fxLatest';
 import type { MonthDataState } from '@/data/queries/monthDataState';
 import { projectionHomeAmount } from '@/data/queries/homeAmount';
@@ -62,6 +65,10 @@ import type { DeletePrompt, RowActions } from './useRowActions';
 import { showToast } from '@/state/undoToast';
 import { isSettlement } from '@/engine/household/settlement';
 import { consumeActivityFilterIntent, useActivityFilterIntent, useSelectedMonth } from '@/state/activityFocus';
+
+const NO_SPLITS: SplitsByLine = new Map();
+const NO_SHARES: ReadonlyMap<string, number | null> = new Map();
+const NO_DROPPED: ReadonlySet<string> = new Set();
 
 export type { ActivityView } from './activityViewPrefs';
 
@@ -196,6 +203,25 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   }, []);
 
   const monthView = useMonthView({ householdId: rc.householdId, homeCurrency: rc.homeCurrency, today: rc.today }, month);
+  // 08.1-04 (D-04): in a household of 2+ the month total and its subtotals count the viewer's share, through the same helper
+  // Home's Mine figure uses (data/queries/figureScope, which reads myShareOfLine through engine/household/countsForMeInput). Rows keep their full amount; shareById carries each changed line's share.
+  const members = useHouseholdMembers(rc.householdId).data;
+  const sharing = (members?.length ?? 0) >= 2;
+  const needsSplits = useMemo(() => sharing && rowsNeedSplits(monthView.rows, rc.userId), [sharing, monthView.rows, rc.userId]);
+  const splitsQuery = useSharedSplits(rc.householdId, needsSplits);
+  const splitsWaiting = needsSplits && splitsQuery.data === undefined;
+  const splits = splitsQuery.data ?? NO_SPLITS;
+  const mine = useMemo(() => {
+    const own = { rows: monthView.rows, shareById: NO_SHARES, dropped: NO_DROPPED, totals: monthView.totals };
+    if (!sharing || rc.userId === null) return own;
+    const rows = mineMonthRows(monthView.rows, splits, rc.userId, rc.homeCurrency);
+    if (rows === monthView.rows) return own;
+    const shareById = new Map<string, number | null>();
+    for (const r of rows) shareById.set(r.id, r.amountHome);
+    const dropped = new Set<string>();
+    for (const r of monthView.rows) if (!shareById.has(r.id)) dropped.add(r.id);
+    return { rows, shareById, dropped, totals: figureTotalsOf(rows, monthView.projections) };
+  }, [sharing, monthView.rows, monthView.projections, monthView.totals, splits, rc.userId, rc.homeCurrency]);
   const { months, counts } = useTransactionMonths(rc.householdId, rc.today, rc.horizonMonth ?? null);
   const accounts = useAccounts(rc.householdId ?? undefined).data;
   const debts = useDebts(debtId === null ? undefined : (rc.householdId ?? undefined)).data;
@@ -247,20 +273,20 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   const position = useMemo(
     () =>
       monthPositionOf({
-        rows: monthView.rows,
+        rows: mine.rows,
         projections: monthView.projections,
-        totals: monthView.totals,
+        totals: mine.totals,
       }),
-    [monthView.rows, monthView.projections, monthView.totals]
+    [mine, monthView.projections]
   );
   // T-03-22-01 / D-47 (03.1 review CR-01): the same data-state gate as Home. A core read that
   // failed or is offline with nothing cached shows Home's error / offline copy, never a figure
   // and never the empty month.
-  const dataState: MonthDataState = rc.ready ? monthView.dataState : 'loading';
+  const dataState: MonthDataState = rc.ready && !splitsWaiting ? monthView.dataState : 'loading';
   const monthLoading = dataState === 'loading';
   const monthUnavailable: 'error' | 'offline' | null =
     dataState === 'error' || dataState === 'offline' ? dataState : null;
-  const monthEmpty = monthUnavailable === null && isMonthEmpty(monthView.totals, position);
+  const monthEmpty = monthUnavailable === null && isMonthEmpty(mine.totals, position);
 
   // ACT-10 as amended by 03.1 D-70: the narrowed totals feed the entry count and the search
   // results count only; the card's figures come from `position`.
@@ -268,7 +294,8 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
     () =>
       searching || filtering
         ? monthTotals(
-            narrowed.map((r) => ({
+            narrowed.filter((r) => !mine.dropped.has(r.id)).map((r) => ({
+              id: r.id,
               amountHome: r.amountHome,
               status: r.status,
               isTransfer: r.transfer_id !== null,
@@ -276,10 +303,11 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
               ratePending: r.rate_pending,
               isSettlement: isSettlement({ isSettlement: r.is_settlement === true }),
             })),
-            unpaidProjections
+            unpaidProjections,
+            (r) => (mine.shareById.has(r.id) ? (mine.shareById.get(r.id) ?? null) : r.amountHome)
           )
-        : monthView.totals,
-    [searching, filtering, narrowed, monthView.totals, unpaidProjections]
+        : mine.totals,
+    [searching, filtering, narrowed, mine, unpaidProjections]
   );
   const entryCount = {
     total: monthView.totals.count,
@@ -463,6 +491,10 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
     searchOpen,
     setSearchOpen,
     monthView,
+    /** 08.1-04: the month's rows and totals in the viewer's share (the same figures as Home's Mine). */
+    monthFigures: { rows: mine.rows, totals: mine.totals },
+    sharing,
+    shareById: mine.shareById,
     items,
     positions,
     itemRows,

@@ -39,9 +39,16 @@ export interface MonthTotals {
   count: number;
 }
 
-export function monthTotals(
-  rows: readonly TotalsInput[],
-  projections: readonly { amountHome: number | null }[]
+/**
+ * 08.1-04 (D-04): the amount a line contributes to the totals. Default is the line's own home amount. A household caller passes
+ * the viewer's share of the line (the same helper Home's Mine uses), so Activity and Home print one figure.
+ */
+export type ShareOf<R extends TotalsInput = TotalsInput> = (row: R) => number | null;
+
+export function monthTotals<R extends TotalsInput = TotalsInput>(
+  rows: readonly R[],
+  projections: readonly { amountHome: number | null }[],
+  shareOf?: ShareOf<R>
 ): MonthTotals {
   let paidIn = 0;
   let paidOut = 0;
@@ -64,20 +71,21 @@ export function monthTotals(
       continue;
     }
     count++;
-    if (row.amountHome === null) {
+    const amount = shareOf === undefined ? row.amountHome : shareOf(row);
+    if (amount === null) {
       if (row.ratePending !== false) unconvertedCount++;
       continue;
     }
     if (row.status === 'paid') {
-      if (row.isRefund === true || row.amountHome < 0) {
-        paidOut += row.amountHome;
+      if (row.isRefund === true || amount < 0) {
+        paidOut += amount;
       } else {
-        paidIn += row.amountHome;
+        paidIn += amount;
       }
     } else {
       // Only 'pending' can reach here: 'skipped' rows already `continue`d above,
       // and TxStatus admits no other member.
-      stillToCome += row.amountHome;
+      stillToCome += amount;
       pendingCount++;
     }
   }
