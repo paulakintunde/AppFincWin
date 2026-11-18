@@ -2492,7 +2492,8 @@
           "overdraft_carried_in",
           "net_lasts",
           "net_lasts_without",
-          "net_used"
+          "net_used",
+          "below_zero_without"
         ]
       },
       "why": "The car is the only reason her account goes below $0: without it she never does ($150, $250, $350 at the ends of November, December and January); with it every month is $119.30 short ($100 - $219.30) and the account is $88.60 below $0 on 31 January, with no overdraft recorded. So \"Not yet\" (UP 5.3, D-28, D-38), and no ready-by date: the plan makes her usual month short for all 48 months, so waiting never makes it fit (owner 2026-11-17, SN-27 option a). Re-checked on 1 December she would still go $203.58 below $0, and even once the cash path clears (about March 2027) the best answer is \"Short each month\". The depletion lines lead (D-54, D-60c): the plan makes her usual month about $119.30 short; the $9,000 price is more than her $2,000 safety net; the plan costs interest; a usual month with room for the payment balances it.",
@@ -2593,9 +2594,9 @@
       "fixIds": [
         "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
       "expertNote": null,
       "plannerNote": "Hand re-check table in 08.1-CASES-D05-D07.md. Engine today (revision 06.9) already answers not_yet, not_covered, readyBy 2027-01, afterBuy.month -$200; the case is a regression lock for D-05 on a one-off, not a knownRed entry."
     },
@@ -2692,9 +2693,9 @@
       "fixIds": [
         "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
       "expertNote": null,
       "plannerNote": "Hand re-check table in 08.1-CASES-D05-D07.md. Engine today (revision 06.9) already answers not_yet, not_covered, readyBy 2027-01, afterBuy {-$550, +$300}; regression lock, not a knownRed entry."
     },
@@ -2788,9 +2789,9 @@
       "fixIds": [
         "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
       "expertNote": null,
       "plannerNote": "Engine today answers readyBy 2028-06 (the right date, but past the limit); plan 06 removes it and adds the not_within_year fact. Goes into knownRed on approval (fix FIN-05). The cheaper option and the Save for it offer are checked in the screen tests, not in this table."
     },
@@ -2886,9 +2887,9 @@
       "fixIds": [
         "FIN-05"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-18",
+      "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
       "expertNote": null,
       "plannerNote": "Engine today answers not_yet, month_already_short, afterBuy.month -$350 (right) but has no below_zero_without fact. Goes into knownRed on approval. The fact's date (2027-01-26) is asserted in the plan 06 unit test, because the table checks fact codes only. SN-27 gains a mustNotHaveFacts below_zero_without after approval (its no-purchase path never goes below $0)."
     }
