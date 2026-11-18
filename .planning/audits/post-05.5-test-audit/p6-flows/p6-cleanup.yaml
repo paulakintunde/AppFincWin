@@ -1,0 +1,73 @@
+# 06.1-74: soft-delete this plan's drafts ("desk lamp 74", "used car 74") from their open-check sheets, as 06.1-78 did.
+# Touches no other check. Prints CLEANUP deleted=<n>.
+appId: com.fincwin.app
+name: P6 cleanup
+---
+- evalScript: ${output.deleted = 0}
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- repeat:
+    times: 8
+    commands:
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
+      - repeat:
+          times: 6
+          while:
+            notVisible: "(desk lamp 74|used car 74), .*"
+          commands:
+            - swipe:
+                start: "50%,75%"
+                end: "50%,35%"
+                duration: 400
+            - waitForAnimationToEnd
+      - runFlow:
+          when:
+            visible: "(desk lamp 74|used car 74), .*"
+          commands:
+            - tapOn: "(desk lamp 74|used car 74), .*"
+            - extendedWaitUntil:
+                visible: "Edit the check"
+                timeout: 15000
+            - tapOn: "Delete"
+            - waitForAnimationToEnd
+            - evalScript: ${output.deleted = output.deleted + 1}
+            - extendedWaitUntil:
+                visible: "cleanup never shown"
+                timeout: 3000
+                optional: true
+- evalScript: "${console.log('CLEANUP deleted=' + output.deleted)}"
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- repeat:
+    times: 6
+    while:
+      notVisible: "(desk lamp 74|used car 74), .*"
+    commands:
+      - swipe:
+          start: "50%,75%"
+          end: "50%,35%"
+          duration: 400
+      - waitForAnimationToEnd
+- assertNotVisible: "(desk lamp 74|used car 74), .*"

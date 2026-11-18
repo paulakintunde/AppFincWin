@@ -1,0 +1,85 @@
+# 06.1-74 Pixel 6 copy of .maestro/decide-write-idle.yaml for the ownet\?r account: the gate is never answered (stops if it shows),
+# Not ready yet is left alonet\?. Writes one draft check (desk lamp 25), removed afterwards by p6-cleanup.yaml.
+appId: com.fincwin.app
+name: P6 write then idle taps
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+# The first Decide open after a launch is slow on a dev build (DP-12), so this waits rather than asserts.
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 90000
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "desk lamp 74"
+      PRICE: "25"
+- extendedWaitUntil:
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 60000
+- assertNotVisible: "How Decide answers|Do you have a safety net\\? About how much\\?"
+# The write has settled when the answer's "waiting to save" notice is gonet\? (as in decide-timing.yaml's write_settle).
+- extendedWaitUntil:
+    notVisible:
+      id: "answer-notice-unsaved_changes"
+    timeout: 180000
+- evalScript: ${output.written = Date.now()}
+- back
+- extendedWaitUntil:
+    visible:
+      id: "past-pill"
+    timeout: 180000
+- evalScript: "${console.log('TIMING back_after_write = ' + (Date.now() - output.written) + ' ms')}"
+
+# Tap 1: about 5 s after the write settled
+- extendedWaitUntil:
+    visible: "06173 net\?ver shown"
+    timeout: 5000
+    optional: true
+- evalScript: ${output.at1 = Date.now() - output.written}
+- evalScript: ${output.t1 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 180000
+- evalScript: "${console.log('TIMING tap_after_write_1 = ' + (Date.now() - output.t1) + ' ms at=' + output.at1)}"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "past-pill"
+    timeout: 180000
+
+# Tap 2: about 20 s after the write settled
+- extendedWaitUntil:
+    visible: "06173 net\?ver shown"
+    timeout: 10000
+    optional: true
+- evalScript: ${output.at2 = Date.now() - output.written}
+- evalScript: ${output.t2 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 180000
+- evalScript: "${console.log('TIMING tap_after_write_2 = ' + (Date.now() - output.t2) + ' ms at=' + output.at2)}"
+- back
+- extendedWaitUntil:
+    visible:
+      id: "past-pill"
+    timeout: 180000
+
+# Tap 3: about 60 s after the write settled
+- extendedWaitUntil:
+    visible: "06173 net\?ver shown"
+    timeout: 35000
+    optional: true
+- evalScript: ${output.at3 = Date.now() - output.written}
+- evalScript: ${output.t3 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 180000
+- evalScript: "${console.log('TIMING tap_after_write_3 = ' + (Date.now() - output.t3) + ' ms at=' + output.at3)}"
+- runFlow: common/to-tabs.yaml

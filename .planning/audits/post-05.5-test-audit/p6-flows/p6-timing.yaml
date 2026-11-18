@@ -1,0 +1,153 @@
+# 06.1-74 Pixel 6 copy of .maestro/decide-timing.yaml for the owner's account (approved 2026-11-13 via the orchestrator).
+# Differences: the small check is "desk lamp" 25; the first-answer gate is never answered (the flow stops if it shows);
+# "Not ready yet" is left as it is (nothing is tapped on it); no ceiling asserts. Writes two draft checks (desk lamp,
+# used car), removed afterwards by p6-cleanup.yaml. Opens the rule sheet (Cancel), safety-net settings and setup Pay without saving.
+appId: com.fincwin.app
+name: P6 Decide timing
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Home, tab, .*"
+- evalScript: ${output.t5 = Date.now()}
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible:
+      id: "check-what"
+    timeout: 60000
+- evalScript: ${output.decideTabOpen = Date.now() - output.t5}
+- evalScript: "${console.log('TIMING decide_tab_open=' + output.decideTabOpen)}"
+- assertVisible: "Can I afford it\\?"
+
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "desk lamp 74"
+      PRICE: "25"
+- evalScript: ${output.t0 = Date.now()}
+- extendedWaitUntil:
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 20000
+- assertNotVisible: "How Decide answers|Do you have a safety net\\? About how much\\?"
+- extendedWaitUntil:
+    visible:
+      id: "answer-not-ready|answer-verdict"
+    timeout: 20000
+- evalScript: ${output.checkitAnswer = Date.now() - output.t0}
+- extendedWaitUntil:
+    notVisible:
+      id: "answer-notice-unsaved_changes"
+    timeout: 90000
+- evalScript: ${output.writeSettle = Date.now() - output.t0}
+- evalScript: "${console.log('TIMING checkit_answer=' + output.checkitAnswer)}"
+- evalScript: "${console.log('TIMING write_settle=' + output.writeSettle)}"
+
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "used car 74"
+      PRICE: "9000"
+- extendedWaitUntil:
+    visible: "Price and how you pay"
+    timeout: 15000
+- assertVisible: "Step 2 of 3"
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Next"
+- waitForAnimationToEnd
+- evalScript: ${output.t1 = Date.now()}
+- tapOn: "Next"
+- extendedWaitUntil:
+    visible: "Step 3 of 3"
+    timeout: 20000
+- evalScript: ${output.stepperNext = Date.now() - output.t1}
+- evalScript: "${console.log('TIMING stepper_next=' + output.stepperNext)}"
+- waitForAnimationToEnd
+- evalScript: ${output.t6 = Date.now()}
+- tapOn:
+    id: "step-back"
+- extendedWaitUntil:
+    visible: "Step 2 of 3"
+    timeout: 60000
+- evalScript: ${output.stepperBack = Date.now() - output.t6}
+- evalScript: "${console.log('TIMING stepper_back=' + output.stepperBack)}"
+
+- runFlow: common/to-tabs.yaml
+- openLink: "fincwin://decide"
+- extendedWaitUntil:
+    visible:
+      id: "check-what"
+    timeout: 60000
+- evalScript: ${output.t7 = Date.now()}
+- tapOn:
+    id: "past-pill"
+- extendedWaitUntil:
+    visible: "Your decisions"
+    timeout: 60000
+- evalScript: ${output.pastOpen = Date.now() - output.t7}
+- evalScript: "${console.log('TIMING past_open=' + output.pastOpen)}"
+- runFlow: common/to-tabs.yaml
+- openLink: "fincwin://decide"
+- extendedWaitUntil:
+    visible:
+      id: "check-what"
+    timeout: 60000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "\\+ Add your own rule"
+- waitForAnimationToEnd
+- evalScript: ${output.t8 = Date.now()}
+- tapOn: "\\+ Add your own rule"
+- extendedWaitUntil:
+    visible: "Add a rule"
+    timeout: 60000
+- evalScript: ${output.ruleSheetOpen = Date.now() - output.t8}
+- evalScript: "${console.log('TIMING rule_sheet_open=' + output.ruleSheetOpen)}"
+- tapOn: "Cancel"
+- waitForAnimationToEnd
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Safety net.*"
+- waitForAnimationToEnd
+- evalScript: ${output.t9 = Date.now()}
+- tapOn:
+    id: "money-rules-net"
+- extendedWaitUntil:
+    visible:
+      id: "net-tile|net-settings-empty"
+    timeout: 60000
+- evalScript: ${output.netSettingsOpen = Date.now() - output.t9}
+- evalScript: "${console.log('TIMING net_settings_open=' + output.netSettingsOpen)}"
+
+- runFlow: common/to-tabs.yaml
+- openLink: "fincwin://decide/setup"
+- extendedWaitUntil:
+    visible:
+      id: "setup-checklist"
+    timeout: 20000
+- evalScript: ${output.t2 = Date.now()}
+- tapOn:
+    id: "setup-row-pay"
+- extendedWaitUntil:
+    visible:
+      id: "setup-item-frame"
+    timeout: 20000
+- assertVisible: "Pay and payday"
+- evalScript: ${output.setupPay = Date.now() - output.t2}
+- evalScript: "${console.log('TIMING setup_pay=' + output.setupPay)}"
+- runFlow: common/to-tabs.yaml
