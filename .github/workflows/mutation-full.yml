@@ -7,10 +7,26 @@ name: Mutation (full)
 # Starts: the `mutation-full` label on a PR (works before the merge, D-178), by hand, or weekly on main (Sunday 04:41 UTC).
 # Never cancelled by a new push: its own concurrency group per commit. The merged incremental file is saved as the
 # baseline that mutation-changed.yml re-uses, so a push then re-tests only mutants in changed code (D-175).
+# Re-run (2026-11-18): by hand with `only` set to the unfinished parts' entries (comma list of file or file:a-b) and
+# `with_run` set to the earlier run's id. The plan cuts only those entries, finer; the merge joins this run's parts with
+# the earlier run's finished parts and checks them against the earlier run's full plan, so one score covers the scope.
 on:
   pull_request:
     types: [labeled]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Re-run only these entries (comma list of file or file:a-b); empty = the whole scope'
+        required: false
+        default: ''
+      parts:
+        description: 'Number of parts'
+        required: false
+        default: '40'
+      with_run:
+        description: 'Earlier run id whose finished parts and full plan join the merge (use with only)'
+        required: false
+        default: ''
   schedule:
     - cron: '41 4 * * 0'
 permissions:
@@ -33,7 +49,15 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - name: Split the mutants into parts
         id: plan
-        run: node scripts/mutation-shards.mjs --parts 40 --out reports/mutation-plan.json
+        env:
+          ONLY: ${{ inputs.only }}
+          PARTS: ${{ inputs.parts || '40' }}
+        run: |
+          if [ -n "$ONLY" ]; then
+            node scripts/mutation-shards.mjs --parts "$PARTS" --only "$ONLY" --out reports/mutation-plan.json
+          else
+            node scripts/mutation-shards.mjs --parts "$PARTS" --out reports/mutation-plan.json
+          fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: mutation-plan
@@ -57,8 +81,10 @@ jobs:
         env:
           FC_RUNS: 10
           MUTATE: ${{ matrix.mutate }}
+          MUTATORS_EXCLUDED: ${{ matrix.exclude }}
         run: |
           echo "Part ${{ matrix.part }} mutates: $MUTATE"
+          if [ -n "$MUTATORS_EXCLUDED" ]; then echo "Leaves out: $MUTATORS_EXCLUDED"; fi
           npx stryker run stryker.part.config.mjs --force --ignoreStatic --mutate "$MUTATE"
       - name: Keep this part's report and baseline
         if: always()
@@ -76,6 +102,9 @@ jobs:
     if: always() && needs.plan.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v4.4.0 (v4)
@@ -89,11 +118,31 @@ jobs:
         with:
           name: mutation-plan
           path: plan
+      - name: Fetch the earlier run's finished parts
+        if: inputs.with_run != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: mutation-part-*
+          path: parts-earlier
+          run-id: ${{ inputs.with_run }}
+          github-token: ${{ github.token }}
+      - name: Fetch the earlier run's full plan
+        if: inputs.with_run != ''
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mutation-plan
+          path: plan-earlier
+          run-id: ${{ inputs.with_run }}
+          github-token: ${{ github.token }}
       - name: Merge the parts and apply the 90% bar (D-174)
-        run: >-
-          node scripts/mutation-merge.mjs --bar 90 --plan plan/mutation-plan.json
-          --out reports/mutation/mutation.json --html reports/mutation/index.html
-          --incremental-out .stryker-cache/incremental.json --label "Full mutation run" parts
+        env:
+          WITH_RUN: ${{ inputs.with_run }}
+        run: |
+          if [ -n "$WITH_RUN" ]; then
+            node scripts/mutation-merge.mjs --bar 90 --plan plan-earlier/mutation-plan.json               --out reports/mutation/mutation.json --html reports/mutation/index.html               --incremental-out .stryker-cache/incremental.json --label "Full mutation run (with run $WITH_RUN)" parts parts-earlier
+          else
+            node scripts/mutation-merge.mjs --bar 90 --plan plan/mutation-plan.json               --out reports/mutation/mutation.json --html reports/mutation/index.html               --incremental-out .stryker-cache/incremental.json --label "Full mutation run" parts
+          fi
       - name: Keep the merged report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
