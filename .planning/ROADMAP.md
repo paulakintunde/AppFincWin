@@ -1514,7 +1514,7 @@ Plans:
 - Former 08-28: partner opt-in, shared safety net, shared-bills caveat, couples note (`08.1-CARRY-OVER-08-28.md`)
 - Former 08-29: household scope choice in the check, Household link in setup, household scope label (`08.1-CARRY-OVER-08-29.md`). The share_pct removal is not 08.1's: 05.5 removes it (05.5 D-09, 2026-11-12).
 - "Create from Decide" (Grow follow-up, 06 VERIFICATION override), built on the new 06.1 screens
-**Plans:** 18 plans in 11 waves (planned 2026-11-18). Engine plans (06 onward) wait for the post-05.5 test audit (06 Task 0 gate); waves 1-2 non-engine plans do not. Open owner questions, planned on defaults: `08.1-OWNER-QUESTIONS.md`.
+**Plans:** 21 plans in 13 waves (planned 2026-11-18; revised the same day after the full UI design run: new plan 19 for the visible Decide stages, plans 04, 05, 07, 09, 10, 11, 12, 14 and 17 edited to match `08.1-UI-SPEC.md`; checker round 1 the same day split the stage work into 19 engine (wave 4), 20 answer side (wave 5) and 21 home and setup (wave 7)). Engine plans (06 onward) wait for the post-05.5 test audit (06 Task 0 gate); waves 1-2 non-engine plans do not. Open owner questions, planned on defaults: `08.1-OWNER-QUESTIONS.md`. Phase 9's sample-data answer uses the First read treatment from plans 19-20.
 
 Plans:
 - [ ] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
@@ -1535,6 +1535,9 @@ Plans:
 - [ ] 08.1-16-PLAN.md — Reading test round 2 (UX-26; D-13, D-14, D-16)
 - [ ] 08.1-17-PLAN.md — Round-2 fix pass, QA-01 freeze, compliance gate, SC1-SC3 checks
 - [ ] 08.1-18-PLAN.md — Named testers switched on (D-15); public switch-on stays with 08.2
+- [ ] 08.1-19-PLAN.md — Visible Decide stages, engine: 3-month check (08.1-STAGE-CHECK.md) and the pure stage read-model stageOf / firstShownCaveat (DCU-10)
+- [ ] 08.1-20-PLAN.md — Visible Decide stages, answer: basis-window sentences, pay-window row, caveat-order rule, StageLine, StageTag, About rows (DCU-10, CMP-F12)
+- [ ] 08.1-21-PLAN.md — Visible Decide stages, home and setup: StageCard (no chip at 3+ months), import prompt, Not ready actions, Records setup prompt, import return to Decide (DCU-10)
 
 ### Phase 08.2: Decide re-audit (INSERTED)
 
@@ -1655,7 +1658,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 0/18 | Planned | - |
+| 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
