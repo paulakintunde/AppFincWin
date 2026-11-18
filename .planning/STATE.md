@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: "Phase 08.1 replanned to UI-SPEC: 21 plans in 13 waves (19 engine stage, 20 answer side, 21 home/setup); checker passed"
-last_updated: "2026-11-18T21:18:24.688Z"
+stopped_at: Phase 9 UI-SPEC approved
+last_updated: "2026-11-18T21:27:51.956Z"
 last_activity: "2026-11-17 -- Phase 8 merged (PR #134); docs tidy (quick 261117-abh)"
 progress:
   total_phases: 30
@@ -232,6 +232,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-18T21:18:24.655Z
-Stopped at: Phase 08.1 replanned to UI-SPEC: 21 plans in 13 waves (19 engine stage, 20 answer side, 21 home/setup); checker passed
-Resume file: .planning/phases/08.1-decide-rebuild-on-real-data/08.1-19-PLAN.md
+Last session: 2026-11-18T21:27:51.919Z
+Stopped at: Phase 9 UI-SPEC approved
+Resume file: .planning/phases/09-tiers-onboarding/09-UI-SPEC.md
