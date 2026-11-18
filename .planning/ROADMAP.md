@@ -1514,10 +1514,27 @@ Plans:
 - Former 08-28: partner opt-in, shared safety net, shared-bills caveat, couples note (`08.1-CARRY-OVER-08-28.md`)
 - Former 08-29: household scope choice in the check, Household link in setup, household scope label (`08.1-CARRY-OVER-08-29.md`). The share_pct removal is not 08.1's: 05.5 removes it (05.5 D-09, 2026-11-12).
 - "Create from Decide" (Grow follow-up, 06 VERIFICATION override), built on the new 06.1 screens
-**Plans:** 0 plans
+**Plans:** 18 plans in 11 waves (planned 2026-11-18). Engine plans (06 onward) wait for the post-05.5 test audit (06 Task 0 gate); waves 1-2 non-engine plans do not. Open owner questions, planned on defaults: `08.1-OWNER-QUESTIONS.md`.
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 08.1 to break down)
+- [ ] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
+- [ ] 08.1-02-PLAN.md — Record as bought server: expected lines, sale, payoff and goal close in one save, one undo (ARC-24; migration 20261123000100, pgTAP 112)
+- [ ] 08.1-03-PLAN.md — Partner opt-ins, rounded partner figure, shared safety net, sharedMoneyFor (carry-over 08-28; migration 20261123000200, pgTAP 111)
+- [ ] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
+- [ ] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261123000300)
+- [ ] 08.1-06-PLAN.md — Engine: ready-by means stays above $0, no dates past 12 months, below-$0-without line (D-05..D-07; audit gate)
+- [ ] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
+- [ ] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
+- [ ] 08.1-09-PLAN.md — Record as bought client: one writer, fixed vs varying costs, tick rows, stops wiring, contract todos (ARC-24, D-09..D-11)
+- [ ] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
+- [ ] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
+- [ ] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
+- [ ] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
+- [ ] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off, carry-over audit, Create from Decide check (D-06..D-08)
+- [ ] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, preview APK, Maestro smoke
+- [ ] 08.1-16-PLAN.md — Reading test round 2 (UX-26; D-13, D-14, D-16)
+- [ ] 08.1-17-PLAN.md — Round-2 fix pass, QA-01 freeze, compliance gate, SC1-SC3 checks
+- [ ] 08.1-18-PLAN.md — Named testers switched on (D-15); public switch-on stays with 08.2
 
 ### Phase 08.2: Decide re-audit (INSERTED)
 
@@ -1638,7 +1655,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
+| 08.1 Decide rebuild on real data | 0/18 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |

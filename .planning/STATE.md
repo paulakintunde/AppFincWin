@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: "Post-05.5 test audit under way (plan merged as PR #135): full mutation run 44223181226 started 2026-11-18 02:25 UTC on main e3f10b46 (05.4-43); preview APK 95fa2fc5 (engine 06.9) awaiting owner phone checks. Next: mutation score and survivors, 05.4-45, then plan Phase 08.1 (context gathered 2026-11-18: 08.1-CONTEXT.md, 16 decisions)"
-last_updated: "2026-11-18T04:45:00.000Z"
-last_activity: 2026-11-18 -- PRs #148-#154 merged (SN-27 fix, Sentry note closed, flake fixes, min-version gate); full mutation run started
+status: ready_to_execute
+stopped_at: "Phase 08.1 planned 2026-11-18: 18 plans in 11 waves, owner questions planned on defaults (08.1-OWNER-QUESTIONS.md). Post-05.5 test audit still under way (05.4-43 mutation score, 05.4-45); 08.1 engine plans (06 onward) wait for it via plan 06's gate, wave-1 non-engine plans can start. Preview APK 95fa2fc5 (engine 06.9) awaiting owner phone checks."
+last_updated: "2026-11-18T18:00:00.000Z"
+last_activity: 2026-11-18 -- Phase 08.1 planned (18 plans); PRs #155-#158 merged
 progress:
   total_phases: 29
   completed_phases: 13
-  total_plans: 670
+  total_plans: 688
   completed_plans: 658
   percent: 95
 ---
@@ -21,10 +21,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** post-05.5 test audit (full mutation run in progress), then Phase 08.1 — decide-rebuild-on-real-data
+**Current focus:** Phase 08.1 — decide-rebuild-on-real-data (planned; engine plans wait for the post-05.5 test audit)
 
 ## Current Position
 
+Phase: 08.1 (decide-rebuild-on-real-data) — PLANNED 2026-11-18, 0/18 plans, 11 waves. Wave 1: 01 (right answers, owner approval), 02, 03, 05 (migrations 20261123000100..000300, pushed together in plan 15 after approval), 04 (Activity share total). Owner questions Q1-Q9 in 08.1-OWNER-QUESTIONS.md, planned on the defaults.
 Phase: 08 (household) — COMPLETE 2026-11-17, 28/28 plans. Migrations 20261122000100..000900 in production (08-PUSH-LOG.md); delete-account Edge Function v1 deployed. Owner device sign-off on preview APK 167f43e3 (adds expo-clipboard). 08-25 ran before 08-27 by owner choice. Merged to main as PR #134 (69e42491). Open: iPhone XR check with the next iOS build; DPIA retention left to Phase 11.
 Phase: 05.5 (one-shared-money-model) — COMPLETE 2026-11-16, 29/29 plans (0.2.0 released; Band B in production; G-PD-2 root fix in 05.5-28, engine revision 06.8)
 Phase: 06.1 (Decide screens from the prototype) — MERGED 2026-11-14 (PR #102, main 9472c6f3); shipped as preview Android build 051b0232 (owner confirmed 2026-11-14).
