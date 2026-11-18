@@ -1523,7 +1523,7 @@ Plans:
 - [x] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
 - [x] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261123000300)
 - [ ] 08.1-06-PLAN.md — Engine: ready-by means stays above $0, no dates past 12 months, below-$0-without line (D-05..D-07; audit gate)
-- [ ] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
+- [x] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
 - [ ] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
 - [ ] 08.1-09-PLAN.md — Record as bought client: one writer, fixed vs varying costs, tick rows, stops wiring, contract todos (ARC-24, D-09..D-11)
 - [ ] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
@@ -1658,7 +1658,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 5/21 | In progress | - |
+| 08.1 Decide rebuild on real data | 6/21 | In progress | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
