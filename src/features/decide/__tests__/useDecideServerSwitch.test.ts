@@ -26,7 +26,7 @@ function clientOf(results: Result[]): MinVersionClient {
 const ok = (value: string): MinVersionQueryResult => ({ data: { value }, error: null });
 const fail: MinVersionQueryResult = { data: null, error: { message: 'boom' } };
 
-const appStateListeners: Array<(s: string) => void> = [];
+const appStateListeners: ((s: string) => void)[] = [];
 
 beforeEach(async () => {
   appStateListeners.length = 0;
