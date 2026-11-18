@@ -20,17 +20,25 @@ export function useMinVersionGate(): MinVersionGateState {
 
   useEffect(() => {
     let cancelled = false;
+    let latestCheck = 0;
 
     function check(): void {
+      const checkId = ++latestCheck;
       const current = Application.nativeApplicationVersion ?? '0.0.0';
-      fetchMinSupportedVersion().then((min) => {
-        if (cancelled) return;
-        if (min && isBelowMinimum(current, min)) {
-          setState({ status: 'blocked', minVersion: min });
-        } else {
+      fetchMinSupportedVersion()
+        .then((min) => {
+          if (cancelled || checkId !== latestCheck) return;
+          if (min && isBelowMinimum(current, min)) {
+            setState({ status: 'blocked', minVersion: min });
+          } else {
+            setState({ status: 'ok' });
+          }
+        })
+        .catch(() => {
+          // A rejected request or malformed version must not strand startup at "checking".
+          if (cancelled || checkId !== latestCheck) return;
           setState({ status: 'ok' });
-        }
-      });
+        });
     }
 
     check();
