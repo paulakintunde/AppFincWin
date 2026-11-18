@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_to_plan
-stopped_at: "Phase 08 Household COMPLETE and merged 2026-11-17 (PR #134). Next: post-05.5 test audit (PR #135: 05.4-43 mutation score, 05.4-45 nightlies, device matrix, TalkBack, Maestro CLI), then Phase 08.1"
-last_updated: "2026-11-17T15:30:00.000Z"
-last_activity: 2026-11-17 -- Phase 8 merged (PR #134); docs tidy (quick 261117-abh)
+stopped_at: "Post-05.5 test audit under way (plan merged as PR #135): full mutation run 44223181226 started 2026-11-18 02:25 UTC on main e3f10b46 (05.4-43); preview APK 95fa2fc5 (engine 06.9) awaiting owner phone checks. Next: mutation score and survivors, 05.4-45, then Phase 08.1"
+last_updated: "2026-11-18T04:45:00.000Z"
+last_activity: 2026-11-18 -- PRs #148-#154 merged (SN-27 fix, Sentry note closed, flake fixes, min-version gate); full mutation run started
 progress:
   total_phases: 29
   completed_phases: 13
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** post-05.5 test audit (PR #135), then Phase 08.1 — decide-rebuild-on-real-data
+**Current focus:** post-05.5 test audit (full mutation run in progress), then Phase 08.1 — decide-rebuild-on-real-data
 
 ## Current Position
 
@@ -216,7 +216,7 @@ Recent decisions affecting current work:
 | 261111-o0p | Phase 8 integration conflicts written into plans (08-28/29 to 08.1, 08-GATES.md, 05.5 notes) | 2026-11-11 | 3df07119 | [261111-o0p-write-phase-8-integration-conflict-decis](./quick/261111-o0p-write-phase-8-integration-conflict-decis/) |
 | 261114-e9v | Decide audit fixes: one-off/future quick income left out of the usual month; answer parts read quick lines; Undo of answered choices (migration 20261114000100) | 2026-11-14 | f4a040c5 | [261114-e9v-decide-audit-fixes](./quick/261114-e9v-decide-audit-fixes/) |
 | 261114-x0q | Phase 8 revision round against main 318d6799 (Grow/06.1/05.5 functions + tables, cache bump, gates, open-PR overlaps; owner answers on Home switch and personal debt/goal lines) | 2026-11-15 | 103fea0d | [261114-x0q-phase-8-household-plan-revision-round](./quick/261114-x0q-phase-8-household-plan-revision-round/) |
-| 261115-hdd | CI fixes: fixed csv test pins tokenize.ts:145 (engine/csv 100% branch bar no longer random); full mutation run weekly (Sun 04:41 UTC), 40 parts, max 10 at once (owner 2026-11-15). Full run still blocked by Decide crosscheck borrowing-on-plans failure (seed 745051798, /gsd-debug next) | 2026-11-15 | 3170b1b6 | [261115-hdd-fix-ci-engine-csv-coverage-flake-and-wee](./quick/261115-hdd-fix-ci-engine-csv-coverage-flake-and-wee/) |
+| 261115-hdd | CI fixes: fixed csv test pins tokenize.ts:145 (engine/csv 100% branch bar no longer random); full mutation run weekly (Sun 04:41 UTC), 40 parts, max 10 at once (owner 2026-11-15). Full run still blocked by Decide crosscheck borrowing-on-plans failure (seed 745051798, /gsd-debug next). *Unblocked 2026-11-15 by PR #133 (c2b5a678): plain borrowing reads UK/EU plan APR as effective; fixed default seed in PR CI.* | 2026-11-15 | 3170b1b6 | [261115-hdd-fix-ci-engine-csv-coverage-flake-and-wee](./quick/261115-hdd-fix-ci-engine-csv-coverage-flake-and-wee/) |
 | 261115-kog | PR auto-merge: repo auto-merge + update-branch on, `hold` label, auto-merge.yml sweep (all ready PRs except drafts, `hold`, forks, Dependabot majors; one-at-a-time update queue keeps strict up-to-date rule). Needs owner AUTOMERGE_TOKEN secret | 2026-11-15 | (this PR) | [261115-kog-pr-auto-merge-with-one-at-a-time-update-](./quick/261115-kog-pr-auto-merge-with-one-at-a-time-update-/) |
 | 261117-abh | Docs tidy after Phase 8 merge: STATE, ROADMAP (05.4 ticked, 05.3 replaced), stale G-PD-2 Maestro note | 2026-11-17 | 9c06ba88 | [261117-abh-docs-tidy-after-phase-8-merge](./quick/261117-abh-docs-tidy-after-phase-8-merge/) |
 | 261117-sn1 | SN-18 wording (text only) and SN-27 proposal; owner chose option (a), built in PR #149: no ready-by date when a plan's own payment makes the usual month short (engine revision 06.9, SN-27 approved, 49/2000 I44 cases lose a date only) | 2026-11-17 | bf173562 | [261117-sn1-sn-18-wording-and-sn-27-proposal](./quick/261117-sn1-sn-18-wording-and-sn-27-proposal/) |
