@@ -110,6 +110,13 @@ export const queryKeys = {
   householdBalances: (householdId: string) => ['transactions', householdId, 'household-balances'] as const,
   splitDefaults: (householdId: string) => ['split-defaults', householdId] as const,
   settlements: (householdId: string) => ['settlements', householdId] as const,
+  // 08.1-07: partner opt-ins, the partner's one rounded total, the shared safety net and the last shared line (all viewer-scoped)
+  partnerOptins: (userId: string, householdId: string) => ['partner-optins', userId, householdId] as const,
+  partnerMoneyRoot: (userId: string) => ['partner-money', userId] as const,
+  partnerMoney: (userId: string, partnerId: string) => ['partner-money', userId, partnerId] as const,
+  safetyNetShares: (userId: string, householdId: string) => ['safety-net-shares', userId, householdId] as const,
+  sharedSafetyNet: (userId: string) => ['shared-safety-net', userId] as const,
+  partnerLastShared: (userId: string, householdId: string) => ['partner-last-shared', userId, householdId] as const,
 };
 
 export const mutationKeys = {
