@@ -38,6 +38,7 @@ function seriesRow(overrides: Partial<RecurringSeriesRow> = {}): RecurringSeries
     deleted_at: null,
     is_automatic: false,
     is_sample: false,
+    amount_kind: 'exact',
     version: 1,
     created_at: '2026-09-24T00:00:00Z',
     updated_at: '2026-09-24T00:00:00Z',
@@ -87,6 +88,14 @@ describe('fetchRecurringSeries', () => {
     const client = createFakeSupabase();
     client.respondWith({ data: null, error: null, status: 200 });
     await expect(fetchRecurringSeries(client, 'hh-1')).resolves.toEqual([]);
+  });
+
+  it('08.1-02: reads amount_kind, and a row without it (an older server) reads as exact', async () => {
+    const client = createFakeSupabase();
+    const { amount_kind: _omit, ...older } = seriesRow({ id: 'series-2' });
+    client.respondWith({ data: [seriesRow({ amount_kind: 'expected' }), older], error: null, status: 200 });
+    const result = await fetchRecurringSeries(client, 'hh-1');
+    expect(result.map((r) => r.amount_kind)).toEqual(['expected', 'exact']);
   });
 });
 
@@ -247,6 +256,7 @@ describe('editRecurringSeriesFrom', () => {
       'occurrence_count',
       'is_automatic',
       'end_reason',
+      'amount_kind',
     ]);
   });
 
