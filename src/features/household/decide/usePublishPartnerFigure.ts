@@ -42,7 +42,6 @@ export function usePublishPartnerFigure(): void {
   const last = useRef<number | null>(null);
   const inFlight = useRef(false);
   const latest = useRef({ hasOptIn, figure });
-  latest.current = { hasOptIn, figure };
 
   const tryPublish = useCallback(() => {
     const { hasOptIn: on, figure: f } = latest.current;
@@ -65,6 +64,7 @@ export function usePublishPartnerFigure(): void {
   }, [hasOptIn]);
 
   useEffect(() => {
+    latest.current = { hasOptIn, figure };
     tryPublish();
   }, [hasOptIn, figure, tryPublish]);
 

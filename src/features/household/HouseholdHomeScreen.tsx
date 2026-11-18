@@ -32,6 +32,8 @@ import { cancelInvite, inviteLink, restoreInvite } from '@/db/householdInvites';
 import { supabase } from '@/services/supabase';
 import { ChangeLine } from './components/ChangeLine';
 import { MemberAvatar } from './components/MemberAvatar';
+import { PartnerFigurePublisher } from './decide/PartnerFigurePublisher';
+import { SharedSafetyNetRow } from './decide/SharedSafetyNetRow';
 import { DepartureCard } from './DepartureCard';
 import { householdIcons } from './glyphs';
 import { HouseholdCurrencySheet } from './HouseholdCurrencySheet';
@@ -321,6 +323,9 @@ export function HouseholdHomeScreen() {
           </View>
         </FadeIn>
       ) : null}
+
+      <SharedSafetyNetRow householdId={householdId} memberCount={members.length} />
+      <PartnerFigurePublisher householdId={householdId} />
 
       <FadeIn once="household-changes" style={styles.section}>
         <View style={card}>
