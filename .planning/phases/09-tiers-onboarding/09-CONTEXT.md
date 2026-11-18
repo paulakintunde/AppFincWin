@@ -23,7 +23,7 @@ The owner chose a **hard paywall after a 14-day trial**. Plans are priced in **f
 ## Implementation Decisions
 
 ### Business model and access
-- **D-01:** **Hard paywall after a free trial.** Every new household gets one 14-day trial with everything unlocked. After the trial ends, or when a paid plan lapses, the app needs a paid plan to keep working. This replaces the freemium model recommended in `PRICING.md` §1–§2.
+- **D-01:** **Hard paywall after a free trial.** Every new household gets one 14-day trial with everything unlocked. The trial is store-managed and needs a card (D-15). After the trial ends, or when a paid plan lapses, the app needs a paid plan to keep working. This replaces the freemium model recommended in `PRICING.md` §1–§2.
 - **D-02:** **When locked, the app is read-only.** People can open and scroll their own records. They can't add, edit or import anything, and can't run a new Decide check. Saved Decide answers stay readable, but nothing is recalculated.
 - **D-03:** **Always open, whatever the plan state:**
   - CSV export (GDPR portability);
@@ -54,9 +54,9 @@ The owner chose a **hard paywall after a 14-day trial**. Plans are priced in **f
 - **D-08:** **Upgrades and downgrades follow each store's own rules.** On Apple, an upgrade takes effect at once with a prorated refund, and a downgrade takes effect at the next renewal. Google Play uses the replacement mode the planner picks; prefer charging the price difference at once for upgrades. The app always says whether a change is immediate or happens at the next renewal.
 - **D-09:** **Seats:** every member with their own login counts, **the payer included**.
 - **D-10:** **Three separate limits:**
-  - **Trial:** up to 12 members.
+  - **Trial:** up to 2 members (the trial is on Solo or Duo only, D-15).
   - **Paid:** the plan's size (1, 2, 6 or 12).
-  - **Server:** the technical cap rises from 6 (Phase 8 D-10, in `supabase/migrations/20261122000500_household_invites.sql`, the `v_members + v_open >= 6` checks) to the plan's size or the trial's 12. It must be raised before paid plans go live, so no one ever pays for seats they can't use.
+  - **Server:** the technical cap rises from 6 (Phase 8 D-10, in `supabase/migrations/20261122000500_household_invites.sql`, the `v_members + v_open >= 6` checks) to the plan's size (2 during a trial). It must be raised before paid plans go live, so no one ever pays for seats they can't use.
 - **D-11:** **Prices outside the US:** the planner proposes explicit store price points for the priority markets (at least Canada and the UK, plus any other launch markets the owner names). **The owner signs that table before the store products are created.** Every other country uses the store's automatic conversion as a fallback. The local currency and billing period always show before purchase.
 - **D-12:** **No sale or introductory price at launch.** **The price pledge, in these exact words:** "The price of your plan won't go up while your subscription stays active. Taxes set by your app store, or moving to a bigger plan, can change what you pay."
 - **D-13:** **One household, one bill; the payer is separate from the owner.**
@@ -68,13 +68,19 @@ The owner chose a **hard paywall after a 14-day trial**. Plans are priced in **f
 - **D-14:** **A member whose home is already covered** sees "Your home already has a plan", who pays and until when. Restore purchases always shows there. A small **"Start your own plan"** link stays visible too, for App Review and for people about to leave.
 
 ### Trial
-- **D-15:** **No card needed. The app runs the trial itself**, not as a store trial. It is never described as an "App Store" or "Google Play" free trial. No one is ever charged without a separate purchase they confirm.
-  - Before planning, re-check the current Apple and Google guidelines on app-run trials for subscription apps, as was done for 3.2.1.
-- **D-16:** **One trial per household, tied to the person.** A partner who joins later can't start another. Someone who has had a trial doesn't get a new one by creating a new household. The planner may add device-level signals (Apple DeviceCheck, Play Integrity) if a privacy review allows; payment details can't be used, since no card is taken.
-- **D-17:** **The trial includes everything, inviting up to 12 people.** At the end, the household chooses a plan that fits its member count.
-- **D-17a:** **The 14-day clock starts at the first real use:** the first record added, the first statement imported, or the first Decide check run. If none of those happens within 30 days of sign-up, the clock starts anyway.
+- **D-15:** **Store-managed free trial; the customer must cancel to avoid being charged** (revision 3, 2026-11-18; replaces the no-card trial the app ran itself). The 14-day trial is an Apple or Google introductory free-trial offer, **on Solo and Duo only**. Household and Extended have no trial. A payment method is taken by the store at the start, and the trial turns into the chosen plan, monthly or yearly, unless cancelled. The trial starts when they subscribe.
+- **D-16:** **Trial reuse is limited on four levels:**
+  1. **Store account:** enforced by the stores (Apple: one introductory offer per Apple ID per subscription group; Google: its own one-trial rules).
+  2. **Payment identity:** **enforced only by Apple and Google, under their own rules. The app never sees card details**, so we never claim to check them ourselves.
+  3. **Device:** iPhone uses **Apple DeviceCheck** (two private flags per device that survive reinstalls). The Android method is researched in planning, since Play Integrity gives no lasting device ID. It must be declared in the App Privacy and Play Data safety forms and checked against GDPR (legitimate interest, no ad identifiers).
+  4. **Person and household (our server):** one trial per person and per household. A partner who joins later is covered by the household's trial and can't start another. Leaving and re-creating a household doesn't give a new trial.
+
+  If any check says a trial was already used, the paywall offers the plans without a trial.
+- **D-17:** **The trial includes everything, for up to 2 people** (Solo or Duo). **Inviting a 3rd person during a trial** moves the household to Household. Before Confirm, the app says: "Adding a 3rd person moves you to Household. Your free trial ends and $14.99 is charged today." The planner checks how each store treats an upgrade during an introductory offer and adjusts the wording to match.
+- **D-17a:** *(Removed in revision 3: a store trial starts when they subscribe, so the clock can't wait for first real use.)*
+- **D-17b:** **A look around before the trial.** Before starting the trial, people can browse the app with the built-in sample data (02.2), including a sample Decide answer. They can't add their own records, import, or run a Decide check on their own money. The way forward is always "Start 14-day free trial".
 - **D-18:** **Reminders:**
-  - the end date and time (in the user's timezone) always visible in You > Subscription during the trial;
+  - the end date and time (in the user's timezone) and the price that will be charged, always visible in You > Subscription during the trial, with Manage subscription to cancel. The stores' own trial emails are a supplement, not a replacement;
   - a banner in the last 3 days, with the end date and prices;
   - one push notification 2 days before the end, only if notifications are allowed;
   - a "Your trial ends today" message on the last day;
@@ -109,7 +115,7 @@ The owner chose a **hard paywall after a 14-day trial**. Plans are priced in **f
 
 ### Store wording and subscription controls
 - **D-22:** **Where prices appear:**
-  - The welcome screen says what the app does and "Try everything free for 14 days. No card needed." It shows no prices.
+  - The welcome screen says what the app does and "Try everything free for 14 days." It shows no prices and never says "no card needed" (the trial needs one, D-15). The trial start screen is a full paywall: it shows the price charged after day 14, the date of the first charge, and that the trial renews into a paid plan unless cancelled.
   - The store listing and **every paywall** show:
     - each plan's size and what it includes;
     - the monthly and yearly price, in local currency, with the renewal period;
@@ -137,9 +143,11 @@ The owner chose a **hard paywall after a 14-day trial**. Plans are priced in **f
 - **D-28:** **First-run order:**
   1. sign in;
   2. the questions, with the analytics yes/no last;
-  3. the app opens, and the trial clock waits for first real use (D-17a).
+  3. the sample-data look-around (D-17b);
+  4. the paywall: "Start 14-day free trial" on Solo or Duo, or buy any plan;
+  5. the app opens on their own data.
 
-  There is no paywall on day one. **The planner must reconcile this with 08.1's goal of a first Decide answer within 60 seconds and 8 taps**, for example by offering "Try a quick check first" before setup, or by counting the target from the end of setup. Bring the choice to the owner.
+  Revision 3 reverses "no paywall on day one": starting a store trial is a purchase. **The planner must reconcile this with 08.1's goal of a first Decide answer within 60 seconds and 8 taps**, for example by offering "Try a quick check first" before setup, or by counting the target from the end of setup. Bring the choice to the owner.
 - **D-29:** **Existing users and testers:**
   - **Named testers** get free access for their whole household until a set date shown in the app (for example 3 months after paid plans launch), then the normal paywall applies.
   - **The owner** stays free.

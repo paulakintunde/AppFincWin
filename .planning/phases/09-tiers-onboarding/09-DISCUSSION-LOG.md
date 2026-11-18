@@ -118,3 +118,16 @@ The owner pasted two outside reviews and asked for clarifying questions, along w
 | Payer moves out | Plan follows the payer (rec); payer can sponsor the old home | Plan follows the payer (D-42) |
 | Solo inside a lapsed home | Solo means leaving (rec); personal cover inside | Solo means leaving (D-43) |
 | Long-locked data | Decide in Phase 11 DPIA (rec); set a limit now | Phase 11 (D-45) |
+
+## Revision 3 — 2026-11-18: store-managed trial, 2 people at most, reuse limits
+
+The owner asked for: trials of at most 2 people; trial reuse limited by device, payment identity and store account, not only by household; and a store-managed free trial that turns into a paid plan unless cancelled (this replaces the no-card trial the app ran itself, D-15). Claude noted that the app can't see payment identity, so that limit is enforced only by Apple and Google.
+
+| Question | Options | Answer |
+|---|---|---|
+| Trial plans | Solo and Duo only (rec); all four, limited to 2 people | Solo and Duo only |
+| 3rd person during a trial | Upgrade ends the trial, said first (rec); blocked until the trial ends | Upgrade ends the trial |
+| Before the trial | Look around with sample data (rec); nothing | Sample-data look-around (D-17b) |
+| Device check | Apple DeviceCheck, Android researched (rec); store account only | Yes |
+
+D-17a (clock starts at first real use) is removed. D-28 no longer avoids a paywall on day one.
