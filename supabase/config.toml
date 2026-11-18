@@ -19,3 +19,8 @@ verify_jwt = false
 # gateway and again in-function (the path's folder must equal the caller's user id).
 [functions.read-pdf-statement]
 verify_jwt = true
+
+# delete-account (08-22, D-40): client-invoked with the caller's JWT, verified by the gateway; the caller id comes only from
+# auth.getUser() in the function (never the body). Deletes the auth user with the service role; the 08-14 trigger runs the household rule.
+[functions.delete-account]
+verify_jwt = true

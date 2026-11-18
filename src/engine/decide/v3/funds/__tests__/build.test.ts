@@ -244,6 +244,14 @@ describe('buildFunds', () => {
       expect(f.unspent?.available).toBe(f.unspent?.value);
     });
 
+    it('G-PD-2 (05.5-28) the gap is read from the as-given suggested figure when one is passed', () => {
+      const inputs = inputsOf({ accounts, unspent: { amount: mu(suggestedNow - 200_000), at: '2026-10-01' } });
+      const month = buildMonthModel(inputs);
+      expect(buildFunds(inputs, month, null, mu(suggestedNow + 70_000)).unexplained).toBe(270_000);
+      expect(buildFunds(inputs, month, null, mu(suggestedNow - 500_000)).unexplained).toBe(0);
+      expect(buildFunds(inputs, month, null).unexplained).toBe(200_000);
+    });
+
     it('D-50 a spare answer covers the gap and adds to available', () => {
       const f = at({ unexplainedAnswer: { amount: mu(200_000), use: 'spare', at: '2026-10-01' } });
       expect(f.unexplained).toBe(0);

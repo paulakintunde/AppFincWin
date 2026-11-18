@@ -100,6 +100,25 @@ export interface TransactionRow {
   income_kind?: string | null;
   counts_as?: 'available' | 'kept' | null;
   refund_of?: string | null;
+  // 08 Household (select-only: only the 08-10, 08-11 and 08-14 RPCs write these, so they sit in neither write-key list).
+  // Optional in the type so the many existing literal fixtures stay valid; readers treat undefined as false or null.
+  is_shared?: boolean;
+  /** Who paid. Null means the creator. After the payer's account is deleted, `paid_by_former_key` names them. */
+  paid_by?: string | null;
+  paid_by_former_key?: string | null;
+  /** The line's amount in the household currency, stamped once when shared (D-39). */
+  household_amount?: number | null;
+  household_currency?: string | null;
+  household_rate_pending?: boolean;
+  split_rule?: 'even' | 'weight' | 'amount' | 'mine' | null;
+  /** True when a member split the line by hand (08-10 follow-up); default re-splits skip it. */
+  split_manual?: boolean;
+  /** A settle-up record (D-22): moves an account balance, never counts as spending or income (ARC-18). */
+  is_settlement?: boolean;
+  settlement_id?: string | null;
+  /** 08-14: the shared line this personal copy was made from, and the person's share of it (signed, like the amount). */
+  copied_from?: string | null;
+  copy_share?: number | null;
 }
 
 export interface AccountRow {
@@ -124,6 +143,10 @@ export interface AccountRow {
   overdraft_rate?: string | null;
   // 06 GRW-11: the savings interest rate (APY) as a percent string; null = not given (20261106000100)
   interest_rate?: string | null;
+  // 08 Household: a joint account (D-13; client-writable) and, for an account that only holds a departed member's shared
+  // lines, the account it stands in for (08-14; server-only, null for every ordinary account).
+  is_shared?: boolean;
+  tombstone_of?: string | null;
   // Record polish: soft delete (D-24, client-patchable) and server-written is_sample (read-only).
   deleted_at: string | null;
   is_sample: boolean;
@@ -232,6 +255,7 @@ export interface NewAccount {
   use_extra_set_aside?: number | null;
   overdraft_rate?: string | null;
   interest_rate?: string | null;
+  is_shared?: boolean;
 }
 
 export type AccountPatch = Partial<
@@ -250,6 +274,7 @@ export type AccountPatch = Partial<
     | 'use_extra_set_aside'
     | 'overdraft_rate'
     | 'interest_rate'
+    | 'is_shared'
   >
 >;
 

@@ -1,0 +1,104 @@
+name: Auto-merge
+# Owner decision 2026-11-15 (quick 261115-kog): every ready PR merges itself once its required checks pass, except
+# drafts, PRs labelled `hold`, PRs from forks, and Dependabot major-version bumps (those wait for the owner).
+# main keeps "branches must be up to date" (strict) and GitHub's merge queue is not available on a user-owned repo,
+# so this sweep is the queue: when no auto-merge PR is mid-test, it updates the oldest one that is behind main.
+# It never checks out or runs PR code; it only reads PR metadata and calls the GitHub API.
+# Needs the AUTOMERGE_TOKEN secret (fine-grained token, this repo only: Contents, Pull requests and Workflows
+# read/write). Work done with the built-in GITHUB_TOKEN would not start CI on the updated branches or on main.
+# Without the secret the sweep does nothing.
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, labeled, unlabeled, converted_to_draft]
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: auto-merge-sweep
+  cancel-in-progress: false
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Sweep open PRs
+        env:
+          GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GH_TOKEN}" ]; then
+            echo "::notice::AUTOMERGE_TOKEN is not set; auto-merge sweep skipped."
+            exit 0
+          fi
+          # GitHub needs a moment to recompute merge states after a push to main.
+          if [ "$EVENT" = "push" ]; then sleep 30; fi
+
+          # Dependabot major bump: "bump X from 4.9.1 to 6.2.0". Grouped updates are minor/patch only (dependabot.yml).
+          is_major() {
+            local title="$1"
+            [[ "$title" =~ from[[:space:]]+v?([0-9]+)\.([0-9]+)[^[:space:]]*[[:space:]]+to[[:space:]]+v?([0-9]+)\.([0-9]+) ]] || return 1
+            local fM="${BASH_REMATCH[1]}" fm="${BASH_REMATCH[2]}" tM="${BASH_REMATCH[3]}" tm="${BASH_REMATCH[4]}"
+            if [ "$fM" != "$tM" ]; then return 0; fi
+            # 0.x: a minor bump is a breaking bump.
+            if [ "$fM" = "0" ] && [ "$fm" != "$tm" ]; then return 0; fi
+            return 1
+          }
+
+          # gh's built-in --jq does all the filtering (no separate jq needed).
+          # 1. Turn auto-merge on or off. One tab-separated line per PR.
+          gh pr list --state open --limit 100 \
+            --json number,title,isDraft,isCrossRepository,labels,author,autoMergeRequest \
+            --jq '.[] | [.number, .isDraft, .isCrossRepository, ([.labels[].name] | index("hold") != null),
+                         .author.login, (.autoMergeRequest != null), .title] | @tsv' |
+          while IFS=$'\t' read -r n draft fork hold login auto title; do
+            eligible=true; why=""
+            if [ "$fork" = "true" ]; then eligible=false; why="from a fork"; fi
+            if [ "$draft" = "true" ]; then eligible=false; why="draft"; fi
+            if [ "$hold" = "true" ]; then eligible=false; why="labelled hold"; fi
+            if [[ "$login" == *dependabot* ]] && is_major "$title"; then eligible=false; why="Dependabot major bump"; fi
+            if [ "$eligible" = "true" ] && [ "$auto" = "false" ]; then
+              echo "#$n: turning auto-merge on"
+              gh pr merge "$n" --auto --merge || echo "::warning::#$n: could not turn auto-merge on"
+            elif [ "$eligible" = "false" ] && [ "$auto" = "true" ]; then
+              echo "#$n: turning auto-merge off ($why)"
+              gh pr merge "$n" --disable-auto || echo "::warning::#$n: could not turn auto-merge off"
+            elif [ "$eligible" = "false" ]; then
+              echo "#$n: left for the owner ($why)"
+            fi
+          done
+
+          # 2. Queue: one auto-merge PR re-tests at a time.
+          FIELDS=number,isCrossRepository,autoMergeRequest,mergeStateStatus,createdAt,statusCheckRollup
+          AUTO='.[] | select(.autoMergeRequest != null and .isCrossRepository == false)'
+          # Mid-test: up to date with main and checks still running (or not started yet).
+          TESTING="[$AUTO | select(.mergeStateStatus != \"BEHIND\" and .mergeStateStatus != \"DIRTY\"
+            and (((.statusCheckRollup // []) | length) == 0 or ((.statusCheckRollup // []) | any(.status != \"COMPLETED\"))))]
+            | map(.number | tostring) | join(\" \")"
+          testing=$(gh pr list --state open --limit 100 --json "$FIELDS" --jq "$TESTING")
+          if [ -n "$testing" ]; then
+            echo "Waiting: #${testing// /, #} still testing against main."
+            exit 0
+          fi
+          # Oldest first. Skip PRs whose last checks failed: they need a fix or a re-run by a person, not a re-test
+          # on every merge. If an update fails (conflict with main), try the next one so the queue never stalls.
+          BEHIND="[$AUTO | select(.mergeStateStatus == \"BEHIND\" and ((.statusCheckRollup // [])
+            | any(.conclusion == \"FAILURE\" or .conclusion == \"TIMED_OUT\" or .conclusion == \"CANCELLED\") | not))]
+            | sort_by(.createdAt) | map(.number | tostring) | join(\" \")"
+          candidates=$(gh pr list --state open --limit 100 --json "$FIELDS" --jq "$BEHIND")
+          if [ -z "$candidates" ]; then
+            echo "Nothing behind main to update."
+            exit 0
+          fi
+          for n in $candidates; do
+            echo "#$n: behind main; updating it so it re-tests and merges"
+            if gh api -X PUT "repos/${GH_REPO}/pulls/${n}/update-branch" --silent; then
+              exit 0
+            fi
+            echo "::warning::#$n: update failed (likely a conflict with main); it needs main merged in by hand"
+          done

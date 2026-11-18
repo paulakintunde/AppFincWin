@@ -24,14 +24,14 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until the Variant C rebuild: named testers in 08.1, the public after 08.2)
 - [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [x] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations (completed 2026-10-29)
-- [ ] **Phase 05.3: Decide screens v3** (INSERTED) - STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
-- [ ] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm
-- [ ] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
+- [ ] **Phase 05.3: Decide screens v3** (INSERTED) - REPLACED by 05.4, not to be resumed. STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
+- [x] **Phase 05.4: Decide safety patch** (INSERTED) - Decide never says "Fits" when a careful person would say "careful": safety net, overdraft, debt minimums, tax, after-purchase figure; plain confidence sentence replaces Rough/Fair/Firm (completed: 55/55 plans; 05.4-43 and 05.4-45 moved to the post-05.5 test audit, D-182)
+- [x] **Phase 05.5: One shared money model** (INSERTED) - Snapshot builder from records, old engine deleted, one month picture, one bill detector, contracts for Grow and Household
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
-- [ ] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
+- [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
@@ -1151,14 +1151,14 @@ Plans:
 **Depends on:** Phase 05.4
 **Success Criteria** (what must be TRUE):
   1. The snapshot builder reads database rows directly and no import of the old engine remains; a shadow comparison on test accounts and goldens shows only approved differences; coverage stays at 100%.
-  2. Home and Decide read one month picture with two named figures ("left so far" and "left after the month's plans").
+  2. Home keeps its own 'left after everything' figure and shows the shared 'left after the month's plans' line; Decide leads with that same figure (D-19).
   3. One recurring-bill detector and one date calendar, proven identical by a property test; one cap per category; one confidence module.
   4. Contract tests exist for the safety net, debt facts, household scope, settlements, income profile and visibility, each marked "to do" until its phase turns it on.
   5. Theme N: six connection points with one owner each are written and tested (month picture, Grow goal, safety net, Grow debt, Activity bills, household scope); the move of the safety-net, debt, savings and share columns out of `decide_settings` is planned; only one Decide remains in the app's routes.
   6. Core Maestro flows run green on the Android emulator.
   7. Compliance gate: retired screens deleted; the copy guard runs at sentence level and in lint.
 **Notes from Phase 8 (2026-11-11):** see `05.5-NOTES-FROM-08.md` (re-scope after 06.1 plans 36/37, share_pct owner, settlement exclusion, `countsForMe` needed before 08-25).
-**Plans:** 19/26 plans executed (waves 1-3 merged via PRs #116, #120, #121; wave 4 (plans 15, 18, 26) built 2026-11-15 on phase/05.5-wave4; owner 2026-11-15: cap gap accepted until 05.5-16, Setup cap row added to 05.5-16, Grow counts standing plans only). 26 plans in 10 waves (planned 2026-11-14; revised 2026-11-14: 05.5-18 split, Grow and snapshot importers moved to 05.5-26). Wave 1 (plans 01-06) is the Phase 8 plugs PR and needs no gate; every later plan starts with the 06.1 gate (05.5-GATE.md). Migration push order: Band A 20261113000100 before Phase 8 08-27 (applied in production 2026-11-14); Band B 20261121000100..000300 after the 05.5 release. Owner 2026-11-14: add a "Stopped" label migration (record_decide_go via grow_end_series) in 05.5; ARC-24 extras (varying costs, sale/payoff, goal close) move to a later phase.
+**Plans:** 29/29 plans complete. Closed 2026-11-16 (owner). Merged via PRs #116, #120, #121, #126, #136, #138, #139, #140, #141, #142, #143 and the close PR. Released as 0.2.0 (EAS c8adcb4c) plus preview OTA 3c05624c. Production: A2 (20261116*) and Band B (20261121*) applied, min_supported_version 0.2.0. Carried to the post-05.5 test audit (PR #135): 05.4-43 mutation score, 05.4-45 three green nightlies, device-matrix rows, TalkBack, Maestro CLI run. Evidence: 05.5-CLOSE-GATE.md.
 
 Plans:
 - [x] 05.5-01-PLAN.md — countsForMe engine rule and the month-picture contract in src/engine/month (wave 1)
@@ -1175,18 +1175,18 @@ Plans:
 - [x] 05.5-12-PLAN.md — [gated] New input builder from rows beside the old, with a parity harness (wave 2)
 - [x] 05.5-13-PLAN.md — [gated] Costs that stop end the Activity bill; record-as-bought write contract (wave 3)
 - [x] 05.5-14-PLAN.md — [gated] Home small "left after the month's plans" line; Home and Decide parity (wave 3)
-- [ ] 05.5-15-PLAN.md — [gated] One cap: Decide cap rules are the Activity cap; CategorySheet note (wave 4)
-- [ ] 05.5-16-PLAN.md — [gated] Swap Decide onto the new builder; owner reviews every changed answer (wave 5)
+- [x] 05.5-15-PLAN.md — [gated] One cap: Decide cap rules are the Activity cap; CategorySheet note (wave 4)
+- [x] 05.5-16-PLAN.md — [gated] Swap Decide onto the new builder; owner reviews every changed answer (wave 5)
 - [x] 05.5-17-PLAN.md — [gated] Shared pay and bill forms; account purpose via AccountSheet; owner approves Activity changes (wave 3)
-- [ ] 05.5-18-PLAN.md — [gated] Move the type and helper importers (charts, journal, Decide screen helpers) off the old engine (wave 4)
-- [ ] 05.5-19-PLAN.md — [gated] Delete the old engine and old builder; empty the tier-word allowlist; lock with depcruise (wave 6)
-- [ ] 05.5-20-PLAN.md — [gated] Remove the v2 Decide switch; one Decide route test; release-check doc (wave 6)
+- [x] 05.5-18-PLAN.md — [gated] Move the type and helper importers (charts, journal, Decide screen helpers) off the old engine (wave 4)
+- [x] 05.5-19-PLAN.md — [gated] Delete the old engine and old builder; empty the tier-word allowlist; lock with depcruise (wave 6)
+- [x] 05.5-20-PLAN.md — [gated] Remove the v2 Decide switch; one Decide route test; release-check doc (wave 6)
 - [x] 05.5-21-PLAN.md — [gated] Stop writing and reading the four old decide_settings columns; cache version bump (wave 3)
-- [ ] 05.5-22-PLAN.md — [gated] Four new Maestro core flows; local emulator green run (wave 7)
-- [ ] 05.5-23-PLAN.md — The one 05.5 release: release shape, ARC-26 docs, UX-31 re-sync, sign-offs, device matrix (wave 8)
-- [ ] 05.5-24-PLAN.md — Band B: floor raise to 0.2.0, apply_patches without share_pct, drop the four columns (wave 9)
-- [ ] 05.5-25-PLAN.md — Phase close gate: carried-in 05.4-43 and 05.4-45 met; criterion 2 reworded to D-19; evidence per success criterion (wave 10)
-- [ ] 05.5-26-PLAN.md — [gated] Grow lines onto v3; check inputs, stacking, snapshot types and decideGoAhead off the old engine (wave 4)
+- [x] 05.5-22-PLAN.md — [gated] Four new Maestro core flows; local emulator green run (wave 7)
+- [x] 05.5-23-PLAN.md — The one 05.5 release: release shape, ARC-26 docs, UX-31 re-sync, sign-offs, device matrix (wave 8)
+- [x] 05.5-24-PLAN.md — Band B: floor raise to 0.2.0, apply_patches without share_pct, drop the four columns (wave 9)
+- [x] 05.5-25-PLAN.md — Phase close gate: carried-in 05.4-43 and 05.4-45 met; criterion 2 reworded to D-19; evidence per success criterion (wave 10)
+- [x] 05.5-26-PLAN.md — [gated] Grow lines onto v3; check inputs, stacking, snapshot types and decideGoAhead off the old engine (wave 4)
 - Carried in from 05.4 (D-182, owner 2026-11-06): 05.4-43 (mutation score to 90% and locked, pending and knownRed lists proved empty) and 05.4-45 (three consecutive green nightly runs) run on main after the 05.4 merge, before 05.5's own plans close. Their plan files stay in the 05.4 phase folder.
 
 ### Phase 6: Grow
@@ -1432,60 +1432,60 @@ Plans:
   7. (Decide fix plan, blocking) Every record is personal unless marked shared, enforced by database rules, and the two-user tests are green BEFORE the invite flow merges: member B cannot read, edit, receive live updates for, or export member A's personal rows (CMP-F18, ARC-22).
   8. (Decide fix plan) A partner's money counts in Decide only with that partner's opt-in, off by default; two partners' "Fits" answers on shared money can never add up to more than the shared money. (Phase 8 delivers only the "off by default" part: 08-25 proves a partner's personal line counts nothing through 05.5's `countsForMe`. The opt-in itself and the two-partners rule moved to 08.1 with former 08-28 on 2026-11-11.)
   9. (Decide fix plan) Household split rules are the one source of "my share"; settlements count as neither spending nor income; money owed to you is not spendable until it arrives (ARC-17, ARC-18, ENG-25). (Phase 8: 08-25 my-share adapter on 05.5's `countsForMe`, 08-30 settlement exclusion. Removing the old `decide_settings.share_pct` column is 05.5's work, 05.5 D-09; the Decide screen parts are 08.1's.)
-**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`. The revision round against main ran on 2026-11-15 (quick 261114-x0q); waves unchanged.
+**Plans:** 28 plans in 12 waves (08-25 gated on 05.5, D-41; it runs last, wave 12, after the owner-approved push in 08-27). 08-28 and 08-29 moved to Phase 08.1 on 2026-11-11 (owner decision); gates and the post-06.1 revision round are in `08-GATES.md`. The revision round against main ran on 2026-11-15 (quick 261114-x0q), with a second pass the same day after 05.5 waves 1-3 and 06.2 merged (migrations re-dated to `20261122000100..000900`; 05.5 gate met); waves unchanged.
 
 Plans:
 **Wave 1**
-- [ ] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
-- [ ] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
-- [ ] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
-- [ ] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
-- [ ] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
+- [x] 08-01-PLAN.md — Preconditions + wave-1 privacy migration (personal unless shared, backfill, RLS, views)
+- [x] 08-02-PLAN.md — Members v2 (owner flag, role label, colours, hidden names, 0% weights), household name, notices table
+- [x] 08-03-PLAN.md — Engine: line split, weights rebalance, colours, member-name resolver; feature switches (D-44)
+- [x] 08-04-PLAN.md — Engine: per-pair balances, isSettlement rule, settle-up total
+- [x] 08-12-PLAN.md — Household copy catalogue (one file per area) + compliance-voice test
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
+- [x] 08-05-PLAN.md — Privacy RPC rewrite (apply_patches v4, undo, definer functions, shared-line edit guard)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
-- [ ] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
-- [ ] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
+- [x] 08-06-PLAN.md — Existing pgTAP suite updated + household table coverage meta-test
+- [x] 08-07-PLAN.md — SC7 two-user privacy suite + export guard (blocks invite flow)
+- [x] 08-08-PLAN.md — Realtime spike: publication, reconciler, two-client test harness (blocks invite flow)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
-- [ ] 08-10-PLAN.md — Shared lines: stored splits, FX stamping, joint accounts, series, defaults
+- [x] 08-09-PLAN.md — Invites, per-user rate-limited redeem (global rate alert-only), D-01 move-in
+- [x] 08-10-PLAN.md — Shared lines: stored splits, FX stamping, joint accounts, series, defaults
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 08-11-PLAN.md — Settle-up state machine, locks, lapse/reminder cron, undo, write-off
-- [ ] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
+- [x] 08-11-PLAN.md — Settle-up state machine, locks, lapse/reminder cron, undo, write-off
+- [x] 08-13-PLAN.md — Client data A (household, members, invites, notices), resolver hook, feature hook
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
-- [ ] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
+- [x] 08-14-PLAN.md — Leave/remove/transfer/reconnect + account-deletion database rule
+- [x] 08-16-PLAN.md — Household UI primitives, name-resolver guard, member and weights sheets
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
-- [ ] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
+- [x] 08-15-PLAN.md — Client data B (sharing mutations, settlements, balances, former members)
+- [x] 08-17-PLAN.md — Household home, notices, You row, invite/rename/currency (owner) sheets
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
-- [ ] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
-- [ ] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
-- [ ] 08-21-PLAN.md — Balances and settle-up UI
-- [ ] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
-- [ ] 08-23-PLAN.md — Realtime wiring in the app
-- [ ] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
+- [x] 08-18-PLAN.md — Join flow (fincwin:// link, code entry, what's-shared card)
+- [x] 08-19-PLAN.md — Sharing UI (entry switch, split sheet, line detail, Activity badges, bulk share)
+- [x] 08-20-PLAN.md — Rules UI (household and category defaults, apply-to-unsettled, joint accounts)
+- [x] 08-21-PLAN.md — Balances and settle-up UI
+- [x] 08-22-PLAN.md — Delete-account Edge Function + in-app deletion
+- [x] 08-23-PLAN.md — Realtime wiring in the app
+- [x] 08-30-PLAN.md — ARC-18 client rule: settlement records out of Activity totals and Home month figures
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 08-24-PLAN.md — Leave/remove UI + removed-member notice
+- [x] 08-24-PLAN.md — Leave/remove UI + removed-member notice
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
+- [x] 08-26-PLAN.md — Full suite, D-45 check, DPIA draft, validation map
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
+- [x] 08-27-PLAN.md — Owner-approved production push, delete-account deploy, device sign-off
 
 **Wave 12** *(blocked on Wave 11 completion)*
-- [ ] 08-25-PLAN.md — [gated on 05.5] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
+- [x] 08-25-PLAN.md — [05.5 gate met 2026-11-15] my-share adapter, BO-07 point 6 contracts, Home Mine/Household switch
 
 **Moved to Phase 08.1** *(2026-11-11, owner decision; re-plan on the 06.1 screens)*
 - 08-28 — Partner opt-in, shared safety net, caveat, couples note -> `08.1-CARRY-OVER-08-28.md`
@@ -1633,11 +1633,11 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
 | 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
-| 05.5 One shared money model | 19/26 | In Progress|  |
+| 05.5 One shared money model | 29/29 | Complete | 2026-11-16 |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
-| 8. Household | 0/TBD | Not started | - |
+| 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |

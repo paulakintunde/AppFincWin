@@ -3,9 +3,8 @@
 // 06-37 (D-35): the line is a debt payment, not spending: money out once, never in a category's spending total.
 import { everydayByMonth, type V3Inputs, type V3Line } from '@/engine/decide/v3';
 import { demoSource } from '../../../__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '../../buildSnapshot';
-import { buildV3Inputs } from '../buildV3Inputs';
-import { SETTINGS, TODAY, USES } from './growScenarios';
+import type { SnapshotSource } from '../../sourceTypes';
+import { SETTINGS, TODAY, buildWithUses } from './growScenarios';
 
 type Row = SnapshotSource['rows'][number];
 
@@ -27,8 +26,8 @@ const monthLines = (i: V3Inputs): V3Line[] => i.months.filter((m) => m.month ===
 describe('06-30 a one-off debt payment counts once (D-33)', () => {
   const base = demoSource(TODAY);
   const debt = base.debts.find((d) => d.minimum_payment > 0)!;
-  const without = buildV3Inputs(base, SETTINGS, undefined, USES);
-  const withOneOff = buildV3Inputs({ ...base, rows: [...base.rows, oneOffRow(debt.id)] }, SETTINGS, undefined, USES);
+  const without = buildWithUses(base, SETTINGS);
+  const withOneOff = buildWithUses({ ...base, rows: [...base.rows, oneOffRow(debt.id)] }, SETTINGS);
 
   it('the line reaches the current month once, as one outflow of its amount', () => {
     const hits = monthLines(withOneOff).filter((l) => l.id === 'one-off-1');
@@ -56,8 +55,8 @@ describe('06-37 a one-off debt payment is a debt payment in Decide (D-35)', () =
   // Paid and carrying a category, the worst case for a category limit: it must still stay out of every category.
   const category = base.rows.find((r) => r.category_id !== null && r.original_amount < 0)!.category_id!;
   const paid = oneOffRow(debt.id, { status: 'paid', category_id: category });
-  const without = buildV3Inputs(base, SETTINGS, undefined, USES);
-  const withPaid = buildV3Inputs({ ...base, rows: [...base.rows, paid] }, SETTINGS, undefined, USES);
+  const without = buildWithUses(base, SETTINGS);
+  const withPaid = buildWithUses({ ...base, rows: [...base.rows, paid] }, SETTINGS);
   const everyday = (i: V3Inputs) => everydayByMonth(i.months, i.series).find((m) => m.month === MONTH)!;
 
   it('the paid line reaches the month once, as a debt payment of its amount', () => {
@@ -79,7 +78,7 @@ describe('06-37 a one-off debt payment is a debt payment in Decide (D-35)', () =
 
   it('an incoming line tagged to a debt is not read as a payment', () => {
     const back = oneOffRow(debt.id, { id: 'one-off-in', original_amount: ONE_OFF, home_amount: ONE_OFF, status: 'paid' });
-    const built = buildV3Inputs({ ...base, rows: [...base.rows, back] }, SETTINGS, undefined, USES);
+    const built = buildWithUses({ ...base, rows: [...base.rows, back] }, SETTINGS);
     const hit = monthLines(built).find((l) => l.id === 'one-off-in');
     expect(hit?.role).not.toBe('debt_payment');
     // P5-WR-05: money in tagged to a debt is an asset sale: one-time money in, never pay.
@@ -89,7 +88,7 @@ describe('06-37 a one-off debt payment is a debt payment in Decide (D-35)', () =
   it('P5-WR-05: a sale (money in) and its final payment (money out), both tagged to the debt, are not pay or spending', () => {
     const sale = oneOffRow(debt.id, { id: 'sale-in', original_amount: 1400000, home_amount: 1400000, status: 'paid' });
     const payoff = oneOffRow(debt.id, { id: 'sale-payoff', original_amount: -900000, home_amount: -900000, status: 'paid' });
-    const built = buildV3Inputs({ ...base, rows: [...base.rows, sale, payoff] }, SETTINGS, undefined, USES);
+    const built = buildWithUses({ ...base, rows: [...base.rows, sale, payoff] }, SETTINGS);
     const lines = monthLines(built);
     expect(lines.find((l) => l.id === 'sale-in')?.role).toBe('other_in');
     expect(lines.find((l) => l.id === 'sale-payoff')?.role).toBe('debt_payment');

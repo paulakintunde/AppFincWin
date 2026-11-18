@@ -42,7 +42,7 @@ function SavedBadge({ label }: { label: string }) {
 }
 
 export function PastDecisionsScreen() {
-  const t = useT() as T;
+  const t = useT() as unknown as T;
   const { colors, pairing } = useTheme();
   const model = usePastDecisions();
   const { decisions, ctx, whole, wholeIn, formatDate } = model;

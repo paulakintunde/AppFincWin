@@ -19,7 +19,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(72);
+select extensions.plan(73);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -175,12 +175,20 @@ select extensions.throws_ok(
 );
 
 -- ---------------------------------------------------------------------
--- 5. An op on B's (other household) row throws 42501 (T-02-09-02).
+-- 5. An op on B's (other household) row is refused (T-02-09-02). Phase 8 (08-05): an invisible row is refused exactly
+-- like a missing id (status conflict, reason not-found), no longer with 42501, so a caller cannot probe for rows.
 -- ---------------------------------------------------------------------
-select extensions.throws_ok(
-  $$select public.apply_patches('[{"entity":"transactions","id":"cb000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"note":"hack"}}]'::jsonb)$$,
-  '42501', null,
-  'an op on B''s row (a household A does not belong to) throws 42501'
+select extensions.is(
+  (select (r ->> 'status') || ':' || (r -> 'conflict' ->> 'reason')
+     from (select public.apply_patches('[{"entity":"transactions","id":"cb000000-0000-0000-0000-000000000001","expectedVersion":1,"patch":{"note":"hack"}}]'::jsonb) as r) q),
+  'conflict:not-found',
+  'an op on B''s row (a household A does not belong to) is refused as not-found'
+);
+select extensions.is(
+  (select (r ->> 'status') || ':' || (r -> 'conflict' ->> 'reason')
+     from (select public.apply_patches('[{"entity":"transactions","id":"cb0000ff-0000-0000-0000-0000000000ff","expectedVersion":1,"patch":{"note":"hack"}}]'::jsonb) as r) q),
+  'conflict:not-found',
+  'a missing id gets the identical refusal (08-05 D-14: no probing)'
 );
 
 -- ---------------------------------------------------------------------
@@ -224,12 +232,20 @@ select public.apply_patches(
 );
 
 reset role;
-insert into public.household_members (household_id, user_id, role, weight)
-  values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+  values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
+
+-- Phase 8 (D-14, 08-05): A's line is personal, and B can neither see nor edit a personal line. The scenario (B changes a
+-- row A has an undo step on) needs a shared line, and only a household RPC may change someone else's shared line (D-14:
+-- split, own category), which sets fincwin.household_rpc; the test sets the same flag for B's one statement.
+select set_config('request.jwt.claims', '', true);
+update public.transactions set is_shared = true where id = 'f0000000-0000-0000-0000-000000000001';
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+select set_config('fincwin.household_rpc', 'on', true);
 update public.transactions set note = 'edited by B' where id = 'f0000000-0000-0000-0000-000000000001';
+select set_config('fincwin.household_rpc', '', true);
 
 reset role;
 set local role authenticated;

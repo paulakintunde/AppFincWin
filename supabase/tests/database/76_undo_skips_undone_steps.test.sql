@@ -18,8 +18,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household. C keeps a household of their own.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 create function public.t76_ver(e text, i uuid) returns integer language plpgsql security definer set search_path = '' as $$
 declare v integer;
@@ -66,6 +66,14 @@ insert into public.decide_answers (id, household_id, created_by, kind, key, amou
   ('a7600000-0000-0000-0000-000000000001', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
    '11111111-1111-1111-1111-111111111111', 'expected_income', '2026-11', 100000, '2026-11-01');
 
+-- Phase 8 (D-12, 08-01/08-05): debts are the creator's alone, so another member can no longer write a debt. Cases 5 and 9
+-- need a second member writing the same row, so they use two joint accounts (a joint account is writable by any member).
+insert into public.accounts (id, household_id, created_by, name, kind, currency, opening_balance, is_shared) values
+  ('ac760000-0000-0000-0000-000000000005', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'Joint 5', 'checking', 'USD', 0, true),
+  ('ac760000-0000-0000-0000-000000000009', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'Joint 9', 'checking', 'USD', 0, true);
+
 set local role authenticated;
 select public.t76_as('11111111-1111-1111-1111-111111111111');
 
@@ -102,12 +110,12 @@ select extensions.is(public.apply_undo_step('76000004-0000-0000-0000-00000000000
 select extensions.is(public.rollback_undo_to('76000004-0000-0000-0000-000000000001') ->> 'status', 'undone', 'case 4: rollback skips a two-op undone step');
 
 -- (5) S2 undone, then another member writes the row: still a conflict
-select public.t76_step('debts', 'd7600000-0000-0000-0000-000000000004', '76000005-0000-0000-0000-000000000001', '{"name":"b"}', '{"name":"Loan 4"}');
-select public.t76_step('debts', 'd7600000-0000-0000-0000-000000000004', '76000005-0000-0000-0000-000000000002', '{"name":"c"}', '{"name":"b"}');
+select public.t76_step('accounts', 'ac760000-0000-0000-0000-000000000005', '76000005-0000-0000-0000-000000000001', '{"name":"b"}', '{"name":"Joint 5"}');
+select public.t76_step('accounts', 'ac760000-0000-0000-0000-000000000005', '76000005-0000-0000-0000-000000000002', '{"name":"c"}', '{"name":"b"}');
 select public.apply_undo_step('76000005-0000-0000-0000-000000000002');
 select public.t76_as('22222222-2222-2222-2222-222222222222');
-select public.apply_patches(jsonb_build_array(jsonb_build_object('entity', 'debts', 'id', 'd7600000-0000-0000-0000-000000000004',
-  'expectedVersion', public.t76_ver('debts', 'd7600000-0000-0000-0000-000000000004'), 'patch', '{"name":"By B"}'::jsonb)));
+select public.apply_patches(jsonb_build_array(jsonb_build_object('entity', 'accounts', 'id', 'ac760000-0000-0000-0000-000000000005',
+  'expectedVersion', public.t76_ver('accounts', 'ac760000-0000-0000-0000-000000000005'), 'patch', '{"name":"By B"}'::jsonb)));
 select public.t76_as('11111111-1111-1111-1111-111111111111');
 create temp table res5 as select public.rollback_undo_to('76000005-0000-0000-0000-000000000001') as r;
 select extensions.is((select r ->> 'status' from res5), 'refused', 'case 5: another member''s write still conflicts');
@@ -140,9 +148,9 @@ select public.t76_as('11111111-1111-1111-1111-111111111111');
 select extensions.is(public.rollback_undo_to('76000008-0000-0000-0000-000000000001') ->> 'status', 'refused', 'case 8: a purged undone step leaves a conflict (safe direction)');
 
 -- (9) another member's undone step on the row does not raise this owner's expected version
-select public.t76_step('debts', 'd7600000-0000-0000-0000-000000000008', '76000009-0000-0000-0000-000000000001', '{"name":"b"}', '{"name":"Loan 8"}');
+select public.t76_step('accounts', 'ac760000-0000-0000-0000-000000000009', '76000009-0000-0000-0000-000000000001', '{"name":"b"}', '{"name":"Joint 9"}');
 select public.t76_as('22222222-2222-2222-2222-222222222222');
-select public.t76_step('debts', 'd7600000-0000-0000-0000-000000000008', '76000009-0000-0000-0000-000000000002', '{"name":"c"}', '{"name":"b"}');
+select public.t76_step('accounts', 'ac760000-0000-0000-0000-000000000009', '76000009-0000-0000-0000-000000000002', '{"name":"c"}', '{"name":"b"}');
 select public.apply_undo_step('76000009-0000-0000-0000-000000000002');
 select public.t76_as('11111111-1111-1111-1111-111111111111');
 select extensions.is(public.rollback_undo_to('76000009-0000-0000-0000-000000000001') ->> 'status', 'refused', 'case 9: another owner''s undone step does not count');

@@ -43,6 +43,9 @@ function mockUseStore<T>(pick: () => T): T {
   return pick();
 }
 
+// 08-23: the (app) layout opens the household live channel; wiring only here.
+jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
+jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn', user: { id: 'u1' } }) }));
 jest.mock('@/features/consent/useConsent', () => ({ useConsent: () => ({ loading: false, needsPrompt: false }) }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => mockUseStore(() => mockStore.rc) }));

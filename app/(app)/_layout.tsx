@@ -28,6 +28,8 @@ import { Screen } from '@/ui/Screen';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
+import { HouseholdRealtimeHost } from '@/data/realtime/HouseholdRealtimeHost';
+import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -108,6 +110,13 @@ export default function AppLayout() {
                 <Stack.Screen name="grow/holding/[id]" />
                 <Stack.Screen name="grow/safety-net" />
                 <Stack.Screen name="grow/lines" />
+                {/* 08-20 (D-13): the household Rules screens, linked from Household home's Rules card; outside the Decide gate. */}
+                <Stack.Screen name="household/split-default" />
+                <Stack.Screen name="household/category-defaults" />
+                <Stack.Screen name="household/shared-accounts" />
+                {/* 08-24 (HH-13): leaving and removing, from Household home and the member sheet; outside the Decide gate. */}
+                <Stack.Screen name="household/leave" />
+                <Stack.Screen name="household/remove" />
                 {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
                 <Stack.Protected guard={DECIDE_OPEN}>
                   {/* 06.1-28 (D-05): the one Decide. Old paths (check/[id], settings, open, changes, lines, pots, setup/rough, setup/first-check) are redirect files. */}
@@ -153,6 +162,9 @@ export default function AppLayout() {
                   quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id] (a redirect to the answer). */}
               <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
+              <HouseholdRealtimeHost />
+              {/* 08-24 (D-28): "You're no longer in ..." once, for a person the owner removed. */}
+              <RemovedNoticeHost />
               <DeviceHomeCurrencyDefault />
             </View>
           </FabProvider>

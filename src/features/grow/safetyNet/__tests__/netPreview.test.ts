@@ -1,7 +1,7 @@
 // 06-16 (G04a, criterion 7): the preview re-judges open checks with the same computeV3 as Decide, on a source whose flagged goal has
 // the new size. Pure: no React, no I/O.
 import { carInputs, demoSource, sofaInputs } from '@/features/decide/__tests__/helpers/demoScenario';
-import type { SnapshotSource } from '@/features/decide/snapshot/buildSnapshot';
+import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { computeV3 } from '@/features/decide/snapshot/v3/computeV3';
 import { SETTINGS } from '@/features/decide/snapshot/v3/__tests__/growScenarios';
 import { coverWeeks, essentialMonthOf, netStateOf, previewNetSize, withNetSize } from '../netPreview';
@@ -80,8 +80,8 @@ describe('previewNetSize', () => {
       const changed = withNetSize(source, size);
       rows.forEach((r, i) => {
         const c = checks[i]!;
-        expect(r.before).toBe(netStateOf(computeV3(source, SETTINGS, c.inputs, undefined, c.id).result));
-        expect(r.after).toBe(netStateOf(computeV3(changed, SETTINGS, c.inputs, undefined, c.id).result));
+        expect(r.before).toBe(netStateOf(computeV3(source, SETTINGS, c.inputs, c.id).result));
+        expect(r.after).toBe(netStateOf(computeV3(changed, SETTINGS, c.inputs, c.id).result));
       });
     }
   });

@@ -2,7 +2,7 @@
 // waiting-write count is laid over at judge time and gives the same Result as a full rebuild with that count.
 import type { CheckV2 } from '@/engine/decide/v3';
 import { carInputs, demoSource, sofaInputs } from '../../../__tests__/helpers/demoScenario';
-import { buildV3Inputs } from '../buildV3Inputs';
+import { buildInputs } from '../buildInputs';
 import { computeV3, emptyCheckEvaluation, preparedV3, withUnsaved } from '../computeV3';
 import { v3s } from './v3Fixtures';
 
@@ -65,14 +65,14 @@ describe('withUnsaved: the waiting-write count laid over at judge time (B-2)', (
   ])('%s judged on the overlay equals a full rebuild with the same count', (_name, stored) => {
     const source = demoSource(TODAY);
     const v3 = v3s({ income_types: ['salary'] });
-    const inputs0 = buildV3Inputs(source, v3);
+    const inputs0 = buildInputs(source, v3);
     const check = actual.readStoredCheck(stored).check as CheckV2;
     const overlay = actual.judgeCheck(withUnsaved(actual.prepare(inputs0), 2), check).result;
     const rebuilt = actual.judgeCheck(actual.prepare({ ...inputs0, unsavedWrites: 2 }), check).result;
     expect(overlay).toEqual(rebuilt);
     expect(overlay.notices[0]).toEqual({ code: 'unsaved_changes', values: {} });
     // and through computeV3: the live count equals a source that carried it
-    expect(computeV3(source, v3, stored, undefined, null, 2).result).toEqual(computeV3({ ...source, unsavedWrites: 2 }, v3, stored).result);
+    expect(computeV3(source, v3, stored, null, 2).result).toEqual(computeV3({ ...source, unsavedWrites: 2 }, v3, stored).result);
   });
 
   it('the empty-check evaluation is held per count and carries the notice only while writes wait', () => {

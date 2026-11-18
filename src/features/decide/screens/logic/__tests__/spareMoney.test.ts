@@ -45,7 +45,7 @@ function thinHistory(): V3Inputs {
   });
 }
 
-/** What the sheet's "That's right" saves, read back the way buildV3Inputs reads decide_settings. */
+/** What the sheet's "That's right" saves, read back the way buildInputs reads decide_settings. */
 function confirmedAsShown(inputs: V3Inputs): V3Inputs {
   const p = prepare(inputs);
   const sum = spareSumOf(p);
@@ -71,10 +71,27 @@ describe('spare money confirmed as shown (G-PD-2)', () => {
   });
 });
 
+/** A confirm $500 below what the as-given reading explains: $500 of the money in the account is genuinely unexplained. */
+function confirmedBelow(inputs: V3Inputs): V3Inputs {
+  const c = confirmedAsShown(inputs);
+  const u = c.unspent as NonNullable<typeof c.unspent>;
+  return { ...c, unspent: { ...u, amount: minorUnits(u.amount - 50_000) } };
+}
+
 describe('the unexplained money ask has an answer (G-PD-2)', () => {
-  it('thin history: the engine still asks after a confirm; answering it with the amount asked clears it', () => {
+  it('thin history: no ask after a confirm (G-PD-2 fixed in 05.5-28)', () => {
     const confirmed = confirmedAsShown(thinHistory());
     const p = prepare(confirmed);
+    expect(p.readings).toHaveLength(2);
+    expect(judgeCheck(p, MUG).result.missing ?? []).not.toContain('unexplained_money_question');
+    expect(unexplainedAsk(p)).toBeNull();
+    for (const r of p.readings) expect(r.funds.unexplained ?? 0).toBe(0);
+  });
+
+  it('thin history, $500 genuinely unexplained: both readings report $500 and the ask stays; answering clears it', () => {
+    const confirmed = confirmedBelow(thinHistory());
+    const p = prepare(confirmed);
+    expect(p.readings.map((r) => r.funds.unexplained)).toEqual([50_000, 50_000]);
     expect(judgeCheck(p, MUG).result.missing).toContain('unexplained_money_question');
     const ask = unexplainedAsk(p);
     expect(ask).not.toBeNull();
@@ -89,7 +106,7 @@ describe('the unexplained money ask has an answer (G-PD-2)', () => {
   });
 
   it('asked again above an earlier answer: the saved amount covers the earlier one too', () => {
-    const confirmed = confirmedAsShown(thinHistory());
+    const confirmed = confirmedBelow(thinHistory());
     const first = unexplainedAsk(prepare(confirmed)) as NonNullable<ReturnType<typeof unexplainedAsk>>;
     const earlier = { amount: minorUnits(1_000), use: 'spare' as const, at: AS_OF };
     const p = prepare({ ...confirmed, unexplainedAnswer: earlier });
@@ -105,7 +122,7 @@ describe('the unexplained money ask has an answer (G-PD-2)', () => {
   });
 
   it('an earlier answer that is not a whole positive amount counts as none', () => {
-    const confirmed = confirmedAsShown(thinHistory());
+    const confirmed = confirmedBelow(thinHistory());
     const first = unexplainedAsk(prepare(confirmed)) as NonNullable<ReturnType<typeof unexplainedAsk>>;
     const p = prepare({ ...confirmed, unexplainedAnswer: { amount: minorUnits(-5), use: 'spare', at: AS_OF } });
     expect(unexplainedAsk(p)).toEqual(first);

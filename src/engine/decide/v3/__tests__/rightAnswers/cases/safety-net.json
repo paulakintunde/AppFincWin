@@ -1525,7 +1525,7 @@
       "id": "SN-18",
       "topic": "safety-net",
       "persona": "Riley, a plan into a short month (invented, D-54, D-63)",
-      "situation": "Riley's usual month ends $300 short: pay $2,500, bills $1,500, everyday spending $1,300. November so far: $2,500 in, bills $1,500 paid, $650 spent; $1,000 is in her everyday account (money from earlier months) and her safety net holds $2,000, its full size, locked (the default). She looks at a $9,000 car over 48 months at 7.9%, first payment on 15 December. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. A usual month: pay $2,500, bills $1,500 and everyday spending $1,300 ($700 of it on essentials).",
+      "situation": "Riley's usual month ends $300 short: pay $2,500, bills $1,500, everyday spending $1,300. It has been short for some time; she started November with $650, what is left of earlier savings. Today is 15 November 2026. November so far: $2,500 in, bills $1,500 paid and $650 of everyday spending, with $650 more still to come this month. Her everyday account holds $1,000 today (the $650 she started with plus this month's money so far), so it will be about $350 at the end of November. Her safety net holds $2,000, its full size, locked (the default); no overdraft is recorded. She looks at a $9,000 car over 48 months at 7.9%, bought today, first payment on 15 December 2026. A usual month: pay $2,500, bills $1,500 and everyday spending $1,300 ($700 of it on essentials).",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -1596,7 +1596,7 @@
         }
       },
       "expected": {
-        "code": "monthly_short",
+        "code": "not_yet",
         "variant": "month_already_short",
         "afterBuy": {
           "month": null,
@@ -1617,14 +1617,15 @@
           "net_used"
         ]
       },
-      "why": "Her usual month is already $300 short, so no new payment fits: \"Short each month\", with the D-63 headline \"No: your month is already short\" and no ready-by date. The depletion lines lead (D-54): the $219.30 payment takes the usual month from $300 short to $519.30 short; the $9,000 price is more than her $2,000 safety net; the plan costs $1,526.06 in interest ($10,526.06 in all), money that could stay with her; a usual month that balances leaves room for a new payment, and $300 a month in lower costs or higher income balances it. The net is locked (D-61), so no line says how long it would last.",
+      "why": "The answer is \"Not yet\", not \"Short each month\": her everyday account goes below $0 within the 90 days and no overdraft is recorded, and the stricter answer wins (UP 5.3, D-28, D-38; owner Q13 option b, 2026-11-15). The headline is the same D-63 line, \"No: your month is already short\", with no ready-by date. Cash path (90 days, to 12 February 2027): $1,000 today, about $350 at the end of November once the $650 still to come is spent; every later month is $300 short, or $519.30 short with the $219.30 payment, and two payments fall in the window (15 December, 15 January). With the car she is below $0 from 27 December ($169.30 below on 31 December) and lowest on 31 January, $688.60 below $0, the day before pay. Without the car she still goes below $0, from 26 January, lowest $250 below on 31 January: the car brings it a month earlier and $438.60 deeper. The monthly part alone would give \"Short each month\": the payment takes the usual month from $300 short to $519.30 short. The depletion lines lead (D-54): the $9,000 price is more than her $2,000 safety net; the plan costs $1,526.06 in interest ($10,526.06 in all), money that could stay with her; a usual month that balances leaves room for a new payment, and $300 a month in lower costs or higher income balances it. The net is locked (D-61), so no line says how long it would last.",
       "fixIds": [
         "FIN-01",
         "FIN-06"
       ],
       "status": "draft",
       "approvedAt": null,
-      "ownerReason": null,
+      "ownerReason": "Owner (2026-11-15, 05.5-28 Q13 option b): the app is right. Her everyday account goes below $0 by January with no overdraft recorded, so the stricter \"not yet\" wins (UP 5.3, D-28, D-38); D-63 allows either code and asks for a clear no. The headline words are the same. The draft had worked only the monthly side.",
+      "changeApproved": "2026-11-15",
       "expertNote": null,
       "plannerNote": "Engine (05.4-47 rules): needs_input (the volatile-income cover question, judge.ts D-48 gate), because the plan payment against a usual month already short is judged by FIN-06 / FIN-08 (05.4-21 / 05.4-23), as for BR-05, QE-11 and QE-12 (knownRed). Hand figures: payment $219.30 (47 x $219.30 and a last $218.96), shortfall $300 -> $519.30, interest $1,526.06 ($10,526.06 in all), price $9,000 over the $2,000 net, gap $300. Plan 47 pinned the same depletion figures on its own Riley input (depletion.test.ts)."
     },
@@ -2395,6 +2396,115 @@
       "ownerReason": "The owner approved the one-person version of audit case A8 per D-132 (2026-11-05), shown the figures, the $200 tight line and both answers.",
       "expertNote": null,
       "plannerNote": "05.4-40 (D-132): the one-person version of audit case A8. HH-01 stays the household follow-up for phase 8 (FIN-19)."
+    },
+    {
+      "id": "SN-27",
+      "topic": "safety-net",
+      "persona": "Riley, a plan that makes her month short (invented, sister of SN-18)",
+      "situation": "Riley's usual month ends $100 over: pay $2,500 on the 1st, bills $1,500, everyday spending $900 ($500 of it on essentials). Today is 15 November 2026. November so far: $2,500 in, bills $1,500 paid and $450 of everyday spending, with $450 more still to come. Her everyday account holds $600 today (the $50 she started November with plus this month's money so far), so about $150 at the end of November. Her safety net holds $2,000, its full size, locked (the default); no overdraft is recorded. She looks at a $9,000 car over 48 months at 7.9%, bought today, first payment on 15 December 2026.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 250000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 150000,
+          "everyday": 90000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 250000,
+          "billsPaid": 150000,
+          "billsDue": 0,
+          "everydaySoFar": 45000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 60000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 200000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": 200000,
+          "saved": 200000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 900000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 48,
+            "apr": "7.9",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "not_yet",
+        "variant": "not_covered",
+        "afterBuy": {
+          "month": 10000,
+          "usualMonth": -11930
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "plan_makes_short",
+          "price_over_net",
+          "interest_is_a_cost",
+          "balanced_month_room",
+          "no_overdraft_limit"
+        ],
+        "mustNotHaveFacts": [
+          "ready_without_interest",
+          "overdraft_carried_in",
+          "net_lasts",
+          "net_lasts_without",
+          "net_used"
+        ]
+      },
+      "why": "The car is the only reason her account goes below $0: without it she never does ($150, $250, $350 at the ends of November, December and January); with it every month is $119.30 short ($100 - $219.30) and the account is $88.60 below $0 on 31 January, with no overdraft recorded. So \"Not yet\" (UP 5.3, D-28, D-38), and no ready-by date: the plan makes her usual month short for all 48 months, so waiting never makes it fit (owner 2026-11-17, SN-27 option a). Re-checked on 1 December she would still go $203.58 below $0, and even once the cash path clears (about March 2027) the best answer is \"Short each month\". The depletion lines lead (D-54, D-60c): the plan makes her usual month about $119.30 short; the $9,000 price is more than her $2,000 safety net; the plan costs interest; a usual month with room for the payment balances it.",
+      "fixIds": [
+        "FIN-05",
+        "FIN-06"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-17",
+      "ownerReason": "Owner (2026-11-17, SN-27 option a): no ready-by date when the plan itself makes the usual month short; waiting never makes it fit. Shown the hand figures, the engine trace and the re-checks on later dates (08.1-PROPOSED-SN-27.md).",
+      "expertNote": null,
+      "plannerNote": null
     }
   ]
 }

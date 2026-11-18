@@ -138,7 +138,11 @@ function lockedSaved(envs: V3Inputs['envelopes']): number {
   return envs.filter((e) => e.locked === true).reduce((t, e) => t + (e.saved > 0 ? e.saved : 0), 0);
 }
 
-export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: string | null): Funds {
+/**
+ * asGivenSuggested (G-PD-2, 05.5-28): unexplained money is read from the as-given reading's suggested figure only, like readiness
+ * (06.1-85). Absent = this reading's own suggested (the as-given reading and every other caller).
+ */
+export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: string | null, asGivenSuggested?: MinorUnits): Funds {
   const lockedNamed = lockedSaved(inputs.envelopes);
   const env = envelopesOf(inputs.envelopes, inputs.asOf);
   const emergency = emergencyOf(inputs.emergency).amount;
@@ -181,7 +185,8 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   let shown = unspent;
   if (unspent !== null) {
     let available = unspent.available as MinorUnits;
-    const raw = Math.max(0, suggested - unspent.value);
+    // G-PD-2 (05.5-28): unexplained money is read from the as-given reading only, like readiness (06.1-85)
+    const raw = Math.max(0, (asGivenSuggested ?? suggested) - unspent.value);
     const covered = validAnswer === null ? 0 : Math.min(validAnswer.amount, raw);
     unexplained = minorUnits(raw - covered);
     if (validAnswer !== null && validAnswer.use === 'spare') {

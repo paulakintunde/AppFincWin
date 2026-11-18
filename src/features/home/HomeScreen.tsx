@@ -17,6 +17,7 @@ import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import { requestActivityFocus } from '@/state/activityFocus';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { FadeIn } from '@/ui/motion/FadeIn';
+import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { AccountsCard } from './AccountsCard';
 import { ComingUpCard } from './ComingUpCard';
 import { ProjectionDetailSheet } from './ProjectionDetailSheet';
@@ -106,10 +107,31 @@ export function HomeScreen() {
           months={vm.months}
           onMonthChange={vm.setMonth}
           formatter={formatter}
-          homeCurrency={rc.homeCurrency}
+          homeCurrency={vm.figureCurrency}
           currentMonth={monthOf(rc.today)}
           state={vm.dataState}
           afterPlans={vm.afterPlans}
+          scopeSwitch={
+            vm.showScope ? (
+              <SegmentedToggle
+                options={[
+                  { key: 'mine', label: t('household.home.scope.mine') },
+                  { key: 'household', label: t('household.home.scope.household') },
+                ]}
+                value={vm.scope}
+                onChange={(k) => vm.setScope(k === 'household' ? 'household' : 'mine')}
+                accessibilityLabel={t('household.home.scope.a11y')}
+                haptic={false}
+              />
+            ) : null
+          }
+          scopeNote={
+            !vm.showScope
+              ? null
+              : vm.scope === 'household'
+                ? t('household.home.scope.householdLabel', { currency: vm.figureCurrency })
+                : t('household.home.scope.mineLabel')
+          }
         />
       </FadeIn>
       <FadeIn once="home.card.comingUp" testID="home-card-comingUp">

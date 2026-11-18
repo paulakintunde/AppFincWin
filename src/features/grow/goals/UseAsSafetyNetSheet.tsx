@@ -23,7 +23,7 @@ export interface UseAsSafetyNetSheetProps {
 }
 
 export function UseAsSafetyNetSheet({ visible, goal, currentNet, ownerId, savedText, netSavedText, onClose, onSet }: UseAsSafetyNetSheetProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { set } = useSetSafetyNet();
   const effect = goal.locked === true ? 'grow.goals.useAsSafetyNet.effectLocked' : 'grow.goals.useAsSafetyNet.effectNormal';
   const swapped = currentNet !== null && currentNet.id !== goal.id;

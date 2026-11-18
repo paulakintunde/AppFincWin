@@ -42,7 +42,7 @@ export function EnvelopeAccountSheet(props: EnvelopeAccountSheetProps) {
 }
 
 function EnvelopeAccountForm({ goalId, onClose, setAccount }: EnvelopeAccountSheetProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const userId = rc.userId ?? undefined;

@@ -1,8 +1,7 @@
 /**
  * I28 back-test (05.1-29, D-17). Rolling origin over seeded synthetic histories in seven persona families.
  *
- * At each origin month the person is cut off at the 3rd of that month, a price ladder is judged by v3 (evaluate) and by
- * today's engine (oldAnswer, 'month' basis), and the held-out month's true leftover says whether a "fits" was false.
+ * At each origin month the person is cut off at the 3rd of that month, a price ladder is judged by v3 (evaluate), and the held-out month's true leftover says whether a "fits" was false.
  * Test-only. Synthetic data only (T-05.1-61): nothing here reads a real person or a real log.
  *
  * D-40: variable earners state their pattern, carry 24-30 months, and their pay series is the latest logged pay. No figure
@@ -20,7 +19,6 @@ import { addYearMonths } from '../../dates';
 import { evaluate } from '../../evaluate';
 import { buildMonthModel } from '../../../../month/model/model';
 import { toCheckV2, toV3Inputs, type FixtureLine, type FixtureMonth, type FixturePerson, type FixturePurchase, type FixtureSeries } from '../golden/adapter';
-import { oldAnswer } from '../golden/toOld';
 
 export const SEED = 0x0128;
 export const HISTORIES_PER_FAMILY = 20;
@@ -180,8 +178,6 @@ export function originsOf(h: History): number[] {
 export interface Counts {
   fitsV3: number;
   falseV3: number;
-  fitsOld: number;
-  falseOld: number;
   months: number;
   belowLow: number;
   withLow: number;
@@ -193,7 +189,7 @@ export interface Counts {
   probes: number;
   asked: number;
 }
-const zero = (): Counts => ({ fitsV3: 0, falseV3: 0, fitsOld: 0, falseOld: 0, months: 0, belowLow: 0, withLow: 0, evaluations: 0, notReady: 0, unexplainedAsked: 0, accountAsked: 0, payAsked: 0, probes: 0, asked: 0 });
+const zero = (): Counts => ({ fitsV3: 0, falseV3: 0, months: 0, belowLow: 0, withLow: 0, evaluations: 0, notReady: 0, unexplainedAsked: 0, accountAsked: 0, payAsked: 0, probes: 0, asked: 0 });
 
 function purchaseOf(price: number, share: FixturePurchase['share']): FixturePurchase {
   return {
@@ -245,11 +241,6 @@ export function runBacktest(): { overall: Counts; byFamily: Record<Family, Count
           c.fitsV3 += 1;
           const unspent = code === 'fits_unspent' ? Number(ev.funds.unspent?.value ?? 0) : 0;
           if (actualLeft + unspent - mine < 0) c.falseV3 += 1;
-        }
-        const old = oldAnswer(person, purchase, 'month');
-        if (old.state === 'fits') {
-          c.fitsOld += 1;
-          if (actualLeft - mine < 0) c.falseOld += 1;
         }
       }
       // D-48: a question is not a fits; asking is reported, not gated. One 12-month monthly plan at 50% of the base.

@@ -21,6 +21,7 @@ import { currencyCode, currencyExponent, minorUnits } from '@/engine/money';
 import { perfMark } from '@/features/decide/perf/perfMarks';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { categoryName as categoryDisplayName } from '@/features/record/categoryName';
 import { useHideFab } from '@/shell/fab/FabProvider';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import type { TabRootScrollHandle } from '@/shell/screen/useTabRootChrome';
@@ -294,7 +295,8 @@ export function DecideHome() {
   const crossings = useRuleCrossings();
   const categories = useCategories(rc.userId ?? undefined).data;
   // 05.5-15 (D-11): the name shown follows the category row (built-ins have no stored name, so categoryName resolves it).
-  const categoryList = useMemo(() => (categories ?? []).map((c) => ({ id: c.id, name: c.name ?? '', row: c })), [categories]);
+  // 05.5 device fix (Pixel 6): a built-in category's name comes from its key, as Activity shows it; c.name alone left " at most".
+  const categoryList = useMemo(() => (categories ?? []).map((c) => ({ id: c.id, name: categoryDisplayName(c, t), row: c })), [categories, t]);
   // D-11, D-17: a capped category is a money rule. Its cap is categories.monthly_cap; the row opens Activity's CategorySheet.
   const caps = useMemo(
     () => (categories ?? []).filter((c) => !c.is_system && c.archived_at === null && c.monthly_cap !== null).map((c) => ({ categoryId: c.id, amount: c.monthly_cap as number })),

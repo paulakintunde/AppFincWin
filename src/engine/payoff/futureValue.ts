@@ -24,7 +24,7 @@ function assertNonNegative(value: number, label: string): void {
 /**
  * The same value as `futureValue`, as an exact bigint that is never range-checked. 04-REVIEW ME-01: a user-entered rate
  * over a long horizon can grow past Number.MAX_SAFE_INTEGER; callers that must not throw (the Decide projections)
- * convert with minorOrNull and report the figure as out of range instead.
+ * check it against Number.MAX_SAFE_INTEGER themselves and report the figure as out of range instead.
  */
 export function futureValueExact(monthly: MinorUnits, apr: Percent, months: number, seed: MinorUnits): bigint {
   assertMonths(months);

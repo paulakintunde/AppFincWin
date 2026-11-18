@@ -4,7 +4,7 @@ import React from 'react';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { judgeCheck, prepare, type CheckV2, type RunningCostLine } from '@/engine/decide/v3';
 import { checkPlan } from '@/engine/decide/v3/__tests__/helpers/fixtures';
-import { percent } from '@/engine/decide';
+import { percent } from '@/engine/payoff';
 import { minorUnits } from '@/engine/money';
 import { saveForItTarget } from '@/data/mutations/decideOutcome';
 import en from '@/i18n/locales/en';

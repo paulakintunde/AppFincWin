@@ -34,7 +34,7 @@ export interface SafetyNetCardProps {
 }
 
 export function SafetyNetCard({ net, money, animate = true, pending = 0, monthly = null, reachesOn = null }: SafetyNetCardProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const hasSize = net !== null && net.size !== null && net.size > 0;
   const saved = net === null ? 0 : net.saved;

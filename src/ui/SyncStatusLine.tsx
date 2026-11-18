@@ -10,7 +10,8 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
-import { useT } from '@/i18n';
+import { useRealtimeStatus } from '@/data/realtime/realtimeStatus';
+import { tOneOf, useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
 import { space } from '@/theme/layout';
@@ -31,6 +32,7 @@ export function SyncStatusLine({ detail = false, wrapperStyle, wrapperTestID }: 
   const t = useT();
   const { colors, pairing } = useTheme();
   const status = useSyncStatus();
+  const livePaused = useRealtimeStatus() === 'paused'; // 08-23: the household channel is down and reconnecting
   const [now, setNow] = useState(() => Date.now());
   const [listOpen, setListOpen] = useState(false);
 
@@ -49,7 +51,7 @@ export function SyncStatusLine({ detail = false, wrapperStyle, wrapperTestID }: 
 
   const { primary, failed, conflicts } = syncStatusLabel(status, now, detail);
   // An open failed-saves list stays mounted even if its last entry clears while the user is in it.
-  if (primary === null && failed === 0 && conflicts === 0 && !listOpen) return null;
+  if (primary === null && failed === 0 && conflicts === 0 && !listOpen && !livePaused) return null;
 
   const labelStyle = {
     ...textRole(pairing, 'label'),
@@ -60,7 +62,8 @@ export function SyncStatusLine({ detail = false, wrapperStyle, wrapperTestID }: 
 
   const line = (
     <View style={styles.column}>
-      {primary ? <Text style={labelStyle}>{t(primary.key, { count: primary.count })}</Text> : null}
+      {primary ? <Text style={labelStyle}>{tOneOf(t, primary.key, { count: primary.count })}</Text> : null}
+      {livePaused ? <Text style={labelStyle}>{t('sync.livePaused')}</Text> : null}
       {failed > 0 ? (
         <Pressable accessibilityRole="button" accessibilityHint={t('sync.failedSheet.openHint')} onPress={() => setListOpen(true)} style={styles.button}>
           <Text style={dangerStyle}>{t('sync.failed', { count: failed })}</Text>

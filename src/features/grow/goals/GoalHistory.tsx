@@ -79,7 +79,7 @@ export interface GoalHistoryCardProps {
 }
 
 export function GoalHistoryCard(p: GoalHistoryCardProps) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
 

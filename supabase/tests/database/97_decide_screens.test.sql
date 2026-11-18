@@ -17,8 +17,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B is a second member of A's household.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 create function public.t97_ver(i uuid) returns integer language sql security definer set search_path = '' as $$
   select version from public.savings_goals where id = i $$;

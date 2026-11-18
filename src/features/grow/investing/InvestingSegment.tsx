@@ -45,7 +45,7 @@ const SWATCHES: readonly CategorySwatchKey[] = ['green', 'blue', 'ochre', 'plum'
  * nothing put in there is no percent, so the word is the signed amount. The spoken label keeps the amount too.
  */
 export function GainBadge({ line }: { line: HoldingLine }) {
-  const t = useT() as (key: string, options?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
   const f = useInvestingFormat();
   const up = line.gain >= 0;
   const amount = f.money(Math.abs(line.gain), line.currency);

@@ -1,8 +1,9 @@
 import { corpus, type ReviewedChange } from './corpus';
 import * as fs from 'fs';
 import * as path from 'path';
-import { auditOf, breakdown, buildPage, priceShareOfPay, quickEstimatesStep, rateText, situationHtml, situationRows, tightSums, words } from './page';
+import { auditOf, breakdown, buildPage, sayLine, priceShareOfPay, quickEstimatesStep, rateText, situationHtml, situationRows, tightSums, words } from './page';
 import { evaluate } from '../../evaluate';
+import { inputsOf } from '../helpers/fixtures';
 import { loadCases } from '../rightAnswers/loader';
 import { toEngineInputs } from '../rightAnswers/fixture';
 import { SHORT_PLAN_CASES, shortPlan, type ShortPlanCase } from '../helpers/shortPlanFixtures';
@@ -12,6 +13,23 @@ const cases = corpus();
 const persona = cases.find((c) => c.key.startsWith('persona:audit-p4-overdrawn:6000'));
 const gen = cases.find((c) => c.key === 'gen:3');
 const change = (key: string): ReviewedChange => ({ fixId: 'T', key, before: { code: 'needs_input', variant: null, afterBuyMonth: null }, after: { code: 'not_yet', variant: 'not_covered', afterBuyMonth: null }, reason: '', approved: true, approvedAt: null });
+
+describe('sayLine counted words (05.5-28)', () => {
+  const inputs = inputsOf();
+  const refill = (months: number) => sayLine('fact', { code: 'net_refill', values: { months } } as never, inputs);
+  it('a value of 1 reads the _one copy: "about a month", not "about 1 months"', () => {
+    expect(refill(1)).toBe('Refilled in about a month from spare money.');
+    expect(refill(1)).not.toContain('1 months');
+  });
+  it('3 months and 0 months read the many form', () => {
+    expect(refill(3)).toBe('Refilled in about 3 months from spare money.');
+    expect(refill(0)).toBe('Refilled in about 0 months from spare money.');
+  });
+  it('a key with only a plain string is unchanged', () => {
+    const line = sayLine('fact', { code: 'net_zero_is_off', values: { zero: 0 } } as never, inputs);
+    expect(line).toContain('treated as switched off');
+  });
+});
 
 describe('reviewed page', () => {
   it('shows a situation for a persona key and a generated key', () => {

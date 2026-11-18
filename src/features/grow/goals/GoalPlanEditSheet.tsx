@@ -60,7 +60,7 @@ export function GoalPlanEditSheet(props: GoalPlanEditSheetProps) {
 }
 
 function PlanForm({ mode, goal, saved, today, series, ownerId, onClose, onSaved }: GoalPlanEditSheetProps & { mode: PlanEditMode }) {
-  const t = useT() as (key: string, params?: Record<string, string | number>) => string;
+  const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
   // P4-WR-01: `saved`, the target and the amounts are all in the goal's currency, so they are shown in it.
   const whole = useGoalMoney(goal.currency);

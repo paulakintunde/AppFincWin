@@ -55,6 +55,7 @@ export function settingsSourceOf(input: SettingsSourceInput): V3SettingsSource |
     hold_months: s.hold_months,
     unspent_anchor: s.unspent_anchor,
     unspent_anchor_at: s.unspent_anchor_at,
+    unspent_anchor_set_at: s.unspent_anchor_set_at,
     everyday_override: s.everyday_override,
     month_marks: s.month_marks,
     rough_saving: s.rough_saving,

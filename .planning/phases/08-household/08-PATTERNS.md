@@ -7,16 +7,18 @@
 All paths are relative to `C:\dev\fincwin-h8`. Excerpts are short on purpose; open the analog for the rest.
 
 **Revision 2026-11-15 (quick 261114-x0q, main 318d6799):** this map predates Grow (06), 06.1 and 05.5 Band A. Where it disagrees with a plan, the plan wins. In particular:
-- `apply_patches`: the base is the newest body on main at build time (`20261114000100_decide_answered_undo.sql` on 2026-11-15; `20261115000100_category_icon_key.sql` if PR #122 lands first). Never copy the `20261028001100_apply_patches_v3.sql` excerpt or its line numbers below. 08-05's interfaces list the current line numbers and the lines that must survive (`261114`, `decide_may_use`, holdings).
+- `apply_patches`: the base is the newest body at build time (`20261115000100_category_icon_key.sql` on main cf53894b, second pass 2026-11-15; 05.5 Band B's `20261121000300_decide_settings_drop_interim_columns.sql` once it lands, without `share_pct`). Never copy the `20261028001100_apply_patches_v3.sql` excerpt or its line numbers below. 08-05's interfaces list the current line numbers and the lines that must survive (`261115` icon_key, `261114`, `decide_may_use`, holdings).
 - Grow and 06.1 added security-definer functions and tables; 08-05 classifies each function and 08-06 / 08-07 list each table.
-- Highest pgTAP file on main is `98_decide_rule_caps_copy.test.sql` (trap 6 below is stale); Phase 8 uses 100-110.
+- Highest pgTAP files on main are `98_decide_rule_caps_copy.test.sql` and 06.2's `98_category_icon_key.test.sql` (trap 6 below is stale); 05.5's remaining plans add no new number; Phase 8 uses 100-110, all free.
+- Phase 8 migrations are `20261122000100..20261122000900` (re-dated in the second pass so they sort after 05.5 Band B `20261121*`).
+- UI: 06.2 (App life, #122) added the shared kit: `src/ui/icons` (Glyph, IconTile, `iconData` names such as `household`, `settlement`, `transfer`), `src/ui/status/StatusBadge` + `statusMap`, Row heights 52/64, `step` / `space` / `tile` / `iconSize` in `src/theme/layout.ts`, motion in `src/ui/motion`, and haptics by meaning (`hapticTap`, `hapticWarn`, `hapticMilestone`, `hapticFailed`, `hapticTick`). The old names `hapticLight` / `hapticWarning` / `hapticSuccess` are gone and `src/ui/__tests__/hapticNames.test.ts` fails if they return. Household screens use these, not the analogs below.
 - `src/features/decide/settings/settingsRows.ts` and the Decide wiring rows below are gone (06.1 plan 36); that work moved to 08.1 / 05.5.
 
 ## File Classification
 
 | New/Modified File | Role | Data Flow | Closest Analog | Match |
 |---|---|---|---|---|
-| `supabase/migrations/2026111x_household_privacy_wave1.sql` (is_shared, policies, views, RPC rewrites, backfill) | migration | CRUD / RLS | `20261012000100_category_rules.sql` (personal/shared policies) + `20261016000100_decide_tables.sql` (owner-private) | role-match |
+| `supabase/migrations/20261122000100_household_privacy_wave1.sql` (is_shared, policies, views, RPC rewrites, backfill) | migration | CRUD / RLS | `20261012000100_category_rules.sql` (personal/shared policies) + `20261016000100_decide_tables.sql` (owner-private) | role-match |
 | `..._household_members_v2.sql` (weight 0, `is_owner`, `role_label`, `colour_key`, `name_hidden`) | migration | CRUD | `20260922000100_household_of_one.sql` (table being altered) | exact (same table) |
 | `..._household_invites.sql` (invites, `redeem_attempts`, create/cancel/redeem RPCs) | migration | request-response | `20260924000600_fx_monitoring.sql` L234-270 (`fx_resolve_calls`) + `handle_new_user` | role-match |
 | `..._household_splits.sql` (`transaction_splits`, `paid_by`, `household_amount`, category defaults) | migration | CRUD | `20260924000400_transactions.sql` (grants, triggers) + `20260924000500_fx_stamping.sql` | role-match |

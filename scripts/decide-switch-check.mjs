@@ -6,7 +6,7 @@
 //             unless --allow-missing-secret is passed (PR use).
 // Output goes to a CI log: counts and the first 8 characters of ids only. Never the token.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -57,6 +57,33 @@ export function runStatic(files) {
   const never = parseList('decide-never-on.json', files.neverOn, errors, false);
   for (const id of testers) if (never.includes(id)) errors.push(`overlap: ${short(id)} is on both lists`);
   return { ok: errors.length === 0, errors, testers, never };
+}
+
+// 05.5-20 (APP-17): DECIDE_OPEN is the only store-build switch. The old v2 switch must not come back.
+const REMOVED_NAMES = [['DECIDE', 'V3'].join('_'), ['decide', 'Engine'].join('')];
+
+function walkSrc(dir, out) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === 'node_modules' || e.name === '__tests__') continue;
+    const full = join(dir, e.name);
+    if (e.isDirectory()) walkSrc(full, out);
+    else if (/\.(ts|tsx)$/.test(e.name)) out.push(full);
+  }
+}
+
+export function checkSwitchSource(root = ROOT) {
+  const errors = [];
+  const avail = readFileSync(join(root, 'src/features/decide/availability.ts'), 'utf8');
+  if (!/export const DECIDE_OPEN\b/.test(avail)) errors.push('availability.ts must export DECIDE_OPEN');
+  const files = [];
+  walkSrc(join(root, 'src'), files);
+  for (const f of files) {
+    const text = readFileSync(f, 'utf8');
+    for (const n of REMOVED_NAMES) {
+      if (text.includes(n)) errors.push(`${f.slice(root.length + 1).split('\\').join('/')}: mentions removed switch ${n}`);
+    }
+  }
+  return errors;
 }
 
 export async function runOnline({ fetch: doFetch, env, files, allowMissingSecret = false }) {
@@ -112,8 +139,9 @@ async function main() {
     process.exit(r.ok ? 0 : 1);
   }
   const r = runStatic(files);
-  if (!r.ok) {
-    for (const e of r.errors) console.error(e);
+  const srcErrors = checkSwitchSource();
+  if (!r.ok || srcErrors.length) {
+    for (const e of [...r.errors, ...srcErrors]) console.error(e);
     process.exit(1);
   }
   console.log(`decide switch lists ok: ${r.testers.length} testers, ${r.never.length} never-on`);

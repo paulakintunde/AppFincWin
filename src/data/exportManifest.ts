@@ -10,6 +10,7 @@
  * table that is in neither EXPORT_MANIFEST nor NOT_USER_DATA.
  */
 
+// CMP-F18: export runs as the signed-in user, so RLS limits it to own + shared rows; 101 proves it per table.
 export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   transactions: [
     'id', 'household_id', 'account_id', 'created_by', 'original_amount', 'original_currency', 'home_currency', 'home_amount',
@@ -22,6 +23,11 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'income_kind', 'counts_as', 'refund_of',
     // 06-30
     'debt_id',
+    // 08 (D-12, D-18): what is shared and who paid, so an export shows it
+    'is_shared', 'paid_by',
+    // 08 (08-10, 08-11, 08-14): the stamped household figure, how it was split, settle-up records and personal copies
+    'paid_by_former_key', 'household_amount', 'household_currency', 'household_rate_pending', 'split_rule', 'split_manual',
+    'is_settlement', 'settlement_id', 'copied_from', 'copy_share',
   ],
   accounts: [
     'id', 'household_id', 'created_by', 'name', 'kind', 'currency', 'opening_balance', 'archived_at', 'overdraft_limit',
@@ -32,6 +38,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'overdraft_rate',
     // 06
     'interest_rate',
+    // 08 (D-13): a joint account
+    'is_shared', 'tombstone_of',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'icon_key', 'created_at', 'updated_at'],
   category_rules: [
@@ -47,14 +55,33 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'end_reason',
     // 06
     'goal_id',
+    // 08 (D-16): a shared series
+    'is_shared',
   ],
   custom_currencies: ['id', 'owner_id', 'code', 'symbol', 'decimals', 'reference_currency', 'unit_value', 'as_of', 'created_at', 'updated_at'],
   import_profiles: ['id', 'owner_id', 'account_id', 'layout_signature', 'profile', 'created_at'],
   undo_log: ['id', 'owner_id', 'label_key', 'label_params', 'status', 'refusal', 'created_at', 'resolved_at'],
   dismissed_series_offers: ['offer_key', 'created_at'],
   statement_periods: ['id', 'household_id', 'account_id', 'period_start', 'period_end', 'import_batch_id'],
-  households: ['id', 'horizon_month'],
-  household_members: ['household_id', 'user_id', 'display_name'],
+  households: ['id', 'horizon_month', 'name', 'reporting_currency', 'owner_id'],
+  household_members: ['household_id', 'user_id', 'display_name', 'is_owner', 'role_label', 'colour_key', 'name_hidden', 'weight', 'created_at'],
+  // 08-13 (D-02): an open invite's plain code is never exported (it is not selectable by the client); these are its dates
+  household_invites: ['id', 'household_id', 'created_by', 'expires_at', 'used_at', 'cancelled_at', 'created_at'],
+  household_events: ['id', 'household_id', 'kind', 'actor_id', 'subject_id', 'ref_id', 'params', 'created_at'],
+  // 08-15 (CMP-F18): sharing and settling. Export runs as the signed-in user, so RLS limits each table to what that person
+  // may see (a settle-up only to its two people). settlement_nudges is server-only rate-limit bookkeeping and is never exported.
+  transaction_splits: ['id', 'transaction_id', 'household_id', 'member_id', 'former_member_key', 'position', 'share', 'weight_snapshot', 'created_at'],
+  transaction_member_categories: ['transaction_id', 'user_id', 'household_id', 'category_id'],
+  household_split_defaults: ['id', 'household_id', 'category_ref', 'rule', 'created_at', 'updated_at'],
+  settlements: [
+    'id', 'household_id', 'kind', 'payer_id', 'receiver_id', 'payer_former_key', 'receiver_former_key', 'amount', 'currency', 'status',
+    'created_by', 'payer_account_id', 'receiver_account_id', 'payer_tx_id', 'receiver_tx_id', 'payer_fx_rate', 'receiver_fx_rate',
+    'remind_at', 'expires_at', 'confirmed_at', 'resolved_at', 'created_at', 'updated_at',
+  ],
+  settlement_lines: ['settlement_id', 'transaction_id', 'household_id', 'amount', 'live'],
+  household_former_members: ['id', 'household_id', 'user_id', 'former_key', 'display_name', 'colour_key', 'name_hidden', 'reason', 'left_at'],
+  // the client's select grant on member_departures is these columns only; the server-held copy and undo bookkeeping stay out
+  member_departures: ['id', 'household_id', 'user_id', 'actor_id', 'kind', 'undo_until', 'restored_at', 'created_at'],
   profiles: [
     'home_currency', 'show_cents', 'lead_figure', 'region', 'region_subdivision', 'week_start', 'sample_prompt_answered_at',
     // profiles.decide_v3 and profiles.decide_shadow are access switches, not user data: excluded on purpose (05.2, 05.4).
@@ -96,7 +123,7 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // 05.2
     'income_types', 'income_pattern', 'income_pattern_confirmed', 'variable_method', 'steady_amount', 'spread_months',
     'hold_months', 'detail', 'remind_plan', 'remind_unspent', 'setup_done_at', 'everyday_override',
-    'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'reserve_account_id', 'reserve_goal',
+    'everyday_override_at', 'month_marks', 'unspent_anchor', 'unspent_anchor_at', 'unspent_anchor_set_at', 'reserve_account_id', 'reserve_goal',
     'rough_saving', 'rough_debt', 'rough_invest', 'rough_as_of', 'unexplained_amount', 'unexplained_use', 'unexplained_at',
     'refine_last_at', 'refine_snooze_until',
     'custom_options', // 05.3-81
@@ -127,5 +154,6 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
 export const NOT_USER_DATA: readonly string[] = [
   'transactions_active', // a view over transactions (not-deleted rows); exported through transactions
   'statement_periods_live', // a view over statement_periods; exported through statement_periods
+  'household_event_reads', // 08-13: one last-opened time per user for the notices badge; no content, erased by FK cascade
   'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
 ];

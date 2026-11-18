@@ -569,11 +569,12 @@ describe('useAccountBalances', () => {
 });
 
 describe('useHouseholdMemberNames', () => {
-  it('returns a Map of userId -> display_name, omitting nulls', async () => {
+  it('returns a Map of userId -> label through memberLabel: a shown name, else the colour name (D-32)', async () => {
     fakeClient.respondWith({
       data: [
-        { user_id: 'u1', display_name: 'Ada' },
-        { user_id: 'u2', display_name: null },
+        { user_id: 'u1', display_name: 'Ada', name_hidden: false, colour_key: 0 },
+        { user_id: 'u2', display_name: null, name_hidden: false, colour_key: 1 },
+        { user_id: 'u3', display_name: 'Pat', name_hidden: true, colour_key: 2 },
       ],
       error: null,
       status: 200,
@@ -581,8 +582,9 @@ describe('useHouseholdMemberNames', () => {
 
     const { result } = await renderHook(() => useHouseholdMemberNames('h1'), { wrapper: wrapper(newClient()) });
 
-    await waitFor(() => expect(result.current.size).toBe(1));
+    await waitFor(() => expect(result.current.size).toBe(3));
     expect(result.current.get('u1')).toBe('Ada');
-    expect(result.current.has('u2')).toBe(false);
+    expect(result.current.get('u2')).toBe('Rust');
+    expect(result.current.get('u3')).toBe('Slate');
   });
 });

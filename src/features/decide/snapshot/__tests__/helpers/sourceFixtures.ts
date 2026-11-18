@@ -1,6 +1,6 @@
 // 05-06 test builders for SnapshotSource. Today is 2026-10-15, home USD, region US; same-currency rows need no rates.
 import type { CustomCurrencyRow, FxLatestRow } from '@/db/rows';
-import type { ChangeSource, DebtSource, GoalSource, SettingsSource, SnapshotSource } from '../../buildSnapshot';
+import type { ChangeSource, DebtSource, GoalSource, SettingsSource, SnapshotSource } from '../../sourceTypes';
 
 export type SourceRow = SnapshotSource['rows'][number];
 export type SourceSeries = SnapshotSource['series'][number];

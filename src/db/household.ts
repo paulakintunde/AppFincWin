@@ -15,3 +15,23 @@ export async function fetchCurrentHouseholdId(client: DbClient, userId: string):
   if (error) throw toDbError(error, status);
   return (data as { household_id: string } | null)?.household_id ?? null;
 }
+
+/** 08-13 (D-11): the household row the members screens show. `name` is null until the owner sets one. */
+export interface HouseholdRow {
+  id: string;
+  name: string | null;
+  reporting_currency: string | null;
+  owner_id: string;
+  version: number;
+}
+
+export async function fetchHousehold(client: DbClient, householdId: string): Promise<HouseholdRow | null> {
+  const { data, error, status } = await client
+    .from('households')
+    .select('id, name, reporting_currency, owner_id, version')
+    .eq('id', householdId)
+    .maybeSingle();
+
+  if (error) throw toDbError(error, status);
+  return (data as HouseholdRow | null) ?? null;
+}

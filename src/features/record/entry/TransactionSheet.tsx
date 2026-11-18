@@ -10,6 +10,7 @@ import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { currencyExponent, money } from '@/engine/money';
 import { monthOf } from '@/engine/time';
+import { SharedGroup, useSharedEntry, type SharedLine } from '@/features/household/sharing/SharedGroup';
 import type { MinorUnits } from '@/engine/money';
 import type { PaymentType, TransactionPatch, TransactionRow } from '@/db/rows';
 import { PAYMENT_TYPES } from '@/db/rows';
@@ -318,6 +319,12 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const seriesById = useMemo(() => new Map((seriesList ?? []).map((x) => [x.id, x])), [seriesList]);
   const { pay: payGoalLine } = useGoalLinePay(rc.userId, rc.householdId);
   const routeOf = useGoalLineRoute(rc.userId, rc.householdId);
+  // 08-19 (HH-04): the Shared group and the writes that follow the line's own save. Only a plain expense can be shared.
+  const accountIsJoint = accounts.find((a) => a.id === state.accountId)?.is_shared === true;
+  const sharedEntry = useSharedEntry({ editRow, accountShared: accountIsJoint, categoryId: state.categoryId });
+  const shareCommit = (line: SharedLine) => {
+    if (state.direction === 'out') sharedEntry.commit(line);
+  };
   const repeatsError = submitted ? repeatsProblem(repeats, state.localDate) : null;
   const isTransfer = state.direction === 'transfer';
   const parse = (text: string, currency: string) => parser.parse(text, currency, exponentFor(currency));
@@ -632,6 +639,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         anchorIsNew: true,
         ownerId: rc.userId,
       });
+      shareCommit({ id: newId, version: 1, month: monthOf(state.localDate) });
       markJustSaved([newId]);
       showToast({ kind: 'ordinary', text: undoLabelText('seriesCreated', { name }), stepId: seriesStep });
       if (!runCapCheck(seriesStep)) hapticTap();
@@ -643,6 +651,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const stepId = newStepId();
     const addedId = add({ ...input, undo: { stepId, labelKey: 'added', labelParams: { name } } });
     // 06.2 L02 / D-20: the new row washes once in Activity; one light tap (the cap warning stands for it instead).
+    shareCommit({ id: addedId, version: 1, month: monthOf(state.localDate) });
     markJustSaved([addedId]);
     showToast({ kind: 'ordinary', text: undoLabelText('added', { name }), stepId });
     if (!runCapCheck(stepId)) hapticTap();
@@ -667,10 +676,12 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const commitEdit = (row: TransactionRow, patch: TransactionPatch, name: string, schedule: ScheduleInput | null) => {
     if (!rc.userId) return;
     if (Object.keys(patch).length === 0 && !schedule) {
+      shareCommit({ id: row.id, version: row.version, month: monthOf(row.local_date) });
       onClose();
       return;
     }
     const editStep = sendRowEdit(row, patch, name);
+    shareCommit({ id: row.id, version: row.version, month: monthOf(row.local_date) });
     if (schedule) {
       // D-09: an existing entry becomes the first occurrence and survives an Undo (anchorIsNew false).
       const seriesStep = createSeries({
@@ -698,6 +709,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const plan = thisAndFuturePlan(editRow, patch);
     const seriesName = patch.name ?? series.name;
     if (plan.rowPatch) sendRowEdit(editRow, plan.rowPatch, seriesName);
+    shareCommit({ id: editRow.id, version: editRow.version, month: monthOf(editRow.local_date) });
     const stepId = editFrom({
       id: series.id,
       householdId: editRow.household_id,
@@ -1053,6 +1065,14 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                 />
                 <Text style={noteStyle}>{t('record.sheet.note.oneOff')}</Text>
               </>
+            ) : null}
+            {state.direction === 'out' ? (
+              <SharedGroup
+                entry={sharedEntry}
+                currency={state.currency}
+                amountMinor={typedAmount.ok ? Math.abs(typedAmount.value) : null}
+                inSeries={Boolean(editRow?.recurring_series_id) || repeats.freq !== 'never'}
+              />
             ) : null}
           </>
         )}

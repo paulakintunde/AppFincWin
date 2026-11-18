@@ -7,9 +7,9 @@
 // as the chevron and the system Back, through setSwipeBackInterceptor, so it never skips past a step to Decide home.
 // 06.1-60 (X-5, G-10): "Why we ask" is a Why? link (WhyLine) under the title; the reason opens in place.
 import React, { useCallback, useEffect, useRef } from 'react';
-import { AccessibilityInfo, BackHandler, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, BackHandler, findNodeHandle, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import Animated, { FadeIn, SlideInLeft, SlideInRight } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { setSwipeBackInterceptor } from '@/features/navigation/swipeBackGesture';
 import { useT } from '@/i18n';
 import { DURATION, useMotion } from '@/theme/motion';
@@ -43,6 +43,17 @@ export interface StepFrameProps {
   nextDisabled?: boolean;
   onSeeNow?: () => void;
   children: React.ReactNode;
+}
+
+/**
+ * 05.5 device fix (Pixel 6, 0.2.0): how a step comes in. A slide 220 ms from the side it is travelling from, or a 150 ms fade under
+ * Reduce Motion. Driven as an animated style, never as a Reanimated `entering` layout animation: on Android a layout animation on
+ * this frame kept the frame at its mount size while the content grew (the car's pre-filled running costs arrive after mount), so
+ * every tap below that size, "See the answer" included, was dropped until something re-laid the step out.
+ */
+export function stepEntrance(direction: 'fwd' | 'back', reduced: boolean): { kind: 'fade' | 'slide'; duration: number; from: -1 | 1 } {
+  if (reduced) return { kind: 'fade', duration: DURATION.searchFade, from: 1 };
+  return { kind: 'slide', duration: DURATION.entrance, from: direction === 'back' ? -1 : 1 };
 }
 
 export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel = null, priceLabel = null, onBack, onJump, onNext, nextDisabled = false, onSeeNow, children }: StepFrameProps) {
@@ -81,9 +92,15 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
     if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
   }, [step]);
 
-  const entering = reduced
-    ? FadeIn.duration(DURATION.searchFade)
-    : (direction === 'back' ? SlideInLeft : SlideInRight).duration(DURATION.entrance);
+  const { width } = useWindowDimensions();
+  const entrance = stepEntrance(direction, reduced);
+  const fade = entrance.kind === 'fade';
+  const offset = entrance.from * width;
+  const shown = useSharedValue(0);
+  useEffect(() => {
+    shown.value = withTiming(1, { duration: entrance.duration });
+  }, [shown, entrance.duration]);
+  const enterStyle = useAnimatedStyle(() => (fade ? { opacity: shown.value } : { transform: [{ translateX: (1 - shown.value) * offset }] }));
   const kindDone = step > 1 && kindLabel !== null;
   const priceDone = step > 2 && priceLabel !== null;
   const names: [string, string, string] = [
@@ -102,7 +119,7 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
 
   return (
     <Screen scroll form>
-      <Animated.View testID="step-frame" entering={entering} style={styles.body}>
+      <Animated.View testID="step-frame" style={[styles.body, enterStyle]}>
         <View style={styles.top}>
           {/* 06.1-49 (A-ST-3, D20): a back chevron (the Row.tsx rotated-border convention, no icon library); "Back" for screen readers. */}
           <Pressable testID="step-back" accessibilityRole="button" accessibilityLabel={t('decide.screens.common.a11y.back')} onPress={onBack} hitSlop={space.gapSm} android_ripple={press.android_ripple} style={({ pressed }) => [styles.target, styles.backTarget, press.pressedStyle(pressed)]}>

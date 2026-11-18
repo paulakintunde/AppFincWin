@@ -17,8 +17,8 @@ create temp table hh as select owner_id, id from public.households;
 grant select on hh to authenticated;
 
 -- B joins A's household as a member.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 1);
 
 -- A check in A's household, so the "check_id set" case reaches the shape check rather than the household guard.
 insert into public.decide_checks (id, household_id, created_by, kind, name, inputs) values

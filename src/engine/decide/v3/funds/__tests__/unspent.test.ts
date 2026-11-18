@@ -3,7 +3,7 @@ import { minorUnits as mu } from '../../../../money/types';
 import { erestOf } from '../../../../month/model/thisMonth';
 import { dueDrops } from '../../../../month/model/dueDrops';
 import type { LineRole, ReadinessWaiver, SkippedOccurrence, V3Line, V3Month, V3Series } from '../../types';
-import { billsAndErest, rollForward, suggestedUnspent, unspentState } from '../unspent';
+import { afterAnchor, billsAndErest, rollForward, suggestedUnspent, unspentState } from '../unspent';
 
 function ser(over: Partial<V3Series> & { id: string }): V3Series {
   return {
@@ -193,6 +193,36 @@ describe('rollForward', () => {
     const lines = ['c', 'a', 'b', 'a'].map((id, i) => line({ id, date: '2026-11-05', amount: mu(1000 + i) }));
     const r = roll({ lines });
     expect(r.breakdown.everyday).toBe(1000 + 1001 + 1002 + 1003);
+  });
+
+  describe('same-day lines (05.5-28, owner Q11 = A: the server-stamped confirm time)', () => {
+    const day = '2026-10-03';
+    const bought = (over: Partial<V3Line> = {}) => line({ id: 'bought', date: day, amount: mu(900000), ...over });
+    test('a line dated on the confirm day and logged after it lowers the figure', () => {
+      const r = roll({ lines: [bought({ loggedAfterConfirm: true })] });
+      expect(r.breakdown.everyday).toBe(900000);
+      expect(r.value).toBe(240000 - 900000);
+      expect(r.rolled).toBe(true);
+    });
+    test('a same-day line without the mark stays inside the figure (confirms from before the stamp)', () => {
+      const r = roll({ lines: [bought(), bought({ id: 'b2', loggedAfterConfirm: false })] });
+      expect(r.value).toBe(240000);
+      expect(r.rolled).toBe(false);
+    });
+    test('lines after the confirm day roll forward with or without the mark; earlier days never do', () => {
+      const a = { at: day };
+      expect(afterAnchor({ date: '2026-10-04' }, a)).toBe(true);
+      expect(afterAnchor({ date: '2026-10-04', loggedAfterConfirm: false }, a)).toBe(true);
+      expect(afterAnchor({ date: day, loggedAfterConfirm: true }, a)).toBe(true);
+      expect(afterAnchor({ date: day }, a)).toBe(false);
+      expect(afterAnchor({ date: '2026-10-02', loggedAfterConfirm: true }, a)).toBe(false);
+    });
+    test('a marked same-day everyday line is not part of what was held back at the confirm', () => {
+      const e = mu(300000);
+      const r = roll({ e, lines: [bought({ amount: mu(7000), loggedAfterConfirm: true })] });
+      const planned = erestOf(e, mu(0), 3, 31);
+      expect(r.breakdown.everyday).toBe(Math.max(0, 7000 - planned));
+    });
   });
 
   test('D-22 planned everyday: only the excess over Erest-at-anchor moves it', () => {

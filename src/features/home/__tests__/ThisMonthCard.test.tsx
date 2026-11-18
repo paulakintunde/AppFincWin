@@ -226,4 +226,25 @@ describe('ThisMonthCard', () => {
       expect((await draw()).queryByTestId('home-after-plans')).toBeNull();
     });
   });
+
+  describe('08-25 Mine / Household scope (HH-09)', () => {
+    it('draws no switch and no scope note when none is given (a household of one)', async () => {
+      const r = await draw();
+      expect(r.queryByTestId('scope-switch')).toBeNull();
+      expect(r.queryByTestId('home-scope-note')).toBeNull();
+    });
+
+    it('draws the given switch at the top and the note under the figure', async () => {
+      const { Text } = jest.requireActual('react-native');
+      const r = await draw({ scopeSwitch: <Text testID="scope-switch" />, scopeNote: 'Shared lines only, in EUR' });
+      expect(r.getByTestId('scope-switch')).toBeTruthy();
+      expect(r.getByTestId('home-scope-note').props.children).toBe('Shared lines only, in EUR');
+    });
+
+    it('formats the figures in the currency it is given (the household currency in Household scope)', async () => {
+      const r = await draw({ homeCurrency: 'EUR' });
+      expect(r.getByText('+€850.00')).toBeTruthy();
+    });
+  });
 });
+

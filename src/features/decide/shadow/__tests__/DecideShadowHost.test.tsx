@@ -114,6 +114,5 @@ describe('DecideShadowHost', () => {
 
   it('owner 2026-11-06: Decide is on for every tester; the host still runs only for decide_shadow', () => {
     expect(availability.DECIDE_OPEN).toBe(true);
-    expect(availability.DECIDE_V3).toBe(true);
   });
 });

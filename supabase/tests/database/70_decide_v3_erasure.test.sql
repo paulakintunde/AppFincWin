@@ -18,8 +18,8 @@ create temp table hh as select owner_id, id from public.households;
 create temp table a_hh as select id from hh where owner_id = '11111111-1111-1111-1111-111111111111';
 
 -- B joins A's household as a member.
-insert into public.household_members (household_id, user_id, role, weight)
-values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', 'member', 1);
+insert into public.household_members (household_id, user_id, is_owner, weight)
+values ((select id from a_hh), '22222222-2222-2222-2222-222222222222', false, 1);
 
 -- ---------------------------------------------------------------------
 -- Fixtures, written as the table owner.
@@ -57,12 +57,12 @@ insert into public.decide_checks (id, household_id, created_by, kind, name, inpu
 update public.profiles set decide_v3 = true where id = '11111111-1111-1111-1111-111111111111';
 
 insert into public.decide_settings (user_id, currency, income_types, income_pattern, income_pattern_confirmed, variable_method, steady_amount,
-  spread_months, hold_months, share_pct, detail, remind_plan, remind_unspent, setup_done_at, everyday_override, everyday_override_at, month_marks,
+  spread_months, hold_months, detail, remind_plan, remind_unspent, setup_done_at, everyday_override, everyday_override_at, month_marks,
   unspent_anchor, unspent_anchor_at, reserve_account_id, reserve_goal, rough_saving, rough_debt, rough_invest, rough_as_of,
   unexplained_amount, unexplained_use, unexplained_at, refine_last_at, refine_snooze_until) values
-  ('11111111-1111-1111-1111-111111111111', 'USD', '{salary_or_wages}', 'steady', true, null, 300000, 6, 2, 50, 'full', true, true, now(), 1000, current_date,
+  ('11111111-1111-1111-1111-111111111111', 'USD', '{salary_or_wages}', 'steady', true, null, 300000, 6, 2, 'full', true, true, now(), 1000, current_date,
    '{"2026-08":"half"}', 5000, current_date, null, 100000, 100, 200, 300, current_date, 400, 'spare', current_date, now(), now()),
-  ('22222222-2222-2222-2222-222222222222', 'USD', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+  ('22222222-2222-2222-2222-222222222222', 'USD', null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
    null, null, null, null, null, null, null, null, null, null, null);
 
 -- The reserve account guard reads the caller's households, so set the claim for this one update.

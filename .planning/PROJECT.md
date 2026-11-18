@@ -110,6 +110,7 @@ All of these are hypotheses until shipped.
 
 **Cut outright**
 - Tax pack and all tax framing — anything computing a liability is regulated advice; users can already flag and export through general export, so the framing buys risk without buying capability. **Clarified 2026-09-25:** this excludes tax *calculation*, tax flags and tax reports. A plain spending category named "Tax" (a label for money already paid, such as a tax bill or an accountant's fee, behaving exactly like any other category) is in scope and is seeded in Phase 2.
+- Purchase tax estimates are in scope; tax calculation stays out (ARC-26).
 - Licence keys, seats and device transfer — RevenueCat anchors entitlement to the Apple ID or Google account, and the stores already handle device coverage, Family Sharing and restore; the prototype's entire licence surface is orphaned by that choice
 - Local-first architecture — deliberately rejected in favour of cloud-first; see Key Decisions
 - `expo-sqlite` and Drizzle ORM — removed with local-first

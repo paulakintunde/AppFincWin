@@ -36,7 +36,7 @@ const REST = { branches: 95, functions: 95, lines: 95, statements: 95 };
 
 const coverageThreshold = {};
 if (hasSource('src/engine')) coverageThreshold['./src/engine/'] = REST; // D-21: 95% on the rest of engine/
-for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'categorize', 'undo', 'activity', 'ofx', 'statement', 'transfer', 'accounts', 'paste', 'entryList', 'grow', 'month']) {
+for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'categorize', 'undo', 'activity', 'ofx', 'statement', 'transfer', 'accounts', 'paste', 'entryList', 'grow', 'month', 'household']) {
   // D-21: 100% folders
   if (hasSource(`src/engine/${f}`)) coverageThreshold[`./src/engine/${f}/`] = FULL;
 }
@@ -70,6 +70,8 @@ module.exports = {
   // pick up tests from nested worktrees under .claude/worktrees/ (gitignored).
   roots: ['<rootDir>/src', '<rootDir>/supabase/functions'],
   testMatch: ['**/src/**/*.test.ts?(x)', '**/supabase/functions/**/*.test.ts'],
+  // 08-08: the two-client Realtime spike needs a running local Supabase; run it with `npm run test:realtime`.
+  testPathIgnorePatterns: ['/node_modules/', '/__spike__/'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/__tests__/**', '!src/**/*.d.ts', '!src/**/*.typecheck.ts'],
   coverageThreshold,
 };

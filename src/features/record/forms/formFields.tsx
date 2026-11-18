@@ -86,7 +86,7 @@ export function useSetupFormat(): SetupFormat {
   const t = useT();
   const fmt = useMoneyFormatter(false);
   const ordinal = useCallback(
-    (day: number) => formatOrdinal(day, fmt.locale, t as (key: string, options?: Record<string, unknown>) => string),
+    (day: number) => formatOrdinal(day, fmt.locale, t as unknown as (key: string, options?: Record<string, unknown>) => string),
     [fmt.locale, t],
   );
   return {

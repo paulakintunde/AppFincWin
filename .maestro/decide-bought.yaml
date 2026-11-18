@@ -13,7 +13,8 @@ name: Decide I bought it
       ITEM: "used car"
       # 06.1-61: 2,500 by default. A 9,000 cash buy above this month's room asks to confirm spare money first
       # (unspent_not_confirmed, G-61-2); since 06.1-84 common/decide-gate answers it, so `-e PRICE=9000` runs that path.
-      # On the test account the 9,000 path then stops on "What is the $… for" (gap row G-PD-2), so it fails there for now.
+      # G-PD-2 (the 9,000 path stopping on "What is the $… for" after a confirm) was fixed in 05.5-28, engine revision 06.8.
+      # The 9,000 path has not been re-run on a device since; the post-05.5 test audit (PR #135) re-runs it.
       PRICE: "${typeof PRICE === 'undefined' ? '2500' : PRICE}"
 - runFlow:
     file: common/scroll-to.yaml

@@ -17,6 +17,10 @@ jest.mock('@/data/mutations/growHoldings', () => ({ useSetAccountRate: () => ({ 
 jest.mock('@/data/mutations/accountUse', () => ({ useSaveAccountUse: () => ({ save: jest.fn() }) }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn() }) }));
+// 08-20: AccountSheet reads the household's members (Joint account row) and checks member lines before turning Joint off.
+let mockHouseholdMembers: unknown[] = [];
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockHouseholdMembers }) }));
+jest.mock('@/features/household/rules/jointAccounts', () => ({ countMemberLinesOnAccount: jest.fn(async () => 0) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
 jest.mock('@/data/queries/activity', () => ({
   useAccountBalances: () => ({ balances: new Map([['acc1', { balance: 5000, overflow: false }]]), isLoading: false }),

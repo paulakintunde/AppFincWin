@@ -13,7 +13,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(16);
+select extensions.plan(17);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values (
@@ -41,14 +41,19 @@ select extensions.is(
   'signup creates exactly one membership row'
 );
 select extensions.is(
-  (select role from public.household_members where user_id = '11111111-1111-1111-1111-111111111111'),
-  'owner',
-  'the new membership has role owner'
+  (select is_owner from public.household_members where user_id = '11111111-1111-1111-1111-111111111111'),
+  true,
+  'the new membership is the owner (is_owner)'
+);
+select extensions.is(
+  (select role_label from public.household_members where user_id = '11111111-1111-1111-1111-111111111111'),
+  'Owner',
+  'the new membership has role_label Owner'
 );
 select extensions.is(
   (select weight from public.household_members where user_id = '11111111-1111-1111-1111-111111111111')::int,
-  1,
-  'the new membership has weight 1'
+  100,
+  'the new membership has weight 100'
 );
 select extensions.is(
   (select full_name from public.profiles where id = '11111111-1111-1111-1111-111111111111'),
