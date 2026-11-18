@@ -131,3 +131,10 @@ The owner asked for: trials of at most 2 people; trial reuse limited by device, 
 | Device check | Apple DeviceCheck, Android researched (rec); store account only | Yes |
 
 D-17a (clock starts at first real use) is removed. D-28 no longer avoids a paywall on day one.
+
+## Follow-up 2026-11-18: 60-second goal and local prices
+
+| Question | Options | Answer |
+|---|---|---|
+| 60-second first answer vs setup + trial first | Sample answer counts (rec); own answer before paywall; drop the goal | Sample answer counts (D-28) |
+| Local prices | Owner signs CA, UK, EU, AU table (rec); stores convert everything | CA, UK, EU, AU (D-11) |

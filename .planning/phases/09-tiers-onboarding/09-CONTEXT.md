@@ -57,7 +57,7 @@ The owner chose a **hard paywall after a 14-day trial**. Plans are priced in **f
   - **Trial:** up to 2 members (the trial is on Solo or Duo only, D-15).
   - **Paid:** the plan's size (1, 2, 6 or 12).
   - **Server:** the technical cap rises from 6 (Phase 8 D-10, in `supabase/migrations/20261122000500_household_invites.sql`, the `v_members + v_open >= 6` checks) to the plan's size (2 during a trial). It must be raised before paid plans go live, so no one ever pays for seats they can't use.
-- **D-11:** **Prices outside the US:** the planner proposes explicit store price points for the priority markets (at least Canada and the UK, plus any other launch markets the owner names). **The owner signs that table before the store products are created.** Every other country uses the store's automatic conversion as a fallback. The local currency and billing period always show before purchase.
+- **D-11:** **Prices outside the US:** the planner proposes explicit store price points for the priority markets (**owner decision 2026-11-18: Canada, the UK, the euro zone and Australia**). **The owner signs that table before the store products are created.** Every other country uses the store's automatic conversion as a fallback. The local currency and billing period always show before purchase.
 - **D-12:** **No sale or introductory price at launch.** **The price pledge, in these exact words:** "The price of your plan won't go up while your subscription stays active. Taxes set by your app store, or moving to a bigger plan, can change what you pay."
 - **D-13:** **One household, one bill; the payer is separate from the owner.**
   - A store-neutral plan record holds: household, payer, platform, product, plan size, renewal status, grace or billing-retry status, and an audit history.
@@ -147,7 +147,7 @@ The owner chose a **hard paywall after a 14-day trial**. Plans are priced in **f
   4. the paywall: "Start 14-day free trial" on Solo or Duo, or buy any plan;
   5. the app opens on their own data.
 
-  Revision 3 reverses "no paywall on day one": starting a store trial is a purchase. **The planner must reconcile this with 08.1's goal of a first Decide answer within 60 seconds and 8 taps**, for example by offering "Try a quick check first" before setup, or by counting the target from the end of setup. Bring the choice to the owner.
+  Revision 3 reverses "no paywall on day one": starting a store trial is a purchase. **Owner decision (2026-11-18): the sample answer counts.** Setup stays short and every question is skippable; the Decide answer shown in the sample-data look-around meets 08.1's 60-second / 8-tap first-answer target. A first answer on the user's own money comes after the trial starts. 08.1's 60-second test measures time to the sample answer for new users.
 - **D-29:** **Existing users and testers:**
   - **Named testers** get free access for their whole household until a set date shown in the app (for example 3 months after paid plans launch), then the normal paywall applies.
   - **The owner** stays free.
