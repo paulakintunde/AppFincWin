@@ -1,7 +1,8 @@
 // FND-09: proves compareVersions/isBelowMinimum's numeric comparison, fetchMinSupportedVersion's
 // fail-open behaviour (error, thrown exception, timeout all resolve to null), and
 // useMinVersionGate's status transitions.
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { AppState, type AppStateStatus } from 'react-native';
 import { compareVersions, isBelowMinimum, fetchMinSupportedVersion, type MinVersionClient } from '../minVersion';
 import * as minVersionModule from '../minVersion';
 import { useMinVersionGate } from '../useMinVersionGate';
@@ -112,5 +113,43 @@ describe('useMinVersionGate', () => {
 
     await waitFor(() => expect(result.current.status).toBe('blocked'));
     expect(result.current.minVersion).toBe('0.3.0');
+  });
+
+  it('fails open when the server returns a malformed version', async () => {
+    fetchSpy.mockResolvedValue('bad.version');
+
+    const { result } = await renderHook(() => useMinVersionGate());
+
+    await waitFor(() => expect(result.current.status).toBe('ok'));
+  });
+
+  it('fails open when fetching the minimum version rejects', async () => {
+    fetchSpy.mockRejectedValue(new Error('offline'));
+
+    const { result } = await renderHook(() => useMinVersionGate());
+
+    await waitFor(() => expect(result.current.status).toBe('ok'));
+  });
+
+  it('ignores a stale check after a newer foreground check completes', async () => {
+    let resolveFirst: ((value: string | null) => void) | undefined;
+    fetchSpy
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockResolvedValueOnce('0.3.0');
+    let onChange: ((state: AppStateStatus) => void) | undefined;
+    const listenerSpy = jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+      onChange = listener as (state: AppStateStatus) => void;
+      return { remove: jest.fn() };
+    });
+
+    try {
+      const { result } = await renderHook(() => useMinVersionGate());
+      await act(async () => { onChange?.('active'); });
+      await waitFor(() => expect(result.current.status).toBe('blocked'));
+      await act(async () => { resolveFirst?.(null); });
+      expect(result.current.status).toBe('blocked');
+    } finally {
+      listenerSpy.mockRestore();
+    }
   });
 });
