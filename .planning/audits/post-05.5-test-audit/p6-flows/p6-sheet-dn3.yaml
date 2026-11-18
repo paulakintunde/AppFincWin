@@ -1,0 +1,163 @@
+# 06.1-74 Pixel 6: G-78-2 (the open-check sheet loses its panel and leaves an invisible backdrop) and DN-3 (Back on a step
+# opened from the answer must not leave the app). Uses only the drafts this plan made ("desk lamp 74", "used car 74").
+# G-78-2: open the desk lamp 74 sheet 8 times; 4 s after it shows, "Edit the check" must still be visible.
+#   Prints G782 open=<n> lost=<n>.
+# DN-3: used car 74 > Edit the check > step > See the answer > Running costs "Change" (opens a step) > system Back.
+#   (06.1-74: "Full cost, with tax" now opens a sheet, not a step.)
+#   Prints DN3 lines: where each Back landed and how long it took. Nothing is bought or decided.
+appId: com.fincwin.app
+name: P6 sheet backdrop and DN-3
+---
+- evalScript: ${output.opens = 0}
+- evalScript: ${output.lost = 0}
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 60000
+- repeat:
+    times: 8
+    commands:
+      - repeat:
+          times: 10
+          while:
+            notVisible:
+              id: "check-what"
+          commands:
+            - swipe:
+                start: "50%,30%"
+                end: "50%,85%"
+                duration: 300
+            - waitForAnimationToEnd
+      - runFlow:
+          file: common/scroll-to.yaml
+          env:
+            TARGET: "desk lamp 74, .*"
+      - tapOn: "desk lamp 74, .*"
+      - extendedWaitUntil:
+          visible: "Edit the check"
+          timeout: 15000
+      - evalScript: ${output.opens = output.opens + 1}
+      - extendedWaitUntil:
+          visible: "g782 never shown"
+          timeout: 4000
+          optional: true
+      - runFlow:
+          when:
+            notVisible: "Edit the check"
+          commands:
+            - evalScript: ${output.lost = output.lost + 1}
+            - evalScript: "${console.log('G782 LOST on open ' + output.opens)}"
+            - takeScreenshot: g782-lost
+      - back
+      - extendedWaitUntil:
+          visible: "Can I afford it\\?"
+          timeout: 30000
+      - extendedWaitUntil:
+          notVisible: "Edit the check"
+          timeout: 15000
+- evalScript: "${console.log('G782 open=' + output.opens + ' lost=' + output.lost)}"
+
+# DN-3
+- repeat:
+    times: 10
+    while:
+      notVisible:
+        id: "check-what"
+    commands:
+      - swipe:
+          start: "50%,30%"
+          end: "50%,85%"
+          duration: 300
+      - waitForAnimationToEnd
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "used car 74, .*"
+- tapOn: "used car 74, .*"
+- extendedWaitUntil:
+    visible: "Edit the check"
+    timeout: 15000
+- tapOn: "Edit the check"
+- extendedWaitUntil:
+    visible: "Step [123] of 3"
+    timeout: 30000
+- repeat:
+    times: 3
+    while:
+      notVisible: "See the answer.*"
+    commands:
+      - runFlow:
+          when:
+            visible: "Step [12] of 3"
+          commands:
+            - runFlow:
+                file: common/scroll-to.yaml
+                env:
+                  TARGET: "Next"
+            - waitForAnimationToEnd
+            - tapOn: "Next"
+            - extendedWaitUntil:
+                visible: "Step [23] of 3"
+                timeout: 30000
+      - runFlow:
+          when:
+            visible: "Step 3 of 3"
+          commands:
+            - runFlow:
+                file: common/scroll-to.yaml
+                env:
+                  TARGET: "See the answer.*"
+- tapOn: "See the answer.*"
+- extendedWaitUntil:
+    visible: "How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
+    timeout: 60000
+- assertNotVisible: "How Decide answers|Do you have a safety net\\? About how much\\?"
+- repeat:
+    times: 8
+    while:
+      notVisible: ".*a month · Change.*"
+    commands:
+      - swipe:
+          start: "50%,75%"
+          end: "50%,35%"
+          duration: 400
+      - waitForAnimationToEnd
+- runFlow:
+    when:
+      notVisible: ".*a month · Change.*"
+    commands:
+      - evalScript: "${console.log('DN3 not measurable: no Running costs Change row on this answer')}"
+- runFlow:
+    when:
+      visible: ".*a month · Change.*"
+    commands:
+      - tapOn: ".*a month · Change.*"
+      - extendedWaitUntil:
+          visible: "Step [123] of 3"
+          timeout: 30000
+      - evalScript: "${console.log('DN3 step opened from the answer')}"
+      - waitForAnimationToEnd
+      - evalScript: ${output.b1 = Date.now()}
+      - back
+      - extendedWaitUntil:
+          visible: "Full cost, with tax.*|I bought it|Not ready yet.*|Can I afford it\\?|Step [123] of 3"
+          timeout: 60000
+      - runFlow:
+          when:
+            visible: "Full cost, with tax.*|I bought it|Not ready yet.*"
+          commands:
+            - evalScript: "${console.log('DN3 back1 answer ms=' + (Date.now() - output.b1))}"
+      - runFlow:
+          when:
+            visible: "Step [123] of 3"
+          commands:
+            - evalScript: "${console.log('DN3 back1 step ms=' + (Date.now() - output.b1))}"
+      - runFlow:
+          when:
+            visible: "Can I afford it\\?"
+          commands:
+            - evalScript: "${console.log('DN3 back1 decide-home ms=' + (Date.now() - output.b1))}"
+- assertVisible: "Full cost, with tax.*|I bought it|Not ready yet.*|Can I afford it\\?|Step [123] of 3"
+- runFlow: common/to-tabs.yaml
+- evalScript: "${console.log('DN3 still in the app after Backs to the tabs')}"
