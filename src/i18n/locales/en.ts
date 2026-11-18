@@ -870,6 +870,8 @@ const en = {
     },
     row: {
       foreignA11y: 'originally {{amount}}',
+      yourShare: 'Your share {{amount}}',
+      yourShareA11y: 'your share {{amount}}',
     },
     detail: {
       status: 'Status',
@@ -939,6 +941,7 @@ const en = {
       a11y: '{{figure}} left after everything, {{entries}}. In {{in}}. Out {{out}}.',
       a11yBalance: '{{figure}} left after everything, {{entries}}. {{note}}.',
       a11yStillToCome: '{{amount}} still to come.',
+      shareNote: 'Your share of shared lines.',
     },
     display: {
       title: 'Display',
