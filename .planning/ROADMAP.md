@@ -1517,11 +1517,11 @@ Plans:
 **Plans:** 21 plans in 13 waves (planned 2026-11-18; revised the same day after the full UI design run: new plan 19 for the visible Decide stages, plans 04, 05, 07, 09, 10, 11, 12, 14 and 17 edited to match `08.1-UI-SPEC.md`; checker round 1 the same day split the stage work into 19 engine (wave 4), 20 answer side (wave 5) and 21 home and setup (wave 7)). Engine plans (06 onward) wait for the post-05.5 test audit (06 Task 0 gate); waves 1-2 non-engine plans do not. Open owner questions, planned on defaults: `08.1-OWNER-QUESTIONS.md`. Phase 9's sample-data answer uses the First read treatment from plans 19-20.
 
 Plans:
-- [ ] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
-- [ ] 08.1-02-PLAN.md — Record as bought server: expected lines, sale, payoff and goal close in one save, one undo (ARC-24; migration 20261123000100, pgTAP 112)
-- [ ] 08.1-03-PLAN.md — Partner opt-ins, rounded partner figure, shared safety net, sharedMoneyFor (carry-over 08-28; migration 20261123000200, pgTAP 111)
-- [ ] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
-- [ ] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261123000300)
+- [x] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
+- [x] 08.1-02-PLAN.md — Record as bought server: expected lines, sale, payoff and goal close in one save, one undo (ARC-24; migration 20261123000100, pgTAP 112)
+- [x] 08.1-03-PLAN.md — Partner opt-ins, rounded partner figure, shared safety net, sharedMoneyFor (carry-over 08-28; migration 20261123000200, pgTAP 111)
+- [x] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
+- [x] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261123000300)
 - [ ] 08.1-06-PLAN.md — Engine: ready-by means stays above $0, no dates past 12 months, below-$0-without line (D-05..D-07; audit gate)
 - [ ] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
 - [ ] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
