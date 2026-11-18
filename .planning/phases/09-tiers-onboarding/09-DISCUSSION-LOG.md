@@ -82,3 +82,30 @@ The owner was concerned about people gaming household plans and asked about $4 t
 |---|---|---|
 | Seat price | $2.99 for 3–6, $3.99 for 7–12 (rec); $3.99 flat; $4.99 flat | Recommended (D-07 revised) |
 | Switch rule | Join a new household once a year (rec); none | Yes (D-39) |
+
+## Revision 2 — 2026-11-18: two outside reviews + owner directions
+
+The owner pasted two outside reviews and asked for clarifying questions, along with two directions of their own: price by group size (1, 2, 6, 12) at full price whether or not every seat is filled, and apply the 12-month switch rule only outside North America, Europe, New Zealand and Australia.
+
+**Where the reviews were wrong or out of date (noted, not acted on):**
+- APP-18's "safety parts" means the safety net and the confidence sentence in a Decide answer, not crisis resources. The real point nearby (free-help links stay open when locked) was accepted as D-03.
+- Yearly seat prices had been set in the written decisions; only the chat summary left them out.
+- D-23 already opened the store's subscription page; the label and placement were fixed.
+- The "duplicated Solo price" was a display glitch where `$` signs rendered as maths.
+
+**Accepted without a question:** Manage subscription, Delete account and Leave household as separate actions; Restore purchases plus a "Start your own plan" link on "Your home already has a plan"; payer separate from owner; a store-neutral record with Apple and Google adapters; exact Solo-upgrade wording with Confirm; a push to the payer when someone waits for a seat; trial never called a store trial; a "trial ends today" message and a post-lock explainer; Apple Family Sharing off; offline saves kept on lock (D-40); the order of checks: plan state, then household, then level (D-35); features holding data never hide; the feature mapping goes to owner review.
+
+| Question | Options | Answer |
+|---|---|---|
+| Household up to 6 | $14.99/$109.99 (rec); $17.99/$129.99; $19.99/$149.99 | $14.99 / $109.99 |
+| Extended up to 12 | $24.99/$189.99 (rec); $29.99/$219.99; $34.99/$259.99 | $24.99 / $189.99 |
+| Trial size | Up to 12 (rec); up to 6 | Up to 12 |
+| Trial clock | First real use, 30-day backstop (rec); setup finish | First real use |
+| Region signal | Store country (rec); app region setting | Store country |
+| Regions | US, CA, EU, EEA, UK, CH + AU, NZ (rec); whole continents | Recommended |
+| Exemptions | Removed; household closed; support exception; rejoin same | All four |
+| Takeover | Any member, first to buy (rec); owner first | Any member |
+| Pledge | Plan price locked while active (rec); drop it | Recommended wording |
+| Locked view | Plus free-help links (rec); only the four | Plus free help |
+| Price shown | Listing + paywall, not welcome (rec); also welcome | Recommended |
+| Testers | Free until a set date (rec); free for good; normal trial | Free until a set date; owner free |
