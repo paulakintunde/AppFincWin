@@ -19,6 +19,7 @@ import {
   type DbClient,
   type PaymentType,
   type RecurringSeriesRow,
+  type SeriesAmountKind,
 } from './rows';
 
 export interface NewRecurringSeries {
@@ -37,6 +38,8 @@ export interface NewRecurringSeries {
   occurrence_count: number | null;
   /** Record polish D-02: the template flag; materialised occurrences inherit it. */
   is_automatic?: boolean;
+  /** 08.1-02: 'expected' for a varying running cost; left out (the server's default) it is 'exact'. */
+  amount_kind?: SeriesAmountKind;
 }
 
 // Mirrors edit_recurring_series_from's allowed patch keys (plan 02-08): any other key
@@ -54,6 +57,7 @@ export const RECURRING_SERIES_PATCH_KEYS = [
   'occurrence_count',
   'is_automatic',
   'end_reason',
+  'amount_kind',
 ] as const satisfies readonly (keyof RecurringSeriesRow)[];
 
 export type RecurringSeriesPatch = Partial<Pick<RecurringSeriesRow, (typeof RECURRING_SERIES_PATCH_KEYS)[number]>>;
@@ -186,7 +190,8 @@ export async function fetchRecurringSeries(client: DbClient, householdId: string
     .order('name', { ascending: true });
 
   if (error) throw toDbError(error, status);
-  return (data as RecurringSeriesRow[] | null) ?? [];
+  // 08.1-02: a row from before the amount_kind column reads as exact.
+  return ((data as RecurringSeriesRow[] | null) ?? []).map((r) => ({ ...r, amount_kind: r.amount_kind ?? 'exact' }));
 }
 
 /** W6-13 WR-05: denial-of-service guard on fetchSeriesIdsByCategory (one merge's op cap). */
