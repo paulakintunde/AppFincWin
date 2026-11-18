@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_execute
-stopped_at: "Phase 08.1 planned 2026-11-18: 18 plans in 11 waves, owner questions planned on defaults (08.1-OWNER-QUESTIONS.md). Post-05.5 test audit still under way (05.4-43 mutation score, 05.4-45); 08.1 engine plans (06 onward) wait for it via plan 06's gate, wave-1 non-engine plans can start. Preview APK 95fa2fc5 (engine 06.9) awaiting owner phone checks."
-last_updated: "2026-11-18T18:00:00.000Z"
-last_activity: 2026-11-18 -- Phase 08.1 planned (18 plans); PRs #155-#158 merged
+status: completed
+stopped_at: Phase 9 UI-SPEC approved
+last_updated: "2026-11-18T21:27:51.956Z"
+last_activity: "2026-11-17 -- Phase 8 merged (PR #134); docs tidy (quick 261117-abh)"
 progress:
-  total_phases: 29
-  completed_phases: 13
-  total_plans: 688
-  completed_plans: 658
-  percent: 95
+  total_phases: 30
+  completed_phases: 16
+  total_plans: 778
+  completed_plans: 765
+  percent: 98
 ---
 
 # Project State
@@ -232,6 +232,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-12T08:12:59.566Z
-Stopped at: Phase 06.1 82/83 (next: PR #102 to main, then 34 ship). On main: Phase 05.5 UI-SPEC approved, next /gsd-plan-phase 05.5
-Resume file: .planning/phases/05.5-one-shared-money-model/05.5-UI-SPEC.md
+Last session: 2026-11-18T21:27:51.919Z
+Stopped at: Phase 9 UI-SPEC approved
+Resume file: .planning/phases/09-tiers-onboarding/09-UI-SPEC.md
