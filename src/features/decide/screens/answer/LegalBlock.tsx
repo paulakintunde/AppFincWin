@@ -8,6 +8,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { LINK_HIT_SLOP, usePressFeedback } from '@/ui/pressFeedback';
+import { TesterBuildLine } from './TesterBuildLine';
 import type { Line } from '../logic/sayResult';
 
 export interface LegalBlockProps {
@@ -50,6 +51,7 @@ export function LegalBlock({ basis, caveat, caveatFigures, onCantSee }: LegalBlo
       <Text testID="answer-footer" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
         {t('legal.decideAnswer.footer')}
       </Text>
+      <TesterBuildLine />
     </View>
   );
 }

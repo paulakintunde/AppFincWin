@@ -5,6 +5,8 @@
  * Draft copy, signed under D-08. "surer" is replaced by "Give it more to go on" (CMP-F12).
  */
 export const answer = {
+  // 08.1-05 (ROADMAP SC8): tester accounts see the build under the legal footer.
+  testerBuild: 'Build {{build}}',
   frame: {
     itemA11y: '{{name}}, {{price}}',
     payTabs: 'How you pay',
