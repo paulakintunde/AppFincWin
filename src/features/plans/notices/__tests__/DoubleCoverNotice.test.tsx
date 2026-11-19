@@ -11,15 +11,8 @@ const mockRpc = jest.fn();
 jest.mock('@/services/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...a) } }));
 let mockUser = { id: BEA };
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: mockUser }) }));
-jest.mock('@/data/queries/household', () => ({
-  useHouseholdMembers: () => ({
-    data: [
-      { user_id: BEA, display_name: 'Bea', name_hidden: false },
-      { user_id: ALEX, display_name: 'Alex', name_hidden: false },
-    ],
-  }),
-}));
-jest.mock('@/features/household/useMemberLabel', () => ({ useMemberLabel: () => (id: string | null) => id ?? '' }));
+const mockNames: Record<string, string> = { [BEA]: 'Bea', [ALEX]: 'Alex' };
+jest.mock('@/features/household/useMemberLabel', () => ({ useMemberLabel: () => (id: string | null) => (id ? mockNames[id] ?? '' : '') }));
 jest.mock('@/services/errors', () => ({ captureError: jest.fn() }));
 const mockToast = jest.fn();
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockToast(...a) }));

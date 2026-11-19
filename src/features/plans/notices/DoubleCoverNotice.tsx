@@ -4,9 +4,8 @@
  * inside the body (NoticeCard has no foot slot). The pick goes to plan_double_cover_choose; a refusal or failure leaves the
  * buttons usable again with a short toast. Text is the plans.doubleCover.* rows (needs owner review per 09-WORDING.md).
  */
-import React, { useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import { useT } from '@/i18n';
-import { useHouseholdMembers } from '@/data/queries/household';
 import { useMemberLabel } from '@/features/household/useMemberLabel';
 import { captureError } from '@/services/errors';
 import { showToast } from '@/state/undoToast';
@@ -21,30 +20,19 @@ export interface DoubleCoverNoticeProps {
 export function DoubleCoverNotice({ state }: DoubleCoverNoticeProps) {
   const t = useT();
   const householdId = state?.householdId ?? null;
-  const { data: members } = useHouseholdMembers(householdId);
-  const label = useMemberLabel(householdId);
+  // D-32: every name goes through the member resolver (the viewer's own button reads "paid by You").
+  const nameOf = useMemberLabel(householdId);
   const choose = useChooseDoubleCover(householdId);
-  // The query's pending flag arrives a tick late; a ref stops a fast second tap from sending a second pick.
-  const inFlight = useRef(false);
-
-  // The payer's own display name, even for the viewer ("paid by Bea", not "paid by You"): both buttons must read alike.
-  const nameOf = useCallback(
-    (userId: string) => {
-      const row = members?.find((m) => m.user_id === userId);
-      return row && !row.name_hidden && row.display_name ? row.display_name : label(userId);
-    },
-    [members, label],
-  );
+  // The mutation's pending flag arrives a tick late; this flag, set in the tap itself, stops a second pick.
+  const [busy, setBusy] = useState(false);
 
   if (!state || state.chosenPayer !== null) return null;
 
   const pick = (keepPayer: string) => {
-    if (inFlight.current || choose.isPending) return;
-    inFlight.current = true;
+    if (busy || choose.isPending) return;
+    setBusy(true);
     choose.mutate(keepPayer, {
-      onSettled: () => {
-        inFlight.current = false;
-      },
+      onSettled: () => setBusy(false),
       onError: (e) => {
         captureError(e, { area: 'unknown' });
         showToast({ kind: 'refusal', text: { key: 'grow.common.notSaved' } });
@@ -63,7 +51,7 @@ export function DoubleCoverNotice({ state }: DoubleCoverNoticeProps) {
       kind: 'primary',
       label: t(key, { plan: t(`plans.paywall.cards.${side.planKey}.name`), name: nameOf(side.payerId) }),
       onPress: () => pick(side.payerId),
-      disabled: choose.isPending,
+      disabled: busy || choose.isPending,
       testID,
     });
   }
