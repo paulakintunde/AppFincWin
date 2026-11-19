@@ -1,7 +1,7 @@
 import * as fc from 'fast-check';
 import { percent } from '../../../../payoff/types';
 import corpusFile from '../../__tests__/golden/legacy-v1-inputs.json';
-import { legacyLimits, legacyStateOf, upgradeInputs } from '../legacy';
+import { legacyLimits, legacyStateOf, percentOf, upgradeInputs } from '../legacy';
 import { LEGACY_STATE_OF_CODE } from '../../constants';
 import type { Code } from '../../types';
 
@@ -181,6 +181,93 @@ describe('legacyStateOf', () => {
     const codes = Object.keys(LEGACY_STATE_OF_CODE) as Code[];
     expect(codes.map((c) => [c, legacyStateOf(c)])).toEqual([
       ['fits_month', 'fits'], ['fits_unspent', 'fits'], ['monthly_short', 'adjust'], ['fits_uses_overdraft', 'adjust'], ['fits_by_borrowing', 'adjust'], ['fits_on_your_answer', 'adjust'], ['emergency_use', 'adjust'], ['fits_uses_net', 'adjust'], ['not_yet', 'no'], ['needs_input', 'missing'],
+    ]);
+  });
+});
+
+describe('legacy boundaries (05.4-62 mutation kills)', () => {
+  it('percentOf reads whole numbers and up to 10 decimals, trimmed, within the cap', () => {
+    expect(percentOf('5')).toBe(percent('5'));
+    expect(percentOf(' 5 ')).toBe(percent('5'));
+    expect(percentOf('1234')).toBe(null); // above the 999.99 cap
+    expect(percentOf('1234', 5000)).toBe(percent('1234'));
+    expect(percentOf('12345', 99999)).toBe(null); // 5 digits
+    expect(percentOf('1.1234567890', 5000)).toBe(percent('1.123456789'));
+    expect(percentOf('1.12345678901', 5000)).toBe(null); // 11 decimals
+    expect(percentOf('1.12')).toBe(percent('1.12'));
+    expect(percentOf('.5')).toBe(null);
+    expect(percentOf('5.')).toBe(null);
+    expect(percentOf('999.99')).toBe(percent('999.99'));
+    expect(percentOf('999.995')).toBe(null);
+    expect(percentOf(5)).toBe(null);
+  });
+
+  it('lists keep only records and only the first 30', () => {
+    const costs: unknown[] = [null, 'junk', [1], 7];
+    for (let i = 0; i < 40; i++) costs.push({ amount: 1, category: `c${i}` });
+    const extras = upgradeInputs({ runningCosts: costs }).check.extras;
+    expect(Object.keys(extras)).toHaveLength(26); // 30 entries read, 4 of them not records
+    expect(extras['legacy:c25']).toBe(1);
+    expect(extras['legacy:c26']).toBeUndefined();
+  });
+
+  it('every frequency maps to its cadence', () => {
+    const cad = (freq: string) => (upgradeInputs({ method: 'instalment', instalment: { freq } }).check.pay as { cadence: unknown }).cadence;
+    expect(cad('weekly')).toEqual({ unit: 'week', every: 1 });
+    expect(cad('fortnightly')).toEqual({ unit: 'week', every: 2 });
+    expect(cad('monthly')).toEqual({ unit: 'month', every: 1 });
+    expect(cad('quarterly')).toEqual({ unit: 'month', every: 3 });
+  });
+
+  it('the member count follows the list length, from 2 to 20', () => {
+    const share = (split: unknown) => upgradeInputs({ scope: 'household', split }).check.share;
+    expect(share({ kind: 'weight', weights: [1, 1, 1] })).toMatchObject({ kind: 'household', memberCount: 3 });
+    expect(share({ kind: 'amount', amounts: [1, 2, 3, 4] })).toMatchObject({ kind: 'household', memberCount: 4 });
+    expect(share({ kind: 'weight', weights: new Array(20).fill(1) })).toMatchObject({ memberCount: 20 });
+    expect(share({ kind: 'weight', weights: new Array(21).fill(1) })).toEqual({ kind: 'personal' });
+    expect(share({ kind: 'amount', amounts: new Array(21).fill(1) })).toEqual({ kind: 'personal' });
+    expect(share({ kind: 'weight', weights: [1] })).toEqual({ kind: 'personal' });
+    expect(share({ kind: 'weight' })).toEqual({ kind: 'personal' });
+    expect(share({ kind: 'amount' })).toEqual({ kind: 'personal' });
+  });
+
+  it('one bad entry spoils a split, one zero does not', () => {
+    const share = (split: unknown) => upgradeInputs({ scope: 'household', split }).check.share;
+    expect(share({ kind: 'weight', weights: [1, 'x'] })).toEqual({ kind: 'personal' });
+    expect(share({ kind: 'weight', weights: [0, 5] })).toMatchObject({ rule: { kind: 'weight', weights: [0, 5] } });
+    expect(share({ kind: 'amount', amounts: [0, 5] })).toMatchObject({ rule: { kind: 'amount', amounts: [0, 5] } });
+    expect(share({ kind: 'amount', amounts: [5, 'x'] })).toEqual({ kind: 'personal' });
+  });
+
+  it('kind invest maps to an invest check with the mapped reason', () => {
+    const r = upgradeInputs({ kind: 'invest' });
+    expect(r.check.legacyKind).toBe('invest');
+    expect(r.reasons).toEqual(['legacy_upgraded', 'legacy_method_mapped']);
+    expect(upgradeInputs({ kind: 'buy' }).check.legacyKind).toBe('buy');
+    expect(upgradeInputs({ method: 'monthly' }).check.legacyKind).toBe('invest');
+  });
+
+  it('upgraded plans are never deferred-interest and the check is never an emergency', () => {
+    expect(upgradeInputs({ method: 'loan' }).check.pay).toMatchObject({ deferredInterestTerm: false });
+    expect(upgradeInputs({ method: 'instalment' }).check.pay).toMatchObject({ deferredInterestTerm: false });
+    expect(upgradeInputs({}).check.emergency).toBe(false);
+  });
+
+  it('stored line text allows decimals up to 4 places and three whole digits', () => {
+    const dsr = (t: string) => legacyLimits({ dsr_line: t, housing_line: null, unsecured_multiple: null }).lines[0]!;
+    expect(dsr('40.5')).toMatchObject({ on: true, source: 'legacy', spec: { kind: 'debt_share', pct: percent('40.5') } });
+    expect(dsr('40.1234').on).toBe(true);
+    expect(dsr('40.12345').on).toBe(false);
+    expect(dsr('1000').on).toBe(false);
+    expect(dsr('100').on).toBe(true);
+    expect(dsr('100.1').on).toBe(false);
+    expect(dsr('4.').on).toBe(false);
+  });
+
+  it('each line carries its own id', () => {
+    expect(legacyLimits(null).lines.map((x) => x.id)).toEqual(['debt_share', 'housing_share', 'unsecured_multiple']);
+    expect(legacyLimits({ dsr_line: null, housing_line: '30', unsecured_multiple: 5 }).lines.map((x) => [x.id, x.source])).toEqual([
+      ['debt_share', 'builtin'], ['housing_share', 'legacy'], ['unsecured_multiple', 'legacy'],
     ]);
   });
 });
