@@ -1576,11 +1576,11 @@ Plans:
 - [x] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
-- [ ] 09-04-PLAN.md — Seat caps from the plan, payer approval requests, D-39 switch rule, departure plan moves
-- [ ] 09-06-PLAN.md — RevenueCat webhook Edge Function (HMAC, dedupe, re-fetch) and shared snapshot module
-- [ ] 09-11-PLAN.md — Feature registry from the signed map, levelFor, applyOnb (TDD)
-- [ ] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
+- [x] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
+- [x] 09-04-PLAN.md — Seat caps from the plan, payer approval requests, D-39 switch rule, departure plan moves
+- [x] 09-06-PLAN.md — RevenueCat webhook Edge Function (HMAC, dedupe, re-fetch) and shared snapshot module
+- [x] 09-11-PLAN.md — Feature registry from the signed map, levelFor, applyOnb (TDD)
+- [x] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
@@ -1699,6 +1699,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 4/25 | In Progress|  |
+| 9. Tiers & Onboarding | 9/26 | In Progress|  |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
