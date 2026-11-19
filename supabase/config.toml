@@ -33,3 +33,7 @@ verify_jwt = false
 # plan-refresh (09-07): caller mode checks the JWT in-function with auth.getUser() (delete-account pattern); sweep mode uses its own secret PLAN_SWEEP_SECRET from the cron job; both are needed so the cron can call it without a user JWT.
 [functions.plan-refresh]
 verify_jwt = false
+
+# plan-grant (09-07, D-29): operator-only (own secret PLAN_GRANT_SECRET); never callable with a user JWT.
+[functions.plan-grant]
+verify_jwt = false
