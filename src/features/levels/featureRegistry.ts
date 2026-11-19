@@ -50,7 +50,7 @@ export const FEATURES = [
   { id: 'calculators', area: 'Grow', minLevel: 3, needsHousehold: false, holdsData: null, glyph: 'view' },
   { id: 'import', area: 'System', minLevel: 3, needsHousehold: false, holdsData: 'importedLines', glyph: 'import' },
   { id: 'pdfImport', area: 'System', minLevel: 3, needsHousehold: false, holdsData: null, glyph: 'download' },
-  { id: 'undoHistory', area: 'System', minLevel: 4, needsHousehold: false, holdsData: null, glyph: 'somethingChange' },
+  { id: 'undoHistory', area: 'System', minLevel: 4, needsHousehold: false, holdsData: null, glyph: 'somethingChanged' },
   { id: 'hh.weightSplit', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'weightSplits', glyph: 'household' },
   { id: 'hh.amountSplit', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'amountSplits', glyph: 'household' },
   { id: 'hh.categoryDefaults', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'categoryDefaultSplits', glyph: 'categories' },
