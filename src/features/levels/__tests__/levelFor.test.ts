@@ -62,7 +62,9 @@ describe('levelFor', () => {
         fc.constantFrom('card', 'loan', 'several'),
         fc.constantFrom('some', 'lots'),
         (a, debt, inv) => {
-          const base = levelFor(a);
+          // Baseline: the same answers with no debt, no investments and steady income.
+          // (Switching 'lots' to 'some' is a step down in investments, not an addition.)
+          const base = levelFor({ ...a, debt: 'none', inv: 'no', shape: 'steady' });
           return (
             levelFor({ ...a, debt }) >= base &&
             levelFor({ ...a, inv }) >= base &&

@@ -20,7 +20,9 @@ function parseRows(): Row[] {
     const m = /^\| ([a-z][a-zA-Z0-9.]*) \| (\w[\w ]*) \|/.exec(line);
     if (!m) continue;
     const cells = line.split('|').map((c) => c.trim());
-    // cells[0] is '' (before the first pipe)
+    // cells[0] is '' (before the first pipe). The section 1 header row ("level | name") has no
+    // numeric minLevel column, so it is skipped.
+    if (!/^[1-4]$/.test(cells[5] ?? '')) continue;
     rows.push({
       id: m[1],
       area: m[2],
