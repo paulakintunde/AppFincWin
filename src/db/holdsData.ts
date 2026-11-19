@@ -8,7 +8,7 @@ import type { DbClient } from './rows';
 export interface HoldsFlags {
   /** Any live line that is one side of a transfer. */
   transfers: boolean;
-  /** Any live line that came from an import batch. */
+  /** Any live line that came from an import batch, or a remembered import layout (the map's "import profile or imported line"). */
   importedLines: boolean;
   /** Any live shared line split by weight. */
   weightSplits: boolean;
@@ -29,12 +29,20 @@ async function anyLine(client: DbClient, householdId: string, probe: Probe): Pro
   return ((data as unknown[] | null) ?? []).length > 0;
 }
 
+/** The caller's own remembered import layouts (RLS scopes the rows to them). */
+async function anyImportProfile(client: DbClient): Promise<boolean> {
+  const { data, error, status } = await client.from('import_profiles').select('id').limit(1);
+  if (error) throw toDbError(error, status);
+  return ((data as unknown[] | null) ?? []).length > 0;
+}
+
 export async function fetchHoldsFlags(client: DbClient, householdId: string): Promise<HoldsFlags> {
-  const [transfers, importedLines, weightSplits, amountSplits] = await Promise.all([
+  const [transfers, importedLine, importProfile, weightSplits, amountSplits] = await Promise.all([
     anyLine(client, householdId, 'transfers'),
     anyLine(client, householdId, 'importedLines'),
+    anyImportProfile(client),
     anyLine(client, householdId, 'weightSplits'),
     anyLine(client, householdId, 'amountSplits'),
   ]);
-  return { transfers, importedLines, weightSplits, amountSplits };
+  return { transfers, importedLines: importedLine || importProfile, weightSplits, amountSplits };
 }

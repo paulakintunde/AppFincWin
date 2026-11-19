@@ -38,13 +38,13 @@ export function useOfferState(userId: string | undefined): {
   state: OfferState | null;
   update: (fn: (s: OfferState) => OfferState) => void;
 } {
-  const [state, setState] = useState<OfferState | null>(null);
+  // Held with the user it was read for, so a different person never sees the previous person's cadence.
+  const [held, setHeld] = useState<{ userId: string; state: OfferState } | null>(null);
   useEffect(() => {
     let live = true;
-    setState(null);
     if (userId === undefined) return undefined;
     void readOfferState(userId).then((s) => {
-      if (live) setState(s);
+      if (live) setHeld({ userId, state: s });
     });
     return () => {
       live = false;
@@ -53,13 +53,14 @@ export function useOfferState(userId: string | undefined): {
   const update = useCallback(
     (fn: (s: OfferState) => OfferState) => {
       if (userId === undefined) return;
-      setState((prev) => {
-        const next = fn(prev ?? EMPTY_OFFER_STATE);
+      setHeld((prev) => {
+        const next = fn(prev !== null && prev.userId === userId ? prev.state : EMPTY_OFFER_STATE);
         void writeOfferState(userId, next);
-        return next;
+        return { userId, state: next };
       });
     },
     [userId]
   );
+  const state = held !== null && held.userId === userId ? held.state : null;
   return { state, update };
 }

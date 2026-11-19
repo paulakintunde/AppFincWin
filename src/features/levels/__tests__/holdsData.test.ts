@@ -28,7 +28,7 @@ const cases: Record<HoldsDataProbeId, HoldsSources> = {
   multipleAccounts: { accounts: [acct, acct] },
   foreignCurrency: { accounts: [{ ...acct, currency: 'EUR' }] },
   savingsGoals: { goals: [{ deleted_at: null, is_safety_net: false, monthly_amount: null }] },
-  debts: { debts: [{ deleted_at: null }] as HoldsSources['debts'] },
+  debts: { debts: [{ deleted_at: null }] },
   holdings: { holdings: [{}] },
   holdingLots: { lots: [{ deleted_at: null }] },
   statementPeriods: { periods: [{}] },
@@ -36,7 +36,7 @@ const cases: Record<HoldsDataProbeId, HoldsSources> = {
   transfers: { flags: { ...flags, transfers: true } },
   categoryCaps: { categories: [{ monthly_cap: 5000, archived_at: null, is_sample: false }] },
   goalContributions: { goals: [{ deleted_at: null, is_safety_net: true, monthly_amount: 2500 }] },
-  debtPlan: { debts: [{ deleted_at: null, payoff_extra: 5000 }] as HoldsSources['debts'] },
+  debtPlan: { debts: [{ deleted_at: null, payoff_extra: 5000 }] },
   importedLines: { flags: { ...flags, importedLines: true } },
   weightSplits: { flags: { ...flags, weightSplits: true } },
   amountSplits: { flags: { ...flags, amountSplits: true } },
@@ -51,7 +51,7 @@ describe('holds-data probes (09-22)', () => {
   });
 
   it('every probe in the registry has a case', () => {
-    const ids = new Set(FEATURES.map((f) => f.holdsData).filter((x): x is string => x !== null));
+    const ids = new Set(FEATURES.map((f) => f.holdsData).filter((x) => x !== null));
     expect([...ids].sort()).toEqual(Object.keys(cases).sort());
   });
 

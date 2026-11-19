@@ -1,6 +1,6 @@
 // Pure (no React or I/O). 09-22: sources to "holds your records" answers, one per probe in the registry (D-34).
 // While a probe's source has not loaded it answers true: data is never hidden during a load (T-09-50).
-import type { AccountRow, CategoryRow, DebtRow, SavingsGoalRow } from '@/db/rows';
+import type { AccountRow, CategoryRow } from '@/db/rows';
 import type { SplitDefaultRow } from '@/db/transactionSplits';
 import { FEATURES } from './featureRegistry';
 
@@ -15,8 +15,13 @@ export interface HoldsSources {
   homeCurrency?: string;
   categories?: readonly Pick<CategoryRow, 'monthly_cap' | 'archived_at' | 'is_sample'>[];
   series?: readonly unknown[];
-  goals?: readonly Pick<SavingsGoalRow, 'deleted_at' | 'is_safety_net' | 'monthly_amount'>[];
-  debts?: readonly Pick<DebtRow, 'deleted_at' | 'payoff_extra' | 'payoff_order' | 'extra_series_id'>[];
+  goals?: readonly { deleted_at: string | null; is_safety_net?: boolean; monthly_amount: number | null }[];
+  debts?: readonly {
+    deleted_at: string | null;
+    payoff_extra?: number;
+    payoff_order?: 'rate' | 'balance' | null;
+    extra_series_id?: string | null;
+  }[];
   holdings?: readonly unknown[];
   lots?: readonly { deleted_at: string | null }[];
   periods?: readonly unknown[];
