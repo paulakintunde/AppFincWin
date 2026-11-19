@@ -61,6 +61,7 @@ function checkFigures(values: readonly number[], memberCount: number, label: str
     if (!Number.isSafeInteger(v) || v < 0) {
       throw new RangeError(`resolveShare: ${label} entry ${v} must be a non-negative integer`);
     }
+    // Stryker disable next-line AssignmentOperator: only a total of exactly 0 is read, and a sum of non-negative entries is 0 exactly when its negation is
     total += v;
   }
   return total;
