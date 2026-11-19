@@ -39,10 +39,14 @@ describe('QuestionScreen screen-reader focus', () => {
   it('the heading names the question number on each new question (the focus move itself needs a native handle: device check)', async () => {
     const focus = jest.spyOn(AccessibilityInfo, 'setAccessibilityFocus').mockImplementation(() => undefined);
     const view = await render(screen(1, 'Where do you live?'));
-    expect(view.getByRole('header').props.accessibilityLabel).toMatch(/^Where do you live\?\. .*1.*11/);
+    // No extra full stop after a question mark (Pixel 9 TalkBack read "What do you count in?. 2 of 11").
+    expect(view.getByRole('header').props.accessibilityLabel).toMatch(/^Where do you live\? .*1.*11/);
 
     await view.rerender(screen(2, 'Which currency?'));
-    expect(view.getByRole('header').props.accessibilityLabel).toMatch(/^Which currency\?\. .*2.*11/);
+    expect(view.getByRole('header').props.accessibilityLabel).toMatch(/^Which currency\? .*2.*11/);
+
+    await view.rerender(screen(3, 'Your first account'));
+    expect(view.getByRole('header').props.accessibilityLabel).toMatch(/^Your first account\. .*3.*11/);
     focus.mockRestore();
   });
 });
