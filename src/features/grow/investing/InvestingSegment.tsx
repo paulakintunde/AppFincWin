@@ -7,6 +7,8 @@
 // badge 'Updated N days ago'.
 //
 // The segment opens its own AddHoldingSheet for its buttons; GrowHome opens another for the FAB.
+import { useWriteGate } from '@/features/plans/useWriteGate';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
@@ -75,6 +77,7 @@ export function InvestingSegment() {
   const { colors, pairing } = useTheme();
   const f = useInvestingFormat();
   const read = useInvestingRead();
+  const gate = useWriteGate('addHolding'); // 09-17 (TIER-09)
   const settings = useDecideSettings(read.userId ?? undefined).data ?? null;
   const [adding, setAdding] = useState(false);
   const [updating, setUpdating] = useState<HoldingRow | null>(null);
@@ -116,7 +119,7 @@ export function InvestingSegment() {
           <GrowGlyph name="invest" color={colors.accent} size={28} />
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.investing.emptyTitle')}</Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.investing.emptyBody')}</Text>
-          <Pill label={t('grow.investing.emptyAction')} variant="primary" onPress={() => setAdding(true)} />
+          <Pill label={t('grow.investing.emptyAction')} variant="primary" locked={gate.gated} onPress={() => gate.run(() => setAdding(true))} />
         </View>
         {sheet}
       </>
@@ -224,11 +227,13 @@ export function InvestingSegment() {
         <Pressable
           testID="investing-add-row"
           accessibilityRole="button"
-          accessibilityLabel={t('grow.investing.emptyAction')}
-          onPress={() => setAdding(true)}
+          accessibilityLabel={gate.a11ySuffix ? `${t('grow.investing.emptyAction')}, ${gate.a11ySuffix}` : t('grow.investing.emptyAction')}
+          onPress={() => gate.run(() => setAdding(true))}
           style={[styles.addRow, styles.addInCard, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 }]}
         >
-          <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.addHolding')}</Text>
+          <LockedLabel gated={gate.gated} color={colors.accent}>
+            <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.addHolding')}</Text>
+          </LockedLabel>
         </Pressable>
       </View>
 

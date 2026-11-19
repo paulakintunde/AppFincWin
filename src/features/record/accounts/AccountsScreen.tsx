@@ -5,6 +5,7 @@
 // because the balance block is two lines (figure plus the one short standing / home line, D-39). D-14: a negative
 // figure is spoken "minus ...". D-24: no accounts shows the 48 tile, one sentence and one button that opens Add.
 // 08 UI-SPEC 4b: a joint account (is_shared, never a tombstone) carries the same Shared badge AccountSheet shows.
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -81,6 +82,7 @@ function AccountCard({
 
 export function AccountsScreen({ onOpenAccount }: AccountsScreenProps) {
   const t = useT();
+  const gate = useWriteGate('addAccount'); // 09-17 (TIER-09)
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const accountsData = useAccounts(rc.householdId ?? undefined).data;
@@ -108,7 +110,7 @@ export function AccountsScreen({ onOpenAccount }: AccountsScreenProps) {
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {t('accounts.title')}
         </Text>
-        <Pill label={t('accounts.add')} variant="primary" onPress={() => setAdding(true)} />
+        <Pill label={t('accounts.add')} variant="primary" locked={gate.gated} onPress={() => gate.run(() => setAdding(true))} />
       </View>
       <ScrollView contentContainerStyle={styles.list}>
         {active.length === 0 && archived.length === 0 ? (

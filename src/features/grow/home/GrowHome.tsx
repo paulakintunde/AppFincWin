@@ -2,6 +2,7 @@
 // content in place (no navigation, no haptic), the Tools row and the footer. The FAB label follows the segment.
 // The FAB opens the sheet of the selected segment: NewGoalSheet, AddDebtSheet (through DebtsSegment addOpen / onAddClosed) or
 // AddHoldingSheet. 06-16 adds the first-open safety-net confirm (D-07) over the screen.
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
@@ -121,7 +122,15 @@ export function GrowHome({ sheets }: GrowHomeProps = {}) {
   const onChooseTrack = useCallback(() => pushOnce('/you'), []);
 
   const fabKey = FAB_KEY[selected];
-  const onFab = selected === 'goals' ? onNewGoal : selected === 'debts' ? onAddDebt : onAddHolding;
+  // 09-17 (TIER-09): the Grow Add button names the lock for the segment it would add to.
+  const goalGate = useWriteGate('addGoal');
+  const debtGate = useWriteGate('addDebt');
+  const holdingGate = useWriteGate('addHolding');
+  const gateRun = selected === 'goals' ? goalGate.run : selected === 'debts' ? debtGate.run : holdingGate.run;
+  const onFab = useCallback(
+    () => gateRun(selected === 'goals' ? onNewGoal : selected === 'debts' ? onAddDebt : onAddHolding),
+    [gateRun, selected, onNewGoal, onAddDebt, onAddHolding],
+  );
   const fab = useMemo(
     () => (basics ? null : { label: t(`grow.home.fab.${fabKey}`), accessibilityLabel: t(`grow.home.fab.${fabKey}`), onPress: onFab }),
     [basics, t, fabKey, onFab]

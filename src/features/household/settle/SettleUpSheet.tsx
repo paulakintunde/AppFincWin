@@ -25,6 +25,7 @@ import { settleUpTotal } from '@/engine/household/settlement';
 import { useHouseholdMembers } from '@/data/queries/household';
 import { useHouseholdBalances, usePairLines } from '@/data/queries/householdBalances';
 import { useProposeSettlement, useRecordPaid, useRecordReceived, useUndoSettlement } from '@/data/mutations/settlements';
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import { useMemberLabel } from '../useMemberLabel';
 import { pairLineToBalanceLine, useRefusalText, useSettleMoney } from './settleHelpers';
 
@@ -45,6 +46,7 @@ export function SettleUpSheet(props: SettleUpSheetProps) {
 
 function SettleBody({ householdId, otherKey, onClose }: { householdId: string; otherKey: string; onClose: () => void }) {
   const t = useT();
+  const gate = useWriteGate('settleUp'); // 09-17 (TIER-09)
   const { colors, pairing } = useTheme();
   const { fmt, formatDate, myAccounts, currency, online, userId } = useSettleMoney();
   const label = useMemberLabel(householdId);
@@ -238,7 +240,15 @@ function SettleBody({ householdId, otherKey, onClose }: { householdId: string; o
           </Text>
         ) : null}
         {!online ? <Text style={meta}>{t('household.settle.offlineHelper')}</Text> : null}
-        <Pill label={ctaLabel} variant="primary" disabled={disabled} pending={saving} onPress={() => void submit()} />
+        <Pill
+          label={ctaLabel}
+          variant="primary"
+          locked={gate.gated}
+          accessibilityLabel={gate.a11ySuffix ? `${ctaLabel}, ${gate.a11ySuffix}` : undefined}
+          disabled={disabled && !gate.gated}
+          pending={saving}
+          onPress={() => gate.run(() => void submit())}
+        />
       </SheetScroll>
     </Sheet>
   );

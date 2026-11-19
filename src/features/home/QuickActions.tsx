@@ -11,6 +11,8 @@ import { Text } from '@/ui/Text';
 import { EMPTY_FILTER } from '@/engine/activity';
 import { openEntry } from '@/features/record/entry/entryHost';
 import { useT } from '@/i18n';
+import { useWriteGate } from '@/features/plans/useWriteGate';
+import { Glyph } from '@/ui/icons/Glyph';
 import { requestActivityFocus } from '@/state/activityFocus';
 import { useTheme } from '@/theme/ThemeProvider';
 import { PRESSED_OPACITY, radii, space, tile } from '@/theme/layout';
@@ -41,16 +43,19 @@ export interface QuickActionsProps {
 
 export function QuickActions({ month, unpaidCount = 0 }: QuickActionsProps) {
   const t = useT();
+  const addGate = useWriteGate('addTransaction'); // 09-17 (TIER-09): Add and Import keep their place and name the lock
+  const importGate = useWriteGate('importStatement');
   const { colors, pairing } = useTheme();
   const tint = accentTintOver(colors.fill1, colors.accent);
   const showCount = unpaidCount > 0;
 
-  const items: { key: ActionKey; label: string; a11y: string; onPress: () => void }[] = [
+  const items: { key: ActionKey; label: string; a11y: string; onPress: () => void; gated?: boolean }[] = [
     {
       key: 'add',
       label: t('home.quick.add'),
-      a11y: t('home.quick.addA11y'),
-      onPress: () => openEntry({ kind: 'new', direction: 'out' }),
+      a11y: addGate.a11ySuffix ? `${t('home.quick.addA11y')}, ${addGate.a11ySuffix}` : t('home.quick.addA11y'),
+      onPress: () => addGate.run(() => openEntry({ kind: 'new', direction: 'out' })),
+      gated: addGate.gated,
     },
     {
       key: 'pay',
@@ -64,8 +69,9 @@ export function QuickActions({ month, unpaidCount = 0 }: QuickActionsProps) {
     {
       key: 'import',
       label: t('home.quick.import'),
-      a11y: t('home.quick.importA11y'),
-      onPress: () => pushOnce({ pathname: '/import', params: { entry: 'you', from: 'home' } } as Href),
+      a11y: importGate.a11ySuffix ? `${t('home.quick.importA11y')}, ${importGate.a11ySuffix}` : t('home.quick.importA11y'),
+      onPress: () => importGate.run(() => pushOnce({ pathname: '/import', params: { entry: 'you', from: 'home' } } as Href)),
+      gated: importGate.gated,
     },
   ];
 
@@ -107,6 +113,7 @@ export function QuickActions({ month, unpaidCount = 0 }: QuickActionsProps) {
           >
             {it.label}
           </Text>
+          {it.gated === true ? <Glyph name="pinLock" size={16} color={colors.inkDim} testID={`quick-lock-${it.key}`} /> : null}
         </Pressable>
       ))}
     </View>

@@ -1,36 +1,26 @@
-// D-16: one entitlement hook. Phase 5 returns true for every feature; Phase 9 switches them
-// without touching screens. D-17: the alternatives table is NOT a Pro candidate.
+// D-16 / 09 D-04: one paid entitlement plus a read-only lock. There is no free tier after the trial, so no Decide part
+// is paid on its own. Supersedes 05 D-17 (alternatives table free) and APP-18 (safety stays free): when locked, Decide
+// does not run for anyone, so no answer is ever shown without its safety parts. Crisis links stay free in
+// You > Free help (D-03).
+import type { PlanView } from '@/features/plans/types';
 
-export const PRO_CANDIDATES = [
+/** The parts of Decide that need the plan like the rest of the app. None is sold on its own. */
+export const DECIDE_PARTS = [
   'multipleOpenChecks',
   'setbacks',
   'decisionJournal',
   'payoffComparisons',
+  'alternatives',
 ] as const;
 
-export type ProFeature = (typeof PRO_CANDIDATES)[number];
+export type DecidePart = (typeof DECIDE_PARTS)[number];
 
-/** APP-18: never paid. The safety net and the confidence sentence are safety, not features. */
-export const ALWAYS_FREE = ['safetyNet', 'confidenceSentence', 'answer', 'footer'] as const;
+/** Always travel together with every answer: the safety net and the confidence sentence are safety, not features. */
+export const SAFETY_PARTS = ['safetyNet', 'confidenceSentence', 'answer', 'footer'] as const;
 
-export type AlwaysFree = (typeof ALWAYS_FREE)[number];
+export type SafetyPart = (typeof SAFETY_PARTS)[number];
 
-/** APP-18: one switch per Pro candidate; all off until Phase 9 turns them on. */
-export const PRO_SWITCHES: Readonly<Record<ProFeature, boolean>> = {
-  multipleOpenChecks: false,
-  setbacks: false,
-  decisionJournal: false,
-  payoffComparisons: false,
-};
-
-export function canUseWith(
-  switches: Readonly<Record<ProFeature, boolean>>,
-  feature: ProFeature,
-  isPro: boolean,
-): boolean {
-  return !switches[feature] || isPro;
-}
-
-export function canUse(feature: ProFeature, isPro = false): boolean {
-  return canUseWith(PRO_SWITCHES, feature, isPro);
+/** D-02: a locked plan starts no new check, for anyone. Saved answers still open (read-only). */
+export function canStartDecide(plan: Pick<PlanView, 'writable'>): boolean {
+  return plan.writable;
 }
