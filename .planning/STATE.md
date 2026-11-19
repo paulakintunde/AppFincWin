@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 9 wave 5 merged (24/26): 09-19, 09-23, 09-24 (partial: First read intro waits for 08.1-19/20) + CI fixes; 09-08 prod push awaits green CI + owner OK; 09-25 next"
+stopped_at: "Phase 9 25/26: 09-08 pushed to production 2026-11-19 (5 migrations, 3 functions; RevenueCat ENV-12 open); 09-24 partial (First read waits for 08.1-19/20); 09-25 next"
 last_updated: "2026-11-19T11:03:51.733Z"
-last_activity: 2026-11-19 -- Phase 9 wave 5 merged
+last_activity: 2026-11-19 -- Phase 9 production push (09-08)
 progress:
   total_phases: 30
   completed_phases: 16
   total_plans: 807
-  completed_plans: 789
+  completed_plans: 790
   percent: 97
 ---
 
@@ -233,5 +233,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-11-19T11:03:51.704Z
-Stopped at: Phase 9 wave 5 merged (24/26): 09-19, 09-23, 09-24 (partial: First read intro waits for 08.1-19/20) + CI fixes; 09-08 prod push awaits green CI + owner OK; 09-25 next
+Stopped at: Phase 9 25/26: 09-08 pushed to production 2026-11-19 (5 migrations, 3 functions; RevenueCat ENV-12 open); 09-24 partial (First read waits for 08.1-19/20); 09-25 next
 Resume file: .planning/phases/09-tiers-onboarding/09-08-PLAN.md

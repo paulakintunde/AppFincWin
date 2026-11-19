@@ -1591,7 +1591,7 @@ Plans:
 - [x] 09-26-PLAN.md — Extended (12): 12 member colours (owner exception, reused token hexes), leave/remove while locked
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
+- [x] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
 - [x] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
 - [x] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
 - [x] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
@@ -1699,6 +1699,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 24/26 | In Progress|  |
+| 9. Tiers & Onboarding | 25/26 | In Progress|  |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
