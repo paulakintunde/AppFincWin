@@ -1583,12 +1583,12 @@ Plans:
 - [x] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
-- [ ] 09-07-PLAN.md — plan-refresh (caller + sweep) and plan-grant (tester/owner promotional grants)
-- [ ] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
-- [ ] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
-- [ ] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
-- [ ] 09-26-PLAN.md — Extended (12): 12 member colours (owner exception, reused token hexes), leave/remove while locked
+- [x] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
+- [x] 09-07-PLAN.md — plan-refresh (caller + sweep) and plan-grant (tester/owner promotional grants)
+- [x] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
+- [x] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
+- [x] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
+- [x] 09-26-PLAN.md — Extended (12): 12 member colours (owner exception, reused token hexes), leave/remove while locked
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
@@ -1699,6 +1699,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 9/26 | In Progress|  |
+| 9. Tiers & Onboarding | 15/26 | In Progress|  |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
