@@ -49,12 +49,12 @@ Drop "United" from store names. "FincWin United" reads like a credit union, whic
 - **First answer before history (DCU-10).** The name promises an answer. Today that answer needs months of history, and the prototype's onboarding takes 14 taps to reach *sample* data. Proposed onboarding: welcome → consent → one account and balance → rough monthly in and out → first check → "Bring your history". About 7 taps and one typed line, roughly 60 seconds.
   - **Open (discuss-phase):** may a verdict rest on rough figures, labelled as a first read? This is a Core Value question. If not, screen 5 uses sample data plus an import prompt.
 - **Screenshots come from the real app (DCU-11).** Frames 1–3 are the verdict, what breaks, and the alternatives, captured from the App Review demo account's sample scenario (sofa $1,800 in a household of two; car $14,500 on a loan).
-- **The quick check is free.** The store name promises it (see `PRICING.md`).
+- ~~**The quick check is free.**~~ **Superseded 2026-11-18 by Phase 9 D-01:** there is no free tier (hard paywall after a 14-day store trial). Before the trial, a look-around with sample data shows a sample Decide answer (D-17b). Store copy must not claim a free check; it must disclose the trial and the subscription (see `.planning/aso/2026-11-18.md`).
 - **Review prompts** only after: an import reconciles, an estimate-vs-actual lands at or under the estimate, or a household settles up. Never after "You cannot afford this", in the first session, or after a failure.
 
 ## 5. Store screenshots (captions of 7 words or fewer; Apple indexes captions)
 
-1. Can I afford it? Ask first. (verdict)
+1. Can I afford it? Your months answer. (verdict; changed 2026-11-18 to stand apart from the new calculator-style "Can I afford it" apps)
 2. See what breaks before you buy (impact)
 3. Cheaper, later, or skip it (alternatives)
 4. Import statements. No bank login. (import reconciliation)
@@ -64,6 +64,12 @@ Drop "United" from store names. "FincWin United" reads like a credit union, whic
 8. Savings, debt payoff and net worth (Grow)
 
 The iOS preview video runs 25 seconds, with the verdict showing within 4 seconds. The Play feature graphic is 1024×500 with no call to action.
+
+**Added 2026-11-18** (details and counts in `.planning/aso/2026-11-18.md`):
+- **iOS promotional text** (169/170): "Try everything free for 14 days. Check whether a purchase fits, worked out from your own months, and see what it breaks before you buy. Built for couples and households."
+- **In-app purchase display names** (Apple indexes them): Solo Budget Plan · Duo Plan for Couples · Household Plan, up to 6 · Extended Family, up to 12. Yearly products add " - Yearly" and stay within 30 characters.
+- **Don't use "verdict" in store copy.** "Verdict Money: Can I Afford It" launched 2026-11-10.
+- **Competition update.** Four calculator-style "can I afford it" apps launched between Sep 28 and Nov 16. None uses logged months or covers a household, so lead with those two points.
 
 ## 6. Icon (decided 2026-09-26: "A · Refine")
 
