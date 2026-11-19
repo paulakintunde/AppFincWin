@@ -15,6 +15,10 @@ const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ router: { push: (...a: unknown[]) => mockPush(...a) } }));
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ useBackHistory: () => ({ goBack: jest.fn() }) }));
 jest.mock('@/shell/header/BackButton', () => ({ BackButton: () => null }));
+jest.mock('@/features/plans/notices/PlanNoticeSlot', () => {
+  const { View } = require('react-native');
+  return { PlanNoticeList: () => <View testID="plan-notice-list" /> };
+});
 jest.mock('@/features/household/useHouseholdScope', () => ({ useHouseholdScope: () => ({ name: 'The Flat' }) }));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
