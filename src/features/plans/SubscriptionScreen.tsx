@@ -27,7 +27,8 @@ import { PlanStatusCard } from './components/PlanStatusCard';
 import { PlanLink } from './components/NoticeCard';
 import { DisclosureBlock } from './components/DisclosureBlock';
 import { plansHref, PLANS_HREF } from './routes';
-import { loadOffers, openManageSubscription } from './store/purchasesClient';
+import { loadOffers } from './store/purchasesClient';
+import { manageSubscription } from './manageSubscription';
 import { PlanNoticeList } from './notices/PlanNoticeSlot';
 import { subscriptionModel } from './subscriptionModel';
 import { usePlanState } from './usePlanState';
@@ -114,7 +115,7 @@ export function SubscriptionScreen() {
             chevron
             emphasis
             onPress={() => {
-              void openManageSubscription();
+              void manageSubscription(plan.store);
             }}
           />
         ) : null}

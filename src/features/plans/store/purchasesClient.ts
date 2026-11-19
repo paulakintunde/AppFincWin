@@ -21,7 +21,8 @@ import type { PlanOffer, PlanPeriod, PurchaseOutcome } from '../types';
 const ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
 const IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
 
-const PLAY_SUBSCRIPTIONS_URL = 'https://play.google.com/store/account/subscriptions';
+export const PLAY_SUBSCRIPTIONS_URL = 'https://play.google.com/store/account/subscriptions';
+export const APPLE_SUBSCRIPTIONS_URL = 'itms-apps://apps.apple.com/account/subscriptions';
 
 /** The public SDK key for this platform, or null when none is configured (every call then reports unavailable). */
 export function purchasesApiKey(): string | null {
@@ -189,19 +190,39 @@ export async function restorePurchases(): Promise<'restored' | 'nothing' | 'alre
   }
 }
 
-export async function openManageSubscription(): Promise<void> {
-  if (!available) return;
-  if (platform() === 'ios') {
-    await Purchases.showManageSubscriptions();
-    return;
+/**
+ * 09-25 (A5-2): opens the store's subscriptions page and never does nothing. A plan the store does not bill (NONE,
+ * BACKFILL, PROMOTIONAL, or not known) goes straight to the platform's subscriptions page. A store plan goes through the
+ * SDK first and falls back to the same page when the SDK is not set up or fails. Resolves false only when no page
+ * opened, so the caller can say so.
+ */
+export async function openManageSubscription(opts: { store?: string | null } = {}): Promise<boolean> {
+  const fallback = platform() === 'ios' ? APPLE_SUBSCRIPTIONS_URL : PLAY_SUBSCRIPTIONS_URL;
+  const storeBilled = opts.store === 'APP_STORE' || opts.store === 'PLAY_STORE';
+  if (available && storeBilled) {
+    try {
+      if (platform() === 'ios') {
+        await Purchases.showManageSubscriptions();
+        return true;
+      }
+      let url = PLAY_SUBSCRIPTIONS_URL;
+      try {
+        url = (await Purchases.getCustomerInfo()).managementURL ?? PLAY_SUBSCRIPTIONS_URL;
+      } catch {
+        // keep the Play default
+      }
+      await Linking.openURL(url);
+      return true;
+    } catch {
+      // fall through to the platform page
+    }
   }
-  let url = PLAY_SUBSCRIPTIONS_URL;
   try {
-    url = (await Purchases.getCustomerInfo()).managementURL ?? PLAY_SUBSCRIPTIONS_URL;
+    await Linking.openURL(fallback);
+    return true;
   } catch {
-    // keep the Play default
+    return false;
   }
-  await Linking.openURL(url);
 }
 
 /** The store account's country, used once for redeem_invite and never stored (T-09-40). */

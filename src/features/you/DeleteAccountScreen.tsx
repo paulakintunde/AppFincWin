@@ -19,8 +19,7 @@ import { useMemberLabel } from '@/features/household/useMemberLabel';
 import { WarningCard } from '@/ui/WarningCard';
 import { PlanLink } from '@/features/plans/components/NoticeCard';
 import { usePlanState } from '@/features/plans/usePlanState';
-import { openManageSubscription } from '@/features/plans/store/purchasesClient';
-import { captureError } from '@/services/errors';
+import { manageSubscription } from '@/features/plans/manageSubscription';
 import { useAccountDeletionPreview } from './useAccountDeletionPreview';
 
 export function DeleteAccountScreen() {
@@ -78,7 +77,7 @@ export function DeleteAccountScreen() {
           <PlanLink
             label={t('plans.deleteWarning.manage')}
             onPress={() => {
-              openManageSubscription().catch((e: unknown) => captureError(e, { area: 'unknown' }));
+              void manageSubscription(plan.store);
             }}
           />
         </View>

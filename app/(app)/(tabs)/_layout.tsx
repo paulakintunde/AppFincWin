@@ -45,9 +45,11 @@ export default function TabsLayout() {
   });
   // 09-24 (D-17b): the pre-trial look-around runs on sample records, so it never asks for a first account of one's own. While the
   // plan is unknown (usePlanState reports 'sample' with loading) nothing is drawn, so neither path is taken on a guess.
+  // 09-25 (A5-3): only a plan that can write is sent to make a first account. A read-only home (locked, and 'sample',
+  // the pre-trial look-around) comes in and reads its empty tabs; the account sheet's Save would only be locked there.
   const plan = usePlanState();
   if (gate && plan.loading) return null;
-  if (gate && plan.status !== 'sample') return <Redirect href="/setup/account" />;
+  if (gate && plan.writable && plan.status !== 'sample') return <Redirect href="/setup/account" />;
   // FabProvider is mounted in app/(app)/_layout.tsx so You, an outer-stack screen, reads the same quick actions.
   return (
     <View style={styles.fill}>

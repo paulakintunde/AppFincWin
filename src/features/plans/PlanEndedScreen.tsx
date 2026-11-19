@@ -17,6 +17,7 @@ import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
 import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Screen } from '@/ui/Screen';
+import { SectionHeader } from '@/ui/SectionHeader';
 import { accentTintOver } from '@/ui/EmptyState';
 import { Text } from '@/ui/Text';
 import { IconTile } from '@/ui/icons/IconTile';
@@ -29,7 +30,8 @@ import { SettingsGroup } from '@/features/you/components/SettingsGroup';
 import { PlanLink } from './components/NoticeCard';
 import { requestPlanRefresh } from './PlanHost';
 import { EXPORT_HREF, FREE_HELP_HREF, plansHref } from './routes';
-import { openManageSubscription, restorePurchases } from './store/purchasesClient';
+import { manageSubscription } from './manageSubscription';
+import { restorePurchases } from './store/purchasesClient';
 import { usePlanState } from './usePlanState';
 
 const DELETE_ACCOUNT_HREF = '/delete-account' as Href;
@@ -102,7 +104,8 @@ export function PlanEndedScreen() {
             chevron
             onPress={() => router.push(FREE_HELP_HREF)}
           />
-          <Row label={t('lock.explainer.manage')} leading={tile('acctCard')} chevron onPress={() => void openManageSubscription()} />
+          {/* 09-25 (A5-2): never a dead tap. With no store subscription it opens the platform's subscriptions page. */}
+          <Row label={t('lock.explainer.manage')} leading={tile('acctCard')} chevron onPress={() => void manageSubscription(plan.store)} />
           <Row label={t('lock.explainer.restore')} leading={tile('acctCard')} chevron onPress={() => void restore()} />
           <Row label={t('lock.explainer.signOut')} leading={tile('signOut')} chevron onPress={() => void signOut()} />
           <Pressable
@@ -115,15 +118,18 @@ export function PlanEndedScreen() {
           </Pressable>
         </SettingsGroup>
 
-        <SettingsGroup title={t('lock.explainer.needsPlan')}>
+        {/* 09-25 (A5-1): UI-SPEC 9c makes "Needs a plan" a body list, not rows. It is plain text on the page (no card, no
+            chevrons, no button role), so it does not look or announce as something to tap. "Choose a plan" below is the action. */}
+        <View style={styles.needsGroup} testID="plan-ended-needs">
+          <SectionHeader title={t('lock.explainer.needsPlan')} />
           <View style={styles.needs}>
             {(['edit', 'import', 'decide'] as const).map((k) => (
-              <Text key={k} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+              <Text key={k} testID={`plan-ended-needs-${k}`} style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
                 {t(`lock.explainer.needs.${k}`)}
               </Text>
             ))}
           </View>
-        </SettingsGroup>
+        </View>
 
         <Pill label={memberOfLapsedHome ? t('lock.explainer.takeOver') : t('lock.explainer.choose')} variant="primary" onPress={choose} />
         {memberOfLapsedHome ? (
@@ -138,6 +144,7 @@ export function PlanEndedScreen() {
 const styles = StyleSheet.create({
   back: { marginBottom: space.gapSm },
   column: { gap: space.groupGap, paddingBottom: space.sheetPadBottom },
-  needs: { padding: space.cardPad, gap: space.gapSm },
+  needsGroup: { marginTop: space.groupGap, gap: space.gapSm },
+  needs: { gap: space.gapSm },
   deleteRow: { minHeight: 52, justifyContent: 'center', paddingHorizontal: space.cardPad },
 });

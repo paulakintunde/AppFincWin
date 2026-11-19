@@ -24,10 +24,10 @@ const mockSave = jest.fn();
 jest.mock('@/data/mutations/userSetup', () => ({ useSaveUserSetup: () => ({ saveUserSetup: (...a: unknown[]) => mockSave(...a) }) }));
 jest.mock('@/features/household/useHouseholdScope', () => ({ useHouseholdScope: () => ({ name: 'The Flat' }) }));
 jest.mock('@/features/household/useMemberLabel', () => ({ useMemberLabel: () => (id: string | null) => (id === 'u-bea' ? 'Bea' : 'Someone') }));
-const mockManage = jest.fn(() => Promise.resolve());
+const mockManage = jest.fn((_opts?: unknown) => Promise.resolve(true));
 jest.mock('@/features/plans/store/purchasesClient', () => ({
   loadOffers: () => Promise.resolve([{ planKey: 'duo', period: 'month', productId: 'p', priceString: '$9.99', packageId: 'x', hasTrial: false, trialDays: null, currencyCode: 'USD' }]),
-  openManageSubscription: () => mockManage(),
+  openManageSubscription: (opts?: unknown) => mockManage(opts),
 }));
 jest.mock('@/features/plans/MoveToSoloSheet', () => {
   const { View } = require('react-native');
@@ -117,6 +117,24 @@ describe('PlanNoticeSlot', () => {
       fireEvent.press(screen.getByText('Run setup'));
     });
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/onboarding', params: { mode: 'rerun' } });
+  });
+
+  it('09-25 A8: on Home the notice has the Home card frame (inset from the screen edge, gap above); the card keeps radius and shadow', async () => {
+    mockSetup = { existingCard: 'pending', version: 3 };
+    await render(wrap(<PlanNoticeSlot />));
+    await screen.findByText('Run setup to simplify the app');
+    const flat = (st: unknown) => Object.assign({}, ...([] as unknown[]).concat(st as never).flat(Infinity as 1));
+    const slot = flat(screen.getByTestId('plan-notice-slot').props.style);
+    expect(slot.marginHorizontal).toBe(16);
+    expect(slot.marginTop).toBe(16);
+  });
+
+  it('09-25 A8: You > Subscription list adds no extra inset (its screen pads it)', async () => {
+    mockSetup = { existingCard: 'pending', version: 3 };
+    await render(wrap(<PlanNoticeList />));
+    await screen.findByText('Run setup to simplify the app');
+    const st = screen.getByTestId('plan-notice-list').props.style as Record<string, unknown>;
+    expect(st.marginHorizontal).toBeUndefined();
   });
 
   it('payer alone on Duo: Manage opens the store page, Move to Solo opens the sheet', async () => {

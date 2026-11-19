@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { fireEvent, render, within } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { PlanEndedScreen } from '../PlanEndedScreen';
 
@@ -20,19 +20,20 @@ jest.mock('@/features/auth/signOut', () => ({
   requestSignOut: () => mockRequestSignOut(),
   performSignOut: jest.fn(),
 }));
-const mockManage = jest.fn(async () => undefined);
+const mockManage = jest.fn(async (_opts?: unknown) => true);
 const mockRestore = jest.fn(async () => 'restored');
 jest.mock('../store/purchasesClient', () => ({
-  openManageSubscription: () => mockManage(),
+  openManageSubscription: (opts?: unknown) => mockManage(opts),
   restorePurchases: () => mockRestore(),
 }));
 jest.mock('../PlanHost', () => ({ requestPlanRefresh: jest.fn(async () => undefined) }));
-jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+const mockShowToast = jest.fn();
+jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockShowToast(...a) }));
 
 let mockPlan: Record<string, unknown>;
 jest.mock('../usePlanState', () => ({ usePlanState: () => mockPlan }));
 
-const base = { status: 'locked', writable: false, loading: false, householdId: 'h1', members: 1, payerId: 'u1', payerIsMe: true, payerName: 'Sam' };
+const base = { store: 'NONE', status: 'locked', writable: false, loading: false, householdId: 'h1', members: 1, payerId: 'u1', payerIsMe: true, payerName: 'Sam' };
 
 describe('PlanEndedScreen', () => {
   beforeEach(() => {
@@ -104,5 +105,51 @@ describe('PlanEndedScreen', () => {
       </ThemeProvider>,
     );
     expect(getByText('Your records stay here read-only. Nothing is deleted without notice.')).toBeTruthy();
+  });
+
+  it('09-25 A5-2: Manage subscription with no store subscription (NONE) asks for the store page with that store', async () => {
+    mockManage.mockClear();
+    mockShowToast.mockClear();
+    const { getByText } = await render(
+      <ThemeProvider>
+        <PlanEndedScreen />
+      </ThemeProvider>,
+    );
+    await fireEvent.press(getByText('Manage subscription'));
+    expect(mockManage).toHaveBeenCalledWith({ store: 'NONE' });
+    expect(mockShowToast).not.toHaveBeenCalled();
+  });
+
+  it('09-25 A5-2: when no store page opens, the tap still answers with a toast', async () => {
+    mockManage.mockClear();
+    mockShowToast.mockClear();
+    mockManage.mockResolvedValueOnce(false);
+    const { getByText } = await render(
+      <ThemeProvider>
+        <PlanEndedScreen />
+      </ThemeProvider>,
+    );
+    await fireEvent.press(getByText('Manage subscription'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(mockShowToast).toHaveBeenCalledWith({ kind: 'info', text: { key: 'plans.subscription.manageFailed' } });
+  });
+
+  it('09-25 A5-1: the Needs a plan lines are information only: not buttons, no chevrons, no press handler', async () => {
+    const { getByText, getByTestId, queryAllByRole } = await render(
+      <ThemeProvider>
+        <PlanEndedScreen />
+      </ThemeProvider>,
+    );
+    const needs = getByTestId('plan-ended-needs');
+    expect(getByText('Needs a plan')).toBeTruthy();
+    for (const label of ['Adding or editing records', 'Importing', 'New Decide checks']) {
+      const line = getByText(label);
+      expect(line.props.onPress).toBeUndefined();
+      expect(line.props.accessibilityRole).toBeUndefined();
+      expect(queryAllByRole('button', { name: label })).toHaveLength(0);
+    }
+    // nothing inside the list is pressable or carries a chevron
+    expect(within(needs).queryAllByRole('button')).toHaveLength(0);
+    expect(within(needs).queryAllByTestId('row-root')).toHaveLength(0);
   });
 });
