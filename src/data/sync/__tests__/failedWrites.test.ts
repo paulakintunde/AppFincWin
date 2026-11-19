@@ -272,3 +272,11 @@ describe('failedWrites', () => {
     expect(asyncStorageMap().has(FAILED_WRITES_KEY)).toBe(false);
   });
 });
+
+describe('failedWrites locked guard (09 D-40)', () => {
+  it('stores nothing for kind locked because lockedWrites holds it', async () => {
+    const before = getFailedWrites().length;
+    await recordFailedWrite({ ...baseEntry, kind: 'locked', code: 'PT402' });
+    expect(getFailedWrites()).toHaveLength(before);
+  });
+});

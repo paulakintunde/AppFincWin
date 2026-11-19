@@ -6,6 +6,8 @@ import { addBreadcrumb } from '@sentry/react-native';
 import { registerWipeHandler } from '@/services/storage/wipe';
 import { clearServerFetchTimes, persister } from './cache/persister';
 import { bumpSessionEpoch } from './sync/sessionEpoch';
+import { classifyWriteError } from './sync/writeErrors';
+import { recordLockedWrite } from './sync/lockedWrites';
 
 export const queryClient = new QueryClient({
   // F-2 (06.1-48): every write's time from submit to settle, so a device check can tell app delay from network delay
@@ -26,6 +28,16 @@ export const queryClient = new QueryClient({
         });
       } catch {
         // telemetry only
+      }
+    },
+    // 09 D-40: a write the server refused because the plan does not cover the household is kept on the phone.
+    onError: (error, variables, _context, mutation) => {
+      try {
+        if (classifyWriteError(error) === 'locked') {
+          void recordLockedWrite({ mutationKey: mutation.options.mutationKey, variables }).catch(() => undefined);
+        }
+      } catch {
+        // never turn a settle into a throw
       }
     },
     onSettled: (_data, error, _variables, _context, mutation) => {
