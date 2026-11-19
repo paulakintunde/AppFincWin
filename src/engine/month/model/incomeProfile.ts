@@ -295,6 +295,7 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
       unseenPay.push({
         seriesId: d.seriesId,
         date: d.date,
+        // Stryker disable next-line StringLiteral: the amount is a safe-integer series amount, so it can never overflow and the label is never shown
         amount: minorFromBigInt(big(d.amount), "incomeThisMonth"),
         arrived,
       });
@@ -329,6 +330,7 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
   let varTotal = varReceived + varDue;
   if (plan.rule === "steady" && profile !== null && profile.steady !== null)
     varTotal = big(profile.steady);
+  // Stryker disable next-line ConditionalExpression: under the balance rule nothing adds to varDue, so varReceived equals varReceived plus varDue
   if (plan.rule === "balance") varTotal = varReceived;
   let total = salaryReceived + salaryDue + varTotal;
 
@@ -336,6 +338,7 @@ export function incomeThisMonth(input: IncomeInput): IncomeThisMonth {
   if (
     total === 0n &&
     received === 0n &&
+    // Stryker disable next-line ConditionalExpression: a zero total with money due cannot happen: due money always raises the total
     dueConfirmed === 0n &&
     !hasPay &&
     typedEstimates !== null
@@ -386,12 +389,15 @@ export function payBasis(
     .map((a) => a.amount)
     .sort((a, b) => Number(a - b));
   const middle = last[(PAY_GAP_ARRIVALS - 1) / 2] as bigint;
+  // Stryker disable next-line EqualityOperator: a middle equal to the set-up gives the same amount and no gap either way
   if (middle >= setup) return { amount: setup, gap: null };
   const below = (setup - middle) * 10000n;
   const gap: PayGap | null =
     below > big(PAY_GAP_BP) * setup
       ? {
+          // Stryker disable next-line StringLiteral: setup is a safe-integer amount, so it can never overflow and the label is never shown
           setup: minorFromBigInt(setup, "payBasis"),
+          // Stryker disable next-line StringLiteral: middle is one of the safe-integer arrival amounts, so it can never overflow and the label is never shown
           middle: minorFromBigInt(middle, "payBasis"),
           gapBp: Number(below / setup),
         }
@@ -436,6 +442,7 @@ export function typicalIncome(input: IncomeInput): {
   const payMonthly = (s: V3Series): bigint => {
     const b = payBasis(s, input.history, asOf);
     if (payGap === null) payGap = b.gap;
+    // Stryker disable next-line StringLiteral: the basis amount is setup or middle, both safe integers, so it can never overflow and the label is never shown
     return sumMonthly({ ...s, amount: minorFromBigInt(b.amount, "typicalIncome") });
   };
 

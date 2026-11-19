@@ -128,6 +128,7 @@ export function buildIncomeMonths(
   recurringBills: bigint,
   setAside: bigint
 ): IncomeMonth[] {
+  // Stryker disable next-line EqualityOperator: month keys are unique, so equal never occurs and < and <= give the same order
   const sorted = used.slice().sort((a, b) => (a.month < b.month ? -1 : 1)); // month keys are unique
   const incomes = sorted.map((m) => incomeByMonth.get(m.month) ?? 0n);
   const total = incomes.reduce((a, b) => a + b, 0n);
@@ -148,6 +149,7 @@ export function buildIncomeMonths(
 export function leanLeftOf(months: readonly IncomeMonth[]): MinorUnits | null {
   let lowest: MinorUnits | null = null;
   for (const m of months) {
+    // Stryker disable next-line EqualityOperator: a month with an equal leftover leaves the lowest value unchanged
     if (m.lean && (lowest === null || m.left < lowest)) lowest = m.left;
   }
   return lowest;

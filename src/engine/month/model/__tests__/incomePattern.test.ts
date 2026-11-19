@@ -289,3 +289,35 @@ describe('isVolatile', () => {
     expect(isVolatile('seasonal', incomes([63, 63, 137, 137]))).toBe(false);
   });
 });
+
+describe('mutation kills (05.4-60)', () => {
+  const m = (month: string, income: number): IncomeMonth => ({ month, income: mu(income), everyday: mu(1), left: mu(0), lean: false });
+  const confirmedFor = (month: string, amount: number, at: string): ExpectedMonthIncome => ({ month, amount: mu(amount), at });
+
+  it('newestIncomes sorts the keys, so a map filled out of order still gives the newest n oldest first', () => {
+    const map = new Map<string, bigint>([['2026-03', 3n], ['2026-01', 1n], ['2026-02', 2n]]);
+    expect(newestIncomes(map, 2)).toEqual([2n, 3n]);
+  });
+
+  it('resolvePattern: steady but not confirmed, or confirmed with no stated pattern, is still flagged when income swings', () => {
+    expect(resolvePattern({ pattern: 'steady', patternConfirmed: false }, true)).toEqual({ stated: 'steady', treated: 'variable', confirmNeeded: true });
+    expect(resolvePattern({ patternConfirmed: true }, true)).toEqual({ stated: null, treated: 'variable', confirmNeeded: true });
+  });
+
+  it('sameCalendarMonth keeps the first of two window months with the same key', () => {
+    expect(sameCalendarMonth([m('2025-12', 1), m('2025-12', 2)], '2026-12')?.income).toBe(1);
+  });
+
+  it('expectedFor: a confirmed 0 is a valid figure; of two entries with the same stamp the later one in the list stands', () => {
+    expect(expectedFor(view(), [confirmedFor('2026-10', 0, '2026-10-01')], '2026-10')).toEqual({ amount: 0, source: 'confirmed' });
+    const a = confirmedFor('2026-10', 1000, '2026-10-01');
+    const b = confirmedFor('2026-10', 2000, '2026-10-01');
+    expect(expectedFor(view(), [a, b], '2026-10')?.amount).toBe(2000);
+    expect(expectedFor(view(), [b, a], '2026-10')?.amount).toBe(1000);
+  });
+
+  it('dependsOnMonths is sorted even when a later payment month is added before the running-cost months', () => {
+    const plan = { cadence: MONTHLY, count: 1, payment: mu(100), finalPayment: mu(100), lastPaying: 1, firstDate: '2027-03-03', fees: { perPeriod: mu(0), end: mu(0) } } as unknown as Schedule;
+    expect(dependsOnMonths('2026-10-03', plan, mu(500))).toEqual(['2026-10', '2026-11', '2026-12', '2027-01', '2027-02', '2027-03', '2027-04', '2027-05', '2027-06', '2027-07', '2027-08', '2027-09']);
+  });
+});
