@@ -22,6 +22,9 @@ export interface NoticeAction {
   label: string;
   onPress: () => void;
   kind: 'primary' | 'link';
+  /** 09-19: additive. A primary action can be held inert while its work runs, and carry a test id. */
+  disabled?: boolean;
+  testID?: string;
 }
 
 export interface NoticeCardProps {
@@ -70,9 +73,11 @@ export function NoticeCard({ title, body, badge, icon, actions, testID }: Notice
           <View style={styles.actions}>
             {shown.map((a) =>
               a.kind === 'primary' ? (
-                <Pill key={a.label} label={a.label} variant="primary" onPress={a.onPress} />
+                <View key={a.label} testID={a.testID}>
+                  <Pill label={a.label} variant="primary" disabled={a.disabled} onPress={a.onPress} />
+                </View>
               ) : (
-                <PlanLink key={a.label} label={a.label} onPress={a.onPress} />
+                <PlanLink key={a.label} label={a.label} onPress={a.onPress} testID={a.testID} />
               ),
             )}
           </View>

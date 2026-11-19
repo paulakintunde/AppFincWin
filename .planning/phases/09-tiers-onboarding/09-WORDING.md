@@ -149,6 +149,7 @@ Placeholders: `{{price}}` store price string, `{{monthly}}` monthly price, `{{ye
 | plans.notices.trialPush.body | Your free trial ends on {{date}}. {{price}} is charged unless you cancel. | sign-off | Push text, 2 days before |
 | plans.notices.paymentFailed.title | Payment failed | sign-off | Badge and title |
 | plans.notices.paymentFailed.body | {{name}}'s payment did not go through. Your home keeps full access until {{date}}. | sign-off | Notice body, every member (D-19) |
+| plans.notices.paymentFailed.bodyPayer | Your payment did not go through. Your home keeps full access until {{date}}. | sign-off | Notice body, the payer (D-19). Added by 09-19 2026-11-19 - needs owner review |
 | plans.notices.paymentFailed.actions.fix | Fix payment | sign-off | Payer action |
 | plans.notices.paymentFailed.actions.takeOver | Take over the plan | sign-off | Member action |
 | plans.notices.paymentFailed.actions.notNow | Not now | sign-off | Member action |
@@ -171,6 +172,7 @@ Placeholders: `{{price}}` store price string, `{{monthly}}` monthly price, `{{ye
 | plans.notices.memberLeft.body | You have full access until {{date}}. Continue on Solo to keep adding and changing things. | sign-off | Notice body (D-41) |
 | plans.notices.memberLeft.actions.solo | Continue on Solo | sign-off | Notice action |
 | plans.notices.memberLeft.actions.notNow | Not now | sign-off | Notice action |
+| plans.notices.approvalWaiting.actions.review | See the request | sign-off | Approval-waiting notice action, opens the approval screen (D-21). Added by 09-19 2026-11-19 - needs owner review |
 | plans.notices.downgradeOffer.title | A smaller plan fits | sign-off | Notice title |
 | plans.notices.downgradeOffer.body | Your home now has {{count}} people. {{plan}} fits them and costs {{price}} a {{period}}. It would start at your next renewal on {{date}}. | sign-off | Notice body (D-21a) |
 | plans.notices.downgradeOffer.actions.switch | Switch at renewal | sign-off | Notice action |

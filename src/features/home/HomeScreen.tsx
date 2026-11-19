@@ -21,6 +21,7 @@ import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { AccountsCard } from './AccountsCard';
 import { ComingUpCard } from './ComingUpCard';
 import { OfferSlot } from '@/features/levels/OfferSlot';
+import { PlanNoticeSlot } from '@/features/plans/notices/PlanNoticeSlot';
 import { ProjectionDetailSheet } from './ProjectionDetailSheet';
 import { QuickActions } from './QuickActions';
 import { ThisMonthCard } from './ThisMonthCard';
@@ -100,6 +101,8 @@ export function HomeScreen() {
       <FadeIn once="home.card.quick" testID="home-card-quick">
         <QuickActions month={vm.month} unpaidCount={vm.dataState === 'ready' ? vm.position.unpaidCount : 0} />
       </FadeIn>
+      {/* 09-19 (UI-SPEC 7): one plan notice at a time, above This month. */}
+      <PlanNoticeSlot />
       <FadeIn once="home.card.thisMonth" testID="home-card-thisMonth">
         <ThisMonthCard
           position={vm.position}
