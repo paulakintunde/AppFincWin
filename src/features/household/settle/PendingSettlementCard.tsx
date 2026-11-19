@@ -5,6 +5,7 @@
 //  - lapsed: a "Lapsed" badge; the lines are owed again
 // Settle-ups are online-only (nothing is queued). Offline the buttons are disabled with a plain message.
 import React, { useState } from 'react';
+import { isPlanWriteBlocked } from '@/data/sync/planWriteGuard';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Pill } from '@/ui/Pill';
 import { StatusBadge } from '@/ui/status/StatusBadge';
@@ -81,7 +82,8 @@ export function ReceiverActions({ settlement, householdId, name }: { settlement:
       hapticTap();
       setOpen(false);
       showToast({ kind: 'ordinary', text: { key: 'household.settle.toasts.settled', params: { amount: amountText, name } } });
-    } catch {
+    } catch (err) {
+      if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
       hapticFailed();
       setFailure(t('household.settle.failed'));
     }
@@ -98,7 +100,8 @@ export function ReceiverActions({ settlement, householdId, name }: { settlement:
       }
       hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'household.settle.notYetSaid' } });
-    } catch {
+    } catch (err) {
+      if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
       hapticFailed();
       setFailure(t('household.settle.failed'));
     }
@@ -189,7 +192,8 @@ export function PendingSettlementCard({ settlement: s, householdId, now: nowProp
           }
           hapticTap();
           showToast({ kind: 'ordinary', text: { key: 'household.settle.cancelled' } });
-        } catch {
+        } catch (err) {
+          if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
           hapticFailed();
           setFailure(t('household.settle.failed'));
         }
@@ -239,7 +243,8 @@ export function PendingSettlementCard({ settlement: s, householdId, now: nowProp
         }
         hapticTap();
         showToast({ kind: 'ordinary', text: { key: 'household.settle.undone' } });
-      } catch {
+      } catch (err) {
+        if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
         hapticFailed();
         setFailure(t('household.settle.failed'));
       }
@@ -349,7 +354,8 @@ export function NoticeSettleActions({
                 hapticTap();
                 setDone(true);
               })
-              .catch(() => {
+              .catch((err: unknown) => {
+                if (isPlanWriteBlocked(err)) return;
                 hapticFailed();
                 setFailure(t('household.settle.failed'));
               });

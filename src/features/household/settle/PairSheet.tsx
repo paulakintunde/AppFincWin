@@ -2,6 +2,7 @@
 // Actions: settle up, ask the person to settle up (once per 24 hours), and for someone who left: record a payment or
 // write the balance off. Settle-ups are online-only; offline the actions are disabled with a plain message.
 import React, { useState } from 'react';
+import { isPlanWriteBlocked } from '@/data/sync/planWriteGuard';
 import { StyleSheet, View } from 'react-native';
 import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { DetailSheet } from '@/ui/DetailSheet';
@@ -93,7 +94,8 @@ function PairBody({
       }
       hapticTap();
       setAskedAt(new Date().toISOString());
-    } catch {
+    } catch (err) {
+      if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
       hapticFailed();
       setFailure(t('household.settle.failed'));
     }
@@ -112,7 +114,8 @@ function PairBody({
       hapticTap();
       showToast({ kind: 'ordinary', text: { key: 'household.settle.writtenOff' } });
       onClose();
-    } catch {
+    } catch (err) {
+      if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
       hapticFailed();
       setFailure(t('household.settle.failed'));
     }

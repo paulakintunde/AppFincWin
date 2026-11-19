@@ -3,6 +3,7 @@
 // confirms with the normal Yes, I got it (nothing is written in the old household's accounts: the leaver's accounts moved
 // with them). While one is waiting the row says so and the entry is hidden. Online-only; offline nothing is sent.
 import React, { useState } from 'react';
+import { isPlanWriteBlocked } from '@/data/sync/planWriteGuard';
 import { StyleSheet, View } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pill } from '@/ui/Pill';
@@ -74,7 +75,8 @@ export function DepartedBalancesCard() {
       hapticTap();
       void qc.invalidateQueries({ queryKey: DEPARTED_KEY(userId) });
       showToast({ kind: 'ordinary', text: { key: 'household.settle.toasts.waiting', params: { name } } });
-    } catch {
+    } catch (err) {
+      if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
       hapticFailed();
       setFailures((f) => ({ ...f, [b.departure_id]: t('household.settle.failed') }));
     } finally {

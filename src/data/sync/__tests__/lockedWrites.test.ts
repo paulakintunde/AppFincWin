@@ -11,7 +11,9 @@ import {
   subscribeLockedWrites,
   replayLockedWrites,
   LOCKED_WRITES_KEY,
+  dropLockedWrites,
 } from '../lockedWrites';
+import { setPlanWriteState } from '../planWriteGuard';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 type GlobalWithStores = typeof globalThis & {
@@ -220,5 +222,38 @@ describe('queryClient MutationCache onError hook', () => {
     const list = getLockedWrites();
     expect(list).toHaveLength(1);
     expect(list[0]?.variables).toBe('locked');
+  });
+
+  // 09-25 (A2-W): D-40 is for a lapsed plan, not the look-around before a trial.
+  it('does not keep a refusal that arrives while the plan view is sample', async () => {
+    setPlanWriteState({ status: 'sample', writable: false, loading: false });
+    try {
+      await recordLockedWrite({ mutationKey: ['decide-settings', 'update'], variables: {} });
+      expect(getLockedWrites()).toHaveLength(0);
+    } finally {
+      setPlanWriteState(null);
+    }
+  });
+
+  it('still keeps a refusal while locked, or while the plan is loading', async () => {
+    setPlanWriteState({ status: 'locked', writable: false, loading: false });
+    await recordLockedWrite({ mutationKey: ['a'], variables: {} });
+    setPlanWriteState({ status: 'sample', writable: false, loading: true });
+    await recordLockedWrite({ mutationKey: ['b'], variables: {} });
+    setPlanWriteState(null);
+    expect(getLockedWrites()).toHaveLength(2);
+  });
+
+  it('dropLockedWrites clears every kept write and the stored copy', async () => {
+    await recordLockedWrite({ mutationKey: ['a'], variables: {} });
+    await recordLockedWrite({ mutationKey: ['b'], variables: {} });
+    await expect(dropLockedWrites()).resolves.toBe(2);
+    expect(getLockedWrites()).toHaveLength(0);
+    await jest.isolateModulesAsync(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fresh = require('../lockedWrites') as typeof import('../lockedWrites');
+      await fresh.hydrateLockedWrites();
+      expect(fresh.getLockedWrites()).toHaveLength(0);
+    });
   });
 });

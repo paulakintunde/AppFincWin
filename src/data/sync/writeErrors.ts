@@ -1,6 +1,7 @@
 import { DbError, VersionConflictError, NotFoundError, SessionUnavailableError } from '@/db/errors';
 import { LONG_OP_TIMEOUT_MARKER, RequestTimeoutError } from '@/services/supabase/timeoutFetch';
 import { SessionWipedError } from './sessionEpoch';
+import { PlanWriteBlockedError } from './planWriteGuard';
 
 /**
  * How a failed write is handled downstream:
@@ -13,6 +14,7 @@ import { SessionWipedError } from './sessionEpoch';
  * - 'transient': network failure or a 5xx/408/429 response. Safe to retry.
  * - 'discarded': WR-A09. The write belonged to a session that sign-out has since wiped. It
  *   is dropped silently: never retried, never recorded, never written into the cache.
+ *   09-25: also a write the plan guard stopped before it started (PlanWriteBlockedError, planWriteGuard.ts).
  * - 'locked': 09 D-40. The household's plan does not cover writes (server SQLSTATE PT402, HTTP 402).
  *   Never retried in a loop; kept on the phone by src/data/sync/lockedWrites.ts and replayed when
  *   covered again.
@@ -66,6 +68,7 @@ export function classifyWriteError(err: unknown): WriteErrorClass {
   if (err instanceof VersionConflictError) return 'conflict';
   if (err instanceof NotFoundError) return 'not-found';
   if (err instanceof SessionWipedError) return 'discarded';
+  if (err instanceof PlanWriteBlockedError) return 'discarded';
   if (err instanceof SessionUnavailableError) return 'auth';
 
   if (err instanceof DbError) {
