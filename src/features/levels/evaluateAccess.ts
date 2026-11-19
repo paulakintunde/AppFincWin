@@ -30,6 +30,15 @@ export interface AccessInput {
   holdsData: boolean;
 }
 
+/**
+ * 09-25 (owner, device check): the plan input for feature access. Switches are the person's own setting (feature_switches is
+ * not a plan-locked table), so in the sample look-around before a trial they work and no row says "Needs a plan". A lapsed
+ * plan ('locked') still disables them with the plan reason. A plan still loading counts as not open.
+ */
+export function featureSwitchesOpen(plan: { writable: boolean; status: string; loading: boolean }): boolean {
+  return plan.writable || (plan.status === 'sample' && !plan.loading);
+}
+
 export function evaluateAccess(input: AccessInput): FeatureAccess {
   const { def, level, switchOn, planWritable, sharesInHousehold, holdsData } = input;
   const id = def.id as FeatureId;

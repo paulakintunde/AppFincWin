@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { FeatureAccess } from '../evaluateAccess';
 import { FEATURES, type FeatureDef, type Level } from '../featureRegistry';
 import { FeaturesScreen, parseFeaturesPreview } from '../FeaturesScreen';
+import { featureSwitchesOpen } from '../evaluateAccess';
 
 jest.setTimeout(30000);
 
@@ -34,7 +35,7 @@ interface Scenario {
   holds: Record<string, boolean>;
 }
 let mockScenario: Scenario;
-let mockPlan: { writable: boolean };
+let mockPlan: { writable: boolean; status?: string; loading?: boolean };
 
 jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
 jest.mock('../useUserSetup', () => ({ useUserSetup: () => ({ data: { level: mockScenario.level }, loading: false }) }));
@@ -167,6 +168,27 @@ describe('FeaturesScreen (UI-SPEC 11)', () => {
     for (const r of rows) expect(r.props.accessibilityState.disabled).toBe(true);
     fireEvent.press(getByTestId('features-choose-plan'));
     expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+
+  // 09-25 (owner): in the sample look-around the switches are the person's own setting and work; no row says Needs a plan.
+  it('sample: switches work, no row says Needs a plan, one Choose a plan link leads to the trial', async () => {
+    mockPlan = { writable: false, status: 'sample', loading: false };
+    mockScenario.planWritable = featureSwitchesOpen({ writable: false, status: 'sample', loading: false });
+    const { queryAllByText, getByLabelText, getByTestId } = await renderScreen();
+    expect(queryAllByText(/Needs a plan/)).toHaveLength(0);
+    const row = getByLabelText(/^Payoff planner/);
+    expect(row.props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(row);
+    expect(mockSet).toHaveBeenCalledTimes(1);
+    await fireEvent.press(getByTestId('features-choose-plan'));
+    expect(mockPush).toHaveBeenCalledWith(expect.objectContaining({ params: expect.objectContaining({ mode: 'first_run' }) }));
+  });
+
+  it('featureSwitchesOpen: sample opens the switches; locked and a loading plan do not', () => {
+    expect(featureSwitchesOpen({ writable: false, status: 'sample', loading: false })).toBe(true);
+    expect(featureSwitchesOpen({ writable: false, status: 'locked', loading: false })).toBe(false);
+    expect(featureSwitchesOpen({ writable: false, status: 'sample', loading: true })).toBe(false);
+    expect(featureSwitchesOpen({ writable: true, status: 'trial', loading: false })).toBe(true);
   });
 
   it('search filters by label and sub, and shows the empty state', async () => {

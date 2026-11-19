@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useFeatureSwitches } from '@/data/queries/userSetup';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { usePlanState } from '@/features/plans/usePlanState';
-import { evaluateAccess, type FeatureAccess } from './evaluateAccess';
+import { evaluateAccess, featureSwitchesOpen, type FeatureAccess } from './evaluateAccess';
 import { FEATURES, featureById, type FeatureDef, type FeatureId, type Level } from './featureRegistry';
 import { useHoldsData, type HoldsDataProbeId } from './useHoldsData';
 import { useUserSetup } from './useUserSetup';
@@ -34,7 +34,7 @@ function useCtx(preview?: AccessPreview): Ctx {
   return {
     level: preview?.level ?? setup.data?.level ?? 4,
     switches: preview?.switches ?? switches ?? {},
-    planWritable: plan.writable,
+    planWritable: featureSwitchesOpen(plan), // 09-25: sample keeps the switches working
     sharesInHousehold: plan.members >= 2,
     holds,
   };
