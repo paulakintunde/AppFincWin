@@ -403,6 +403,7 @@ Added after owner sign-off 2026-11-19 - needs owner review. Shown to both payers
 | onboarding.sample.bar.word | Sample | sign-off | Sample bar word |
 | onboarding.sample.bar.sub | Free for 14 days | sign-off | Sample bar sub-line |
 | onboarding.sample.bar.start | Start 14-day free trial | sign-off | Sample bar button |
+| onboarding.sample.bar.readerLabel | Sample figures. Start 14-day free trial. | sign-off | Added 2026-11-19 (09-24) - needs owner review. Screen-reader label on the Sample bar button (UI-SPEC 4); the reader adds "Button" |
 | onboarding.sample.lockedTitle | That needs your own records | sign-off | Locked sheet title in the look-around |
 | onboarding.sample.lockedBody | Start the free trial to add your own records and run checks on your own money. | sign-off | Locked sheet body in the look-around |
 | onboarding.sample.keepLooking | Keep looking | sign-off | Locked sheet text button |

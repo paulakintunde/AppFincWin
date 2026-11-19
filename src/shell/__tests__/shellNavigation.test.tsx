@@ -21,6 +21,10 @@ let mockAccounts: { data?: { archived_at: string | null }[]; isLoading: boolean;
 // 08-23: the (app) layout opens the household live channel; wiring only here.
 jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
 jest.mock('@/features/plans/PlanHost', () => ({ PlanHost: () => null }));
+// 09-24: a loaded paid plan, so the tabs layout's first-account gate behaves as before (no Sample bar, no look-around).
+jest.mock('@/features/plans/usePlanState', () => ({
+  usePlanState: () => ({ status: 'trial', kind: 'trial', writable: true, loading: false, members: 1, leftGrace: false, householdId: null, payerName: null, graceUntil: null, coveredUntil: null }),
+}));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
 jest.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => ({ status: 'signedIn', user: { id: 'u1' } }),
