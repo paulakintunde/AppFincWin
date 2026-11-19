@@ -109,6 +109,7 @@ export function depositOfStream(input: {
   return {
     rate: input.rate,
     value: minorFromBigInt(fv, 'depositOfStream'),
+    // Stryker disable next-line StringLiteral: a value that fits the safe range is always at least the paid-in figure, so the value label throws first
     paidIn: minorFromBigInt(paid, 'depositOfStream'),
     interestGivenUp: minorFromBigInt(fv - paid + avoided, 'depositOfStream'),
   };
@@ -209,6 +210,7 @@ export function insteadFutures(input: {
       unspent,
       typicalLeft: month.typicalLeft,
       month: month.month,
+      // Stryker disable next-line ConditionalExpression: an absent picture or a picture key holding undefined reads the same in buyLater
       ...(month.incomePicture === undefined ? {} : { picture: month.incomePicture }),
     }),
   };
