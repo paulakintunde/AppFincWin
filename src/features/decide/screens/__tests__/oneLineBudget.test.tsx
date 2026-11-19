@@ -37,6 +37,8 @@ let mockBars: ReturnType<typeof pastMonthBars> = [];
 let mockInputs: unknown = null;
 const mockPush = jest.fn();
 
+// 09-17: DecideHome's write gate reads the plan state; a writable home here.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));

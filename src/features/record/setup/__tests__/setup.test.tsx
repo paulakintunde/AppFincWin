@@ -69,6 +69,17 @@ jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockAccounts })
 // 09: the plan shell (lock host, lock banner, write gate) reads plan_state through React Query; these suites test the shell
 // layout, so the plan is a writable tester household and the plan hosts render nothing (like PlanHost).
 jest.mock('@/features/plans/LockHost', () => ({ LockHost: () => null }));
+// 09-23: the root entry reads the signed-in user, the setup row and the household before landing; a finished setup in a
+// home of one lands on Home.
+jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn', user: { id: 'u1' } }) }));
+jest.mock('@/data/queries/userSetup', () => ({
+  useUserSetupQuery: () => ({ data: { completedAt: '2026-11-01T00:00:00Z', level: 4, partnerVersion: false }, isError: false }),
+  useFeatureSwitches: () => ({ data: {} }),
+}));
+jest.mock('@/data/queries/household', () => ({
+  ...jest.requireActual('@/data/queries/household'),
+  useHousehold: () => ({ data: null, isLoading: false, isError: false }),
+}));
 jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
 jest.mock('@/features/plans/usePlanState', () => ({
   usePlanState: () => ({ status: 'tester', writable: true, prelaunch: true, loading: false, isError: false }),
