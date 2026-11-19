@@ -16,6 +16,40 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn() } }));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('@/features/plans/store/purchasesClient', () => require('@/features/plans/store/fakeStore'));
+jest.mock('@/features/plans/PlanHost', () => ({ requestPlanRefresh: jest.fn(() => Promise.resolve()) }));
+// 09-20: a tester household (writable, no plan row) keeps Phase 8 behaviour: no plan confirm, no lock.
+jest.mock('@/features/plans/usePlanState', () => ({
+  usePlanState: () => ({
+    status: 'tester',
+    kind: 'prelaunch',
+    writable: true,
+    householdId: 'h',
+    planKey: null,
+    planSize: 0,
+    period: null,
+    seats: 6,
+    members: 1,
+    payerId: null,
+    payerIsMe: false,
+    payerName: null,
+    store: null,
+    productId: null,
+    willRenew: false,
+    coveredUntil: null,
+    trialEndsAt: null,
+    graceUntil: null,
+    promoKind: 'tester',
+    prelaunch: true,
+    leftGrace: false,
+    trialAvailable: true,
+    billingIssueAt: null,
+    loading: false,
+    isError: false,
+  }),
+}));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 
 const mockCreate = jest.fn();

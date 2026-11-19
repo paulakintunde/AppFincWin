@@ -25,6 +25,9 @@ jest.mock('expo-router', () => ({
   usePathname: () => mockPath,
 }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('@/features/plans/store/purchasesClient', () => require('@/features/plans/store/fakeStore'));
+jest.mock('@/features/plans/PlanHost', () => ({ requestPlanRefresh: jest.fn(() => Promise.resolve()) }));
 const mockGoBack = jest.fn();
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ useBackHistory: () => ({ goBack: mockGoBack, history: [] }) }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
