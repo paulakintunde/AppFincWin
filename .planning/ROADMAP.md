@@ -1570,10 +1570,10 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 09-01-PLAN.md — Owner documents: level-to-feature map, wording file, planner questions (sign-off gate)
-- [ ] 09-02-PLAN.md — Plan data model: household_plans, trial ledger, seats/state/writable functions, plan_state(), launch switch
-- [ ] 09-09-PLAN.md — Client 'locked' write class, kept-on-phone writes and replay (D-40)
-- [ ] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
+- [x] 09-01-PLAN.md — Owner documents: level-to-feature map, wording file, planner questions (sign-off gate)
+- [x] 09-02-PLAN.md — Plan data model: household_plans, trial ledger, seats/state/writable functions, plan_state(), launch switch
+- [x] 09-09-PLAN.md — Client 'locked' write class, kept-on-phone writes and replay (D-40)
+- [x] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
@@ -1698,6 +1698,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 0/TBD | Not started | - |
+| 9. Tiers & Onboarding | 4/25 | In Progress|  |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
