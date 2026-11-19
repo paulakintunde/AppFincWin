@@ -30,6 +30,7 @@ import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
 import { HouseholdRealtimeHost } from '@/data/realtime/HouseholdRealtimeHost';
 import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost';
+import { PlanHost } from '@/features/plans/PlanHost';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -163,6 +164,8 @@ export default function AppLayout() {
               <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
               <HouseholdRealtimeHost />
+              {/* 09-10: store identity, plan Realtime and foreground refresh. */}
+              <PlanHost />
               {/* 08-24 (D-28): "You're no longer in ..." once, for a person the owner removed. */}
               <RemovedNoticeHost />
               <DeviceHomeCurrencyDefault />
