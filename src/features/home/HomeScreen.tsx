@@ -20,6 +20,7 @@ import { FadeIn } from '@/ui/motion/FadeIn';
 import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { AccountsCard } from './AccountsCard';
 import { ComingUpCard } from './ComingUpCard';
+import { OfferSlot } from '@/features/levels/OfferSlot';
 import { ProjectionDetailSheet } from './ProjectionDetailSheet';
 import { QuickActions } from './QuickActions';
 import { ThisMonthCard } from './ThisMonthCard';
@@ -150,6 +151,7 @@ export function HomeScreen() {
           onSeeAll={seeAll}
         />
       </FadeIn>
+      <OfferSlot context="home" />
       <FadeIn once="home.card.accounts" testID="home-card-accounts">
         <AccountsCard
           accounts={vm.accounts}
