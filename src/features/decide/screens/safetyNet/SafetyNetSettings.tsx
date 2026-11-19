@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useT } from '@/i18n';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { useGoalsRead } from '@/features/grow/goals/useGoalsRead';
 import { goalPercent } from '@/features/grow/home/GoalRow';
@@ -45,6 +46,8 @@ export interface SafetyNetSettingsProps {
 
 export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): React.JSX.Element {
   const t = useT() as unknown as Translate;
+  // 09-25 (A2-W): set, lock and unlock are writes; read-only plans open the locked sheet instead.
+  const gate = useReadOnlyGate('editRecord');
   const { colors, pairing } = useTheme();
   const { userId, householdId } = usePastContext();
   const money = useGoalMoney();
@@ -64,8 +67,10 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
     net.mutate({ goal: row, on: false, ownerId: userId });
   };
   const onSwitch = (nextLocked: boolean): void => {
-    if (nextLocked) lock();
-    else setConfirmOpen(true);
+    gate.run(() => {
+      if (nextLocked) lock();
+      else setConfirmOpen(true);
+    });
   };
 
   const card = [styles.card, { backgroundColor: colors.surface }, shadows.card];
@@ -79,7 +84,13 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
             {t('decide.screens.safetyNet.settings.emptyTitle')}
           </Text>
           <Text style={{ ...textRole(pairing, 'body'), color: colors.inkMuted, textAlign: 'center' }}>{t('decide.screens.safetyNet.settings.emptyBody')}</Text>
-          <Pill label={t('decide.screens.safetyNet.settings.setAmount')} variant="primary" onPress={() => setQuestionOpen(true)} />
+          <Pill
+            label={t('decide.screens.safetyNet.settings.setAmount')}
+            variant="primary"
+            locked={gate.gated}
+            accessibilityLabel={gate.a11ySuffix ? `${t('decide.screens.safetyNet.settings.setAmount')}, ${gate.a11ySuffix}` : undefined}
+            onPress={() => gate.run(() => setQuestionOpen(true))}
+          />
         </View>
         <NetQuestionSheet answer={answer} visible={questionOpen} onDone={() => setQuestionOpen(false)} onDismiss={() => setQuestionOpen(false)} />
       </DetailScreen>
@@ -145,10 +156,16 @@ export function SafetyNetSettings({ net, answer }: SafetyNetSettingsProps): Reac
               {t('decide.screens.safetyNet.settings.beforeTitle')}
             </Text>
             {whatUnlocking}
-            <OutlineButton label={t('decide.screens.safetyNet.settings.unlock')} onPress={() => setConfirmOpen(true)} />
+            <OutlineButton label={t('decide.screens.safetyNet.settings.unlock')} onPress={() => gate.run(() => setConfirmOpen(true))} />
           </View>
         ) : (
-          <Pill label={t('decide.screens.safetyNet.settings.lockAgain')} variant="secondary" onPress={lock} />
+          <Pill
+            label={t('decide.screens.safetyNet.settings.lockAgain')}
+            variant="secondary"
+            locked={gate.gated}
+            accessibilityLabel={gate.a11ySuffix ? `${t('decide.screens.safetyNet.settings.lockAgain')}, ${gate.a11ySuffix}` : undefined}
+            onPress={() => gate.run(lock)}
+          />
         )}
 
         <Pressable

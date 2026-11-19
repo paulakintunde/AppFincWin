@@ -149,6 +149,7 @@ export function HomeScreen() {
           categories={categories}
           state={vm.dataState}
           onPay={vm.rowActions.pay}
+          payLocked={vm.rowActions.locked}
           onOpenRow={flow.openDetail}
           onOpenProjection={setProjection}
           onSeeAll={seeAll}

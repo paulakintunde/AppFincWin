@@ -111,6 +111,7 @@ export function DebtsSegment({ addOpen = false, onAddClosed }: DebtsSegmentProps
 function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; fmt: DebtFormat }) {
   const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
   const gate = useWriteGate('addDebt'); // 09-17 (TIER-09)
+  const planGate = useWriteGate('editRecord'); // 09-25 (A2-W): saving the payoff plan is a write
   const { colors, pairing } = useTheme();
   const { model, today, userId, householdId } = read;
   const month = useDebtMonth();
@@ -402,9 +403,10 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
           onceRecorded={onceKey !== null && onceKeyDone === onceKey}
           lumpDebt={onceLine === null ? null : { name: onceLine.name, balance: onceLine.point.balance }}
           startDates={{ extra: scenario === 'minimum' || !stepperOn ? stopFrom : extraFrom, once: onceOn }}
-          onUseExtra={useExtra}
-          onStopExtra={stopExtra}
-          onUseOnce={useOnce}
+          onUseExtra={() => planGate.run(useExtra)}
+          onStopExtra={() => planGate.run(stopExtra)}
+          onUseOnce={() => planGate.run(useOnce)}
+          writeLocked={planGate.gated}
           left={sameCurrency ? month.left : null}
           fmt={fmt}
           currency={currency}
