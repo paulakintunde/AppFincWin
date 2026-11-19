@@ -13,6 +13,9 @@ import { SessionWipedError } from './sessionEpoch';
  * - 'transient': network failure or a 5xx/408/429 response. Safe to retry.
  * - 'discarded': WR-A09. The write belonged to a session that sign-out has since wiped. It
  *   is dropped silently: never retried, never recorded, never written into the cache.
+ * - 'locked': 09 D-40. The household's plan does not cover writes (server SQLSTATE PT402, HTTP 402).
+ *   Never retried in a loop; kept on the phone by src/data/sync/lockedWrites.ts and replayed when
+ *   covered again.
  * - 'auth': WR-A01. The session was missing or expired (HTTP 401, PostgREST's JWT codes
  *   PGRST301/302/303, or the pre-send session check found no session). Nothing is wrong with
  *   the write itself: it waits and retries, and every retry runs the session check again,
@@ -26,7 +29,7 @@ import { SessionWipedError } from './sessionEpoch';
  * different unique constraint (e.g. custom_currencies' (owner_id, code)) and is a permanent
  * rejection the user must be told about (D-19), never a silent drop.
  */
-export type WriteErrorClass = 'transient' | 'auth' | 'conflict' | 'rejected' | 'not-found' | 'discarded';
+export type WriteErrorClass = 'transient' | 'auth' | 'conflict' | 'rejected' | 'not-found' | 'discarded' | 'locked';
 
 // D-19: permanent rejections. 42501 RLS denial, 23514 check violation, 23503 FK violation,
 // 23502 not-null violation, 22P02 invalid text representation, PGRST204 PostgREST
@@ -66,6 +69,7 @@ export function classifyWriteError(err: unknown): WriteErrorClass {
   if (err instanceof SessionUnavailableError) return 'auth';
 
   if (err instanceof DbError) {
+    if (err.code === 'PT402' || err.status === 402) return 'locked';
     if (isConnectivityFailure(err)) return 'transient';
     if (err.status === 401 || AUTH_CODES.has(err.code)) return 'auth';
     if (REJECTED_CODES.has(err.code)) return 'rejected';
