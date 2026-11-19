@@ -24,3 +24,8 @@ verify_jwt = true
 # auth.getUser() in the function (never the body). Deletes the auth user with the service role; the 08-14 trigger runs the household rule.
 [functions.delete-account]
 verify_jwt = true
+
+# plan-webhook (09-06, D-13): called by RevenueCat, not a user. verify_jwt = false; its own HMAC secret
+# (REVENUECAT_WEBHOOK_HMAC_SECRET) is checked in verify.ts. State is re-fetched from RevenueCat, never trusted from the body.
+[functions.plan-webhook]
+verify_jwt = false
