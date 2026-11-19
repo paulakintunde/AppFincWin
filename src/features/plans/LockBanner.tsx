@@ -19,6 +19,12 @@ import { formatPlanDate } from './formatPlanDate';
 import { PLAN_ENDED_HREF, SUBSCRIPTION_HREF, plansHref } from './routes';
 import { usePlanState } from './usePlanState';
 
+/** Whether the banner draws: the tabs layout gives the screens under it a top inset of 0 only then. */
+export function lockBannerShown(plan: { loading: boolean; status: string; leftGrace?: boolean }): boolean {
+  if (plan.loading) return false;
+  return plan.status === 'locked' || (plan.status === 'grace' && !plan.leftGrace);
+}
+
 export function LockBanner() {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -27,8 +33,7 @@ export function LockBanner() {
   const household = useHousehold(plan.members > 1 ? plan.householdId : null);
 
   const locked = plan.status === 'locked';
-  const grace = plan.status === 'grace' && !plan.leftGrace;
-  if (plan.loading || (!locked && !grace)) return null;
+  if (!lockBannerShown(plan)) return null;
 
   const body = textRole(pairing, 'label');
   let text: string;

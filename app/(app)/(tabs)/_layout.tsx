@@ -2,7 +2,8 @@
 // unstable-native-tabs). backBehavior 'none' because BackHistoryProvider owns cross-tab back.
 // Detail screens are OUTER-stack siblings of this group, so they cover the bar and the FAB. The
 // first-account gate lives here so neither Home nor Activity renders without an account.
-import { Profiler } from 'react';
+import { Profiler, useContext } from 'react';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { StyleSheet, View } from 'react-native';
@@ -22,7 +23,7 @@ import { isTabId } from '@/shell/tabBar/tabs';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
-import { LockBanner } from '@/features/plans/LockBanner';
+import { LockBanner, lockBannerShown } from '@/features/plans/LockBanner';
 import { usePlanState } from '@/features/plans/usePlanState';
 import { SampleBar } from '@/features/onboarding/SampleBar';
 import { SampleHost } from '@/features/onboarding/SampleHost';
@@ -48,12 +49,17 @@ export default function TabsLayout() {
   // 09-25 (A5-3): only a plan that can write is sent to make a first account. A read-only home (locked, and 'sample',
   // the pre-trial look-around) comes in and reads its empty tabs; the account sheet's Save would only be locked there.
   const plan = usePlanState();
+  const insets = useContext(SafeAreaInsetsContext);
+  const bannerShown = lockBannerShown(plan);
   if (gate && plan.loading) return null;
   if (gate && plan.writable && plan.status !== 'sample') return <Redirect href="/setup/account" />;
   // FabProvider is mounted in app/(app)/_layout.tsx so You, an outer-stack screen, reads the same quick actions.
   return (
     <View style={styles.fill}>
       <LockBanner />
+      {/* 09-25 (device check, locked home): the banner already sits under the status bar, so the tab screens below it get a
+          top inset of 0; with the real inset each tab header left a second status-bar-high gap under the banner. */}
+      <SafeAreaInsetsContext.Provider value={bannerShown && insets ? { ...insets, top: 0 } : insets}>
       <Tabs
         backBehavior="none"
         // 09-24 (UI-SPEC 4): the pinned Sample bar sits in the tab bar's slot, directly above it, so screens end above both.
@@ -88,6 +94,7 @@ export default function TabsLayout() {
       >
         {TAB_SCREENS}
       </Tabs>
+      </SafeAreaInsetsContext.Provider>
       <Fab />
       <FabQuickMenu />
       <ShellEntryHost />

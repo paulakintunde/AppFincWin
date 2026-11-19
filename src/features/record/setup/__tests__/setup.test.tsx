@@ -80,7 +80,7 @@ jest.mock('@/data/queries/household', () => ({
   ...jest.requireActual('@/data/queries/household'),
   useHousehold: () => ({ data: null, isLoading: false, isError: false }),
 }));
-jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
+jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null, lockBannerShown: () => false }));
 jest.mock('@/features/plans/usePlanState', () => ({
   usePlanState: () => ({ status: 'tester', writable: true, prelaunch: true, loading: false, isError: false }),
 }));
@@ -100,7 +100,7 @@ jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { chil
 // 09-24: the gate reads the plan; a paid plan keeps the first-account redirect, 'sample' (the pre-trial look-around) skips it.
 let mockPlan: { status: string; loading: boolean; writable?: boolean } = { status: 'trial', loading: false, writable: true };
 jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
-jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
+jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null, lockBannerShown: () => false }));
 jest.mock('@/features/onboarding/SampleBar', () => ({ SampleBar: () => null }));
 jest.mock('@/features/onboarding/SampleHost', () => ({ SampleHost: () => null }));
 jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));

@@ -182,8 +182,10 @@ export function ComingUpCard({
             icon="payBills"
             heading={t('appLife.empty.comingUp.heading', { month: monthName })}
             body={t('appLife.empty.comingUp.body')}
-            actionLabel={t('appLife.empty.comingUp.action')}
-            onAction={() => openEntry({ kind: 'new', direction: 'out' })}
+            // 09-25 (device check, locked home): read-only, so no "Add a bill" button that would only open the locked sheet.
+            {...(payLocked
+              ? {}
+              : { actionLabel: t('appLife.empty.comingUp.action'), onAction: () => openEntry({ kind: 'new', direction: 'out' }) })}
           />
         )}
       </View>

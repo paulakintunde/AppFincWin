@@ -64,7 +64,7 @@ jest.mock('@/features/plans/PlanHost', () => ({ PlanHost: () => null }));
 // 09: the plan shell (lock host, lock banner, write gate) reads plan_state through React Query; these suites test the shell
 // layout, so the plan is a writable tester household and the plan hosts render nothing (like PlanHost).
 jest.mock('@/features/plans/LockHost', () => ({ LockHost: () => null }));
-jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
+jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null, lockBannerShown: () => false }));
 jest.mock('@/features/plans/LockedSheet', () => ({ LockedSheet: () => null }));
 jest.mock('@/features/plans/usePlanState', () => ({
   usePlanState: () => ({ status: 'tester', writable: true, prelaunch: true, loading: false, isError: false }),
