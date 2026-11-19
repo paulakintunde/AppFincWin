@@ -66,6 +66,13 @@ let mockAccounts: { data?: { archived_at: string | null }[]; isLoading: boolean;
 // 06.1-72: the app layouts wrap Decide screens in DecideV3Scope; here it only passes its children through.
 jest.mock('@/data/queries/decideV3', () => ({ DecideV3Scope: ({ children }: { children: unknown }) => children }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockAccounts }));
+// 09: the plan shell (lock host, lock banner, write gate) reads plan_state through React Query; these suites test the shell
+// layout, so the plan is a writable tester household and the plan hosts render nothing (like PlanHost).
+jest.mock('@/features/plans/LockHost', () => ({ LockHost: () => null }));
+jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
+jest.mock('@/features/plans/usePlanState', () => ({
+  usePlanState: () => ({ status: 'tester', writable: true, prelaunch: true, loading: false, isError: false }),
+}));
 
 jest.mock('../../../../../app/_layout', () => {
   const R = require('react');
