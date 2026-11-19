@@ -2,7 +2,7 @@
 
 Phase 9 wording file. Draft for owner sign-off.
 
-Signed: (owner fills: name, date)
+Signed: owner, 2026-11-19
 
 Plain words first. Every sentence a person will read in Phase 9 is in this file, one row per sentence, each with a key. Plan 09-12 turns the rows into the app's text files, so the keys are fixed once you sign.
 
@@ -177,6 +177,18 @@ Placeholders: `{{price}}` store price string, `{{monthly}}` monthly price, `{{ye
 | plans.notices.existingUser.body | You are seeing everything. Answer 11 short questions and FincWin shows the parts that fit you. | sign-off | Existing-user card body |
 | plans.notices.existingUser.actions.run | Run setup | sign-off | Card action |
 | plans.notices.existingUser.actions.notNow | Not now | sign-off | Card action |
+
+### plans.doubleCover (two plans cover one home, P4)
+
+Added after owner sign-off 2026-11-19 - needs owner review. Shown to both payers.
+
+| key | text | status | where |
+|---|---|---|---|
+| plans.doubleCover.title | Two plans cover this home | sign-off | Notice title, both payers. Added after owner sign-off 2026-11-19 - needs owner review |
+| plans.doubleCover.body | Two plans cover this home. Pick one. The plan you do not pick is not used. Its payer is told to cancel it or ask their store for a refund. FincWin never cancels a plan for you. | sign-off | Notice body. Added after owner sign-off 2026-11-19 - needs owner review |
+| plans.doubleCover.choiceNew | Keep {{plan}}, paid by {{name}} | sign-off | Button, the takeover (new) plan. Added after owner sign-off 2026-11-19 - needs owner review |
+| plans.doubleCover.choiceOld | Keep {{plan}}, paid by {{name}} | sign-off | Button, the recovered (old) plan. Added after owner sign-off 2026-11-19 - needs owner review |
+| plans.doubleCover.defaultLine | If neither of you picks within 7 days, the newer plan stays. The other payer is told to cancel their plan or ask their store for a refund. | sign-off | Default line under the buttons. Added after owner sign-off 2026-11-19 - needs owner review |
 
 ## plans.invite, plans.leave, plans.solo, plans.switchRule
 

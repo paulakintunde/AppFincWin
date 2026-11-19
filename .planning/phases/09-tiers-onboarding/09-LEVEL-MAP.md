@@ -2,7 +2,7 @@
 
 Phase 9 level-to-feature map (D-32). Draft for owner sign-off.
 
-Signed: (owner fills: name, date)
+Signed: owner, 2026-11-19
 
 Plain words first. This file says which feature turns up at which level. A person starts at the level their answers give. They can turn any feature on or off later in You > Features. A feature that already holds their records never hides (D-34). Decide is not in this table: it shows at every level, and its parts (debts, goals, safety net, repeating bills) stay reachable from Decide (D-33).
 
@@ -99,16 +99,30 @@ The five household rows count at Everyday. Without a household they show "Not on
 These prototype features have no clear built version. Answer each. A "no" means it is not listed. A "yes" means the planner checks what exists and lists it at the level in brackets.
 
 1. Split one line across several categories. Not found as its own feature. List it if it exists? (Everything: yes / no)
+   Owner answer (2026-11-19): No.
 2. Search every month. Marked as likely built (history screen). List it at Everything? (yes / no) It is already in the table above at level 4.
+   Owner answer (2026-11-19): Yes. Search every month, listed at Everything as drafted.
 3. Stand-alone reconcile, outside the statement import. Only the import step exists. Keep "Reconcile" as one row at Full picture? (yes / no)
+   Owner answer (2026-11-19): Yes. Reconcile stays as one row at Full picture.
 4. Chart modes (bars, share, blocks) on Insights. Only partly there. List them? (yes / no)
+   Owner answer (2026-11-19): No.
 5. Health score, one figure for the month. Not found. List it? (yes / no)
+   Owner answer (2026-11-19): No.
 6. Envelope rollover, unspent money carried to next month. Not found. List it? (yes / no)
+   Owner answer (2026-11-19): No.
 7. Forecast, where the month ends if nothing changes. Decide owns this. Leave it out of Features? (yes / no)
+   Owner answer (2026-11-19): Yes. Forecast stays in Decide, not a Features row.
 8. Compare months. Not found. List it? (yes / no)
+   Owner answer (2026-11-19): No.
 9. Cash flow by month. Not found. List it? (yes / no)
+   Owner answer (2026-11-19): No.
 10. Extra views (by week, running balance, calendar). Not found. List it? (yes / no)
+   Owner answer (2026-11-19): No.
 11. Year calendar. Not found. List it? (yes / no)
+   Owner answer (2026-11-19): No.
 12. The five household rows: should they sit at Everyday (level 2), as drafted, or only turn on when someone answers that they share money? (Everyday / answer only)
+   Owner answer (2026-11-19): Everyday. The five household rows sit at level 2, gated by household eligibility.
+
+Owner answer (2026-11-19): levels accepted as drafted (Basics 5, Everyday 19, Full picture 29, Everything 32).
 
 Move any row above by editing its `minLevel`.
