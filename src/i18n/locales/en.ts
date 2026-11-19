@@ -51,6 +51,10 @@
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
 import { appLife } from './appLife';
 import { household } from './household';
+import { plans } from './plans';
+import { onboarding } from './onboarding';
+import { features } from './features';
+import { lock } from './lock';
 import { decideScreens } from './decideScreens';
 
 const en = {
@@ -3254,6 +3258,11 @@ const en = {
   appLife: appLife,
   // Phase 8 Household copy, one file per area so parallel UI plans never edit the same file. Source: 08-UI-SPEC.md. Declarative, never advice.
   household: household,
+  // Phase 9 copy, owner-signed in 09-WORDING.md; one file per area.
+  plans: plans,
+  onboarding: onboarding,
+  features: features,
+  lock: lock,
 } as const;
 
 export default en;
