@@ -10,6 +10,8 @@ import { GrowHome, prefillFromParams } from '../home/GrowHome';
 jest.setTimeout(30000);
 
 let mockParams: Record<string, string> = {};
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/shell/fab/FabProvider', () => ({ useRegisterFab: () => undefined }));

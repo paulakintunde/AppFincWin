@@ -2,6 +2,8 @@
 // Everything is read through useGoalsRead (06-12), the same connection points Decide uses, so the figures match Decide's.
 // `basics` draws only the safety net card (level Basics: goals off). Loading is grey blocks with no loop; an error is the
 // generic card with Try again.
+import { useWriteGate } from '@/features/plans/useWriteGate';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useEditGoal } from '@/data/mutations/growGoals';
@@ -41,6 +43,7 @@ export { useGoalMoney };
 export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: GoalsSegmentProps) {
   const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
   const { colors, pairing } = useTheme();
+  const gate = useWriteGate('addGoal'); // 09-17 (TIER-09): the add controls keep their place and name the lock
   const read = useGoalsRead();
   const money = useGoalMoney();
   const rowsQ = useSavingsGoalRows(read.userId ?? undefined, read.householdId ?? undefined);
@@ -146,7 +149,7 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
           <GrowGlyph name="savings" color={colors.accent} size={28} />
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.goals.emptyTitle')}</Text>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.goals.emptyBody')}</Text>
-          <Pill label={t('grow.goals.emptyAction')} variant="primary" onPress={onNewGoal} />
+          <Pill label={t('grow.goals.emptyAction')} variant="primary" locked={gate.gated} onPress={() => gate.run(onNewGoal)} />
         </View>
       ) : (
         <View style={card}>
@@ -173,8 +176,10 @@ export function GoalsSegment({ basics = false, onNewGoal, onChooseTrack }: Goals
               }}
             />
           ))}
-          <Pressable accessibilityRole="button" accessibilityLabel={t('grow.home.newGoal')} onPress={onNewGoal} style={styles.newGoal}>
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.home.newGoal')}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={gate.a11ySuffix ? `${t('grow.home.newGoal')}, ${gate.a11ySuffix}` : t('grow.home.newGoal')} onPress={() => gate.run(onNewGoal)} style={styles.newGoal}>
+            <LockedLabel gated={gate.gated} color={colors.accent}>
+              <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.home.newGoal')}</Text>
+            </LockedLabel>
           </Pressable>
         </View>
       )}

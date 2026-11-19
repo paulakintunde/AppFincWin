@@ -16,6 +16,8 @@ import { GrowHome } from '../GrowHome';
 jest.setTimeout(30000);
 
 const mockPush = jest.fn();
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPush(h) }));
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams }));

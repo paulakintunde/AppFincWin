@@ -2,6 +2,8 @@
 // rows, cards paid in full, and the payoff plan card with both orders side by side. Everything comes from useDebtsRead (06-14),
 // which composes the engine; this file only lays it out. The segment owns its Add a debt sheet: GrowHome's FAB can open it with
 // `addOpen` / `onAddClosed`, and the segment's own buttons open it without any wiring.
+import { useWriteGate } from '@/features/plans/useWriteGate';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
@@ -108,6 +110,7 @@ export function DebtsSegment({ addOpen = false, onAddClosed }: DebtsSegmentProps
 
 function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; fmt: DebtFormat }) {
   const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
+  const gate = useWriteGate('addDebt'); // 09-17 (TIER-09)
   const { colors, pairing } = useTheme();
   const { model, today, userId, householdId } = read;
   const month = useDebtMonth();
@@ -355,15 +358,17 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         <Pressable
           testID="debts-add-row"
           accessibilityRole="button"
-          accessibilityLabel={t('grow.debts.emptyAction')}
-          onPress={onAdd}
+          accessibilityLabel={gate.a11ySuffix ? `${t('grow.debts.emptyAction')}, ${gate.a11ySuffix}` : t('grow.debts.emptyAction')}
+          onPress={() => gate.run(onAdd)}
           style={({ pressed }) => [
             styles.addRow,
             model.debts.length > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null,
             { opacity: pressed ? PRESSED_OPACITY : 1 },
           ]}
         >
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.addDebtRow')}</Text>
+          <LockedLabel gated={gate.gated} color={colors.accent}>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.addDebtRow')}</Text>
+          </LockedLabel>
         </Pressable>
       </View>
 
