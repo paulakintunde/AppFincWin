@@ -247,6 +247,7 @@ const en = {
   },
   sync: {
     offline: 'offline',
+    exportFailed: 'The export could not be made. Nothing was changed.',
     syncedJustNow: 'synced just now',
     syncedMinutes_one: 'synced {{count}} minute ago',
     syncedMinutes_other: 'synced {{count}} minutes ago',
