@@ -15,6 +15,8 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// 09-13: useFeature goes through useFeatureAccess; the split features are visible here.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: true }) }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ showCents: true }) }));
 
