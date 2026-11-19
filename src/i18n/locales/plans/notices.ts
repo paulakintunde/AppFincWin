@@ -25,6 +25,8 @@ export const notices = {
     paymentFailed: {
       title: 'Payment failed',
       body: '{{name}}’s payment did not go through. Your home keeps full access until {{date}}.',
+      // Added by 09-19 2026-11-19 - needs owner review (the payer's own line).
+      bodyPayer: 'Your payment did not go through. Your home keeps full access until {{date}}.',
       actions: {
         fix: 'Fix payment',
         takeOver: 'Take over the plan',
@@ -68,6 +70,12 @@ export const notices = {
       actions: {
         solo: 'Continue on Solo',
         notNow: 'Not now',
+      },
+    },
+    // Added by 09-19 2026-11-19 - needs owner review.
+    approvalWaiting: {
+      actions: {
+        review: 'See the request',
       },
     },
     downgradeOffer: {
