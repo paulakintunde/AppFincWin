@@ -12,6 +12,8 @@ import { newStepId } from '@/data/mutations/undoCapture';
 import { accountDeleteState } from '@/engine/accounts';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -28,6 +30,7 @@ export interface AccountRemoveRowProps {
 
 export function AccountRemoveRow({ account, usage, onDeleted }: AccountRemoveRowProps) {
   const t = useT();
+  const gate = useReadOnlyGate('editRecord'); // 09-25 (A2-W)
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const { remove } = useDeleteAccount();
@@ -71,8 +74,10 @@ export function AccountRemoveRow({ account, usage, onDeleted }: AccountRemoveRow
   if (state?.kind === 'delete') {
     return (
       <View style={styles.block}>
-        <Pressable accessibilityRole="button" onPress={() => setConfirming(true)} style={styles.press}>
-          <Text style={{ ...labelStyle, color: colors.danger }}>{t('accounts.remove.delete')}</Text>
+        <Pressable accessibilityRole="button" onPress={() => gate.run(() => setConfirming(true))} style={styles.press}>
+          <LockedLabel gated={gate.gated} color={colors.danger}>
+            <Text style={{ ...labelStyle, color: colors.danger }}>{t('accounts.remove.delete')}</Text>
+          </LockedLabel>
         </Pressable>
         <ConfirmSheet
           visible={confirming}
@@ -98,10 +103,12 @@ export function AccountRemoveRow({ account, usage, onDeleted }: AccountRemoveRow
     <View style={styles.block}>
       <Pressable
         accessibilityRole="button"
-        onPress={() => setConfirmingArchive(true)}
+        onPress={() => gate.run(() => setConfirmingArchive(true))}
         style={[styles.button, { borderColor: colors.line4 }]}
       >
-        <Text style={{ ...labelStyle, color: colors.ink }}>{t('accounts.remove.archive')}</Text>
+        <LockedLabel gated={gate.gated} color={colors.ink}>
+          <Text style={{ ...labelStyle, color: colors.ink }}>{t('accounts.remove.archive')}</Text>
+        </LockedLabel>
       </Pressable>
       {reason !== null ? <Text style={metaStyle}>{reason}</Text> : null}
       <ConfirmSheet

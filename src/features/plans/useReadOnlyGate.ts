@@ -33,3 +33,28 @@ export function useReadOnlyGate(action: LockActionId = 'editRecord'): WriteGate 
   );
   return { gated, variant, run, a11ySuffix: gated ? t('lock.accessibleSuffix') : null };
 }
+
+/**
+ * A write control inside a sheet: when read-only the sheet closes first, then the locked sheet opens (one sheet at a time).
+ * `guard(fn)` returns the press handler; `label(text)` adds the spoken "needs a plan".
+ */
+export function useSheetWriteGate(
+  onClose: () => void,
+  action: LockActionId = 'editRecord',
+): WriteGate & { guard: (fn: () => void) => () => void; label: (text: string) => string } {
+  const gate = useReadOnlyGate(action);
+  const { gated, run, a11ySuffix } = gate;
+  const guard = useCallback(
+    (fn: () => void) => () => {
+      if (!gated) {
+        fn();
+        return;
+      }
+      onClose();
+      run(() => undefined);
+    },
+    [gated, run, onClose],
+  );
+  const label = useCallback((text: string) => (a11ySuffix ? `${text}, ${a11ySuffix}` : text), [a11ySuffix]);
+  return { ...gate, guard, label };
+}
