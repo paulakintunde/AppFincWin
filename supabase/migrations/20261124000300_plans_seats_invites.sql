@@ -165,6 +165,9 @@ $$;
 revoke execute on function public.hh_join_member(uuid, uuid, uuid) from public, anon, authenticated;
 
 -- 5. redeem_invite: switch rule (D-39), plan seats (D-10) and payer approval (D-21) ---------------------------------
+-- Older builds call redeem_invite with p_code only; the replacement keeps p_code first and gives p_store_country a
+-- default, so their named-argument call resolves to the new function unchanged.
+-- contract-ok: min_version >= 0.2.0
 drop function public.redeem_invite(text);
 create function public.redeem_invite(p_code text, p_store_country text default null)
 returns jsonb
