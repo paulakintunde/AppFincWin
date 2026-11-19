@@ -82,6 +82,8 @@ jest.mock('@/data/queries/accounts', () => ({
 jest.mock('@/features/consent/useConsent', () => ({
   useConsent: () => ({ loading: false, needsPrompt: false }),
 }));
+// 09-23: the layout skips its consent redirect for a first run; a finished setup here.
+jest.mock('@/features/onboarding/useFirstRunPending', () => ({ useFirstRunPending: () => false }));
 
 import ImportRoute from '../../../../app/(app)/import';
 import AccountDetailRoute from '../../../../app/(app)/accounts/[id]';

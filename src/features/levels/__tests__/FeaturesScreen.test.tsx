@@ -3,7 +3,7 @@ import { fireEvent, render } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { FeatureAccess } from '../evaluateAccess';
 import { FEATURES, type FeatureDef, type Level } from '../featureRegistry';
-import { FeaturesScreen } from '../FeaturesScreen';
+import { FeaturesScreen, parseFeaturesPreview } from '../FeaturesScreen';
 
 jest.setTimeout(30000);
 
@@ -39,14 +39,14 @@ let mockPlan: { writable: boolean };
 jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
 jest.mock('../useUserSetup', () => ({ useUserSetup: () => ({ data: { level: mockScenario.level }, loading: false }) }));
 jest.mock('../useFeatureAccess', () => ({
-  useAllFeatureAccess: () => {
+  useAllFeatureAccess: (preview?: { level: number; switches: Record<string, boolean> }) => {
     const { FEATURES: all } = require('../featureRegistry');
     const { evaluateAccess: evaluate } = require('../evaluateAccess');
     return all.map((def: FeatureDef) =>
       evaluate({
         def,
-        level: mockScenario.level,
-        switchOn: mockScenario.switches[def.id],
+        level: preview?.level ?? mockScenario.level,
+        switchOn: (preview?.switches ?? mockScenario.switches)[def.id],
         planWritable: mockScenario.planWritable,
         sharesInHousehold: mockScenario.shares,
         holdsData: def.holdsData !== null && mockScenario.holds[def.holdsData] === true,
@@ -184,5 +184,39 @@ describe('FeaturesScreen (UI-SPEC 11)', () => {
     const { queryByLabelText } = await renderScreen();
     expect(queryByLabelText(/^Decide/)).toBeNull();
     expect(queryByLabelText(/^Coach/)).toBeNull();
+  });
+});
+
+describe('FeaturesScreen preview (09-23, onboarding summary)', () => {
+  beforeEach(() => {
+    mockPush.mockClear();
+    mockSet.mockClear();
+    mockPlan = { writable: false };
+    mockScenario = { level: 4, planWritable: true, shares: true, switches: {}, holds: {} };
+  });
+
+  it('parses the route params, dropping unknown ids and bad levels', () => {
+    expect(parseFeaturesPreview({})).toBeUndefined();
+    expect(parseFeaturesPreview({ preview: '1', level: '2', on: 'categories,nope', off: 'goals' })).toEqual({
+      level: 2,
+      switches: { categories: true, goals: false },
+    });
+    expect(parseFeaturesPreview({ preview: '1', level: '9' })?.level).toBe(4);
+  });
+
+  it('shows the previewed level, read-only switches, and no Run setup again or plan link', async () => {
+    const { getByText, queryByText, queryByTestId, getByLabelText, getByTestId } = await render(
+      <ThemeProvider>
+        <FeaturesScreen preview={{ level: 1, switches: {} }} />
+      </ThemeProvider>
+    );
+    expect(getByTestId('features-preview')).toBeTruthy();
+    expect(getByText('Basics')).toBeTruthy();
+    expect(queryByText('Run setup again')).toBeNull();
+    expect(queryByTestId('features-choose-plan')).toBeNull();
+    const row = getByLabelText('Categories');
+    expect(row.props.accessibilityState).toMatchObject({ disabled: true });
+    fireEvent.press(row);
+    expect(mockSet).not.toHaveBeenCalled();
   });
 });

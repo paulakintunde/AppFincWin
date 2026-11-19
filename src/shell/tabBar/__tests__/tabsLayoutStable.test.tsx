@@ -56,6 +56,8 @@ jest.mock('@/features/plans/usePlanState', () => ({
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn', user: { id: 'u1' } }) }));
 jest.mock('@/features/consent/useConsent', () => ({ useConsent: () => ({ loading: false, needsPrompt: false }) }));
+// 09-23: the layout skips its consent redirect for a first run; a finished setup here.
+jest.mock('@/features/onboarding/useFirstRunPending', () => ({ useFirstRunPending: () => false }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => mockUseStore(() => mockStore.rc) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockUseStore(() => mockStore.accounts) }));
 jest.mock('@/data/queries/decideV3', () => ({ DecideV3Scope: ({ children }: { children: unknown }) => children }));

@@ -13,6 +13,7 @@ import { DECIDE_OPEN } from '@/features/decide/availability';
 import { harnessEnabled } from '@/features/devHarness/harnessEnabled';
 import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
 import { useConsent } from '@/features/consent/useConsent';
+import { useFirstRunPending } from '@/features/onboarding/useFirstRunPending';
 import { consentAnswered } from '@/features/consent/consentAnswered';
 import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
 import { SheetToastOverlay, UndoToastHost } from '@/features/record/history/UndoToastHost';
@@ -46,6 +47,7 @@ export { RouteErrorBoundary as ErrorBoundary };
 export default function AppLayout() {
   const { loading, needsPrompt, consent } = useConsent();
   const pathname = usePathname();
+  const firstRunPending = useFirstRunPending();
   const reduceMotion = useReduceMotion();
   const animation = Platform.OS === 'android' ? (reduceMotion ? 'none' : 'slide_from_right') : 'default';
 
@@ -56,7 +58,10 @@ export default function AppLayout() {
     return <Screen>{null}</Screen>;
   }
 
-  if (needsPrompt && pathname !== '/consent') {
+  // 09-23 (ANL-07): onboarding asks consent as its last step, so the redirect does not interrupt the questions. Only the
+  // screen is skipped: track() stays consent-gated (T-09-77).
+  const inOnboarding = pathname.startsWith('/onboarding') || firstRunPending;
+  if (needsPrompt && pathname !== '/consent' && !inOnboarding) {
     return <Redirect href="/consent" />;
   }
 
@@ -162,6 +167,8 @@ export default function AppLayout() {
                 <Stack.Screen name="export" />
                 <Stack.Screen name="features" />
                 <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
+                {/* 09-23: the first-run, partner and re-run questions; no edge swipe (the flow owns Back, UI-SPEC 3). */}
+                <Stack.Screen name="onboarding" options={{ gestureEnabled: false, headerShown: false }} />
               </Stack>
               <SampleBanner />
               <UndoToastHost />

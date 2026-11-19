@@ -8,15 +8,21 @@
  *    overlap (an in-flight ref), run serially in WRITE_SCOPE and stop at the first PT402 (T-09-59). A replay that is
  *    refused again does not loop: the next one waits for the next transition, foreground or session.
  *
+ * 3. 09-23 (owner P3): once the plan is writable it makes the setup account and goal from the person's answers, once
+ *    (applyOnboardingRecords: stable ids, existence check, done-marker last). Tried once per session, again after a
+ *    failed lookup on the next foreground.
+ *
  * The lock lifts only when the server's plan record says writable (UI-SPEC 9e); nothing here unlocks optimistically.
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { getLockedWrites, hydrateLockedWrites, replayLockedWrites, useLockedWrites } from '@/data/sync/lockedWrites';
 import { showToast } from '@/state/undoToast';
+import { applyOnboardingRecords, needsRecords } from '@/features/onboarding/applyOnboardingRecords';
+import { useSetupRecordsDeps } from '@/features/onboarding/useSetupRecordsDeps';
 import { PLAN_ENDED_HREF } from './routes';
 import { usePlanState } from './usePlanState';
 
@@ -26,6 +32,7 @@ export function LockHost() {
   const qc = useQueryClient();
   const plan = usePlanState();
   const writes = useLockedWrites();
+  const records = useSetupRecordsDeps();
 
   // The latest plan, read by the foreground listener and the replay helper without re-subscribing.
   const planRef = useRef(plan);
@@ -34,6 +41,8 @@ export function LockHost() {
   });
   const inFlight = useRef<Promise<void> | null>(null);
   const didSessionReplay = useRef(false);
+  // Counts returns to the foreground; the setup-records effect (P3) retries on it after a failed lookup.
+  const [foregrounds, setForegrounds] = useState(0);
   const prevWritable = useRef<boolean | null>(null);
 
   const runReplay = useCallback(
@@ -77,10 +86,34 @@ export function LockHost() {
   // (c) a return to the foreground.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') runReplay('foreground');
+      if (s === 'active') {
+        runReplay('foreground');
+        setForegrounds((n) => n + 1);
+      }
     });
     return () => sub.remove();
   }, [runReplay]);
+
+  // (P3) the setup account and goal, once the household is covered.
+  const recordsRef = useRef(records);
+  useEffect(() => {
+    recordsRef.current = records;
+  });
+  const recordsState = useRef<'idle' | 'running' | 'done'>('idle');
+  const wantsRecords = needsRecords(records.setup);
+  useEffect(() => {
+    if (recordsState.current !== 'idle' || plan.loading || !plan.writable || !wantsRecords) return;
+    recordsState.current = 'running';
+    const p = planRef.current;
+    void applyOnboardingRecords({ ...recordsRef.current, plan: { writable: p.writable, loading: p.loading, householdId: p.householdId } })
+      .then((result) => {
+        recordsState.current = result === 'not-ready' ? 'idle' : 'done';
+      })
+      .catch(() => {
+        // The lookup failed (offline, say): nothing was added; the next foreground tries again.
+        recordsState.current = 'idle';
+      });
+  }, [plan.loading, plan.writable, plan.householdId, wantsRecords, foregrounds]);
 
   // The explainer opens once per (household, coveredUntil) the first time a lock is seen.
   const locked = !plan.loading && plan.status === 'locked';
