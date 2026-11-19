@@ -20,6 +20,28 @@ describe('toPaidLine', () => {
   });
 });
 
+describe('settle (05.4-60 kills)', () => {
+  it('a line exactly the window away still settles; one day further does not', () => {
+    expect([...settle([due('s', '2026-10-10')], [pl('a', '2026-10-03')], () => 7).settled]).toEqual(['s|2026-10-10']);
+    expect([...settle([due('s', '2026-10-10')], [pl('a', '2026-10-02')], () => 7).settled]).toEqual([]);
+  });
+
+  it('of two lines the same distance away, the shorter id wins even when it is a prefix of the other', () => {
+    const lines = [pl('a0', '2026-10-10'), pl('a', '2026-10-10')];
+    expect(settle([due('s', '2026-10-10')], lines, () => 3).lineFor.get('s|2026-10-10')).toBe('a');
+  });
+
+  it('an unlinked line settles only a due date of the same sign and within the amount band', () => {
+    const at = (lineAmount: number, dueAmount: number): boolean =>
+      settle([due('s', '2026-10-10', dueAmount)], [pl('x', '2026-10-10', { seriesId: null, amount: mu(lineAmount) })], () => 3).settled.size === 1;
+    expect(at(100000, 100000)).toBe(true);
+    expect(at(-100000, 100000)).toBe(false);
+    expect(at(100000, -100000)).toBe(false);
+    expect(at(-100000, -100000)).toBe(true);
+    expect(at(0, 0)).toBe(false);
+  });
+});
+
 describe('matchWindowDays', () => {
   it('is half the shortest gap minus a day, capped', () => {
     expect(matchWindowDays({ unit: 'week', every: 1 }, 7)).toBe(3);
