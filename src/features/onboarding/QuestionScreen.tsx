@@ -16,6 +16,9 @@ import { useReduceMotion } from '@/theme/motion';
 import { textRole } from '@/theme/typography';
 import { useCopy } from './useCopy';
 
+/** How long after a new question appears its heading takes screen-reader focus (after the 150 ms fade, once TalkBack settles). */
+export const HEADING_FOCUS_DELAY_MS = 500;
+
 export interface QuestionScreenProps {
   /** Question number and how many there are (11, or 9 for the partner version). */
   progress: { n: number; total: number };
@@ -80,11 +83,16 @@ export function QuestionScreen({
   const label = t('onboarding.chrome.progress', { n: progress.n, total: progress.total });
 
   // 09-25 A7 (TalkBack device check): focus started on "1 of 11" and stayed put after Continue or Skip, so a screen-reader
-  // user heard nothing until they tapped. Each new question moves focus to its heading, as the Decide check steps do.
+  // user heard nothing until they tapped. Each new question moves focus to its heading. Device check on the Pixel 9: a call in
+  // the same frame as the new question loses to TalkBack's own placement (focus stayed on "1 of 11" / "Skip this question"),
+  // so the move waits until the question has faded in and TalkBack has settled.
   const titleRef = useRef<React.ElementRef<typeof Text>>(null);
   useEffect(() => {
-    const handle = titleRef.current === null ? null : findNodeHandle(titleRef.current);
-    if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+    const timer = setTimeout(() => {
+      const handle = titleRef.current === null ? null : findNodeHandle(titleRef.current);
+      if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+    }, HEADING_FOCUS_DELAY_MS);
+    return () => clearTimeout(timer);
   }, [stepKey]);
 
   return (
