@@ -1135,8 +1135,8 @@ Plans:
 - [x] 05.4-42-PLAN.md — Build the shadow report tools and push migrations 000800-001000 (Push 2); the first shadow run on the owner accounts moves to after the merge (D-160, D-171).
 - [x] 05.4-44-PLAN.md — Theme M/O design side for 05.4: VC-01 check, owner-approved round-8 boards (canvas 1793940119-6331, kit 1793940300-8c9d) and the freeze record marked pending reading test; the reading test, freeze and v1.1 list happen before Grow (D-166).
 **Follow-up on main after the merge** *(owner 2026-11-06, D-182: merge 05.4 now; 43 and 45 run on main after the merge)*
-- [ ] 05.4-43-PLAN.md — Close the Theme M gates: raise the mutation score to 90% and lock it, prove the pending and knownRed lists are empty, and wire the nightly property runs. Moved out of 05.4 (D-182); the workflows built so far merge with 05.4, the 90% bar and the empty-list proof are done on main.
-- [ ] 05.4-45-PLAN.md — Collect the evidence that the nightly gates hold: three consecutive green nightly runs (20,000-case cross-check, full Stryker at break 90, 2,000-run properties) on main. Moved out of 05.4 (D-182); runs on main after 05.4-43.
+- [x] 05.4-43-PLAN.md — *(closed for the build 2026-11-19: baseline 83.63%, gap-closure plans 05.4-58..62 added tests; the full 90% score and break 90 moved to Phase 11, owner)* Close the Theme M gates: raise the mutation score to 90% and lock it, prove the pending and knownRed lists are empty, and wire the nightly property runs. Moved out of 05.4 (D-182); the workflows built so far merge with 05.4, the 90% bar and the empty-list proof are done on main.
+- [x] 05.4-45-PLAN.md — *(2026-11-19: four green nightlies 16-19 Nov; the full Stryker part moved to Phase 11, owner)* Collect the evidence that the nightly gates hold: three consecutive green nightly runs (20,000-case cross-check, full Stryker at break 90, 2,000-run properties) on main. Moved out of 05.4 (D-182); runs on main after 05.4-43.
 **Gap closure: D-68 and D-69** *(after 05.4-52, one after another; 05.4-19 Task 2 waits for 05.4-56)*
 - [x] 05.4-53-PLAN.md — D-68 in the engine: a short plan that money on hand pays in full inside the 90 days is judged by cash like a one-off, with one caution line; I-D68 property and I44 named cause.
 - [x] 05.4-54-PLAN.md — D-68 in the plain calculator and the right-answer table: hand-written drafts BR-17..BR-23, the approved-case scan, the narrowed FIN-06/FIN-07 skip.
@@ -1548,7 +1548,7 @@ Plans:
   1. Every fix ID in the plan is checked as done, waived by the owner, or moved with a reason.
   2. All seven auditors score 10/10, or the owner signs a waiver for each gap; a failed line opens a gap plan in 08.1 and only that auditor re-runs.
   3. The four household personas run on both partners' accounts, and the reading test (about 5 people) passes.
-  4. At least 95% of Stryker's breaking changes across the Decide engine are caught by a test; each one not caught is recorded as harmless with a reason (QA-04).
+  4. *(Moved to Phase 11, criterion 8, owner 2026-11-19.)* At least 95% of Stryker's breaking changes across the Decide engine are caught by a test; each one not caught is recorded as harmless with a reason (QA-04).
   5. The public switch-on and the deletion of the old Decide screens and routes happen in the same release (Theme N, BO-09).
 **Plans:** 0 plans
 
@@ -1597,6 +1597,7 @@ Plans:
   5. A TestFlight build is installed and exercised on the physical iPhone, an internal-testing build on physical Android, and the store listing carries screenshots for all required device sizes plus a 1024×1024 icon.
   6. Rendered screens match the prototype's screenshots within tolerance on both platforms — the final visual-fidelity gate, verifiable here because every screen now exists.
   7. The review account opens onto months of sample data where Decide returns real verdicts, its credentials are filed with both stores, and a working support URL and in-app contact route exist.
+  8. Pre-launch mutation check (QA-04, moved here by the owner 2026-11-19): one full Stryker run on the final engine scores at least 90% in each of the five Decide groups (the 08.2 aim is 95%), each mutant left is recorded as harmless with a reason, and `thresholds.break` is set to 90. Parts that run out of time are re-run in up to 80 smaller pieces sized by earlier run times; the checklist is in `05.4-VERIFICATION.md`.
 **Plans**: TBD
 **UI hint**: no (store assets and copy audit; no new app screens)
 **Research flag**: Guideline 3.2.1(viii) must be re-read against live text; its wording changed since the brief was written. Separately, correct the brief's mis-citation — the 36% APR / 60-day loan cap is 3.2.2(ix), not 3.2.1(viii), and does not apply here regardless.
