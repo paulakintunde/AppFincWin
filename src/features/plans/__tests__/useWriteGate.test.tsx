@@ -66,10 +66,7 @@ describe('useWriteGate', () => {
     expect(getByText('Start 14-day free trial')).toBeTruthy();
   });
 
-  it.each([
-    ['grace', 'grace'],
-    ['tester', 'tester'],
-  ] as const)('%s writable: not gated', async (status) => {
+  it.each(['grace', 'tester'] as const)('%s writable: not gated', async (status) => {
     mockPlan = { status, writable: true, loading: false };
     const { getByTestId } = await setup();
     await fireEvent.press(getByTestId('b'));
