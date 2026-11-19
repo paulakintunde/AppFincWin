@@ -11,7 +11,7 @@ import { useCheckHistory } from '@/data/queries/decideHistory';
 import type { DecideCheckHistoryRow } from '@/db/decideCheckHistory';
 import { VERDICT_TABLE, verdictRowFor, type Code, type Variant } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
-import { canUse } from '@/features/decide/entitlements';
+import { usePlanState } from '@/features/plans/usePlanState';
 import { METHOD_LABEL } from '@/features/decide/screens/logic/codeMaps';
 import { compareEstimate } from '@/features/decide/journal/estimateActual';
 import { finalPriceOf, parseCheckInputs } from '@/features/decide/snapshot/checkInputs';
@@ -70,6 +70,8 @@ function chipOf(row: DecideCheckHistoryRow, once: boolean): { word: string; tone
 export function DecisionDetailScreen({ id }: { id: string | null }) {
   const t = useT() as unknown as T;
   const { colors, pairing } = useTheme();
+  const plan = usePlanState(); // 09-17 (D-02, D-04): a locked plan keeps saved answers readable and says they are not recalculated
+  const readOnly = !plan.writable && !plan.loading;
   const model = usePastDecisions();
   const del = useDeleteDecision();
   const decision = id === null ? null : (model.decisions.find((d) => d.id === id) ?? null);
@@ -79,8 +81,6 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
   const [confirming, setConfirming] = useState(false);
   const { ctx, whole, wholeIn, formatDate, today } = model;
   const goalList = useMemo(() => [...model.goalByCheck.values()], [model.goalByCheck]);
-
-  if (!canUse('decisionJournal')) return null;
 
   if (decision === null) {
     return (
@@ -143,6 +143,11 @@ export function DecisionDetailScreen({ id }: { id: string | null }) {
   return (
     <DetailScreen title={name}>
       <View style={styles.stack}>
+        {readOnly ? (
+          <Text testID="decide-saved-meta" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {t('lock.decideSaved')}
+          </Text>
+        ) : null}
         {asOf !== null ? (
           <>
             <AsCheckedAnswer
