@@ -257,3 +257,59 @@ describe('judge: the one-off part with the cash path inside the overdraft', () =
     expect(ev.result.facts.some((f) => f.code === 'net_used')).toBe(false);
   });
 });
+
+describe('overdraft.ts mutation kills (05.4-58)', () => {
+  const rated = acct('a1', -20_000, { overdraftLimit: mu(50_000), overdraftRate: percent('22') });
+
+  it('a not-cleared answer carries every fact with its figures: date, cost, rate, month, the without-purchase side and the repeat', () => {
+    const ctx = { floor: mu(-50_000), withPurchase: pathOf(-10_000, -10_000, 5), withoutPurchase: pathOf(-5_000, -5_000, 5), paydays: ['2026-11-02', '2026-11-03'] };
+    const { variant, facts } = overdraftUseFacts([rated], ctx, { kind: 'month', month: '2027-01' });
+    expect(variant).toBe('not_cleared');
+    expect(facts).toEqual([
+      { code: 'overdraft_not_cleared', values: { accountId: 'a1', date: '2026-11-02', below: 10_000, zero: 0 } },
+      { code: 'overdraft_use', values: { accountId: 'a1', below: 10_000, days: 2, rate: '22', cost: 12, zero: 0 } },
+      { code: 'overdraft_cost_90d', values: { rate: '22', cost: 12, zero: 0 } },
+      { code: 'wait_clears', values: { month: '2027-01', zero: 0 } },
+      { code: 'overdraft_without_purchase', values: { below: 5_000, days: 2, cost: 6, zero: 0 } },
+      { code: 'overdraft_purchase_adds', values: { cost: 6 } },
+      { code: 'overdraft_repeat', values: { accountId: 'a1', count: 2, of: 3, rate: '22', cost: 6, zero: 0 } },
+    ]);
+  });
+
+  it('a pay date past the end of the path reads the end of the path', () => {
+    const ctx = { floor: mu(-50_000), withPurchase: pathOf(0, -10, -7), withoutPurchase: pathOf(0, 0, 0), paydays: ['2027-01-01'] };
+    const { facts } = overdraftUseFacts([rated], ctx, null);
+    expect(facts[0]).toEqual({ code: 'overdraft_not_cleared', values: { accountId: 'a1', date: '2027-01-01', below: 7, zero: 0 } });
+  });
+
+  it('the pay date is read at the point of that date, not at another point', () => {
+    const ctx = { floor: mu(-50_000), withPurchase: pathOf(0, -10, -7, -3), withoutPurchase: pathOf(0, 0, 0, 0), paydays: ['2026-11-03'] };
+    const { facts } = overdraftUseFacts([rated], ctx, null);
+    expect(facts[0]!.values).toEqual({ accountId: 'a1', date: '2026-11-03', below: 7, zero: 0 });
+  });
+
+  it('the no-limit facts say clearing first and that no interest can be told, each with its figures', () => {
+    const facts = noLimitFacts([acct('m', -1)], mu(5), { kind: 'month', month: '2027-03' });
+    expect(facts).toEqual([
+      { code: 'no_overdraft_limit', values: { accountId: 'm', below: 5, zero: 0 } },
+      { code: 'clearing_first', values: { zero: 0 } },
+      { code: 'ready_without_interest', values: {} },
+    ]);
+  });
+
+  it('the account that carries a dip: the first of two equal limits, and none when no account has a limit', () => {
+    const payer = acct('p', 1_000);
+    const a = acct('a', 0, { overdraftLimit: mu(5_000) });
+    const b = acct('b', 0, { overdraftLimit: mu(5_000) });
+    expect(overdraftAccountOf([payer, a, b])?.id).toBe('a');
+    expect(overdraftAccountOf([payer, acct('z', 0, { overdraftLimit: mu(0) })])).toBeNull();
+    expect(overdraftAccountOf([acct('only', 100)])).toBeNull();
+  });
+
+  it('the account to ask about is the payer when its limit is not recorded, not the first account with none', () => {
+    const first = acct('first', 0);
+    const payer = acct('payer', 1_000);
+    expect(noLimitAccountOf([first, payer])?.id).toBe('payer');
+    expect(noLimitAccountOf([first, acct('rich', 1_000, { overdraftLimit: mu(10) })])?.id).toBe('first');
+  });
+});

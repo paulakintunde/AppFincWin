@@ -74,6 +74,7 @@ export function depletionFacts(d: DepletionInput): Fact[] {
   const cash = d.shortPlanCash === true;
   const M = cash ? 0 : d.monthly;
   const already = TL < 0;
+  // Stryker disable next-line ConditionalExpression,LogicalOperator: an already-short month or a plan with no monthly cost ends in the same facts, so those parts of the test change nothing
   const planMakesShort = !already && M > 0 && TL - M < 0 && (d.code === 'monthly_short' || d.code === 'not_yet');
   if (!already && !planMakesShort) return cash ? interestFacts(d) : [];
   const out: Fact[] = [];

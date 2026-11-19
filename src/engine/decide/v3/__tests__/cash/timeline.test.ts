@@ -185,3 +185,42 @@ describe('UX-38 labelled flows are the path flows with labels added', () => {
     expect(replacesFlowsLabelled({ ...rep, saleOnPath: undefined } as ReplacesEffect, 3_000).map((f) => f.kind)).toEqual(['stopped_cost', 'stopped_cost']);
   });
 });
+
+describe('cashTimeline mutation kills (05.4-58)', () => {
+  it('a list of 1 day is allowed, and the error for a bad length names the module and the limit', () => {
+    const p = prepare(sam());
+    expect(cashTimeline(p, checkOnce(1_000), 1).rows.every((r) => r.date === '2026-10-03')).toBe(true);
+    expect(() => cashTimeline(p, checkOnce(1_000), 0)).toThrow('cash/timeline: days must be 1..90');
+  });
+
+  it('a bill of 0 is not a row of the list', () => {
+    const zero = sam({ series: [...sam().series, v3Series({ id: 'free', role: 'bill', cadence: MONTHLY, anchorDate: '2026-01-12', amount: 0 })] });
+    const rows = cashTimeline(prepare(zero), checkOnce(1_000), 30).rows;
+    expect(rows.some((r) => r.seriesId === 'free')).toBe(false);
+    expect(rows.every((r) => r.amount !== 0)).toBe(true);
+  });
+
+  it('flows of one kind on one date keep the order the path takes them, however many there are', () => {
+    const ids = ['rent2', 'gym', 'tv', 'spa', 'zoo'];
+    const more = sam({ series: [...sam().series, ...ids.map((id) => v3Series({ id, role: 'bill', cadence: MONTHLY, anchorDate: '2026-01-25', amount: 1_000 }))] });
+    const rows = cashTimeline(prepare(more), checkOnce(1_000), 30).rows.filter((r) => r.kind === 'bill' && r.date === '2026-10-25');
+    expect(rows.map((r) => r.seriesId)).toEqual(['rent', ...ids]);
+  });
+
+  it('the balance after a row is the running money less the everyday spread so far', () => {
+    const p = prepare(sam());
+    const t = cashTimeline(p, checkOnce(50_000), 30);
+    const spread0 = (p.readings[0]!.open.spread[0] as bigint);
+    expect(spread0 > 0n).toBe(true);
+    expect(t.rows[0]!.balanceAfter).toBe(t.start - 50_000 - Number(spread0));
+  });
+
+  it('the lowest point is the first day it is reached', () => {
+    const flat = inputsOf({
+      balance: mu(100_000),
+      series: [v3Series({ id: 'bill', role: 'bill', cadence: MONTHLY, anchorDate: '2026-01-10', amount: 30_000 })],
+    });
+    const t = cashTimeline(prepare(flat), checkOnce(1_000), 20);
+    expect(t.lowest.date).toBe('2026-10-10');
+  });
+});

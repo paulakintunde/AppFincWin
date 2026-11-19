@@ -255,3 +255,27 @@ describe('D-67: the regular saving leaves the everyday account on every path, a 
     expect(main.points.find((p) => p.date === '2026-11-20')!.balance).toBe(40_000);
   });
 });
+
+describe('moneySource.ts mutation kills (05.4-58)', () => {
+  const split = { dayOne: mu(1_000), envelope: mu(0), month: mu(0), earlier: mu(0), protectedUsed: mu(0), aboveSize: mu(0) };
+
+  it('the error messages name the module and the reason', () => {
+    expect(() => sourceSplit({ ...split, envelope: mu(2_000) })).toThrow('moneySource: the envelope and the protected part are more than the price');
+    expect(() => sourceSplit({ ...split })).toThrow('moneySource: the parts cannot sum to the price');
+  });
+
+  it('extra savings below 0 count as none', () => {
+    expect(sourceSplit({ ...split, month: mu(5_000), aboveSize: mu(-100) })).toEqual([{ source: 'month', amount: 1_000 }]);
+  });
+
+  it('this month gives only what is left after the extra savings', () => {
+    expect(sourceSplit({ ...split, month: mu(5_000), aboveSize: mu(300) })).toEqual([
+      { source: 'month', amount: 700 },
+      { source: 'extra_savings', amount: 300 },
+    ]);
+  });
+
+  it('earlier money below 0 counts as none, so a split that needs none does not throw', () => {
+    expect(sourceSplit({ ...split, month: mu(5_000), earlier: mu(-50) })).toEqual([{ source: 'month', amount: 1_000 }]);
+  });
+});

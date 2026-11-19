@@ -141,3 +141,29 @@ describe('the D-65 tiers through evaluate (Riley-like: usual month 300 short, ne
     expect(fact(open, 'net_lasts')).toEqual({ shortfall: 30_000, months: 6 });
   });
 });
+
+describe('monthShortTier mutation kills (05.4-58)', () => {
+  const base: TierInput = {
+    code: 'fits_month',
+    monthly: mu(0),
+    typicalLeft: mu(-1_000),
+    spare: null,
+    monthLeft: mu(-300),
+    aboveSize: mu(5_000),
+    used: mu(100),
+    fromExtra: mu(0),
+  };
+
+  it('a usual month of exactly 0 is not short, and the error names the module', () => {
+    expect(() => monthShortTier({ ...base, typicalLeft: mu(0) })).toThrow('depletion: the usual month is not short');
+    expect(() => monthShortTier({ ...base, typicalLeft: mu(1) })).toThrow(RangeError);
+  });
+
+  it('a month already below 0 and no spare figure counts as no money, not as negative money', () => {
+    expect(monthShortTier(base).fact).toEqual({ code: 'month_short_fits', values: { price: 100, money: 5_000, short: 1_000 } });
+  });
+
+  it('extra savings below 0 count as none', () => {
+    expect(monthShortTier({ ...base, spare: mu(4_000), aboveSize: mu(-500) }).fact).toEqual({ code: 'month_short_fits', values: { price: 100, money: 4_000, short: 1_000 } });
+  });
+});
