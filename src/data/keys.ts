@@ -108,6 +108,8 @@ export const queryKeys = {
   // 08-15: who owes whom. One read serves both the balances and the traced lines of one pair (usePairLines selects from it). It sits under transactionsRoot, so every transaction write
   // (and every settle-up call, which invalidates the root's balances) refreshes them.
   householdBalances: (householdId: string) => ['transactions', householdId, 'household-balances'] as const,
+  // 09-22 (D-34): four yes/no probes (transfers, imported lines, weight and amount splits). Under transactionsRoot so a write refreshes them.
+  holdsFlags: (householdId: string) => ['transactions', householdId, 'holds-flags'] as const,
   splitDefaults: (householdId: string) => ['split-defaults', householdId] as const,
   settlements: (householdId: string) => ['settlements', householdId] as const,
   // 09-10: the server plan record for the signed-in user's household.
