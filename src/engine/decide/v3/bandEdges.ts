@@ -55,7 +55,9 @@ export const REFERENCE_USD_RATES: Readonly<Record<string, string>> = Object.free
 /** Exact decimal string ('3.6725') to a fraction. No floats. */
 function parseRate(s: string): UsdRate {
   const dot = s.indexOf('.');
+  // Stryker disable next-line EqualityOperator: no reference rate starts with a dot, so dot is never 0
   const whole = dot < 0 ? s : s.slice(0, dot);
+  // Stryker disable next-line EqualityOperator: no reference rate starts with a dot, so dot is never 0
   const frac = dot < 0 ? '' : s.slice(dot + 1);
   return { num: BigInt(whole + frac), den: 10n ** BigInt(frac.length) };
 }
@@ -83,6 +85,7 @@ export function tidyFromUsd(usdMinor: number, rate: UsdRate, exponent: number): 
   }
   const step = 10n ** BigInt(stepPow);
   const tidy = divideHalfUp(n, d * step) * step;
+  // Stryker disable next-line EqualityOperator: a tidy value equal to the cap gives the cap either way
   return minorUnits(Number(tidy > MAX_BIG ? MAX_BIG : tidy));
 }
 
