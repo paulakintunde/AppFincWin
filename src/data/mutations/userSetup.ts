@@ -42,7 +42,7 @@ export function registerUserSetupMutations(qc: QueryClient): void {
       const key = queryKeys.userSetup(vars.userId);
       await qc.cancelQueries({ queryKey: key });
       const previous = qc.getQueryData<UserSetup | null>(key) ?? null;
-      qc.setQueryData<UserSetup | null>(key, {
+      const base: UserSetup = {
         userId: vars.userId,
         level: null,
         levelSource: null,
@@ -52,10 +52,15 @@ export function registerUserSetupMutations(qc: QueryClient): void {
         partnerVersion: false,
         existingCard: null,
         recordsAppliedAt: null,
-        ...(previous ?? {}),
-        ...vars.patch,
         version: vars.baseVersion + 1,
-      });
+      };
+      const next: UserSetup = { ...base, ...(previous ?? {}) };
+      for (const k of Object.keys(vars.patch) as (keyof UserSetupPatch)[]) {
+        const v = vars.patch[k];
+        if (v !== undefined) Object.assign(next, { [k]: v });
+      }
+      next.version = vars.baseVersion + 1;
+      qc.setQueryData<UserSetup | null>(key, next);
       return { previous };
     },
     onSuccess: (row: UserSetup, vars: SaveUserSetupVars) => {
