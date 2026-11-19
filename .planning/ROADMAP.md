@@ -1588,6 +1588,7 @@ Plans:
 - [ ] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
 - [ ] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
 - [ ] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
+- [ ] 09-26-PLAN.md — Extended (12): 12 member colours (owner exception, reused token hexes), leave/remove while locked
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
