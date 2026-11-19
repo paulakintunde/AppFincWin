@@ -1,7 +1,7 @@
 // 02-30: the first-account gate, the two onboarding setup screens (D-22) and the routing that
 // makes Home the signed-in landing. Hooks, router and analytics are mocked; this checks wiring.
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, fireEvent, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { needsFirstAccount } from '../firstAccountGate';
 
@@ -98,13 +98,14 @@ jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => n
 jest.mock('@/features/decide/shadow/DecideShadowHost', () => ({ DecideShadowHost: () => null }));
 jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { children: React.ReactNode }) => children }));
 // 09-24: the gate reads the plan; a paid plan keeps the first-account redirect, 'sample' (the pre-trial look-around) skips it.
-let mockPlan = { status: 'trial', loading: false };
+let mockPlan: { status: string; loading: boolean; writable?: boolean } = { status: 'trial', loading: false, writable: true };
 jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
 jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
 jest.mock('@/features/onboarding/SampleBar', () => ({ SampleBar: () => null }));
 jest.mock('@/features/onboarding/SampleHost', () => ({ SampleHost: () => null }));
 jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));
 
+import { setPlanWriteState } from '@/data/sync/planWriteGuard';
 import { SetupAccountScreen } from '../SetupAccountScreen';
 import { SetupHistoryScreen } from '../SetupHistoryScreen';
 import ActivityRoute from '../../../../../app/(app)/(tabs)/_layout';
@@ -121,7 +122,7 @@ beforeEach(() => {
   mockSeedPending = false;
   mockSeed.mockResolvedValue(true);
   mockAccounts = { data: [], isLoading: false, isError: false };
-  mockPlan = { status: 'trial', loading: false };
+  mockPlan = { status: 'trial', loading: false, writable: true };
 });
 
 describe('needsFirstAccount', () => {
@@ -251,6 +252,37 @@ describe('Tabs layout first-account gate', () => {
     mockPlan = { status: 'sample', loading: true };
     await render(wrap(<ActivityRoute />));
     expect(mockRedirectHref).toBeNull();
+  });
+  it('09-25 A5-3: a locked (read-only) home with no account reads its tabs and is never sent to /setup/account', async () => {
+    mockPlan = { status: 'locked', loading: false, writable: false };
+    mockAccounts = { data: [], isLoading: false, isError: false };
+    const view = await render(wrap(<ActivityRoute />));
+    expect(mockRedirectHref).toBeNull();
+    expect(view.toJSON()).not.toBeNull();
+  });
+  it('09-25 A5-3: draws nothing while the plan is unknown, so neither path is taken on a guess', async () => {
+    mockPlan = { status: 'sample', loading: true, writable: false };
+    const view = await render(wrap(<ActivityRoute />));
+    expect(mockRedirectHref).toBeNull();
+    expect(view.toJSON()).toBeNull();
+  });
+});
+
+describe('09-25 A5-3: SetupAccountScreen in a locked home', () => {
+  afterEach(async () => {
+    await act(() => setPlanWriteState(null));
+  });
+  it('goes on to Activity and never opens the new-account sheet', async () => {
+    setPlanWriteState({ status: 'locked', writable: false, loading: false });
+    await render(wrap(<SetupAccountScreen />));
+    expect(mockRedirectHref).toBe('/activity');
+    expect(mockSheetProps).toBeNull();
+  });
+  it('a writable plan still gets the first-account sheet', async () => {
+    setPlanWriteState({ status: 'trial', writable: true, loading: false });
+    await render(wrap(<SetupAccountScreen />));
+    expect(mockRedirectHref).toBeNull();
+    expect(mockSheetProps!.visible).toBe(true);
   });
 });
 
