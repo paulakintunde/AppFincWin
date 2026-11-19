@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(33);
+select extensions.plan(34);
 
 select extensions.ok(exists (select 1 from pg_publication where pubname = 'supabase_realtime'), 'supabase_realtime publication exists');
 
@@ -23,7 +23,7 @@ select extensions.is((select count(*)::int from pg_publication_tables where pubn
 select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'debt_line_applied'), 0, 'debt_line_applied is not published');
 select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename like 'decide\_%'), 0, 'no decide_* table is published');
 
-select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename not in ('transactions', 'accounts', 'household_events', 'transaction_splits', 'settlements', 'settlement_lines', 'household_split_defaults', 'household_former_members', 'member_departures')), 0, 'only shared-capable tables are published');
+select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename not in ('transactions', 'accounts', 'household_events', 'transaction_splits', 'settlements', 'settlement_lines', 'household_split_defaults', 'household_former_members', 'member_departures', 'household_plans')), 0, 'only shared-capable tables are published');
 
 select extensions.is(has_table_privilege('authenticated', 'public.transactions', 'DELETE'), false, 'authenticated cannot hard-delete transactions');
 select extensions.is(has_table_privilege('authenticated', 'public.accounts', 'DELETE'), false, 'authenticated cannot hard-delete accounts');
@@ -44,6 +44,8 @@ select extensions.is(has_table_privilege('authenticated', 'public.settlements', 
 select extensions.is(has_table_privilege('authenticated', 'public.settlement_lines', 'DELETE'), false, 'authenticated cannot hard-delete settlement_lines');
 select extensions.is(has_table_privilege('anon', 'public.settlements', 'SELECT'), false, 'anon cannot read settlements');
 select extensions.is(has_table_privilege('anon', 'public.member_departures', 'SELECT'), false, 'anon cannot read member_departures');
+
+select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'household_plans'), 1, 'household_plans is published (09-02)');
 
 select * from extensions.finish();
 rollback;
