@@ -112,6 +112,9 @@ export const queryKeys = {
   settlements: (householdId: string) => ['settlements', householdId] as const,
   // 09-10: the server plan record for the signed-in user's household.
   planState: (userId: string) => ['plan-state', userId] as const,
+  // 09-13: the person's private level, answers and feature switches.
+  userSetup: (userId: string) => ['user-setup', userId] as const,
+  featureSwitches: (userId: string) => ['feature-switches', userId] as const,
 };
 
 export const mutationKeys = {
@@ -141,6 +144,10 @@ export const mutationKeys = {
   editTransfer: ['transfers', 'edit'] as const,
   deleteTransfer: ['transfers', 'delete'] as const,
   saveImportProfile: ['import-profiles', 'save'] as const,
+  // 09-13
+  saveUserSetup: ['user-setup', 'save'] as const,
+  setFeatureSwitch: ['feature-switches', 'set'] as const,
+  replaceFeatureSwitches: ['feature-switches', 'replace'] as const,
   // Phase 02.2 (Record polish)
   cloneMonth: ['transactions', 'clone-month'] as const,
   pasteLines: ['transactions', 'paste-lines'] as const,

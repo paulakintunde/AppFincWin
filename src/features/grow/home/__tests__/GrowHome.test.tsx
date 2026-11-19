@@ -108,9 +108,10 @@ jest.mock('@/data/queries/growHoldings', () => ({
 }));
 jest.mock('@/data/mutations/growHoldings', () => ({ useEditHolding: () => ({ edit: jest.fn(), remove: jest.fn() }) }));
 let mockFlags: Record<string, boolean> | null = null;
-jest.mock('@/features/grow/growFeatureFlags', () => {
+// 09-13: GrowHome asks useGrowFeatureFlags(); level 4 means every flag on, a test overrides some.
+jest.mock('@/features/grow/useGrowFeatureFlags', () => {
   const actual = jest.requireActual('@/features/grow/growFeatureFlags');
-  return { ...actual, growFeatureFlags: () => ({ ...actual.growFeatureFlags(), ...(mockFlags ?? {}) }) };
+  return { useGrowFeatureFlags: () => actual.growFeatureFlags(mockFlags ?? {}) };
 });
 
 const LEDGER: GoalsRead = {
