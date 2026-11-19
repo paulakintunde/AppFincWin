@@ -31,6 +31,8 @@ import { DecideV3Scope } from '@/data/queries/decideV3';
 import { HouseholdRealtimeHost } from '@/data/realtime/HouseholdRealtimeHost';
 import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost';
 import { PlanHost } from '@/features/plans/PlanHost';
+import { LockHost } from '@/features/plans/LockHost';
+import { LockedSheetProvider } from '@/features/plans/useWriteGate';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -67,6 +69,7 @@ export default function AppLayout() {
           <AndroidBackHandler />
           {/* One FAB registry for the tabs and the outer stack: You > Add runs the quick actions the tabs register (05-98). */}
           <FabProvider>
+            <LockedSheetProvider>
             <View style={{ flex: 1 }}>
               <Stack
                 // 06.1-73 (DB-1): screens two or more below the top stop re-rendering until they are near the top again.
@@ -155,6 +158,7 @@ export default function AppLayout() {
                   <Stack.Screen name="decide/dev-harness" />
                 </Stack.Protected>
                 <Stack.Screen name="you" />
+                <Stack.Screen name="plan-ended" />
                 <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
               </Stack>
               <SampleBanner />
@@ -166,10 +170,12 @@ export default function AppLayout() {
               <HouseholdRealtimeHost />
               {/* 09-10: store identity, plan Realtime and foreground refresh. */}
               <PlanHost />
+              <LockHost />
               {/* 08-24 (D-28): "You're no longer in ..." once, for a person the owner removed. */}
               <RemovedNoticeHost />
               <DeviceHomeCurrencyDefault />
             </View>
+            </LockedSheetProvider>
           </FabProvider>
         </SheetOverlayProvider>
       </ShellLayoutProvider>

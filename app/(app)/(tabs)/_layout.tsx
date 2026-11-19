@@ -22,6 +22,7 @@ import { isTabId } from '@/shell/tabBar/tabs';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
+import { LockBanner } from '@/features/plans/LockBanner';
 
 // 06.1-78 (H-15): the Tabs get Screen elements only. A null child (the old grow fallback once Grow opened) made expo-router log
 // "Layout children must be of type Screen" on every render. Built once: availability is a build switch, not state.
@@ -43,6 +44,7 @@ export default function TabsLayout() {
   // FabProvider is mounted in app/(app)/_layout.tsx so You, an outer-stack screen, reads the same quick actions.
   return (
     <View style={styles.fill}>
+      <LockBanner />
       <Tabs
         backBehavior="none"
         tabBar={(props) => <TabBar {...props} />}
