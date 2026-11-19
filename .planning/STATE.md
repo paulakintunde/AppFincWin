@@ -221,6 +221,7 @@ Recent decisions affecting current work:
 | 261115-kog | PR auto-merge: repo auto-merge + update-branch on, `hold` label, auto-merge.yml sweep (all ready PRs except drafts, `hold`, forks, Dependabot majors; one-at-a-time update queue keeps strict up-to-date rule). Needs owner AUTOMERGE_TOKEN secret | 2026-11-15 | (this PR) | [261115-kog-pr-auto-merge-with-one-at-a-time-update-](./quick/261115-kog-pr-auto-merge-with-one-at-a-time-update-/) |
 | 261117-abh | Docs tidy after Phase 8 merge: STATE, ROADMAP (05.4 ticked, 05.3 replaced), stale G-PD-2 Maestro note | 2026-11-17 | 9c06ba88 | [261117-abh-docs-tidy-after-phase-8-merge](./quick/261117-abh-docs-tidy-after-phase-8-merge/) |
 | 261117-sn1 | SN-18 wording (text only) and SN-27 proposal; owner chose option (a), built in PR #149: no ready-by date when a plan's own payment makes the usual month short (engine revision 06.9, SN-27 approved, 49/2000 I44 cases lose a date only) | 2026-11-17 | bf173562 | [261117-sn1-sn-18-wording-and-sn-27-proposal](./quick/261117-sn1-sn-18-wording-and-sn-27-proposal/) |
+| 261118-u83 | ASO re-check: 4 new "can I afford it" apps (incl. Verdict Money), hard-paywall copy fixes, features to compete on; LAUNCH-POSITIONING §4/§5 updated | 2026-11-18 | (this PR) | [261118-u83-aso-re-check-2026-11-18](./quick/261118-u83-aso-re-check-2026-11-18/) |
 
 ## Deferred Items
 

@@ -8,7 +8,7 @@ name: Mutation (full)
 # Never cancelled by a new push: its own concurrency group per commit. The merged incremental file is saved as the
 # baseline that mutation-changed.yml re-uses, so a push then re-tests only mutants in changed code (D-175).
 # Re-run (2026-11-18): by hand with `only` set to the unfinished parts' entries (comma list of file or file:a-b) and
-# `with_run` set to the earlier run's id. The plan cuts only those entries, finer; the merge joins this run's parts with
+# `with_run` set to the earlier run ids (comma list, the full run first). The plan cuts only those entries, finer; the merge joins this run's parts with
 # the earlier run's finished parts and checks them against the earlier run's full plan, so one score covers the scope.
 on:
   pull_request:
@@ -24,7 +24,7 @@ on:
         required: false
         default: '40'
       with_run:
-        description: 'Earlier run id whose finished parts and full plan join the merge (use with only)'
+        description: 'Earlier run ids, comma list: their finished parts join the merge; the first one''s plan is the full plan (use with only)'
         required: false
         default: ''
   schedule:
@@ -118,28 +118,26 @@ jobs:
         with:
           name: mutation-plan
           path: plan
-      - name: Fetch the earlier run's finished parts
+      # with_run may list several runs (comma list): each one's finished parts join the merge, and the FIRST run's
+      # plan is the full plan the merge checks against (2026-11-18: a full run, its re-run, then a re-run of 2 parts).
+      - name: Fetch the earlier runs' finished parts and the first run's full plan
         if: inputs.with_run != ''
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: mutation-part-*
-          path: parts-earlier
-          run-id: ${{ inputs.with_run }}
-          github-token: ${{ github.token }}
-      - name: Fetch the earlier run's full plan
-        if: inputs.with_run != ''
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: mutation-plan
-          path: plan-earlier
-          run-id: ${{ inputs.with_run }}
-          github-token: ${{ github.token }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          WITH_RUN: ${{ inputs.with_run }}
+        run: |
+          first=""
+          for id in $(echo "$WITH_RUN" | tr ',' ' '); do
+            [ -z "$first" ] && first="$id"
+            gh run download "$id" --repo "$GITHUB_REPOSITORY" --pattern 'mutation-part-*' --dir "parts-earlier/$id" || echo "run $id: no part reports"
+          done
+          gh run download "$first" --repo "$GITHUB_REPOSITORY" --name mutation-plan --dir plan-earlier
       - name: Merge the parts and apply the 90% bar (D-174)
         env:
           WITH_RUN: ${{ inputs.with_run }}
         run: |
           if [ -n "$WITH_RUN" ]; then
-            node scripts/mutation-merge.mjs --bar 90 --plan plan-earlier/mutation-plan.json               --out reports/mutation/mutation.json --html reports/mutation/index.html               --incremental-out .stryker-cache/incremental.json --label "Full mutation run (with run $WITH_RUN)" parts parts-earlier
+            node scripts/mutation-merge.mjs --bar 90 --plan plan-earlier/mutation-plan.json               --out reports/mutation/mutation.json --html reports/mutation/index.html               --incremental-out .stryker-cache/incremental.json --label "Full mutation run (with runs $WITH_RUN)" parts parts-earlier
           else
             node scripts/mutation-merge.mjs --bar 90 --plan plan/mutation-plan.json               --out reports/mutation/mutation.json --html reports/mutation/index.html               --incremental-out .stryker-cache/incremental.json --label "Full mutation run" parts
           fi
