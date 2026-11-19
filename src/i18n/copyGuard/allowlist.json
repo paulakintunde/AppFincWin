@@ -52,6 +52,13 @@
       "reason": "existing hit before 05.5 (D-14); rewrite through owner wording sign-off"
     },
     {
+      "path": "decide.screens.common.paused.body",
+      "sentenceHash": "6d3a2d3f",
+      "rule": "banned:safe",
+      "dated": "2026-11-18",
+      "reason": "08.1-05 draft (UI-SPEC section 8), same sentence as the error message; rewrite or keep at the 08.1-14 wording sign-off"
+    },
+    {
       "path": "decide.screens.stepper.kind.why",
       "sentenceHash": "04ffab99",
       "rule": "banned:you can",

@@ -339,6 +339,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   below: '$320.00',
   bill: 'Car insurance',
   bridge: '$600.00',
+  build: '0.3.0 (a1b2c3d4)', // 08.1-05 tester build line
   cadence: 'a month', // 06.1 wave 6
   capped: '$150.00',
   category: 'Groceries',
