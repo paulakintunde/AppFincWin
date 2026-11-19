@@ -1,0 +1,22 @@
+{
+  "api_version": "1.0",
+  "event": {
+    "id": "evt-initial-0001",
+    "type": "INITIAL_PURCHASE",
+    "app_user_id": "11111111-1111-4111-8111-111111111111",
+    "original_app_user_id": "11111111-1111-4111-8111-111111111111",
+    "aliases": [
+      "11111111-1111-4111-8111-111111111111"
+    ],
+    "environment": "PRODUCTION",
+    "product_id": "fincwin_duo:yearly",
+    "store": "APP_STORE",
+    "event_timestamp_ms": 1795000000000,
+    "subscriber_attributes": {
+      "$email": {
+        "value": "redacted@example.invalid",
+        "updated_at_ms": 1795000000000
+      }
+    }
+  }
+}

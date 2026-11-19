@@ -1,0 +1,22 @@
+{
+  "api_version": "1.0",
+  "event": {
+    "id": "evt-anon-0001",
+    "type": "INITIAL_PURCHASE",
+    "app_user_id": "$RCAnonymousID:abc123",
+    "original_app_user_id": "$RCAnonymousID:abc123",
+    "aliases": [
+      "$RCAnonymousID:abc123"
+    ],
+    "environment": "PRODUCTION",
+    "product_id": "fincwin_duo:yearly",
+    "store": "APP_STORE",
+    "event_timestamp_ms": 1795000000000,
+    "subscriber_attributes": {
+      "$email": {
+        "value": "redacted@example.invalid",
+        "updated_at_ms": 1795000000000
+      }
+    }
+  }
+}
