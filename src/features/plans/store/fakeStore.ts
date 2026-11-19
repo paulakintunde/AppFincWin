@@ -11,6 +11,9 @@ export const fakeStoreState = {
   nextPurchase: { kind: 'purchased' } as PurchaseOutcome,
   nextRestore: 'nothing' as RestoreResult,
   manageOpened: 0,
+  manageStore: null as string | null,
+  /** What openManageSubscription resolves: false means no store page opened. */
+  manageOpens: true,
   country: null as string | null,
   offers: null as PlanOffer[] | null,
 };
@@ -21,6 +24,8 @@ export function resetFakeStore(): void {
   fakeStoreState.nextPurchase = { kind: 'purchased' };
   fakeStoreState.nextRestore = 'nothing';
   fakeStoreState.manageOpened = 0;
+  fakeStoreState.manageStore = null;
+  fakeStoreState.manageOpens = true;
   fakeStoreState.country = null;
   fakeStoreState.offers = null;
 }
@@ -70,8 +75,10 @@ export async function restorePurchases(): Promise<RestoreResult> {
   return fakeStoreState.nextRestore;
 }
 
-export async function openManageSubscription(): Promise<void> {
+export async function openManageSubscription(opts: { store?: string | null } = {}): Promise<boolean> {
   fakeStoreState.manageOpened += 1;
+  fakeStoreState.manageStore = opts.store ?? null;
+  return fakeStoreState.manageOpens;
 }
 
 export async function storefrontCountry(): Promise<string | null> {

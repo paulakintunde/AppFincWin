@@ -7,6 +7,8 @@ export const subscription = {
     title: 'Subscription',
     manage: 'Manage subscription',
     manageSub: 'Opens {{store}}',
+    // 09-25 (A5-2): added 2026-11-19, needs owner review.
+    manageFailed: 'Your app store did not open. Open it to see your subscriptions.',
     endsLine: 'When a plan ends, FincWin becomes read-only. You can still export your data.',
     row: {
       plan: 'Plan',

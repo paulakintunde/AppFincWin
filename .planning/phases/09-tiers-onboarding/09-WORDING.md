@@ -95,6 +95,7 @@ Placeholders: `{{price}}` store price string, `{{monthly}}` monthly price, `{{ye
 | plans.subscription.title | Subscription | sign-off | Screen title |
 | plans.subscription.manage | Manage subscription | sign-off | First row |
 | plans.subscription.manageSub | Opens {{store}} | sign-off | Sub-line of the manage row |
+| plans.subscription.manageFailed | Your app store did not open. Open it to see your subscriptions. | sign-off | Toast when Manage subscription could not open any store page (09-25 A5-2). Added 2026-11-19 - needs owner review |
 | plans.subscription.endsLine | When a plan ends, FincWin becomes read-only. You can still export your data. | sign-off | Line under the manage row (D-23) |
 | plans.subscription.row.plan | Plan | sign-off | Status card label |
 | plans.subscription.row.planValue | {{plan}} · {{count}} people | sign-off | Status card value |
