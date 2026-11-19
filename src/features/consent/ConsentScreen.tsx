@@ -1,6 +1,8 @@
 // D-17: the one-screen, equal-weight analytics consent prompt. No dark patterns: both
 // choices are the same size and position, neither is pre-selected, and there is no
 // close/skip control other than the two choices themselves.
+// 09-21: the content is split out as ConsentContent so onboarding can show it as its unnumbered last step
+// without a redirect; ConsentScreen keeps the redirect to Home.
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -14,45 +16,61 @@ import { Screen } from '@/ui/Screen';
 import { captureError } from '@/services/errors';
 import { useConsent } from './useConsent';
 
-export function ConsentScreen() {
+export interface ConsentContentProps {
+  /** Called once the answer is saved. The caller decides where to go next. */
+  onDone: (choice: 'granted' | 'declined') => void;
+  /** UI-SPEC 2a: shows the "Last step" line above the card when this is the unnumbered onboarding step. */
+  lastStep?: boolean;
+}
+
+/** The consent heading, body, never-sent card and the two equal-weight choices. No redirect: the caller moves on. */
+export function ConsentContent({ onDone, lastStep = false }: ConsentContentProps) {
   const t = useT();
   const { colors, fonts } = useTheme();
   const { grant, decline } = useConsent();
-  const [status, setStatus] = useState<'idle' | 'busy' | 'done'>('idle');
+  const [status, setStatus] = useState<'idle' | 'busy'>('idle');
   const [saveFailed, setSaveFailed] = useState(false);
 
-  // Only leave the screen once the answer is saved (and so already visible to the (app)
-  // layout's gate) -- redirecting on a failed write would bounce straight back here. A failed
-  // or thrown write always returns to idle with an inline error, so neither choice can stay
-  // disabled (WR-02).
-  const choose = useCallback(async (answer: () => Promise<boolean>) => {
-    setStatus('busy');
-    setSaveFailed(false);
-    let saved = false;
-    try {
-      saved = await answer();
-    } catch (e) {
-      captureError(e, { area: 'unknown' });
-    }
-    setSaveFailed(!saved);
-    setStatus(saved ? 'done' : 'idle');
-  }, []);
+  // Only leave once the answer is saved (and so already visible to the (app) layout's gate) -- moving on after a failed
+  // write would bounce straight back here. A failed or thrown write always returns to idle with an inline error, so
+  // neither choice can stay disabled (WR-02).
+  const choose = useCallback(
+    async (answer: () => Promise<boolean>, choice: 'granted' | 'declined') => {
+      setStatus('busy');
+      setSaveFailed(false);
+      let saved = false;
+      try {
+        saved = await answer();
+      } catch (e) {
+        captureError(e, { area: 'unknown' });
+      }
+      setSaveFailed(!saved);
+      setStatus('idle');
+      if (saved) onDone(choice);
+    },
+    [onDone]
+  );
 
-  const handleShare = useCallback(() => choose(grant), [choose, grant]);
-  const handleDecline = useCallback(() => choose(decline), [choose, decline]);
-
-  if (status === 'done') {
-    return <Redirect href={APP_HOME_HREF} />;
-  }
+  const handleShare = useCallback(() => choose(grant, 'granted'), [choose, grant]);
+  const handleDecline = useCallback(() => choose(decline, 'declined'), [choose, decline]);
 
   return (
-    <Screen scroll>
+    <>
       <Text style={[styles.heading, { fontFamily: fonts.body[700], color: colors.ink }]}>
         {t('consent.heading')}
       </Text>
       <Text style={[styles.body, { fontFamily: fonts.body[500], color: colors.inkMuted }]}>
         {t('consent.body')}
       </Text>
+
+      {lastStep ? (
+        <Text
+          testID="consent-last-step"
+          style={[styles.lastStep, { fontFamily: fonts.body[600], color: colors.inkMuted }]}
+        >
+          {t('onboarding.analytics.lastStep')}
+        </Text>
+      ) : null}
 
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <Text style={[styles.cardTitle, { fontFamily: fonts.body[600], color: colors.inkDim }]}>
@@ -113,6 +131,18 @@ export function ConsentScreen() {
           {t('consent.saveFailed')}
         </Text>
       ) : null}
+    </>
+  );
+}
+
+export function ConsentScreen() {
+  const [done, setDone] = useState(false);
+  if (done) {
+    return <Redirect href={APP_HOME_HREF} />;
+  }
+  return (
+    <Screen scroll>
+      <ConsentContent onDone={() => setDone(true)} />
     </Screen>
   );
 }
@@ -127,6 +157,11 @@ const styles = StyleSheet.create({
     marginTop: space.gapMd,
     fontSize: fontSize.body,
     lineHeight: fontSize.body * 1.5,
+  },
+  lastStep: {
+    marginTop: space.groupGap,
+    fontSize: fontSize.label,
+    lineHeight: fontSize.label * 1.4,
   },
   card: {
     marginTop: space.groupGap,
