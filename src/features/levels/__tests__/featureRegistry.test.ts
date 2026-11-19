@@ -24,8 +24,8 @@ function parseRows(): Row[] {
     // numeric minLevel column, so it is skipped.
     if (!/^[1-4]$/.test(cells[5] ?? '')) continue;
     rows.push({
-      id: m[1],
-      area: m[2],
+      id: m[1] ?? '',
+      area: m[2] ?? '',
       minLevel: Number(cells[5]),
       needsHousehold: cells[6] === 'yes',
     });

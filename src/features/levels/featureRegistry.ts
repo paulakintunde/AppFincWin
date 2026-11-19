@@ -54,7 +54,7 @@ export const FEATURES = [
   { id: 'hh.weightSplit', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'weightSplits', glyph: 'household' },
   { id: 'hh.amountSplit', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'amountSplits', glyph: 'household' },
   { id: 'hh.categoryDefaults', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'categoryDefaultSplits', glyph: 'categories' },
-  { id: 'hh.sharedAccounts', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'sharedAccounts', glyph: 'house' },
+  { id: 'hh.sharedAccounts', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'sharedAccounts', glyph: 'housing' },
   { id: 'hh.settleUp', area: 'Sharing', minLevel: 2, needsHousehold: true, holdsData: 'settlements', glyph: 'settlement' },
 ] as const satisfies readonly FeatureDef[];
 
