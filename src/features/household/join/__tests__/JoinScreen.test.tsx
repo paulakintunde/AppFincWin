@@ -20,6 +20,8 @@ jest.mock('react-native-safe-area-context', () => ({
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({ router: { replace: (...a: unknown[]) => mockReplace(...a), push: jest.fn() } }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+jest.mock('@/features/plans/store/purchasesClient', () => require('@/features/plans/store/fakeStore'));
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ useBackHistory: () => ({ goBack: jest.fn(), history: [] }) }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
 jest.mock('@/data/sync/useSyncStatus', () => ({
@@ -164,7 +166,7 @@ describe('JoinScreen', () => {
     expect(mockRedeem).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByText('Join Flat 4B'));
-    await waitFor(() => expect(mockRedeem).toHaveBeenCalledWith({}, CODE));
+    await waitFor(() => expect(mockRedeem).toHaveBeenCalledWith({}, CODE, null));
     expect(mockReset).toHaveBeenCalledWith(expect.anything(), 'me', 'old-h');
     expect(hapticTap).toHaveBeenCalled();
     await waitFor(() => expect(screen.getByTestId('whats-shared-body')).toBeTruthy());

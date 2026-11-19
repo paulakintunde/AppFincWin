@@ -15,6 +15,9 @@ export type RestoreToastKey = 'plans.paywall.states.restoreNone' | 'plans.paywal
 
 export const SLOW_AFTER_MS = 60_000;
 
+/** What `start` reports when it returns: the store took the purchase, the person backed out, or it failed. */
+export type StartResult = 'submitted' | 'cancelled' | 'failed';
+
 export interface StartArgs {
   offer: PlanOffer;
   /** Set when the person already holds a store plan (Android replacement mode needs it). */
@@ -48,54 +51,52 @@ export function usePurchaseFlow() {
     return () => clearTimeout(id);
   }, [phase]);
 
-  const start = useCallback(
-    async ({ offer, change, timing }: StartArgs) => {
+  const start = useCallback(async ({ offer, change, timing }: StartArgs): Promise<StartResult> => {
+    setNotCharged(false);
+    setState('pending');
+    let outcome;
+    try {
+      outcome = await purchasePlan(offer, change ? { change } : {});
+    } catch (e) {
+      captureError(e, { area: 'unknown' });
       setNotCharged(false);
-      setState('pending');
-      let outcome;
-      try {
-        outcome = await purchasePlan(offer, change ? { change } : {});
-      } catch (e) {
-        captureError(e, { area: 'unknown' });
-        setNotCharged(false);
-        setState('failed');
-        return;
+      setState('failed');
+      return 'failed';
+    }
+    if (outcome.kind === 'cancelled') {
+      setState('idle');
+      return 'cancelled';
+    }
+    if (outcome.kind === 'failed') {
+      setNotCharged(outcome.notCharged);
+      setState('failed');
+      return 'failed';
+    }
+    if (outcome.kind === 'already-used-by-another-account') {
+      setNotCharged(false);
+      setState('failed');
+      return 'failed';
+    }
+    // purchased, or pending store approval: the server decides when the plan is covered.
+    if (outcome.kind === 'purchased') {
+      if (offer.hasTrial && (offer.planKey === 'solo' || offer.planKey === 'duo')) {
+        getAnalytics().track('trial_started', { plan: offer.planKey, period: offer.period });
+      } else {
+        getAnalytics().track('plan_changed', { plan: offer.planKey, period: offer.period, timing });
       }
-      if (outcome.kind === 'cancelled') {
-        setState('idle');
-        return;
-      }
-      if (outcome.kind === 'failed') {
-        setNotCharged(outcome.notCharged);
-        setState('failed');
-        return;
-      }
-      if (outcome.kind === 'already-used-by-another-account') {
-        setNotCharged(false);
-        setState('failed');
-        return;
-      }
-      // purchased, or pending store approval: the server decides when the plan is covered.
-      if (outcome.kind === 'purchased') {
-        if (offer.hasTrial && (offer.planKey === 'solo' || offer.planKey === 'duo')) {
-          getAnalytics().track('trial_started', { plan: offer.planKey, period: offer.period });
-        } else {
-          getAnalytics().track('plan_changed', { plan: offer.planKey, period: offer.period, timing });
-        }
-      }
-      // A change that starts at renewal leaves the current plan in place, so the server will not show the new plan yet.
-      const deferred = timing === 'renewal';
-      setTarget(deferred ? { plan: null, period: null } : { plan: offer.planKey, period: offer.period });
-      setState('waitingServer');
-      try {
-        await requestPlanRefresh({ force: true });
-      } catch (e) {
-        captureError(e, { area: 'unknown' });
-      }
-      if (deferred) setState('done');
-    },
-    [],
-  );
+    }
+    // A change that starts at renewal leaves the current plan in place, so the server will not show the new plan yet.
+    const deferred = timing === 'renewal';
+    setTarget(deferred ? { plan: null, period: null } : { plan: offer.planKey, period: offer.period });
+    setState('waitingServer');
+    try {
+      await requestPlanRefresh({ force: true });
+    } catch (e) {
+      captureError(e, { area: 'unknown' });
+    }
+    if (deferred) setState('done');
+    return 'submitted';
+  }, []);
 
   const restore = useCallback(async (): Promise<RestoreToastKey | null> => {
     let result: Awaited<ReturnType<typeof restorePurchases>>;
