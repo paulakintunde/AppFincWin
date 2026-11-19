@@ -115,6 +115,8 @@ track('plan_restored', { result: 'nothing' });
 track('offer_shown', { feature: 'debts' });
 track('offer_accepted', { feature: 'debts' });
 track('offer_dismissed', { feature: 'debts', choice: 'never' });
+track('offer_dismissed', { feature: 'debts', choice: 'not_now' });
+// @ts-expect-error choice is required (ANL-03 finite guard rejects optional props)
 track('offer_dismissed', { feature: 'debts' });
 track('csv_exported', { locked: true });
 

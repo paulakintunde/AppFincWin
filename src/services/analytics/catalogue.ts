@@ -155,7 +155,7 @@ export type EventCatalogue = {
   plan_restored: { result: 'restored' | 'nothing' | 'already_used' | 'failed' };
   offer_shown: { feature: Phase9FeatureId };
   offer_accepted: { feature: Phase9FeatureId };
-  offer_dismissed: { feature: Phase9FeatureId; choice?: 'not_now' | 'never' };
+  offer_dismissed: { feature: Phase9FeatureId; choice: 'not_now' | 'never' };
   csv_exported: { locked: boolean };
 };
 
