@@ -10,7 +10,7 @@ export type StartLineKey = 'plans.paywall.startLine' | 'plans.paywall.startLineN
 export type CardNameKey = 'plans.paywall.cards.solo.name' | 'plans.paywall.cards.duo.name' | 'plans.paywall.cards.household.name' | 'plans.paywall.cards.extended.name';
 export type CardPeopleKey = 'plans.paywall.cards.solo.people' | 'plans.paywall.cards.duo.people' | 'plans.paywall.cards.household.people' | 'plans.paywall.cards.extended.people';
 export type PriceKey = 'plans.paywall.priceMonth' | 'plans.paywall.priceYear' | 'plans.paywall.priceOtherMonth' | 'plans.paywall.priceOtherYear';
-export type ChangeLineKey = 'plans.paywall.takesEffectNow' | 'plans.paywall.takesEffectRenewal' | 'plans.paywall.changeConfirm.now';
+export type ChangeLineKey = 'plans.paywall.takesEffectNow' | 'plans.paywall.takesEffectRenewal' | 'plans.invite.thirdPersonTrialContinues';
 export type CtaKey = 'plans.paywall.cta.startTrial' | 'plans.paywall.cta.subscribe' | 'plans.paywall.cta.change' | 'plans.paywall.currentPlan';
 
 export interface PlansModelInput {
@@ -41,6 +41,7 @@ export interface PlanCardModel {
 
 export interface DisclosureLine {
   key: string;
+  /** `period` is a locale key (plans.paywall.periodWord.*), resolved to words where the line is rendered. */
   params?: Record<string, string>;
 }
 
@@ -125,7 +126,7 @@ export function plansModel(input: PlansModelInput): PlansModel {
           rule.timing === 'renewal'
             ? { key: 'plans.paywall.takesEffectRenewal', date: renewalDate }
             : rule.timing === 'trialContinues'
-              ? { key: 'plans.paywall.changeConfirm.now', date: null }
+              ? { key: 'plans.invite.thirdPersonTrialContinues', date: null }
               : { key: 'plans.paywall.takesEffectNow', date: null };
       }
     }
@@ -172,7 +173,7 @@ export function plansModel(input: PlansModelInput): PlansModel {
 
   const disclosure: DisclosureLine[] = [];
   if (selectedOffer) {
-    const periodWord = period === 'year' ? 'year' : 'month';
+    const periodWord = period === 'year' ? 'plans.paywall.periodWord.year' : 'plans.paywall.periodWord.month';
     if (trialSelected) {
       const firstCharge = new Date(now + (selectedOffer.trialDays ?? 14) * DAY_MS).toISOString();
       disclosure.push({ key: 'plans.paywall.disclosure.trial', params: { price: selectedOffer.priceString, period: periodWord, date: firstCharge } });

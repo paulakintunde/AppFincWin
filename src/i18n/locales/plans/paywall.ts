@@ -46,6 +46,10 @@ export const paywall = {
     currentPlan: 'Current plan',
     takesEffectNow: 'Takes effect now. The store adjusts the price for the time left.',
     takesEffectRenewal: 'Takes effect at your next renewal on {{date}}.',
+    periodWord: {
+      month: 'month',
+      year: 'year',
+    },
     disclosure: {
       trial: 'Free for 14 days, then {{price}} a {{period}}. First charge on {{date}}. Renews automatically until cancelled.',
       noTrial: '{{price}} a {{period}}, charged today. Renews automatically until cancelled.',

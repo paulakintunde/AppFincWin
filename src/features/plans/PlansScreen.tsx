@@ -138,6 +138,7 @@ export function PlansScreen({ mode: modeParam, plan: planParam, onSeeMembers }: 
     if (!held) return '';
     const rule = changeRule({ from: { ...held, billingIssue: false }, to: { plan: model.selection.plan, period }, platform });
     if ('timing' in rule && rule.timing === 'renewal') return t('plans.paywall.changeConfirm.renewal', { date: formatPlanDate(plan.coveredUntil, i18n.language) });
+    if ('timing' in rule && rule.timing === 'trialContinues') return t('plans.invite.thirdPersonTrialContinues');
     return t('plans.paywall.changeConfirm.now');
   })();
 

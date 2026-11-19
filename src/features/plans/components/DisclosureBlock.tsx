@@ -21,7 +21,13 @@ export function DisclosureBlock({ lines }: { lines: DisclosureLine[] }) {
   return (
     <View testID="disclosure-block" style={[styles.card, { backgroundColor: colors.fill1 }]}>
       {lines.map((line) => {
-        const params = line.params ? { ...line.params, ...(line.params.date ? { date: formatPlanDate(line.params.date, i18n.language) } : {}) } : undefined;
+        const params = line.params
+          ? {
+              ...line.params,
+              ...(line.params.date ? { date: formatPlanDate(line.params.date, i18n.language) } : {}),
+              ...(line.params.period ? { period: tOneOf(t, line.params.period as ParseKeys<'common'>) } : {}),
+            }
+          : undefined;
         return (
           <Text key={line.key} style={meta}>
             {tOneOf(t, line.key as ParseKeys<'common'>, params)}

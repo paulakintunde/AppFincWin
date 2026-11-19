@@ -86,6 +86,13 @@ describe('plansModel', () => {
     expect(m.cta.disabled).toBe(true);
     expect(household.changeLine?.key).toBe('plans.paywall.takesEffectNow');
   });
+  it('in a Solo trial, Duo says the trial continues (signed row), not the generic now line', () => {
+    const m = model({ selected: { plan: 'duo', period: 'month' } }, { status: 'trial', planKey: 'solo', period: 'month', members: 1 });
+    expect(m.cards.find((c) => c.planKey === 'duo')?.changeLine).toEqual({ key: 'plans.invite.thirdPersonTrialContinues', date: null });
+  });
+  it('disclosure period is a locale key, not an English word', () => {
+    expect(model({ selected: { plan: 'solo', period: 'year' } }).disclosure[0]?.params?.period).toBe('plans.paywall.periodWord.year');
+  });
   it('says a smaller plan takes effect at renewal, with the date', () => {
     const m = model({ selected: { plan: 'duo', period: 'month' } }, { status: 'active', planKey: 'household', period: 'month', members: 2, coveredUntil: '2027-01-09T00:00:00Z' });
     expect(m.cards.find((c) => c.planKey === 'duo')?.changeLine).toEqual({ key: 'plans.paywall.takesEffectRenewal', date: '2027-01-09T00:00:00Z' });

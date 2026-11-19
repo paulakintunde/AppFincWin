@@ -44,6 +44,8 @@ Placeholders: `{{price}}` store price string, `{{monthly}}` monthly price, `{{ye
 | plans.paywall.currentPlan | Current plan | sign-off | Disabled button on the plan held now |
 | plans.paywall.takesEffectNow | Takes effect now. The store adjusts the price for the time left. | sign-off | Line on a bigger plan |
 | plans.paywall.takesEffectRenewal | Takes effect at your next renewal on {{date}}. | sign-off | Line on a smaller plan (D-08) |
+| plans.paywall.periodWord.month | month | sign-off | Added 2026-11-19 - needs owner review. The word dropped into the disclosure lines for a monthly price |
+| plans.paywall.periodWord.year | year | sign-off | Added 2026-11-19 - needs owner review. The word dropped into the disclosure lines for a yearly price |
 | plans.paywall.disclosure.trial | Free for 14 days, then {{price}} a {{period}}. First charge on {{date}}. Renews automatically until cancelled. | sign-off | Disclosure block, trial plan selected (D-22) |
 | plans.paywall.disclosure.noTrial | {{price}} a {{period}}, charged today. Renews automatically until cancelled. | sign-off | Disclosure block, no trial |
 | plans.paywall.disclosure.everyPlan | Every plan includes everything. Plans differ only in how many people they cover. | sign-off | Disclosure block |
