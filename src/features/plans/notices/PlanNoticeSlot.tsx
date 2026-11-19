@@ -22,7 +22,8 @@ import { STATUS } from '@/ui/status/statusMap';
 import { NoticeCard, PlanLink, type NoticeAction } from '../components/NoticeCard';
 import { MoveToSoloSheet } from '../MoveToSoloSheet';
 import { OfflineSavesNotice, useOfflineSavesCount } from '../OfflineSavesNotice';
-import { loadOffers, openManageSubscription } from '../store/purchasesClient';
+import { loadOffers } from '../store/purchasesClient';
+import { manageSubscription } from '../manageSubscription';
 import type { PlanKey, PlanOffer, PlanPeriod } from '../types';
 import { usePlanState } from '../usePlanState';
 import { DoubleCoverNotice } from './DoubleCoverNotice';
@@ -136,13 +137,14 @@ function NoticeView({ notice, onDismiss, onMoveSolo, onExistingDismiss }: {
 }) {
   const t = useT();
   const tk = t as unknown as Translate;
+  const store = usePlanState().store;
   const actions: NoticeAction[] = notice.actions.map((a) => ({
     kind: a.style,
     label: tk(a.labelKey, a.kind === 'choose' ? a.params : undefined),
     onPress: () => {
       switch (a.kind) {
         case 'manage':
-          void openManageSubscription().catch((e: unknown) => captureError(e, { area: 'unknown' }));
+          void manageSubscription(store);
           return;
         case 'navigate':
           router.push(a.href as Href);
@@ -207,7 +209,7 @@ function PlanNotices({ which }: { which: 'first' | 'all' }) {
   const shown = which === 'first' ? notices.slice(0, 1) : notices;
   if (shown.length === 0) return null;
   return (
-    <View style={styles.list} testID={which === 'first' ? 'plan-notice-slot' : 'plan-notice-list'}>
+    <View style={which === 'first' ? [styles.list, styles.home] : styles.list} testID={which === 'first' ? 'plan-notice-slot' : 'plan-notice-list'}>
       {shown.map((n) =>
         n.id === 'offlineSaves' ? (
           <OfflineSavesNotice key={n.id} />
@@ -234,5 +236,8 @@ export function PlanNoticeList() {
 
 const styles = StyleSheet.create({
   list: { gap: space.gapMd },
+  // 09-25 (A8): on Home the notice sits in the same frame as every other Home card (This month, Coming up, Accounts):
+  // the card inset from the screen edge and the gap above. On You > Subscription the screen already pads it.
+  home: { marginHorizontal: space.cardPad, marginTop: space.cardPad },
   wrap: { gap: space.gapSm },
 });
