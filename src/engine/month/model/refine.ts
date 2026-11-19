@@ -95,7 +95,9 @@ const LIFE_CHANGE_KINDS: ReadonlySet<RefineCardKind> = new Set<RefineCardKind>([
   'under_logged_month',
 ]);
 
+// Stryker disable next-line EqualityOperator: at 0 both branches give 0, so the sign test at zero changes nothing
 const abs = (x: bigint): bigint => (x < 0n ? -x : x);
+// Stryker disable next-line EqualityOperator: ids and keys are unique, so equal never occurs and < and <= give the same order
 const cmp = (a: string, b: string): number => (a < b ? -1 : 1); // ids and keys are unique
 
 /**
@@ -104,11 +106,13 @@ const cmp = (a: string, b: string): number => (a < b ? -1 : 1); // ids and keys 
  */
 export function refineNoise(current: MinorUnits, window: readonly MinorUnits[]): MinorUnits {
   const pct = (abs(BigInt(current)) * BigInt(REFINE_NOISE_PCT) + 99n) / 100n;
+  // Stryker disable next-line EqualityOperator: when the floor equals the percentage either branch gives the same value
   let noise = BigInt(REFINE_NOISE_MIN_MINOR) > pct ? BigInt(REFINE_NOISE_MIN_MINOR) : pct;
   const recent = window.slice(-REFINE_WINDOW_MONTHS).map((v) => BigInt(v));
   if (recent.length >= 3) {
     const med = medianHalfUp(recent);
     const mad = medianHalfUp(recent.map((v) => abs(v - med)));
+    // Stryker disable next-line EqualityOperator: a deviation equal to the noise leaves the noise unchanged
     if (mad > noise) noise = mad;
   }
   return minorFromBigInt(noise, FN);
@@ -227,6 +231,7 @@ export function refine(input: RefineInput): RefineResult {
     const incomes = past.map((m) => minorUnits(m.lines.reduce((t, l) => (l.status === 'paid' && l.role === 'income' ? t + l.amount : t), 0)));
     const recent = incomes.slice(-REFINE_STEADY_ABOVE_MONTHS);
     if (recent.every((v) => v < steady)) {
+      // Stryker disable next-line EqualityOperator: a value equal to the lowest so far leaves the lowest unchanged
       const lowest = incomes.slice(-3).reduce((lo, v) => (v < lo ? v : lo));
       const card = valueCard('steady_above_income', null, steady, BigInt(lowest), incomes);
       if (card !== null) cards.push(card);

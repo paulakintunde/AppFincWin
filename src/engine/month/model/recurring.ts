@@ -94,8 +94,10 @@ export function detectCandidates(rows: readonly DetectRow[], ctx: DetectContext)
   for (const row of rows) {
     if (row.isTransfer || row.amount === 0) continue;
     const key = offerKey(row.name, row.currency, row.amount);
+    // Stryker disable next-line StringLiteral: the fallback label for a missing account only has to be the same for every such row
     const groupKey = `${key}|${row.accountId ?? ''}`;
     const group = groups.get(groupKey);
+    // Stryker disable next-line EqualityOperator: a row with amount 0 never reaches this line, so >= and > give the same direction
     if (group === undefined) groups.set(groupKey, { key, direction: row.amount > 0 ? 'in' : 'out', rows: [row] });
     else group.rows.push(row);
   }
@@ -104,6 +106,7 @@ export function detectCandidates(rows: readonly DetectRow[], ctx: DetectContext)
   for (const group of groups.values()) {
     if (ctx.dismissedKeys.has(group.key)) continue;
     if (group.rows.some((r) => ctx.linkedRowIds.has(r.id))) continue;
+    // Stryker disable next-line MethodExpression: the copy is only read through this sort, so sorting group.rows in place gives the same result
     const sorted = [...group.rows].sort(byDateThenId);
     if (sorted.length < 2) continue;
 

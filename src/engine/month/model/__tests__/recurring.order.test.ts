@@ -41,3 +41,44 @@ describe('detectCandidates ordering (I16)', () => {
     expect(detectCandidates(twin, EMPTY)).toHaveLength(2);
   });
 });
+
+describe('detectCandidates (05.4-60 kills)', () => {
+  it('rows come back in date order whatever the input order, with ids not following dates', () => {
+    const ordered = [row('c', '2025-01-03'), row('a', '2025-02-02'), row('b', '2025-03-04')];
+    const want = detectCandidates(ordered, EMPTY);
+    expect(want).toHaveLength(1);
+    expect(want[0]?.rowIds).toEqual(['c', 'a', 'b']);
+    expect(detectCandidates([...ordered].reverse(), EMPTY)[0]?.rowIds).toEqual(['c', 'a', 'b']);
+    expect(detectCandidates([ordered[1] as DetectRow, ordered[2] as DetectRow, ordered[0] as DetectRow], EMPTY)[0]?.rowIds).toEqual(['c', 'a', 'b']);
+  });
+
+  it('transfers and zero amounts are never offered', () => {
+    expect(detectCandidates(series('t', 'Acme', '2025-01-03', { isTransfer: true }), EMPTY)).toEqual([]);
+    expect(detectCandidates(series('z', 'Acme', '2025-01-03', { amount: 0 }), EMPTY)).toEqual([]);
+    const mixed = [...series('t', 'Acme', '2025-01-03', { isTransfer: true }), ...series('m', 'Acme', '2025-01-03')];
+    expect(detectCandidates(mixed, EMPTY).map((c) => c.rowIds)).toEqual([['m-0', 'm-1', 'm-2']]);
+  });
+
+  it('same payee on two accounts is two groups; a pay in is "in" and a bill out is "out"', () => {
+    const rows = [...series('p', 'Pay', '2025-01-03', { amount: 100000 }), ...series('q', 'Pay', '2025-01-03', { amount: 100000, accountId: 'a2' })];
+    const out = detectCandidates(rows, EMPTY);
+    expect(out.map((c) => [c.direction, c.rowIds.length])).toEqual([['in', 3], ['in', 3]]);
+  });
+
+  it('orders by key, then anchor date, then first row id, against the order the data would give by itself', () => {
+    // two datasets so one of them has the key order opposite to the anchor/id order, whatever the keys turn out to be
+    for (const flip of [false, true]) {
+      const early = series(flip ? 'z' : 'a', 'Acme', '2025-01-03');
+      const late = series(flip ? 'a' : 'z', 'Acme', '2025-02-10', { currency: 'EUR' });
+      const out = detectCandidates([...late, ...early], EMPTY);
+      expect(out).toHaveLength(2);
+      expect(out.map((c) => c.key)).toEqual(out.map((c) => c.key).sort());
+    }
+    // same name and key on two accounts: the earlier anchor date comes first even when its ids sort later
+    const lateA = series('a', 'Acme', '2025-02-10');
+    const earlyZ = series('z', 'Acme', '2025-01-03', { accountId: 'a2' });
+    const byAnchor = detectCandidates([...lateA, ...earlyZ], EMPTY);
+    expect(byAnchor.map((c) => c.anchorDate)).toEqual(['2025-03-04', '2025-03-12']);
+    expect(byAnchor[0]?.rowIds[0]).toBe('z-0');
+  });
+});
