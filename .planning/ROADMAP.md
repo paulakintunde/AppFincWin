@@ -1592,12 +1592,12 @@ Plans:
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
-- [ ] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
-- [ ] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
-- [ ] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
-- [ ] 09-20-PLAN.md — Household flows: Solo invite confirm, approvals, waiting, switch-rule refusal, leave/Solo moves
-- [ ] 09-21-PLAN.md — Onboarding questions, analytics step, summary, partner and re-run modes
-- [ ] 09-22-PLAN.md — You > Features and in-context feature offers
+- [x] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
+- [x] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
+- [x] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
+- [x] 09-20-PLAN.md — Household flows: Solo invite confirm, approvals, waiting, switch-rule refusal, leave/Solo moves
+- [x] 09-21-PLAN.md — Onboarding questions, analytics step, summary, partner and re-run modes
+- [x] 09-22-PLAN.md — You > Features and in-context feature offers
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
@@ -1699,6 +1699,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 15/26 | In Progress|  |
+| 9. Tiers & Onboarding | 21/26 | In Progress|  |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
