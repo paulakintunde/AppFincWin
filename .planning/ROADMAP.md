@@ -1570,7 +1570,45 @@ Plans:
   3. A user is offered a specific hidden feature in context, at the moment it would have helped, and is told which specific feature a paywall is gating and why.
   4. Household features are governed by whether the user shares money, independently of level.
   5. A user can purchase a subscription recognised across their devices, restore a previous purchase, and cancel through a path no harder to find than account deletion.
-**Plans**: TBD
+**Plans**: 25 plans in 6 waves (planned 2026-11-18 against 09-CONTEXT revision 3 D-01..D-45 and the owner answers in 09-RESEARCH). Owner gates: 09-01 (signed level map, wording file, planner defaults P1-P8) before 09-11/09-12; 09-08 production push. Open human items that do not block close: real Google purchase tests (Play account), iOS products/purchase/DeviceCheck (Apple enrolment, D-24).
+
+Plans:
+**Wave 1**
+- [ ] 09-01-PLAN.md — Owner documents: level-to-feature map, wording file, planner questions (sign-off gate)
+- [ ] 09-02-PLAN.md — Plan data model: household_plans, trial ledger, seats/state/writable functions, plan_state(), launch switch
+- [ ] 09-09-PLAN.md — Client 'locked' write class, kept-on-phone writes and replay (D-40)
+- [ ] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
+- [ ] 09-04-PLAN.md — Seat caps from the plan, payer approval requests, D-39 switch rule, departure plan moves
+- [ ] 09-06-PLAN.md — RevenueCat webhook Edge Function (HMAC, dedupe, re-fetch) and shared snapshot module
+- [ ] 09-11-PLAN.md — Feature registry from the signed map, levelFor, applyOnb (TDD)
+- [ ] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
+- [ ] 09-07-PLAN.md — plan-refresh (caller + sweep) and plan-grant (tester/owner promotional grants)
+- [ ] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
+- [ ] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
+- [ ] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
+- [ ] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
+- [ ] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
+- [ ] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
+- [ ] 09-20-PLAN.md — Household flows: Solo invite confirm, approvals, waiting, switch-rule refusal, leave/Solo moves
+- [ ] 09-21-PLAN.md — Onboarding questions, analytics step, summary, partner and re-run modes
+- [ ] 09-22-PLAN.md — You > Features and in-context feature offers
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
+- [ ] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
+- [ ] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
 **UI hint**: yes
 **Research flag**: Two blocking decisions, both currently open in PROJECT.md, must be resolved before gating is implemented — not during: (1) which of the ~50 features are Free versus Pro, since the paywall's original five-item pitch lost cloud sync and tax export to the architecture decision; (2) whether the Coach ships as a real LLM and on what terms, including a server-side post-filter against prescriptive language before implementation. Everything built before these decisions stays tier-agnostic behind a single entitlement check.
 
