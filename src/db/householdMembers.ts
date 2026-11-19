@@ -15,7 +15,7 @@ export interface HouseholdMemberRow {
   role_label: string;
   /** Percent, 0 to 100. */
   weight: number;
-  /** 0 to 5, an index into MEMBER_COLOUR_NAMES. */
+  /** 0 to 11, an index into MEMBER_COLOUR_NAMES. */
   colour_key: number;
   display_name: string | null;
   name_hidden: boolean;

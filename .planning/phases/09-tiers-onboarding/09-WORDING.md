@@ -514,3 +514,18 @@ Added after owner sign-off 2026-11-19 - needs owner review. Shown to both payers
 | plans.household.full | {{plan}} holds {{count}} people. | sign-off | Line under Invite someone when full |
 | plans.household.seePlans | See plans | sign-off | Payer link when full |
 | plans.household.askPayer | Ask {{payer}} to change the plan. | sign-off | Line for others when full |
+
+## household.members.colours (added 2026-11-19, needs owner review)
+
+Six more member colour names for Extended (12). The owner signed the file on 2026-11-19 before these rows existed; these six rows are not yet signed.
+
+| key | text | status | where |
+|---|---|---|---|
+| household.members.colours.navy | Navy | sign-off | Member colour picker and hidden-name label |
+| household.members.colours.magenta | Magenta | sign-off | Member colour picker and hidden-name label |
+| household.members.colours.brown | Brown | sign-off | Member colour picker and hidden-name label |
+| household.members.colours.orange | Orange | sign-off | Member colour picker and hidden-name label |
+| household.members.colours.charcoal | Charcoal | sign-off | Member colour picker and hidden-name label |
+| household.members.colours.brick | Brick | sign-off | Member colour picker and hidden-name label |
+
+Owner glance at the 09-25 device pass: the six colours (Navy #1F3A5F, Magenta #A62D8C, Brown #7A4B2A, Orange #A65600, Charcoal #14150F, Brick #933720) beside the first six; Magenta and Orange are new hexes (owner 2026-11-19); Orange is closest to Brown (ΔE00 12.3) and Brick is closest to Rust (ΔE00 8.0).

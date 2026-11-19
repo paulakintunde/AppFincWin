@@ -94,6 +94,32 @@ describe('MemberSheet', () => {
     );
   });
 
+  it('offers 12 colours and saves a colour above 5', async () => {
+    await setup();
+    for (const ck of ['green', 'rust', 'slate', 'ochre', 'plum', 'teal', 'navy', 'magenta', 'brown', 'orange', 'charcoal', 'brick']) {
+      expect(screen.getByTestId(`colour-${ck}`)).toBeTruthy();
+    }
+    await fireEvent.press(screen.getByTestId('colour-charcoal'));
+    await fireEvent.press(screen.getByText('Save changes'));
+    await waitFor(() =>
+      expect(mockDisplay).toHaveBeenCalledWith(expect.anything(), { expectedVersion: 1, colourKey: 10, nameHidden: false, displayName: null }),
+    );
+    mockDisplay.mockClear();
+    await fireEvent.press(screen.getByTestId('colour-orange'));
+    await fireEvent.press(screen.getByText('Save changes'));
+    await waitFor(() =>
+      expect(mockDisplay).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ colourKey: 9 })),
+    );
+  });
+
+  it('marks a new colour held by another member as taken', async () => {
+    mockMembers = [member('me', 'Paul', 0), member('u2', 'Sam', 7, { is_owner: true, role_label: 'Owner' })];
+    await setup();
+    const magenta = screen.getByTestId('colour-magenta');
+    expect(magenta.props.accessibilityLabel).toBe('Magenta, taken by Sam');
+    expect(magenta.props.accessibilityState.disabled).toBe(true);
+  });
+
   it('shows the conflict card on version_conflict', async () => {
     mockDisplay.mockResolvedValueOnce({ ok: false, reason: 'version_conflict' });
     await setup();
