@@ -15,8 +15,10 @@ function parseRows(): Row[] {
     const cells = line
       .split(' | ')
       .map((c) => c.trim().replace(/^\|\s*/, '').replace(/\s*\|$/, ''));
-    if (cells.length < 4 || cells[0] === 'key' || !/^[A-Za-z]+\.[A-Za-z.]+$/.test(cells[0])) continue;
-    rows.push({ key: cells[0], text: cells[1], status: cells[2] });
+    const [key, text, status] = cells;
+    if (cells.length < 4 || key === undefined || text === undefined || status === undefined) continue;
+    if (key === 'key' || !/^[A-Za-z]+\.[A-Za-z.]+$/.test(key)) continue;
+    rows.push({ key, text, status });
   }
   return rows;
 }
