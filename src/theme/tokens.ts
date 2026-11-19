@@ -141,11 +141,22 @@ export const stateColors: Readonly<Record<StateTone, { readonly color: string; r
 /** 06.1 D-16: muted text on any state tint. */
 export const stateMuted = '#5A564B';
 
-/** Component.HHCOL, FincWin United.dc.html line 3216. */
-export const memberColors = ['#1B4D3E', '#B4472A', '#3E5C6B', '#7E6020', '#6E4A63', '#2F6E68'] as const;
+/**
+ * Component.HHCOL (FincWin United.dc.html line 3216) keys 0-5. Keys 6-11 (owner exception 2026-11-19, Extended plan of 12): Navy, Brown,
+ * Charcoal and Brick reuse ACCENTS.navy, ACCENTS.rust, colors.ink and stateColors.short.color; Magenta and Orange (keys 7 and 9) are
+ * owner-approved new hexes that live only here (white text 6.22 and 5.31; CIEDE2000 12 or more from every other member colour; tested in
+ * __tests__/memberColours.test.ts). A member colour always shows with the member's name or colour word.
+ */
+export const memberColors = [
+  '#1B4D3E', '#B4472A', '#3E5C6B', '#7E6020', '#6E4A63', '#2F6E68',
+  '#1F3A5F', '#A62D8C', '#7A4B2A', '#A65600', '#14150F', '#933720',
+] as const;
 
 /** Privacy-safe display names for memberColors, in the same order. */
-export const memberColorNames = ['Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Teal'] as const;
+export const memberColorNames = [
+  'Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Teal',
+  'Navy', 'Magenta', 'Brown', 'Orange', 'Charcoal', 'Brick',
+] as const;
 
 export const shadowColor = '#14150F';
 
