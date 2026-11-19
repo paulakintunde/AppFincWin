@@ -26,7 +26,8 @@ jest.mock('@/features/plans/PlanHost', () => ({ PlanHost: () => null }));
 jest.mock('@/features/plans/LockHost', () => ({ LockHost: () => null }));
 jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
 jest.mock('@/features/plans/usePlanState', () => ({
-  usePlanState: () => ({ status: 'tester', writable: true, prelaunch: true, loading: false, isError: false }),
+  // 09-24: a loaded, non-sample plan, so the tabs layout's first-account gate behaves as before (no Sample bar).
+  usePlanState: () => ({ status: 'tester', kind: 'tester', writable: true, prelaunch: true, loading: false, isError: false, members: 1, leftGrace: false, householdId: null, payerName: null, graceUntil: null, coveredUntil: null }),
 }));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
 jest.mock('@/features/auth/AuthProvider', () => ({

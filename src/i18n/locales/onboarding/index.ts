@@ -187,6 +187,7 @@ export const onboarding = {
       word: 'Sample',
       sub: 'Free for 14 days',
       start: 'Start 14-day free trial',
+      readerLabel: 'Sample figures. Start 14-day free trial.',
     },
     lockedTitle: 'That needs your own records',
     lockedBody: 'Start the free trial to add your own records and run checks on your own money.',

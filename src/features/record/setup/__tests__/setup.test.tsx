@@ -97,6 +97,12 @@ jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () 
 jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
 jest.mock('@/features/decide/shadow/DecideShadowHost', () => ({ DecideShadowHost: () => null }));
 jest.mock('@/shell/fab/FabProvider', () => ({ FabProvider: ({ children }: { children: React.ReactNode }) => children }));
+// 09-24: the gate reads the plan; a paid plan keeps the first-account redirect, 'sample' (the pre-trial look-around) skips it.
+let mockPlan = { status: 'trial', loading: false };
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
+jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null }));
+jest.mock('@/features/onboarding/SampleBar', () => ({ SampleBar: () => null }));
+jest.mock('@/features/onboarding/SampleHost', () => ({ SampleHost: () => null }));
 jest.mock('expo-router/js-tabs', () => ({ Tabs: Object.assign(() => null, { Screen: () => null }) }));
 
 import { SetupAccountScreen } from '../SetupAccountScreen';
@@ -115,6 +121,7 @@ beforeEach(() => {
   mockSeedPending = false;
   mockSeed.mockResolvedValue(true);
   mockAccounts = { data: [], isLoading: false, isError: false };
+  mockPlan = { status: 'trial', loading: false };
 });
 
 describe('needsFirstAccount', () => {
@@ -235,6 +242,13 @@ describe('Tabs layout first-account gate', () => {
     await render(wrap(<ActivityRoute />));
     mockCtx = { ready: false, householdId: null, userId: null, today: '2026-10-09' };
     mockAccounts = { data: [], isLoading: false, isError: false };
+    await render(wrap(<ActivityRoute />));
+    expect(mockRedirectHref).toBeNull();
+  });
+  it('09-24: does not redirect in the pre-trial look-around (plan status sample) or while the plan is unknown', async () => {
+    mockPlan = { status: 'sample', loading: false };
+    await render(wrap(<ActivityRoute />));
+    mockPlan = { status: 'sample', loading: true };
     await render(wrap(<ActivityRoute />));
     expect(mockRedirectHref).toBeNull();
   });
