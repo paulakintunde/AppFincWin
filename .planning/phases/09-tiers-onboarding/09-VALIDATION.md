@@ -59,6 +59,37 @@ Filled by the planner per task. Requirement-level map:
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
+### Per-plan task map (planner, 2026-11-18)
+
+| Plan | Wave | Task(s) | Automated command | Covers |
+|------|------|---------|-------------------|--------|
+| 09-01 | 1 | 1-3 | banned-word node script over 09-WORDING.md; `grep Signed:` | D-32 map, wording sign-off (owner gate) |
+| 09-02 | 1 | 1-2 | `npx supabase test db supabase/tests/database/111_plans_core.test.sql` (+102, 104) | TIER-07 data model, D-10, D-13, D-16, D-30 |
+| 09-03 | 2 | 1-2 | `npx supabase test db` (112 + full suite) | D-02, D-40 server lock, D-29 backfill |
+| 09-04 | 2 | 1-2 | `npx supabase test db` (113, 114) | D-10, D-21, D-39, D-41, D-42 |
+| 09-05 | 3 | 1-2 | `npx supabase test db` (115) | D-13, D-16, D-19 |
+| 09-06 | 2 | 1-2 | `npm run test:deno` (subscriber, verify, sync) | TIER-07 webhook |
+| 09-07 | 3 | 1-2 | `npm run test:deno` (refresh, grant) | TIER-07/08, D-29 grants |
+| 09-08 | 4 | 1-4 | gate + `grep` push log; owner checkpoints | ENV-12, schema push [BLOCKING] |
+| 09-09 | 1 | 1-2 | `npx jest src/data/sync` | D-40 client |
+| 09-10 | 1 | 1-3 | `npx jest src/features/plans` | TIER-07/08, D-08, D-16 |
+| 09-11 | 2 | 1 (TDD) | `npx jest src/features/levels` | TIER-01/02 |
+| 09-12 | 2 | 1-2 | `npx jest src/i18n src/services/analytics src/ui/status` | ANL-08, copy guard |
+| 09-13 | 3 | 1-3 | `npx jest src/features/levels src/features/grow src/features/household` | TIER-02/03/06 |
+| 09-14 | 3 | 1-2 | `npx jest src/features/plans` | TIER-07/08/09, D-22, D-44 |
+| 09-15 | 4 | 1-2 | `npx jest src/features/you src/features/plans` | TIER-10, D-14, D-23 |
+| 09-16 | 3 | 1-2 | `npx jest src/features/plans` | TIER-09, D-03 |
+| 09-17 | 4 | 1-2 | `npx jest src/features/plans/__tests__/writeGateWiring.test.tsx` (+touched folders) | TIER-09, D-04 |
+| 09-18 | 4 | 1-2 | `npx jest src/features/export` | D-03 export, D-40 notice |
+| 09-19 | 5 | 1-2 | `npx jest src/features/plans/notices` | D-18, D-19, D-21a |
+| 09-20 | 4 | 1-2 | `npx jest src/features/household` | D-17, D-20, D-21, D-39, D-43 |
+| 09-21 | 4 | 1-2 | `npx jest src/features/onboarding src/features/consent` | TIER-01/04, ANL-07/08 |
+| 09-22 | 4 | 1-2 | `npx jest src/features/levels` | TIER-03/05/06 |
+| 09-23 | 5 | 1-2 | `npx jest src/features/onboarding src/features/household/join` | TIER-01/04, D-28, D-30 |
+| 09-24 | 5 | 1-2 | `npx jest src/features/onboarding` | D-17b, D-28 |
+| 09-25 | 6 | 1-3 | full suite + owner device pass | all |
+
+
 ---
 
 ## Wave 0 Requirements
