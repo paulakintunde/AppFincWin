@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 9 wave 4 built (21/26): 09-15, 09-17, 09-18, 09-20, 09-21, 09-22 merged; 09-08 prod push blocked on CI pgTAP fixes + owner OK"
+stopped_at: "Phase 9 wave 5 partly merged (23/26): 09-19, 09-23 + CI fixes; 09-24 building (First read intro deferred to 08.1); 09-08 prod push awaits green CI + owner OK"
 last_updated: "2026-11-19T11:03:51.733Z"
-last_activity: 2026-11-19 -- Phase 9 wave 4 merged
+last_activity: 2026-11-19 -- Phase 9 09-19, 09-23 and CI fixes merged
 progress:
   total_phases: 30
   completed_phases: 16
   total_plans: 807
-  completed_plans: 786
+  completed_plans: 788
   percent: 97
 ---
 
@@ -233,5 +233,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-11-19T11:03:51.704Z
-Stopped at: Phase 9 wave 4 built (21/26): 09-15, 09-17, 09-18, 09-20, 09-21, 09-22 merged; 09-08 prod push blocked on CI pgTAP fixes + owner OK
+Stopped at: Phase 9 wave 5 partly merged (23/26): 09-19, 09-23 + CI fixes; 09-24 building (First read intro deferred to 08.1); 09-08 prod push awaits green CI + owner OK
 Resume file: .planning/phases/09-tiers-onboarding/09-08-PLAN.md

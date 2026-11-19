@@ -1600,8 +1600,8 @@ Plans:
 - [x] 09-22-PLAN.md — You > Features and in-context feature offers
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
-- [ ] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
+- [x] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
+- [x] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
 - [ ] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read)
 
 **Wave 6** *(blocked on Wave 5 completion)*
@@ -1699,6 +1699,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 21/26 | In Progress|  |
+| 9. Tiers & Onboarding | 23/26 | In Progress|  |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
