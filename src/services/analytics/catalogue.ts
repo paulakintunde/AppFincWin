@@ -23,6 +23,44 @@ export type DecideSetupStepKey =
   | 'welcome' | 'paid' | 'pay' | 'season' | 'method' | 'other' | 'regular' | 'loans' | 'saving' | 'everyday'
   | 'unusual' | 'accountUse' | 'emergency' | 'envelopes' | 'unspent' | 'share' | 'detail' | 'reminders' | 'summary';
 
+/**
+ * 09 (09-LEVEL-MAP.md): every feature id, copied as a literal union so analytics does not import features code.
+ * Keep in step with src/features/levels/featureRegistry.ts.
+ */
+export type Phase9FeatureId =
+  | 'moneyInOut'
+  | 'categories'
+  | 'search'
+  | 'monthView'
+  | 'balances'
+  | 'recurring'
+  | 'cloneMonth'
+  | 'refunds'
+  | 'bulkSelect'
+  | 'searchAllMonths'
+  | 'multiAccount'
+  | 'transfers'
+  | 'reconcile'
+  | 'multiCurrency'
+  | 'caps'
+  | 'comingUp'
+  | 'goals'
+  | 'goalContributions'
+  | 'debts'
+  | 'payoffPlan'
+  | 'investing'
+  | 'lots'
+  | 'growthIllustration'
+  | 'calculators'
+  | 'import'
+  | 'pdfImport'
+  | 'undoHistory'
+  | 'hh.weightSplit'
+  | 'hh.amountSplit'
+  | 'hh.categoryDefaults'
+  | 'hh.sharedAccounts'
+  | 'hh.settleUp';
+
 export type EventCatalogue = {
   app_opened: Record<string, never>;
   sign_in_completed: { provider: 'apple' | 'google' };
@@ -96,6 +134,29 @@ export type EventCatalogue = {
   decide_help_used: Record<string, never>;
   decide_refine_choice: { kind: DecideRefineCardKind; choice: 'kept' | 'updated' };
   decide_not_ready_shown: { first: 'past_month_missing' | 'activity_not_current' | 'envelopes_unconfirmed'; count: '1' | '2' | '3' };
+  // 09 D-38/ANL-08: no amounts, prices or free text; plan id only; sent only with consent through track().
+  // Levels are the strings '1' to '4' because the finite-literal guard rejects numbers (ANL-03).
+  onboarding_started: { mode: 'first_run' | 'partner' | 'rerun' };
+  onboarding_question_answered: {
+    step: 'goal' | 'cur' | 'acct' | 'shape' | 'inc' | 'freq' | 'debt' | 'inv' | 'share' | 'watch' | 'save';
+    skipped: boolean;
+  };
+  onboarding_finished: { mode: 'first_run' | 'partner' | 'rerun'; skipped_all: boolean };
+  onboarding_level_assigned: { level: '1' | '2' | '3' | '4'; source: 'answers' | 'skipped' | 'existing' };
+  level_changed: { from: '1' | '2' | '3' | '4'; to: '1' | '2' | '3' | '4'; source: 'rerun' | 'features' };
+  feature_switch_changed: { feature: Phase9FeatureId; on: boolean };
+  paywall_shown: { trigger: 'first_run' | 'sample_bar' | 'locked' | 'change_plan' | 'notice' | 'invite' };
+  trial_started: { plan: 'solo' | 'duo'; period: 'month' | 'year' };
+  plan_changed: {
+    plan: 'solo' | 'duo' | 'household' | 'extended';
+    period: 'month' | 'year';
+    timing: 'now' | 'renewal' | 'trialContinues';
+  };
+  plan_restored: { result: 'restored' | 'nothing' | 'already_used' | 'failed' };
+  offer_shown: { feature: Phase9FeatureId };
+  offer_accepted: { feature: Phase9FeatureId };
+  offer_dismissed: { feature: Phase9FeatureId; choice?: 'not_now' | 'never' };
+  csv_exported: { locked: boolean };
 };
 
 export type EventName = keyof EventCatalogue;

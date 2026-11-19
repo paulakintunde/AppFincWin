@@ -100,3 +100,36 @@ track('decide_recorded', { outcome: 'planned', amount: 4000 });
 // Invalid: a free string is not an outcome.
 // @ts-expect-error
 track('decide_recorded', { outcome: 'Laptop' });
+
+// 09-12 (D-38, ANL-08): level, plan and offer events carry enums only. Levels are the strings '1' to '4'.
+track('onboarding_started', { mode: 'first_run' });
+track('onboarding_question_answered', { step: 'goal', skipped: false });
+track('onboarding_finished', { mode: 'rerun', skipped_all: false });
+track('onboarding_level_assigned', { level: '2', source: 'skipped' });
+track('level_changed', { from: '2', to: '3', source: 'features' });
+track('feature_switch_changed', { feature: 'hh.settleUp', on: true });
+track('paywall_shown', { trigger: 'sample_bar' });
+track('trial_started', { plan: 'solo', period: 'month' });
+track('plan_changed', { plan: 'household', period: 'year', timing: 'renewal' });
+track('plan_restored', { result: 'nothing' });
+track('offer_shown', { feature: 'debts' });
+track('offer_accepted', { feature: 'debts' });
+track('offer_dismissed', { feature: 'debts', choice: 'never' });
+track('offer_dismissed', { feature: 'debts' });
+track('csv_exported', { locked: true });
+
+// Invalid: no amount on a plan event.
+// @ts-expect-error
+track('plan_changed', { plan: 'solo', period: 'month', timing: 'now', amount: 699 });
+
+// Invalid: the level is a literal string, not a number.
+// @ts-expect-error
+track('onboarding_level_assigned', { level: 2, source: 'answers' });
+
+// Invalid: a feature id outside the signed map, so no free text.
+// @ts-expect-error
+track('offer_shown', { feature: 'my groceries' });
+
+// Invalid: no price on the trial event.
+// @ts-expect-error
+track('trial_started', { plan: 'solo', period: 'month', price: 'six ninety-nine' });
