@@ -12,6 +12,7 @@ import { DURATION, useMotion } from '@/theme/motion';
 import { textRole } from '@/theme/typography';
 import type { SortKey } from '@/engine/activity';
 import type { ActivityView } from '../activityViewPrefs';
+import { OfflineSavesChip } from '@/features/plans/OfflineSavesChip';
 import { SearchBar, type SearchScope } from '../SearchBar';
 import { UnpaidBanner } from '../UnpaidBanner';
 import { formatMonthLabel } from '../MonthSwitcher';
@@ -162,6 +163,9 @@ export function ActivityHeaderBands(p: ActivityHeaderBandsProps): React.JSX.Elem
 
       {/* D-66: the Unpaid banner stays under band 4 while the Unpaid filter is on. */}
       {!searchOpen && p.unpaidOnly ? <UnpaidBanner onClear={p.onClearUnpaid} /> : null}
+
+      {/* 09-18 (D-40): writes kept on the phone because of a lock; renders nothing at zero. */}
+      {!searchOpen ? <OfflineSavesChip /> : null}
 
       {/* D-46: the offer card sits below the bands and above the list. */}
       {!searchOpen ? p.offerCard : null}
