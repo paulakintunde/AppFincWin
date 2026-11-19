@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { LockHost } from '../LockHost';
 import type { PlanStatus } from '../types';
+import { getPlanWriteState } from '@/data/sync/planWriteGuard';
 
 jest.setTimeout(30000);
 
@@ -24,7 +25,9 @@ jest.mock('../usePlanState', () => ({ usePlanState: () => mockPlan }));
 let mockWrites: unknown[] = [];
 const mockReplay = jest.fn();
 const mockHydrate = jest.fn(async () => undefined);
+const mockDrop = jest.fn(async () => 0);
 jest.mock('@/data/sync/lockedWrites', () => ({
+  dropLockedWrites: () => mockDrop(),
   getLockedWrites: () => mockWrites,
   useLockedWrites: () => mockWrites,
   hydrateLockedWrites: () => mockHydrate(),
@@ -186,9 +189,37 @@ describe('LockHost explainer', () => {
     const first = await mount();
     await act(async () => undefined);
     expect(mockPush).toHaveBeenCalledWith('/plan-ended');
-    first.unmount();
+    await first.unmount();
     await mount();
     await act(async () => undefined);
     expect(mockPush).toHaveBeenCalledTimes(1);
+  });
+});
+
+// 09-25 (A2-W): the plan view reaches the central write guard, and nothing made in the look-around is kept.
+describe('LockHost and the central guard', () => {
+  beforeEach(() => mockDrop.mockClear());
+
+  it('publishes the plan view to the guard', async () => {
+    mockPlan = plan({ status: 'sample', writable: false, coveredUntil: null });
+    await mount();
+    expect(getPlanWriteState()).toEqual({ status: 'sample', writable: false, loading: false });
+  });
+
+  it('sample with kept writes drops them and never replays', async () => {
+    mockPlan = plan({ status: 'sample', writable: false, coveredUntil: null });
+    mockWrites = [{ id: 'w1' }];
+    await mount();
+    expect(mockDrop).toHaveBeenCalledTimes(1);
+    expect(mockReplay).not.toHaveBeenCalled();
+  });
+
+  it('locked or loading keeps them (D-40)', async () => {
+    mockWrites = [{ id: 'w1' }];
+    mockPlan = plan({ status: 'locked', writable: false });
+    await mount();
+    mockPlan = plan({ status: 'sample', writable: false, loading: true });
+    await mount();
+    expect(mockDrop).not.toHaveBeenCalled();
   });
 });

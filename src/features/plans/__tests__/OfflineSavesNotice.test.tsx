@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { OfflineSavesNotice } from '../OfflineSavesNotice';
 import { OfflineSavesChip } from '../OfflineSavesChip';
 import { ExportScreen } from '@/features/export/ExportScreen';
+import { setPlanWriteState } from '@/data/sync/planWriteGuard';
 
 jest.setTimeout(30000);
 
@@ -79,6 +80,18 @@ describe('OfflineSavesNotice', () => {
     const { getByTestId, getByText } = await render(wrap(<OfflineSavesChip />));
     expect(getByTestId('offline-saves-chip')).toBeTruthy();
     expect(getByText('3')).toBeTruthy();
+  });
+
+  // 09-25 (A2-W): like the notice, the chip never shows in the sample look-around.
+  it('the Activity chip is hidden in sample and shown when locked', async () => {
+    mockWrites = writes(1);
+    setPlanWriteState({ status: 'sample', writable: false, loading: false });
+    const sample = await render(wrap(<OfflineSavesChip />));
+    expect(sample.queryByTestId('offline-saves-chip')).toBeNull();
+    setPlanWriteState({ status: 'locked', writable: false, loading: false });
+    const locked = await render(wrap(<OfflineSavesChip />));
+    expect(locked.getByTestId('offline-saves-chip')).toBeTruthy();
+    setPlanWriteState(null);
   });
 });
 
