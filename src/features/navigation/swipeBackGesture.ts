@@ -25,8 +25,8 @@ export function shouldSwipeBack(s: SwipeSample): boolean {
 }
 
 // Tab roots (the (tabs) group: Home, Activity, later Decide/Grow/Insights), the consent prompt
-// and the linear setup flow never swipe back; detail screens do (D-07).
-const NO_SWIPE_BACK: ReadonlySet<string> = new Set(['(tabs)', 'consent', 'setup/account', 'setup/rough', 'setup/first-check', 'setup/history']);
+// and the linear setup flow never swipe back; detail screens do (D-07). 09-23: nor the onboarding questions (own Back, UI-SPEC 3).
+const NO_SWIPE_BACK: ReadonlySet<string> = new Set(['(tabs)', 'consent', 'onboarding', 'setup/account', 'setup/rough', 'setup/first-check', 'setup/history']);
 
 export function isSwipeBackRoute(routeName: string): boolean {
   return !NO_SWIPE_BACK.has(routeName);

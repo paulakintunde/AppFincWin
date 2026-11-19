@@ -45,3 +45,13 @@ export function firstRunTarget(input: FirstRunInput): FirstRunTarget {
 export function onboardingModeOf(target: FirstRunTarget): OnboardingRouteMode | null {
   return typeof target === 'object' ? target.onboarding : null;
 }
+
+/** The onboarding route's `mode` param; anything else falls back to the partner version when the row says so. */
+export function modeFromParam(
+  param: string | string[] | undefined,
+  partnerVersion: boolean
+): OnboardingRouteMode | 'rerun' {
+  const p = Array.isArray(param) ? param[0] : param;
+  if (p === 'first_run' || p === 'partner' || p === 'rerun') return p;
+  return partnerVersion ? 'partner' : 'first_run';
+}

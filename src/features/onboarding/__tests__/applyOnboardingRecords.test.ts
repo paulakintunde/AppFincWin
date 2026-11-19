@@ -1,5 +1,12 @@
 import type { UserSetup } from '@/db/userSetup';
-import { applyOnboardingRecords, setupRecordId, type ApplyRecordsDeps, type SetupRecordKind } from '../applyOnboardingRecords';
+import {
+  applyOnboardingRecords,
+  idOfVariables,
+  queuedAddHasId,
+  setupRecordId,
+  type ApplyRecordsDeps,
+  type SetupRecordKind,
+} from '../applyOnboardingRecords';
 
 jest.mock('expo-crypto', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -187,5 +194,22 @@ describe('applyOnboardingRecords', () => {
     });
     expect(w.calls.addAccount).toHaveBeenCalledTimes(1);
     expect(w.calls.saveUserSetup).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('queued add scan (the real recordExists, first half)', () => {
+  it('reads the id from an account add or a goal save', () => {
+    expect(idOfVariables({ row: { id: 'a' } })).toBe('a');
+    expect(idOfVariables({ goal: { id: 'g' } })).toBe('g');
+    expect(idOfVariables(undefined)).toBeNull();
+    expect(idOfVariables({ userId: 'u' })).toBeNull();
+  });
+
+  it('a paused or pending add carrying the id counts; a finished one does not', () => {
+    const m = (status: string, id: string) => ({ state: { status, variables: { row: { id } } } });
+    expect(queuedAddHasId([m('pending', 'x')], 'x')).toBe(true);
+    expect(queuedAddHasId([m('idle', 'x')], 'x')).toBe(true);
+    expect(queuedAddHasId([m('success', 'x')], 'x')).toBe(false);
+    expect(queuedAddHasId([m('pending', 'y')], 'x')).toBe(false);
   });
 });

@@ -11,7 +11,7 @@ import { ConsentContent } from '@/features/consent/ConsentScreen';
 import type { SetupStepReady } from '@/features/income/stepTypes';
 import type { Level } from '@/features/levels/featureRegistry';
 import type { OnboardingAnswers, QuestionKey } from '@/features/levels/onboardingAnswers';
-import { FEATURES_HREF } from '@/features/plans/routes';
+import { featuresPreviewHref } from '@/features/plans/routes';
 import { getDeviceRegion } from '@/services/locale/deviceLocale';
 import { showToast } from '@/state/undoToast';
 import { Screen } from '@/ui/Screen';
@@ -109,7 +109,7 @@ export function OnboardingFlow({ mode, onFinished, onExitFirst, payerName }: Onb
         onContinue={finish}
         onApply={finish}
         onKeep={keep}
-        onSeeWhatIsOn={() => router.push(FEATURES_HREF)}
+        onSeeWhatIsOn={() => router.push(featuresPreviewHref(plan.level, plan.switches))}
       />
     );
   }

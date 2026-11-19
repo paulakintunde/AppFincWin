@@ -28,6 +28,13 @@ jest.mock('@/features/auth/AuthProvider', () => ({
 jest.mock('@/features/consent/useConsent', () => ({
   useConsent: () => ({ loading: false, needsPrompt: false }),
 }));
+// 09-23: the layout skips its consent redirect for a first run; a finished setup here.
+jest.mock('@/features/onboarding/useFirstRunPending', () => ({ useFirstRunPending: () => false }));
+// 09-23: the root entry reads the setup row before landing; a finished setup lands on Home.
+jest.mock('@/data/queries/userSetup', () => ({
+  useUserSetupQuery: () => ({ data: { completedAt: '2026-11-01T00:00:00Z', level: 4, partnerVersion: false }, isError: false }),
+  useFeatureSwitches: () => ({ data: {} }),
+}));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1', userId: 'u1', today: '2026-10-14' }),
 }));

@@ -38,7 +38,22 @@ export interface ApplyRecordsDeps {
   saveUserSetup(patch: UserSetupPatch): void;
 }
 
-export type ApplyRecordsResult = 'not-ready' | 'nothing-to-do' | 'applied';
+/** The id an account add or goal save carries in its variables (AddAccountVars.row.id, SaveGoalPlanVars.goal.id). */
+export function idOfVariables(variables: unknown): string | null {
+  const v = variables as { row?: { id?: unknown }; goal?: { id?: unknown } } | null | undefined;
+  const id = v?.row?.id ?? v?.goal?.id;
+  return typeof id === 'string' ? id : null;
+}
+
+/** True when a not-yet-succeeded mutation (a paused offline add restored by the persister, say) carries this id. */
+export function queuedAddHasId(
+  mutations: readonly { state: { status: string; variables: unknown } }[],
+  id: string
+): boolean {
+  return mutations.some((m) => m.state.status !== 'success' && m.state.status !== 'error' && idOfVariables(m.state.variables) === id);
+}
+
+export type ApplyRecordsResult ='not-ready' | 'nothing-to-do' | 'applied';
 
 /** Whether there is anything to apply at all (cheap check before any lookup). */
 export function needsRecords(setup: UserSetup | null): boolean {

@@ -47,6 +47,11 @@ jest.mock('@/db/householdInvites', () => ({
   previewInvite: (...a: unknown[]) => mockPreview(...a),
   redeemInvite: (...a: unknown[]) => mockRedeem(...a),
 }));
+// 09-23: the person's setup row; finished by default (an existing user joining goes to the household).
+let mockSetupData: { completedAt: string | null; level: number | null; partnerVersion: boolean; version: number } | null;
+jest.mock('@/features/levels/useUserSetup', () => ({ useUserSetup: () => ({ data: mockSetupData, loading: false }) }));
+const mockSaveSetup = jest.fn();
+jest.mock('@/data/mutations/userSetup', () => ({ useSaveUserSetup: () => ({ saveUserSetup: (v: unknown) => mockSaveSetup(v) }) }));
 const mockTake = jest.fn();
 jest.mock('../pendingInvite', () => ({
   ...jest.requireActual('../pendingInvite'),
@@ -91,6 +96,8 @@ beforeEach(async () => {
   mockTake.mockResolvedValue(null);
   (hapticTap as jest.Mock).mockClear();
   mockOnline = true;
+  mockSetupData = { completedAt: '2026-11-01T00:00:00Z', level: 4, partnerVersion: false, version: 2 };
+  mockSaveSetup.mockReset();
 });
 
 describe('JoinScreen', () => {
@@ -204,5 +211,25 @@ describe('JoinScreen', () => {
     await setup();
     await waitFor(() => expect(screen.getByTestId('join-preview')).toBeTruthy());
     expect(mockRedeem).not.toHaveBeenCalled();
+  });
+
+  it('09-23: a person with no finished setup goes on to the partner questions after joining', async () => {
+    await AsyncStorage.setItem('fincwin.whatsSharedSeen.h-new', '1');
+    mockSetupData = null;
+    mockPreview.mockResolvedValue(PREVIEW);
+    mockRedeem.mockResolvedValue({ ok: true, household_id: 'h-new', household_name: 'Flat 4B' });
+    await setup();
+    await typeAndCheck(CODE);
+    await waitFor(() => expect(screen.getByText('Join Flat 4B')).toBeTruthy());
+    await fireEvent.press(screen.getByText('Join Flat 4B'));
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith({ pathname: '/onboarding', params: { mode: 'partner' } }));
+    expect(mockSaveSetup).toHaveBeenCalledWith({ userId: 'me', patch: { partnerVersion: true }, baseVersion: 0 });
+  });
+
+  it('09-23: a new person who does not join goes on to the first-run questions', async () => {
+    mockSetupData = null;
+    await setup();
+    await fireEvent.press(screen.getByLabelText('Back'));
+    expect(mockReplace).toHaveBeenCalledWith({ pathname: '/onboarding', params: { mode: 'first_run' } });
   });
 });

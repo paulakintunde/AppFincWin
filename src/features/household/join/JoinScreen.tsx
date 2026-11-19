@@ -31,6 +31,10 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { supabase } from '@/services/supabase';
 import { formatPlanDate } from '@/features/plans/formatPlanDate';
 import { storefrontCountry } from '@/features/plans/store/purchasesClient';
+import { onboardingHref } from '@/features/plans/routes';
+import { useUserSetup } from '@/features/levels/useUserSetup';
+import { setupDone } from '@/features/onboarding/firstRun';
+import { useSaveUserSetup } from '@/data/mutations/userSetup';
 import { useInviterLabel } from '../useMemberLabel';
 import { WhatsSharedSheet } from './WhatsSharedSheet';
 import { formatTypedCode, takePendingInvite } from './pendingInvite';
@@ -66,6 +70,23 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
   const hasAccounts = (useAccounts(oldHouseholdId ?? undefined).data ?? []).length > 0;
   const { isOnline: online } = useSyncStatus();
   const inviterName = useInviterLabel();
+  const setup = useUserSetup();
+  const { saveUserSetup } = useSaveUserSetup();
+  // 09-23 (D-30): a person with no finished setup goes on to the partner questions after joining, not to the household.
+  const needsSetup = !setup.loading && !setupDone(setup.data);
+  const afterJoin = () => {
+    if (needsSetup && userId !== null) {
+      saveUserSetup({ userId, patch: { partnerVersion: true }, baseVersion: setup.data?.version ?? 0 });
+      router.replace(onboardingHref('partner'));
+      return;
+    }
+    router.replace(href('/household'));
+  };
+  // A new person who arrived here first (an invite waiting at sign-in) and does not join goes on to the first-run questions.
+  const leave = () => {
+    if (needsSetup) router.replace(onboardingHref('first_run'));
+    else goBack();
+  };
 
   const [input, setInput] = useState('');
   const [phase, setPhase] = useState<Phase>({ kind: 'enter' });
@@ -164,7 +185,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
       } catch {
         // If the mark cannot be read or written the card shows once more rather than never.
       }
-      if (seen) router.replace(href('/household'));
+      if (seen) afterJoin();
       else setShared({ household });
     } catch {
       hapticFailed();
@@ -181,7 +202,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
   return (
     <Screen scroll>
       <View style={styles.back}>
-        <BackButton variant="compact" onPress={goBack} />
+        <BackButton variant="compact" onPress={leave} />
       </View>
       <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
         {t('household.join.title')}
@@ -240,7 +261,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
           <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
             {t('plans.invite.waiting.body', { payer: phase.payer })}
           </Text>
-          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={goBack} style={styles.notNow}>
+          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={leave} style={styles.notNow}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.join.gotIt')}</Text>
           </Pressable>
         </FadeIn>
@@ -262,7 +283,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
           >
             <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('plans.switchRule.contact')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={goBack} style={styles.notNow}>
+          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={leave} style={styles.notNow}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.join.notNow')}</Text>
           </Pressable>
         </FadeIn>
@@ -293,7 +314,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
               />
             </View>
           )}
-          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={goBack} style={styles.notNow}>
+          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={leave} style={styles.notNow}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.join.notNow')}</Text>
           </Pressable>
         </FadeIn>
@@ -304,7 +325,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
         household={shared?.household ?? ''}
         onDone={() => {
           setShared(null);
-          router.replace(href('/household'));
+          afterJoin();
         }}
       />
     </Screen>

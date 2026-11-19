@@ -33,6 +33,17 @@ jest.mock('@/data/sync/lockedWrites', () => ({
 const mockToast = jest.fn();
 jest.mock('@/state/undoToast', () => ({ showToast: (...a: unknown[]) => mockToast(...a) }));
 
+// 09-23 (P3): the setup-records deps; a setup with an account answer not yet applied.
+const mockApply = jest.fn(async () => 'applied' as const);
+let mockSetupNeeds = false;
+jest.mock('@/features/onboarding/useSetupRecordsDeps', () => ({
+  useSetupRecordsDeps: () => ({ setup: { needs: mockSetupNeeds }, userId: 'u1', homeCurrency: 'GBP' }),
+}));
+jest.mock('@/features/onboarding/applyOnboardingRecords', () => ({
+  needsRecords: (s: { needs: boolean } | null) => s?.needs === true,
+  applyOnboardingRecords: (...a: unknown[]) => mockApply(...(a as [])),
+}));
+
 let appStateListener: ((s: string) => void) | null = null;
 
 function plan(over: Partial<MockPlan>): MockPlan {
@@ -55,6 +66,8 @@ beforeEach(async () => {
   mockReplay.mockReset().mockResolvedValue({ synced: 1, stillLocked: 0 });
   mockToast.mockClear();
   mockWrites = [];
+  mockApply.mockClear();
+  mockSetupNeeds = false;
   appStateListener = null;
   await AsyncStorage.clear();
   jest.spyOn(AppState, 'addEventListener').mockImplementation(((_: string, cb: (s: string) => void) => {
@@ -118,6 +131,52 @@ describe('LockHost replay', () => {
     expect(mockReplay).toHaveBeenCalledTimes(1);
     await act(async () => appStateListener?.('active'));
     expect(mockReplay).toHaveBeenCalledTimes(2);
+  });
+});
+
+// Kept above the explainer block: its fire-and-forget storage push overlaps act() for the blocks after it.
+describe('LockHost setup records (09-23, owner P3)', () => {
+  it('does nothing while the plan is not writable', async () => {
+    mockSetupNeeds = true;
+    mockPlan = plan({ status: 'sample', writable: false });
+    await mount();
+    await act(async () => undefined);
+    expect(mockApply).not.toHaveBeenCalled();
+  });
+
+  it('applies once when the household becomes covered, with the plan and deps', async () => {
+    mockSetupNeeds = true;
+    mockPlan = plan({ status: 'sample', writable: false });
+    const host = await mount();
+    await act(async () => undefined);
+    mockPlan = plan({ status: 'trial', writable: true });
+    await host.again();
+    await act(async () => undefined);
+    expect(mockApply).toHaveBeenCalledTimes(1);
+    expect(mockApply).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'u1', plan: { writable: true, loading: false, householdId: 'h1' } })
+    );
+    await host.again();
+    await act(async () => appStateListener?.('active'));
+    expect(mockApply).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed lookup retries on the next foreground', async () => {
+    mockSetupNeeds = true;
+    mockPlan = plan({});
+    mockApply.mockRejectedValueOnce(new Error('offline'));
+    await mount();
+    await act(async () => undefined);
+    expect(mockApply).toHaveBeenCalledTimes(1);
+    await act(async () => appStateListener?.('active'));
+    expect(mockApply).toHaveBeenCalledTimes(2);
+  });
+
+  it('nothing to apply: never called', async () => {
+    mockPlan = plan({});
+    await mount();
+    await act(async () => undefined);
+    expect(mockApply).not.toHaveBeenCalled();
   });
 });
 

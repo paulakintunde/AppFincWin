@@ -54,6 +54,10 @@ jest.mock('@/data/queries/household', () => ({
   resetHouseholdScope: jest.fn(),
 }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
+// 09-23: an existing person with a finished setup (joining goes to the household, not the partner questions).
+jest.mock('@/features/levels/useUserSetup', () => ({
+  useUserSetup: () => ({ data: { completedAt: '2026-11-01T00:00:00Z', level: 4, partnerVersion: false, version: 1 }, loading: false }),
+}));
 jest.mock('../useHouseholdScope', () => ({
   useHouseholdScope: () => ({
     userId: 'me',

@@ -19,15 +19,21 @@ interface Ctx {
   holds: Record<HoldsDataProbeId, boolean>;
 }
 
-function useCtx(): Ctx {
+/** 09-23: a level and switch map not applied yet (the onboarding summary's Features preview). */
+export interface AccessPreview {
+  level: Level;
+  switches: Record<string, boolean>;
+}
+
+function useCtx(preview?: AccessPreview): Ctx {
   const { user } = useAuth();
   const plan = usePlanState();
   const setup = useUserSetup();
   const switches = useFeatureSwitches(user?.id).data;
   const holds = useHoldsData();
   return {
-    level: setup.data?.level ?? 4,
-    switches: switches ?? {},
+    level: preview?.level ?? setup.data?.level ?? 4,
+    switches: preview?.switches ?? switches ?? {},
     planWritable: plan.writable,
     sharesInHousehold: plan.members >= 2,
     holds,
@@ -51,7 +57,7 @@ export function useFeatureAccess(id: FeatureId): FeatureAccess {
   return useMemo(() => accessFor(def, c), [def, c.level, c.switches, c.planWritable, c.sharesInHousehold, c.holds]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-export function useAllFeatureAccess(): readonly FeatureAccess[] {
-  const c = useCtx();
+export function useAllFeatureAccess(preview?: AccessPreview): readonly FeatureAccess[] {
+  const c = useCtx(preview);
   return useMemo(() => FEATURES.map((f) => accessFor(f, c)), [c.level, c.switches, c.planWritable, c.sharesInHousehold, c.holds]); // eslint-disable-line react-hooks/exhaustive-deps
 }

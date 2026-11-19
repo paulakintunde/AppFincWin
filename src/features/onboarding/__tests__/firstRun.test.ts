@@ -1,4 +1,4 @@
-import { firstRunTarget, onboardingModeOf, setupDone, type FirstRunInput } from '../firstRun';
+import { firstRunTarget, modeFromParam, onboardingModeOf, setupDone, type FirstRunInput } from '../firstRun';
 
 const base: FirstRunInput = {
   pendingInvite: null,
@@ -68,5 +68,14 @@ describe('helpers', () => {
   it('onboardingModeOf', () => {
     expect(onboardingModeOf({ onboarding: 'partner' })).toBe('partner');
     expect(onboardingModeOf('home')).toBeNull();
+  });
+});
+
+describe('modeFromParam', () => {
+  it('takes a known mode, else falls back on the partner flag', () => {
+    expect(modeFromParam('rerun', false)).toBe('rerun');
+    expect(modeFromParam(['partner'], false)).toBe('partner');
+    expect(modeFromParam(undefined, true)).toBe('partner');
+    expect(modeFromParam('nonsense', false)).toBe('first_run');
   });
 });
