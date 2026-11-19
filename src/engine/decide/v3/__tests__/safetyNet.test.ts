@@ -188,3 +188,19 @@ describe('the cash check with the net lending (cash/path.ts withNet)', () => {
     expect(withNet(notCovered, path(-600), () => path(-700), mu(1_000))).toMatchObject({ added: 0 });
   });
 });
+
+describe('netDip mutation kills (05.4-58)', () => {
+  const net = { ...NO_NET, saved: mu(100_000), usable: mu(100_000) } as ResolvedNet;
+
+  it('a purchase that takes nothing from the net needs 0 months to refill it, whatever the usual month leaves', () => {
+    expect(netDip(mu(0), mu(0), net, null).refillMonths).toBe(0);
+    expect(netDip(mu(0), mu(0), net, mu(-5)).refillMonths).toBe(0);
+    expect(netDip(mu(-9), mu(0), net, null).refillMonths).toBe(0);
+  });
+
+  it('a dip with no usual leftover has no refill figure', () => {
+    expect(netDip(mu(5_000), mu(0), net, null).refillMonths).toBeNull();
+    expect(netDip(mu(5_000), mu(0), net, mu(0)).refillMonths).toBeNull();
+    expect(netDip(mu(5_000), mu(0), net, mu(2_000)).refillMonths).toBe(3);
+  });
+});

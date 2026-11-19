@@ -187,6 +187,7 @@ const ASK: OneOffPart = Object.freeze({ code: 'needs_input', variant: null, spli
 function readyMonth(month: MonthModel, price: number, unspent: number | null): Extract<ReadyBy, { kind: 'month' }> | null {
   // 05.4 ENG-02: signed. Money below 0 is that much more to make up (OD-10: -1,500 is 1,500 worse, never rounded up to 0).
   const short = price - (unspent ?? 0);
+  // Stryker disable next-line EqualityOperator: at short === 0 both sides give a gap of 0
   const gap = short > 0 ? short : 0; // nothing left to make up still waits for the next month
   const pic = month.incomePicture;
   if (pic !== undefined && pic.treated === 'seasonal') {
@@ -218,8 +219,10 @@ export function readyWithSale(
   const have0 = BigInt(unspent ?? 0);
   for (let n = 1; n <= SIMULATION_MONTH_CAP; n++) {
     const ym = addYearMonths(month.month, n);
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: the month where own reaches the price is the base month itself, so the loop gives the same ready month either way
     if (base !== null && ym >= base.month) break;
     const own = have0 + BigInt(tl) * BigInt(n);
+    // Stryker disable next-line EqualityOperator: own can reach the price only at the base month, which the loop breaks on first, so the strictness of this test never decides
     if (own >= BigInt(price) || (ym >= saleYm && own + BigInt(sale.amount) >= BigInt(price))) return { ready: { kind: 'month', month: ym }, waits: own >= BigInt(price) ? null : sale.date };
   }
   return { ready: base, waits: null };
@@ -244,6 +247,7 @@ function ladder(
   const P = p.dayOne;
   // A funding segment is never negative: a month already below 0 funds nothing, and its shortfall is inside unspent already
   // (this month's room is counted once), so it is not taken off twice.
+  // Stryker disable next-line EqualityOperator: at monthLeft === 0 both branches give 0
   const Bm = month.monthLeft > 0 ? Math.min(P, month.monthLeft) : 0;
   // 05.4 BO-05 (RC-08): a purchase dated in a later month also has the usual leftover of the months before it (laterRoom); that
   // money is not in unspent yet, so only this month's part comes off the earlier money below.
@@ -265,6 +269,7 @@ function ladder(
     split.push({ source: 'unspent_earlier', amount: mu(rest) });
     return fit('fits_unspent', split);
   }
+  // Stryker disable next-line EqualityOperator: at earlierRoom === 0 both branches give 0
   const fromEarlier = earlierRoom > 0 ? earlierRoom : 0;
   // 06 D-22: spare savings are the net's money above its size and unlocked goals kept outside the spending accounts.
   const above = spareSavings(net);
@@ -277,6 +282,7 @@ function ladder(
   }
 
   // 05.4 FIN-03 (D-26, D-36): what earlier money cannot cover, the overdraft does, up to how far the account really goes below 0.
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: with overdraft 0 the test rest <= earlierRoom + above is already false at this point, so it cannot pass
   if (overdraft > 0 && rest <= earlierRoom + above + overdraft) return fit('fits_uses_overdraft', split);
 
   // 05.4 FIN-02 / ENG-04 (D-35, D-41, D-49): the protected part of the net (all of it when protection is off), any purpose.

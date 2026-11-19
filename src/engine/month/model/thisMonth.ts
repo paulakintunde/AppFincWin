@@ -30,7 +30,9 @@ export function erestOf(e: MinorUnits, everydayLogged: MinorUnits, day: number, 
   const eb = BigInt(e);
   const pace = divideHalfUp(eb * BigInt(daysInMonth - day), BigInt(daysInMonth));
   const gap = eb - BigInt(everydayLogged);
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: a negative gap only ever loses to the pace, which is never below 0, so flooring the gap at 0 changes nothing
   const floor = gap > 0n ? gap : 0n;
+  // Stryker disable next-line EqualityOperator,StringLiteral: equal pace and floor give the same value, and E and the logged sum are safe integers so the label is never shown
   return minorFromBigInt(pace > floor ? pace : floor, 'erestOf');
 }
 

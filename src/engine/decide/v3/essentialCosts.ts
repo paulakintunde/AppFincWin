@@ -23,8 +23,11 @@ const FN = 'essentialCosts';
  * left out of the typical month, D-31). A debt minimum below 0 counts as 0.
  */
 export function essentialCosts(month: MonthModel, debts: readonly V3Debt[], essentialSpending: MinorUnits): EssentialCosts {
+  // Stryker disable next-line EqualityOperator: bills of 0 count as 0 either way, so > 0 and >= 0 agree
   const bills = BigInt(month.recurringBills > 0 ? month.recurringBills : 0);
+  // Stryker disable next-line EqualityOperator: a minimum of 0 counts as 0 either way, so > 0 and >= 0 agree
   const mins = debts.reduce((t, d) => t + BigInt(d.minimum > 0 ? d.minimum : 0), 0n);
+  // Stryker disable next-line EqualityOperator: spending of 0 counts as 0 either way, so > 0 and >= 0 agree
   const spend = BigInt(essentialSpending > 0 ? essentialSpending : 0);
   const unit = BigInt(ESSENTIAL_ROUND_MINOR);
   const total = ceilDivide(bills + mins + spend, unit) * unit;
@@ -43,8 +46,10 @@ export function essentialCosts(month: MonthModel, debts: readonly V3Debt[], esse
 export function essentialSpendingOf(inputs: V3Inputs, month: MonthModel): MinorUnits {
   const typed = month.e !== null && month.monthsUsed.length === 0 && month.reasons.includes('quick_estimates_used');
   const raw = month.e ?? 0;
+  // Stryker disable next-line EqualityOperator: an everyday figure of 0 gives 0 either way, so > 0 and >= 0 agree
   const e = raw > 0 ? raw : 0;
   const stated = typed ? (inputs.typedEstimates?.essential ?? null) : null;
+  // Stryker disable next-line EqualityOperator: at the edges (0 and the everyday part) both sides of the comparison give the same value
   if (stated !== null) return minorUnits(stated < 0 ? 0 : stated < e ? stated : e);
   const ids = inputs.essentialCategoryIds ?? [];
   if (ids.length === 0) return minorUnits(e);
@@ -56,5 +61,6 @@ export function essentialSpendingOf(inputs: V3Inputs, month: MonthModel): MinorU
   if (months.length === 0) return minorUnits(e);
   const per = months.map((m) => ids.reduce((t, id) => t + (m.byCategory.get(id) ?? 0n), 0n));
   const med = medianHalfUp(per);
+  // Stryker disable next-line EqualityOperator: when the median equals the everyday part both branches return the same value
   return minorFromBigInt(med < BigInt(e) ? med : BigInt(e), FN);
 }

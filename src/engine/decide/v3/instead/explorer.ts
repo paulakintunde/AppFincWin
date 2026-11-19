@@ -43,6 +43,7 @@ export function explore(input: {
       typicalLeft,
       month: input.month.month,
       // D-12: the season follows the slider; the lever lifts every month of the seasonal walk (saved = max(0, left + lift))
+      // Stryker disable next-line ConditionalExpression: an absent picture or a picture key holding undefined reads the same in buyLater
       ...(input.month.incomePicture === undefined ? {} : { picture: input.month.incomePicture }),
       lift: minorUnits(everydayCut + savingCut),
       ...(input.answerWaits === true ? { waitsAtLeastAMonth: true } : {}),

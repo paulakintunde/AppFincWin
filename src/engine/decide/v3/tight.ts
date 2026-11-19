@@ -29,12 +29,15 @@ export interface TightFloor {
 /** A usual month's bills plus everyday spending; an unknown everyday figure counts as 0. Never below 0. */
 export function monthlySpendingOf(month: Pick<MonthModel, 'recurringBills' | 'e'>): MinorUnits {
   const total = month.recurringBills + (month.e ?? 0);
+  // Stryker disable next-line EqualityOperator: a total of 0 gives 0 either way, so > 0 and >= 0 agree
   return minorUnits(total > 0 ? total : 0);
 }
 
 /** The user's line when set (never below 0), else a tenth of the month's spending, rounded up. */
 export function tightFloor(monthlySpending: MinorUnits, userLine: MinorUnits | null | undefined): TightFloor {
+  // Stryker disable next-line EqualityOperator: a line of 0 gives 0 either way, so > 0 and >= 0 agree
   if (userLine !== null && userLine !== undefined) return { floor: minorUnits(userLine > 0 ? userLine : 0), basis: 'user_line' };
+  // Stryker disable next-line EqualityOperator: spending of 0 gives 0n either way, so > 0 and >= 0 agree
   const spend = monthlySpending > 0 ? BigInt(monthlySpending) : 0n;
   return { floor: minorUnits(Number(ceilDivide(spend, BigInt(TIGHT_FLOOR_DIVISOR)))), basis: 'tenth' };
 }

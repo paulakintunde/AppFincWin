@@ -47,6 +47,7 @@ export function historyPay(inputs: V3Inputs): HistoryPay | null {
   let low = byMonth.get(keys[0] as string) as bigint;
   for (const k of keys) {
     const v = byMonth.get(k) as bigint;
+    // Stryker disable next-line EqualityOperator: a month equal to the low leaves the low value unchanged
     if (v < low) low = v;
   }
   const idx = seriesIndex(inputs.series);

@@ -8,6 +8,7 @@ import type { MinorUnits } from '../../../money/types';
 import { minorFromBigInt, ONE_HUNDRED_PERCENT, type Percent } from '../../../payoff/types';
 
 export function closingCost(price: MinorUnits, percent: Percent | null): MinorUnits {
+  // Stryker disable next-line StringLiteral: the label only appears in an overflow message, which a value of 0 can never raise
   if (percent === null) return minorFromBigInt(0n, 'closingCost');
   if (percent < 0n) throw new RangeError(`closingCost: closing percent ${percent} must be >= 0`);
   return minorFromBigInt(divideHalfUp(BigInt(price) * percent, ONE_HUNDRED_PERCENT), 'closingCost');
