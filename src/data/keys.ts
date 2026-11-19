@@ -110,6 +110,8 @@ export const queryKeys = {
   householdBalances: (householdId: string) => ['transactions', householdId, 'household-balances'] as const,
   splitDefaults: (householdId: string) => ['split-defaults', householdId] as const,
   settlements: (householdId: string) => ['settlements', householdId] as const,
+  // 09-10: the server plan record for the signed-in user's household.
+  planState: (userId: string) => ['plan-state', userId] as const,
 };
 
 export const mutationKeys = {
