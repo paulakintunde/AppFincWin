@@ -1,8 +1,8 @@
 // 09-21 UI-SPEC 2: the chrome around every question. Back chevron (hidden on question 1), "n of total", "Skip the rest",
 // a thin progress bar, heading, sub, content, a "Why this matters" link, and a pinned footer with Continue and
 // "Skip this question" (both always present, D-27). Partner mode adds the privacy line under the title.
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, findNodeHandle, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Text } from '@/ui/Text';
 import { Pill } from '@/ui/Pill';
@@ -79,6 +79,14 @@ export function QuestionScreen({
   const showWhy = whyOpen === stepKey;
   const label = t('onboarding.chrome.progress', { n: progress.n, total: progress.total });
 
+  // 09-25 A7 (TalkBack device check): focus started on "1 of 11" and stayed put after Continue or Skip, so a screen-reader
+  // user heard nothing until they tapped. Each new question moves focus to its heading, as the Decide check steps do.
+  const titleRef = useRef<React.ElementRef<typeof Text>>(null);
+  useEffect(() => {
+    const handle = titleRef.current === null ? null : findNodeHandle(titleRef.current);
+    if (handle !== null) AccessibilityInfo.setAccessibilityFocus(handle);
+  }, [stepKey]);
+
   return (
     <Screen>
       <View style={styles.top}>
@@ -119,7 +127,12 @@ export function QuestionScreen({
         automaticallyAdjustKeyboardInsets
       >
         <Animated.View key={stepKey} {...(reduced ? {} : { entering: FadeIn.duration(150) })} style={styles.body}>
-          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
+          <Text
+            ref={titleRef}
+            accessibilityRole="header"
+            accessibilityLabel={`${title}. ${label}`}
+            style={{ ...textRole(pairing, 'heading'), color: colors.ink }}
+          >
             {title}
           </Text>
           {partner ? (
