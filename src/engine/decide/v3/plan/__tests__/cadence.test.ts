@@ -6,13 +6,16 @@ import {
   QUARTERLY,
   WEEKLY,
   YEARLY,
+  amortBase,
   assertCadence,
   cadenceOfFreq,
   countFromTerm,
   monthlyEquivalentOf,
   perYear,
   sameCadence,
+  scaledApr,
 } from '../cadence';
+import { percent } from '../../../../payoff/types';
 import type { Cadence } from '../../types';
 
 const cadenceArb = fc.record({
@@ -77,5 +80,27 @@ describe('cadence', () => {
     expect(() => assertCadence({ unit: 'day', every: 1 } as unknown as Cadence, 'x')).toThrow(RangeError);
     expect(() => countFromTerm(MONTHLY, -1)).toThrow(RangeError);
     expect(() => countFromTerm(MONTHLY, 1.5)).toThrow(RangeError);
+  });
+});
+
+describe('cadence.ts mutation kills (05.4-58)', () => {
+  const MAX = Number.MAX_SAFE_INTEGER;
+
+  it('every refusal names its caller and the offending value', () => {
+    expect(() => assertCadence({ unit: 'day' as never, every: 1 }, 'who')).toThrow('who: unit "day" must be week or month');
+    expect(() => assertCadence({ unit: 'week', every: 13 }, 'who')).toThrow('who: every 13 must be an integer from 1 to 12');
+    expect(() => amortBase({ unit: 'week', every: 0 })).toThrow('amortBase: every 0 must be an integer from 1 to 12');
+    expect(() => scaledApr(percent('5'), { unit: 'week', every: 0 })).toThrow('scaledApr: every 0 must be an integer from 1 to 12');
+    expect(() => countFromTerm(MONTHLY, -1)).toThrow('countFromTerm: termMonths -1 must be a non-negative integer');
+  });
+
+  it('a payment too large for a safe integer names monthlyEquivalentOf', () => {
+    expect(() => monthlyEquivalentOf(minorUnits(MAX), WEEKLY)).toThrow(/^monthlyEquivalentOf: /);
+  });
+
+  it('two cadences are the same only when both the unit and the count match', () => {
+    expect(sameCadence({ unit: 'week', every: 2 }, { unit: 'week', every: 2 })).toBe(true);
+    expect(sameCadence({ unit: 'week', every: 2 }, { unit: 'week', every: 3 })).toBe(false);
+    expect(sameCadence({ unit: 'week', every: 2 }, { unit: 'month', every: 2 })).toBe(false);
   });
 });

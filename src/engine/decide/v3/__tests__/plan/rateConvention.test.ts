@@ -95,3 +95,22 @@ describe('buildSchedule with a region (FIN-23)', () => {
     expect(uk.exactInterestBp).toBe(exactInterestBp({ apr: periodicRateFor(percent('19.9'), WEEKLY, 'GB'), count: 52, base: 52, due: false, pausePeriods: 0 }));
   });
 });
+
+describe('rateConvention mutation kills (05.4-58)', () => {
+  it('the list is the UK and the 27 EU member states, exactly', () => {
+    expect([...EFFECTIVE_APR_COUNTRIES]).toEqual([
+      'GB',
+      'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE',
+      'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+    ]);
+  });
+
+  it.each(['AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'])('%s is an EU country', (c) => {
+    expect(effectiveAprArea(c)).toBe('eu');
+  });
+
+  it('a rate whose compounding lands exactly on 1 + APR is accepted: yearly payments give 12 x the APR', () => {
+    const apr = percent('7');
+    expect(periodicRateFor(apr, { unit: 'month', every: 12 }, 'GB')).toBe(apr * 12n);
+  });
+});

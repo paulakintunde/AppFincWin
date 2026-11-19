@@ -5,7 +5,7 @@ import { amortise, amortiseDue } from '../../../../payoff/amortise';
 import { PERCENT_SCALE, ZERO_PERCENT, percent, percentFromScaled, rateDenominator } from '../../../../payoff/types';
 import type { Cadence, PlanFees, Schedule } from '../../types';
 import { BIWEEKLY, MONTHLY, QUARTERLY, WEEKLY, scaledApr } from '../cadence';
-import { EXACT_INTEREST_BP_CAP, buildSchedule, exactInterestBp, paymentsInRange, scheduleLines, type ScheduleInput } from '../schedule';
+import { EXACT_INTEREST_BP_CAP, buildSchedule, exactInterestBp, paymentDates, paymentsInRange, scheduleLines, type ScheduleInput } from '../schedule';
 
 const NO_FEES: PlanFees = { setup: minorUnits(0), perPeriod: minorUnits(0), end: minorUnits(0) };
 const ASOF = '2026-10-26';
@@ -249,5 +249,76 @@ describe('D-138 exactInterestBp: the interest before rounding, as a share of the
     if (!r.ok || !flat.ok) throw new Error('schedule');
     expect(flat.schedule.exactInterestBp).toBe(556);
     expect(r.schedule.exactInterestBp).toBeGreaterThan(556);
+  });
+});
+
+describe('schedule.ts mutation kills (05.4-58)', () => {
+  const MAX = Number.MAX_SAFE_INTEGER;
+
+  it('every refusal names the function and the figure', () => {
+    expect(() => buildSchedule(input({ fees: { ...NO_FEES, setup: minorUnits(-1) } }))).toThrow('buildSchedule: fee setup -1 must be a non-negative integer');
+    expect(() => buildSchedule(input({ financed: minorUnits(-5) }))).toThrow('buildSchedule: financed -5 must be >= 0');
+    expect(() => buildSchedule(input({ apr: -1n as never }))).toThrow('buildSchedule: apr must be >= 0');
+    expect(() => buildSchedule(input({ firstPayment: { kind: 'deferred', firstDate: '2026-10-25', interestDuringPause: false } }))).toThrow('buildSchedule: firstDate 2026-10-25 is before 2026-10-26');
+  });
+
+  it.each([1.5, -1, 601, Number.NaN])('a count of %s is refused', (count) => {
+    expect(() => buildSchedule(input({ count }))).toThrow(/^buildSchedule: count .* must be an integer from 1 to 600$/);
+  });
+
+  it('the first and the last allowed count build', () => {
+    expect(build({ count: 1 }).lastPaying).toBe(1);
+    expect(build({ count: 600 }).count).toBe(600);
+  });
+
+  it('a bad cadence is refused before the missing count is reported', () => {
+    expect(() => buildSchedule(input({ cadence: { unit: 'month', every: 0 }, count: null }))).toThrow(RangeError);
+  });
+
+  it('a first payment on the as-of day itself is allowed', () => {
+    const s = build({ firstPayment: { kind: 'deferred', firstDate: ASOF, interestDuringPause: false } });
+    expect(s.firstDate).toBe(ASOF);
+  });
+
+  it('interest during a wait is added only when the wait carries interest, and only with a rate', () => {
+    const later = '2027-01-26';
+    const none = build({ apr: percent('12'), firstPayment: { kind: 'deferred', firstDate: later, interestDuringPause: false } });
+    expect(none.pauseInterest).toBe(0);
+    const some = build({ apr: percent('12'), firstPayment: { kind: 'deferred', firstDate: later, interestDuringPause: true } });
+    expect(some.pauseInterest).toBe(7_272);
+    const zero = build({ apr: ZERO_PERCENT, firstPayment: { kind: 'deferred', firstDate: later, interestDuringPause: true } });
+    expect(zero.pauseInterest).toBe(0);
+  });
+
+  it('a wait of 1000 weeks is the longest that builds; 1001 is refused', () => {
+    const weekly = { unit: 'week', every: 1 } as const;
+    const at = (days: number) => new Date(Date.UTC(2026, 9, 26 + days)).toISOString().slice(0, 10);
+    const pause = (days: number) => ({ kind: 'deferred', firstDate: at(days), interestDuringPause: true }) as const;
+    expect(build({ cadence: weekly, apr: percent('5'), firstPayment: pause(7_000) }).pauseInterest).toBeGreaterThan(0);
+    expect(() => buildSchedule(input({ cadence: weekly, apr: percent('5'), firstPayment: pause(7_007) }))).toThrow('buildSchedule: deferral spans more than 1000 periods');
+  });
+
+  it('a fee per period is part of the monthly equivalent', () => {
+    const s = build({ fees: { ...NO_FEES, perPeriod: minorUnits(500) } });
+    expect(s.monthlyEquivalent).toBe(Number(s.payment) + 500);
+  });
+
+  it('exactInterestBp is 0 at 0%', () => {
+    expect(exactInterestBp({ apr: 0n, count: 12, base: 12, due: false, pausePeriods: 0 })).toBe(0);
+  });
+
+  it('paymentDates lists exactly the payment dates', () => {
+    expect(paymentDates(build({ count: 3 }))).toEqual(['2026-11-26', '2026-12-26', '2027-01-26']);
+  });
+
+  it('a payment too large for a safe integer names its function', () => {
+    const s = { ...build({ count: 2 }), payment: minorUnits(MAX), finalPayment: minorUnits(MAX), fees: { ...NO_FEES, perPeriod: minorUnits(1) } } as Schedule;
+    expect(() => paymentsInRange(s, '2026-11-01', '2027-12-31')).toThrow(/^paymentsInRange: /);
+  });
+
+  it('scheduleLines: none for no payments; one payment is the final amount', () => {
+    const s = build({ count: 3 });
+    expect(scheduleLines({ ...s, lastPaying: 0 })).toEqual([]);
+    expect(scheduleLines({ ...s, lastPaying: 1, payment: minorUnits(100), finalPayment: minorUnits(70) })).toEqual([{ count: 1, amount: 70 }]);
   });
 });
