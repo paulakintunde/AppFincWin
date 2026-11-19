@@ -159,6 +159,7 @@ export default function AppLayout() {
                 </Stack.Protected>
                 <Stack.Screen name="you" />
                 <Stack.Screen name="plan-ended" />
+                <Stack.Screen name="export" />
                 <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
               </Stack>
               <SampleBanner />
