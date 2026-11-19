@@ -15,6 +15,7 @@ export function bandOf(whole: MinorUnits, t: HomeThresholds): { readonly band: B
   const reasons: ReasonCode[] = t.source === 'fallback' ? ['band_currency_fallback'] : [];
   if (whole < t.bandEdges[0]!) return { band: 1, reasons };
   let count = 0;
+  // Stryker disable next-line EqualityOperator: i === length reads an undefined edge, and undefined < whole is false, so the count is unchanged
   for (let i = 1; i < t.bandEdges.length; i += 1) if (t.bandEdges[i]! < whole) count += 1;
   return { band: (2 + count) as Band, reasons };
 }
@@ -70,6 +71,7 @@ export function stagedRequired(band: Band): boolean {
 /** Answer keys are prefixed with their layer: 'L2.worth', 'L6.closing'. */
 export function layerOfAnswerKey(key: string): Layer {
   const dot = key.indexOf('.');
+  // Stryker disable next-line EqualityOperator: dot === 0 gives prefix "" or the whole key, and neither is a layer, so both throw the same error
   const prefix = dot < 0 ? key : key.slice(0, dot);
   const found = CANONICAL.find((l) => l === prefix);
   if (found === undefined) throw new RangeError(`layerOfAnswerKey: "${key}" has no layer prefix`);
