@@ -34,6 +34,14 @@ insert into public.debts (id, household_id, created_by, name, kind, currency, ba
 insert into public.transactions (id, household_id, created_by, account_id, original_amount, original_currency, local_date, time_zone, name, status, is_shared) values
   ('a1120000-0000-0000-0000-000000000003', (select h from ids), '11111111-1111-1111-1111-111111111111', 'a1120000-0000-0000-0000-000000000001', -1000, 'USD', current_date, 'UTC', 'Shop', 'paid', false);
 
+-- B joins A's household (two members, USD reporting) so share_transaction gets past its own checks and reaches its write.
+update public.household_members set created_at = now() - interval '2 days' where user_id = '11111111-1111-1111-1111-111111111111';
+delete from public.household_members where user_id = '22222222-2222-2222-2222-222222222222';
+insert into public.household_members (household_id, user_id, is_owner, weight, created_at)
+values ((select h from ids), '22222222-2222-2222-2222-222222222222', false, 50, now() - interval '1 day');
+update public.household_members set weight = 50 where user_id = '11111111-1111-1111-1111-111111111111';
+update public.households set reporting_currency = 'USD' where id = (select h from ids);
+
 -- 1. Coverage: every client-writable records table carries the plan_lock trigger.
 -- Exclusions (one reason each): profiles, user_setup, feature_switches = D-03 stays writable while locked;
 -- households, household_members, household_events, household_event_reads, household_invites, member_departures,
@@ -61,20 +69,22 @@ select extensions.is(public.household_plan_state((select h from ids)), 'none', '
 set local role authenticated;
 select public.t112_as('11111111-1111-1111-1111-111111111111');
 
--- 3-8. Refusals.
-select extensions.throws_ok($$ insert into public.transactions (id, household_id, created_by, account_id, original_amount, original_currency, local_date, time_zone, name, status, is_shared)
-  values ('a1120000-0000-0000-0000-000000000009', (select h from ids), '11111111-1111-1111-1111-111111111111', 'a1120000-0000-0000-0000-000000000001', -500, 'USD', current_date, 'UTC', 'Locked', 'paid', false) $$,
+-- 3-8. Refusals. Each write uses only the columns the client is granted, the way the app writes them: a column the
+-- client may not write fails the grant check (42501) before any trigger runs, which would hide the lock.
+select extensions.throws_ok($$ insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name, status)
+  values ('a1120000-0000-0000-0000-000000000009', (select h from ids), 'a1120000-0000-0000-0000-000000000001', -500, 'USD', current_date, 'UTC', 'Locked', 'paid') $$,
   'PT402', 'plan locked', 'locked: insert into transactions is refused');
 select extensions.throws_ok($$ update public.accounts set name = 'Renamed' where id = 'a1120000-0000-0000-0000-000000000001' $$,
   'PT402', 'plan locked', 'locked: update accounts is refused');
-select extensions.throws_ok($$ insert into public.categories (id, owner_id, name, color_key) values ('a1120000-0000-0000-0000-000000000004', '11111111-1111-1111-1111-111111111111', 'Locked cat', 'green') $$,
+select extensions.throws_ok($$ insert into public.categories (id, name, color_key) values ('a1120000-0000-0000-0000-000000000004', 'Locked cat', 'green') $$,
   'PT402', 'plan locked', 'locked: insert into categories (owner table, no household_id) is refused');
-select extensions.throws_ok($$ insert into public.decide_checks (id, household_id, created_by, kind, name)
-  values ('a1120000-0000-0000-0000-000000000005', (select h from ids), '11111111-1111-1111-1111-111111111111', 'buy', 'Laptop') $$,
+select extensions.throws_ok($$ insert into public.decide_checks (id, household_id, kind, name)
+  values ('a1120000-0000-0000-0000-000000000005', (select h from ids), 'buy', 'Laptop') $$,
   'PT402', 'plan locked', 'locked: insert into decide_checks is refused');
-select extensions.throws_ok($$ delete from public.debts where id = 'a1120000-0000-0000-0000-000000000002' $$,
-  'PT402', 'plan locked', 'locked: delete from debts is refused');
-select extensions.throws_ok($$ select public.share_transaction('a1120000-0000-0000-0000-000000000003', 1, 'even',
+select extensions.throws_ok($$ update public.debts set deleted_at = now() where id = 'a1120000-0000-0000-0000-000000000002' $$,
+  'PT402', 'plan locked', 'locked: deleting a debt (the app sets deleted_at) is refused');
+select extensions.throws_ok($$ select public.share_transaction('a1120000-0000-0000-0000-000000000003',
+  (select version from public.transactions where id = 'a1120000-0000-0000-0000-000000000003'), 'even',
   array['11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222']::uuid[]) $$,
   'PT402', null, 'locked: a SECURITY DEFINER write RPC (share_transaction) is refused');
 
@@ -98,10 +108,18 @@ select extensions.lives_ok($$ insert into public.transactions (id, household_id,
 set local role authenticated;
 select public.t112_as('11111111-1111-1111-1111-111111111111');
 select extensions.lives_ok($$ select public.seed_sample_data((select h from ids), current_date) $$, 'locked: seed_sample_data works');
-select extensions.throws_ok($$ insert into public.accounts (id, household_id, created_by, name, kind, currency, opening_balance, is_shared)
-  values ('a1120000-0000-0000-0000-00000000000b', (select h from ids), '11111111-1111-1111-1111-111111111111', 'After seed', 'checking', 'USD', 0, false) $$,
+select extensions.throws_ok($$ insert into public.accounts (id, household_id, name, kind, currency, opening_balance, is_shared)
+  values ('a1120000-0000-0000-0000-00000000000b', (select h from ids), 'After seed', 'checking', 'USD', 0, false) $$,
   'PT402', 'plan locked', 'the sample bypass does not leak: a real write right after seeding is still refused');
-select extensions.lives_ok($$ select public.redate_sample_data_if_stale((select h from ids), current_date + 62) $$, 'locked: redate_sample_data_if_stale works');
+-- Make the sample lines two months old with no session (seed_sample_data only accepts a p_today within 2 days of today).
+reset role;
+select set_config('request.jwt.claims', '', true);
+select set_config('fincwin.system_restamp', 'on', true);  -- keeps is_sample through the edit (as 87 does)
+update public.transactions set local_date = (local_date - interval '2 months')::date where household_id = (select h from ids) and is_sample;
+select set_config('fincwin.system_restamp', '', true);
+set local role authenticated;
+select public.t112_as('11111111-1111-1111-1111-111111111111');
+select extensions.is(public.redate_sample_data_if_stale((select h from ids), current_date), true, 'locked: redate_sample_data_if_stale works');
 select extensions.lives_ok($$ select public.clear_sample_data((select h from ids)) $$, 'locked: clear_sample_data works');
 select extensions.throws_ok($$ update public.accounts set name = 'Still locked' where id = 'a1120000-0000-0000-0000-000000000001' $$,
   'PT402', 'plan locked', 'the clear bypass does not leak either');
