@@ -223,7 +223,7 @@ describe('parseCheckV2 boundaries (05.4-62 mutation kills)', () => {
   });
 
   it('a note name is trimmed, cut to 80 and trimmed again', () => {
-    const name = (n: unknown) => (parse({ quickLines: [{ id: 'q', kind: 'savings', amount: 1, name: n }] }).quickLines as { name: string }[])[0]!.name;
+    const name = (n: unknown) => (parse({ quickLines: [{ id: 'q', kind: 'savings', amount: 1, name: n }] }).quickLines as unknown as { name: string }[])[0]!.name;
     expect(name('   ' + 'a'.repeat(100))).toBe('a'.repeat(80));
     expect(name('a'.repeat(79) + ' ' + 'b'.repeat(10))).toBe('a'.repeat(79));
     expect(name('  hi  ')).toBe('hi');
@@ -231,7 +231,7 @@ describe('parseCheckV2 boundaries (05.4-62 mutation kills)', () => {
   });
 
   it('a stopped cost source needs the bill kind for a series id', () => {
-    const stop = (source: unknown) => (parse({ replaces: { stops: [{ id: 's', amount: 1, everyMonths: 1, stopDate: '2026-12-01', source }] } }).replaces as { stops: unknown[] }).stops;
+    const stop = (source: unknown) => (parse({ replaces: { stops: [{ id: 's', amount: 1, everyMonths: 1, stopDate: '2026-12-01', source }] } }).replaces as unknown as { stops: unknown[] }).stops;
     expect(stop({ kind: 'bogus', seriesId: 'b1' })).toEqual([]);
     expect(stop({ kind: 'bill', seriesId: 'b1' })).toEqual([{ id: 's', amount: 1, everyMonths: 1, stopDate: '2026-12-01', source: { kind: 'bill', seriesId: 'b1' } }]);
     expect(stop({ kind: 'bill' })).toEqual([]);

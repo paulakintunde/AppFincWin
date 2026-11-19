@@ -1090,7 +1090,7 @@ describe("mutation kills (05.4-60)", () => {
 
   it("a stated steady amount of 0 stands even with money received; no steady amount on another rule is ignored", () => {
     const typed = { income: mu(77000), expenses: mu(0), saving: mu(0), debt: mu(0), invest: mu(0), asOf: "2026-10-03" };
-    const steady = (n: number | null, variable: "steady" | "match" = "steady") => prof({ types: ["freelance"], variable, steady: n });
+    const steady = (n: number | null, variable: "steady" | "match" = "steady") => prof({ types: ["freelance"], variable, steady: n === null ? null : mu(n) });
     expect(incomeThisMonth(inp({ profile: steady(50000), typedEstimates: typed }))).toMatchObject({ received: 0, dueConfirmed: 0, total: 50000 });
     const got = month("2026-10", [line({ id: "v", amount: mu(5000) })]);
     expect(incomeThisMonth(inp({ current: got, profile: steady(0), typedEstimates: typed }))).toMatchObject({ received: 5000, total: 0, reasons: [] });

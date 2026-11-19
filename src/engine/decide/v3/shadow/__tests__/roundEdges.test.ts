@@ -26,7 +26,7 @@ describe('05.4-61 roundForShadow: the character budget is exact', () => {
   // adding one figure with a key of `n` characters in all grows the JSON by n + 2 (quotes) + 1 (colon) + 1 (comma) + 1 (one digit)
   const factWithKeyLength = (keyLen: number): Result['facts'] => {
     const key = 'k'.repeat(keyLen - 'x.'.length);
-    return [{ code: 'x', values: { [key]: 5 } }];
+    return [{ code: 'x', values: { [key]: 5 } }] as unknown as Result['facts'];
   };
 
   it('a figure that brings the JSON to exactly 1100 characters is kept', () => {
