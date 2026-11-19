@@ -22,8 +22,8 @@ It records build ids and results only. No keys, emails or account ids go here (T
 
 ## Preview build
 
-- Build id: [pending, 09-25 Task 2]
-- Install link: [pending]
+- Build id: a577d4c4-3e89-4a83-972e-08790cc55aae (EAS preview, Android, app 0.2.0, runtime 583da0c2, from phase/09-tiers-onboarding @ 93b8b866, finished 2026-11-19). RevenueCat Android key not yet set in EAS, so Plans shows its store-error state.
+- Install link: https://expo.dev/artifacts/eas/MsfJIONxulD7jTn6E_hrpNy8KldtfhMmrsV9ABJ1k8c.apk (install over the current preview with `adb install -r` to keep data)
 - Why a new build is needed: react-native-purchases changes the native fingerprint, so an OTA update cannot deliver it. The iOS build waits for Apple enrolment.
 
 ---
