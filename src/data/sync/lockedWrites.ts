@@ -4,6 +4,7 @@ import { MutationObserver, type QueryClient, type QueryKey } from '@tanstack/rea
 import { LargeSecureStore } from '@/services/supabase/largeSecureStore';
 import { registerWipeHandler } from '@/services/storage/wipe';
 import { WRITE_SCOPE } from '../keys';
+import { getPlanWriteState } from './planWriteGuard';
 import { bumpSessionEpoch } from './sessionEpoch';
 import { classifyWriteError } from './writeErrors';
 
@@ -76,6 +77,10 @@ export async function recordLockedWrite(e: {
   variables: unknown;
 }): Promise<void> {
   const mutationKey = e.mutationKey ?? [];
+  // 09-25 (A2-W): D-40 keeps writes for a lapsed plan, not for the look-around before a trial. A refusal that arrives
+  // while the plan view says sample targets sample rows (or nothing of the person's own) and is dropped, never kept.
+  const plan = getPlanWriteState();
+  if (plan !== null && !plan.loading && plan.status === 'sample') return;
   // A replayed write that is refused again fires the global onError; it is already held, so do not hold it twice.
   if (replaying && replaying.variables === e.variables && replaying.mutationKey === mutationKey) return;
   const full: LockedWrite = {
@@ -96,6 +101,21 @@ async function removeEntry(id: string): Promise<void> {
   entries = entries.filter((e) => e.id !== id);
   notify();
   await persist();
+}
+
+/**
+ * 09-25 (A2-W): drops every kept write. Called while the plan view is sample (before any plan): a household with no plan
+ * record has never had writes covered, so anything held was refused during the look-around (or before this guard
+ * existed) and must not replay into the person's records when the trial starts.
+ */
+export async function dropLockedWrites(): Promise<number> {
+  await hydrating;
+  const dropped = entries.length;
+  if (dropped === 0) return 0;
+  entries = [];
+  notify();
+  await persist();
+  return dropped;
 }
 
 /** Same array reference until it changes (useSyncExternalStore). */

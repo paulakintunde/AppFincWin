@@ -12,6 +12,10 @@
  *    (applyOnboardingRecords: stable ids, existence check, done-marker last). Tried once per session, again after a
  *    failed lookup on the next foreground.
  *
+ * 4. 09-25 (A2-W): it publishes the plan view to the central write guard (src/data/sync/planWriteGuard.ts), and while the
+ *    plan view is sample it drops any kept write: those were refused in the look-around and must never replay into the
+ *    person's records when the trial starts.
+ *
  * The lock lifts only when the server's plan record says writable (UI-SPEC 9e); nothing here unlocks optimistically.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -19,7 +23,8 @@ import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { getLockedWrites, hydrateLockedWrites, replayLockedWrites, useLockedWrites } from '@/data/sync/lockedWrites';
+import { dropLockedWrites, getLockedWrites, hydrateLockedWrites, replayLockedWrites, useLockedWrites } from '@/data/sync/lockedWrites';
+import { setPlanWriteState } from '@/data/sync/planWriteGuard';
 import { showToast } from '@/state/undoToast';
 import { applyOnboardingRecords, needsRecords } from '@/features/onboarding/applyOnboardingRecords';
 import { useSetupRecordsDeps } from '@/features/onboarding/useSetupRecordsDeps';
@@ -39,6 +44,19 @@ export function LockHost() {
   useEffect(() => {
     planRef.current = plan;
   });
+  // (09-25) the central write guard reads the same plan view, outside React.
+  useEffect(() => {
+    setPlanWriteState({ status: plan.status, writable: plan.writable, loading: plan.loading });
+  }, [plan.status, plan.writable, plan.loading]);
+  useEffect(() => () => setPlanWriteState(null), []);
+
+  // (09-25) nothing made in the look-around is kept for later.
+  const sampleLoaded = !plan.loading && plan.status === 'sample';
+  useEffect(() => {
+    if (!sampleLoaded || writes.length === 0) return;
+    void dropLockedWrites().catch(() => undefined);
+  }, [sampleLoaded, writes.length]);
+
   const inFlight = useRef<Promise<void> | null>(null);
   const didSessionReplay = useRef(false);
   // Counts returns to the foreground; the setup-records effect (P3) retries on it after a failed lookup.

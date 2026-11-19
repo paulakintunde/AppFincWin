@@ -8,6 +8,7 @@ import { clearServerFetchTimes, persister } from './cache/persister';
 import { bumpSessionEpoch } from './sync/sessionEpoch';
 import { classifyWriteError } from './sync/writeErrors';
 import { recordLockedWrite } from './sync/lockedWrites';
+import { guardPlanWrite } from './sync/planWriteGuard';
 
 export const queryClient = new QueryClient({
   // F-2 (06.1-48): every write's time from submit to settle, so a device check can tell app delay from network delay
@@ -17,6 +18,9 @@ export const queryClient = new QueryClient({
     // 06.1-73 (H-11b): the start crumb; with the 'net' send crumb and the settled crumb below a write's whole path is
     // visible. Key name and the pending-write count only.
     onMutate: (_variables, mutation) => {
+      // 09-25 (A2-W): the plan guard. Throws before the mutation's own onMutate and mutationFn when the plan does not
+      // cover this write, so nothing is changed optimistically, sent or queued; the LockedSheet explains it.
+      guardPlanWrite({ mutationKey: mutation.options.mutationKey, meta: mutation.options.meta });
       try {
         addBreadcrumb({
           category: 'write',

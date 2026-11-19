@@ -15,6 +15,7 @@ import { useGuessContext } from '@/features/record/useGuessContext';
 import { categoryName } from '@/features/record/categoryName';
 import { CategoryPicker } from '@/features/record/entry/pickers/CategoryPicker';
 import { useT } from '@/i18n';
+import { useSheetWriteGate } from '@/features/plans/useReadOnlyGate';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -44,6 +45,7 @@ export function RuleSheet({ visible, mode, onClose }: RuleSheetProps) {
 
 function SheetBody({ mode, onClose }: { mode: RuleSheetMode; onClose: () => void }) {
   const t = useT();
+  const gate = useSheetWriteGate(onClose); // 09-25 (A2-W): saves are writes; read-only plans open the locked sheet
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const lookup = useCategoryLookup(rc.userId ?? undefined);
@@ -177,9 +179,13 @@ function SheetBody({ mode, onClose }: { mode: RuleSheetMode; onClose: () => void
         <Pill
           label={editing ? t('categories.rules.sheet.saveChanges') : t('categories.rules.sheet.save')}
           variant="primary"
-          onPress={save}
+          locked={gate.gated}
+          accessibilityLabel={gate.label(editing ? t('categories.rules.sheet.saveChanges') : t('categories.rules.sheet.save'))}
+          onPress={gate.guard(save)}
         />
-        {editing ? <Pill label={t('categories.rules.sheet.remove')} variant="danger" onPress={doRemove} /> : null}
+        {editing ? (
+          <Pill label={t('categories.rules.sheet.remove')} variant="danger" locked={gate.gated} accessibilityLabel={gate.label(t('categories.rules.sheet.remove'))} onPress={gate.guard(doRemove)} />
+        ) : null}
       </SheetScroll>
       <CategoryPicker
         visible={picking}

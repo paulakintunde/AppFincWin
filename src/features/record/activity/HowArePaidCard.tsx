@@ -7,6 +7,7 @@ import { type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { useDecideSettings } from '@/data/queries/decide';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
+import { useReadOnly } from '@/features/plans/useReadOnlyGate';
 import { useShouldStack } from '@/ui/textFit';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -75,11 +76,15 @@ function IncomeCard({ userId }: { userId: string }) {
   );
 }
 
-/** Hidden unless the account has the Decide switch on (D-01); the settings read starts only then. */
+/**
+ * Hidden unless the account has the Decide switch on (D-01); the settings read starts only then. 09-25 (A2-W): hidden while
+ * the plan is read-only (sample or locked): the card only leads to a write.
+ */
 export function HowArePaidCard() {
   const { v3 } = useDecideAccess();
   const rc = useRecordContext();
-  if (!v3 || rc.userId === null) return null;
+  const readOnly = useReadOnly();
+  if (!v3 || rc.userId === null || readOnly) return null;
   return <IncomeCard userId={rc.userId} />;
 }
 

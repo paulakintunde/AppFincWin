@@ -14,6 +14,7 @@ import { useAddCategory, useEditCategory } from '@/data/mutations/categories';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
+import { useSheetWriteGate } from '@/features/plans/useReadOnlyGate';
 import { useAmountParser } from '@/ui/money/useAmountParser';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
@@ -56,6 +57,7 @@ export function CategorySheet({ visible, mode, onClose, capCrossings }: Category
 
 function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; onClose: () => void; capCrossings?: CategorySheetProps['capCrossings'] }) {
   const t = useT();
+  const gate = useSheetWriteGate(onClose); // 09-25 (A2-W): saves are writes; read-only plans open the locked sheet
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const { add } = useAddCategory();
@@ -204,9 +206,15 @@ function SheetBody({ mode, onClose, capCrossings }: { mode: CategorySheetMode; o
             ) : null}
           </>
         ) : null}
-        <Pill label={editing ? t('categories.sheet.saveChanges') : t('categories.sheet.save')} variant="primary" onPress={save} />
+        <Pill
+          label={editing ? t('categories.sheet.saveChanges') : t('categories.sheet.save')}
+          variant="primary"
+          locked={gate.gated}
+          accessibilityLabel={gate.label(editing ? t('categories.sheet.saveChanges') : t('categories.sheet.save'))}
+          onPress={gate.guard(save)}
+        />
         {editing ? (
-          <Pill label={t('categories.sheet.archive')} variant="danger" onPress={() => setRemoving(true)} />
+          <Pill label={t('categories.sheet.archive')} variant="danger" locked={gate.gated} accessibilityLabel={gate.label(t('categories.sheet.archive'))} onPress={gate.guard(() => setRemoving(true))} />
         ) : null}
       </SheetScroll>
       {showIcon ? (

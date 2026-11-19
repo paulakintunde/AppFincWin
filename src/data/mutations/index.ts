@@ -6,6 +6,7 @@
 // 01-13 appends its own custom-currency and money-preference registration calls here, next
 // to the original two (see registerCustomCurrencyMutations/registerMoneyPrefsMutations below).
 import type { QueryClient } from '@tanstack/react-query';
+import { guardPlanSend } from '@/data/sync/planWriteGuard';
 import { registerAccountMutations } from './accounts';
 import { registerUndoCaptureMutations } from './undoCapture';
 import { registerTransactionMutations } from './transactions';
@@ -51,6 +52,25 @@ import { registerHouseholdSharingMutations } from './householdSharing';
 import { registerUserSetupMutations } from './userSetup';
 
 export function registerMutationDefaults(qc: QueryClient): void {
+  // 09-25 (A2-W): every registered mutationFn passes the plan send guard, so a write restored from disk while the plan
+  // is in sample status is dropped instead of sent. New writes are stopped earlier, in MutationCache onMutate.
+  const setDefaults = qc.setMutationDefaults;
+  const wasOwn = Object.prototype.hasOwnProperty.call(qc, 'setMutationDefaults');
+  const guarded: QueryClient['setMutationDefaults'] = (mutationKey, options) => {
+    const fn = options.mutationFn;
+    const next = fn ? { ...options, mutationFn: guardPlanSend(mutationKey, fn) } : options;
+    setDefaults.call(qc, mutationKey, next as Parameters<QueryClient['setMutationDefaults']>[1]);
+  };
+  qc.setMutationDefaults = guarded;
+  try {
+    registerAll(qc);
+  } finally {
+    if (wasOwn) qc.setMutationDefaults = setDefaults;
+    else delete (qc as { setMutationDefaults?: unknown }).setMutationDefaults;
+  }
+}
+
+function registerAll(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
   // call recordUndoStepSafely's queued fallback, so a paused-mutation replay restored from
   // disk always has a registered mutationFn to resume with (Pitfall 3, RESEARCH.md).

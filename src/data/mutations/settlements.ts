@@ -79,6 +79,8 @@ function useOnlineCall<V extends HouseholdVars, T = unknown>(
     // 'always': the default network mode would pause the call while offline and run it on reconnect, which is the queue
     // behaviour these calls must not have.
     networkMode: 'always',
+    // 09-25 (A2-W): settlements are plan-locked server-side; the central guard stops these unkeyed calls too.
+    meta: { planLocked: true },
     mutationFn: async (vars) => {
       if (!onlineManager.isOnline()) return OFFLINE_RESULT;
       const client = await writeClient();

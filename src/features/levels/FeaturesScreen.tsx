@@ -68,7 +68,8 @@ export function FeaturesScreen({ preview }: { preview?: AccessPreview } = {}) {
   const level: Level = preview?.level ?? setup.data?.level ?? 4;
   const key = levelKey(level);
   const onCount = access.filter((a) => a.on).length;
-  const locked = !plan.writable && preview === undefined;
+  // The one plan link at the top: locked and sample (09-25: in sample the rows stay switchable and carry no plan reason).
+  const locked = !plan.writable && !plan.loading && preview === undefined;
 
   const needle = query.trim().toLocaleLowerCase();
   const sections = useMemo(() => {
@@ -94,7 +95,13 @@ export function FeaturesScreen({ preview }: { preview?: AccessPreview } = {}) {
           <PlanLink
             label={t('features.reasons.choosePlan')}
             testID="features-choose-plan"
-            onPress={() => router.push(plansHref({ mode: 'locked', trigger: 'locked' }))}
+            onPress={() =>
+              router.push(
+                plan.status === 'sample'
+                  ? plansHref({ mode: 'first_run', trigger: 'sample_bar' })
+                  : plansHref({ mode: 'locked', trigger: 'locked' }),
+              )
+            }
           />
         ) : null}
 

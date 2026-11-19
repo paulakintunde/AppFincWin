@@ -12,6 +12,7 @@ import { KEY_KIND, KEY_VISITED, stepHref } from "../../check/useStepCheck";
 import type { OpenCheckRowModel } from "../homeCardsModel";
 import { editTarget, OpenCheckSheet } from "../OpenCheckSheet";
 import { resetPushOnceForTests } from "@/shell/navigation/pushOnce";
+import { setPlanWriteState } from "@/data/sync/planWriteGuard";
 
 jest.setTimeout(30000);
 
@@ -411,5 +412,31 @@ describe("OpenCheckSheet Delete (06.1-80, DC-9)", () => {
       stepId: "step-del",
       target: { entity: "decide_checks", id: "c1" },
     });
+  });
+});
+
+// 09-25 (A2-W): in the sample look-around (and when locked) the write rows keep their place with the lock mark; a tap closes the
+// sheet and writes nothing. "See today's answer" stays open.
+describe("OpenCheckSheet read-only (09-25)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    resetPushOnceForTests();
+    setPlanWriteState({ status: "sample", writable: false, loading: false });
+  });
+  afterEach(() => setPlanWriteState(null));
+
+  it("Delete, Edit and Choose how to pay show the lock and write nothing", async () => {
+    const onDismiss = await renderSheet(rowOf(small()), modelOf({ draft: true }));
+    expect(screen.getByLabelText("Delete, needs a plan")).toBeTruthy();
+    expect(screen.getByLabelText("Edit the check, needs a plan")).toBeTruthy();
+    expect(screen.getByLabelText("Choose how to pay, needs a plan")).toBeTruthy();
+    expect(screen.getByLabelText("See today’s answer")).toBeTruthy(); // reading stays open, no lock
+    await fireEvent.press(screen.getByTestId("open-check-action-delete"));
+    expect(onDismiss).toHaveBeenCalled();
+    expect(showToast).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByTestId("open-check-action-edit"));
+    expect(mockPush).not.toHaveBeenCalled();
+    await fireEvent.press(screen.getByTestId("open-check-action-pay"));
+    expect(screen.queryByTestId("plan-use")).toBeNull();
   });
 });

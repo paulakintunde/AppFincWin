@@ -21,6 +21,7 @@ import { monthOf } from '@/engine/time';
 import type { EntryMode } from '@/features/record/entry/transactionForm';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 
 export interface RowActionsContext {
   householdId: string | null;
@@ -36,6 +37,8 @@ export type DeletePrompt = 'scope' | 'transferDelete';
 
 export interface RowActions {
   enabled: boolean;
+  /** 09-25 (A2-W): the plan is read-only; every action below opens the locked sheet instead of writing. */
+  locked: boolean;
   pay(row: ActivityRowView): void;
   unpay(row: ActivityRowView): void;
   /** Deletes a plain line at once; returns the prompt the screen must show otherwise. */
@@ -67,6 +70,9 @@ function pad2(n: number): string {
 export function useRowActions(ctx: RowActionsContext): RowActions {
   const { householdId, ownerId, today, selectionActive, rows, accountName } = ctx;
   const enabled = !selectionActive && householdId !== null && ownerId !== null;
+  // 09-25 (A2-W): one gate for every row action here (swipes, the detail sheet, Home's Pay). The central guard stops the
+  // write regardless; this keeps the screen from showing a success toast for a change that was not made.
+  const gate = useReadOnlyGate('editRecord');
   const { markPaid } = useMarkPaid();
   const { markUnpaid } = useBulkMarkUnpaid();
   const { apply } = useBulkPatch();
@@ -233,5 +239,26 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
     [today]
   );
 
-  return { enabled, pay, unpay, remove, deleteThisOne, deleteThisAndFuture, deleteTransfer, cloneMode };
+  const locked = gate.gated;
+  const run = gate.run;
+  return useMemo(
+    () => ({
+      enabled,
+      locked,
+      pay: (row: ActivityRowView) => run(() => pay(row)),
+      unpay: (row: ActivityRowView) => run(() => unpay(row)),
+      remove: (row: ActivityRowView): { prompt: DeletePrompt } | null => {
+        if (locked) {
+          run(() => undefined);
+          return null;
+        }
+        return remove(row);
+      },
+      deleteThisOne: (row: ActivityRowView) => run(() => deleteThisOne(row)),
+      deleteThisAndFuture: (row: ActivityRowView) => run(() => deleteThisAndFuture(row)),
+      deleteTransfer: (row: ActivityRowView) => run(() => deleteTransfer(row)),
+      cloneMode,
+    }),
+    [enabled, locked, run, pay, unpay, remove, deleteThisOne, deleteThisAndFuture, deleteTransfer, cloneMode]
+  );
 }

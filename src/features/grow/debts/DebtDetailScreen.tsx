@@ -25,6 +25,8 @@ import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { ProgressBar } from '@/features/grow/ui/ProgressBar';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { useT } from '@/i18n';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { showToast } from '@/state/undoToast';
@@ -65,6 +67,10 @@ const FIRST_CHIP = 'extra-50';
 
 export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
+  // 09-25 (A2-W): Edit, sold, remove and the plan change are writes; read-only plans open the locked sheet. The "If you pay
+  // more" chips and "Try other amounts" are what-if reads and stay open.
+  const gate = useReadOnlyGate('editRecord');
+  const lockA11y = (text: string): string => (gate.a11ySuffix ? `${text}, ${gate.a11ySuffix}` : text);
   const { colors, pairing } = useTheme();
   const read = useDebtsRead();
   const rows = useDebtRows(read.householdId);
@@ -157,8 +163,10 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
           <View style={[...card, styles.paymentsCard]}>
             <Row label={t('grow.debts.detail.seeAllInActivity')} chevron dense onPress={() => router.navigate({ pathname: '/activity', params: { debt: row.id } } as Href)} />
           </View>
-          <Pressable testID="debt-remove" accessibilityRole="button" accessibilityLabel={t('grow.debts.detail.remove')} onPress={() => setRemoveOpen(true)} style={styles.action}>
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.debts.detail.remove')}</Text>
+          <Pressable testID="debt-remove" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.debts.detail.remove'))} onPress={() => gate.run(() => setRemoveOpen(true))} style={styles.action}>
+            <LockedLabel gated={gate.gated} color={colors.danger}>
+              <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.debts.detail.remove')}</Text>
+            </LockedLabel>
           </Pressable>
         </View>
         {removeSheet}
@@ -262,11 +270,13 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
         <Pressable
           testID="debt-edit"
           accessibilityRole="button"
-          accessibilityLabel={t('grow.goals.detail.edit')}
-          onPress={() => setEditOpen(true)}
+          accessibilityLabel={lockA11y(t('grow.goals.detail.edit'))}
+          onPress={() => gate.run(() => setEditOpen(true))}
           style={({ pressed }) => [styles.edit, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
         >
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.goals.detail.edit')}</Text>
+          <LockedLabel gated={gate.gated} color={colors.accent}>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.goals.detail.edit')}</Text>
+          </LockedLabel>
         </Pressable>
       }
     >
@@ -332,11 +342,13 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
             <Pressable
               testID="debt-change-plan"
               accessibilityRole="button"
-              accessibilityLabel={t('grow.debts.detail.changeInPlan')}
-              onPress={() => router.navigate('/(tabs)/grow?segment=debts' as Href)}
+              accessibilityLabel={lockA11y(t('grow.debts.detail.changeInPlan'))}
+              onPress={() => gate.run(() => router.navigate('/(tabs)/grow?segment=debts' as Href))}
               style={({ pressed }) => [styles.link, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
             >
-              <Text style={link}>{t('grow.debts.detail.changeInPlan')}</Text>
+              <LockedLabel gated={gate.gated} color={colors.accent}>
+                <Text style={link}>{t('grow.debts.detail.changeInPlan')}</Text>
+              </LockedLabel>
               <GrowGlyph name="chev" color={colors.accent} size={16} />
             </Pressable>
             {rate === null ? null : (
@@ -402,12 +414,16 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
 
         <View style={styles.actions}>
           {line.point.paidInFull ? null : (
-            <Pressable testID="debt-sold" accessibilityRole="button" accessibilityLabel={t('grow.debts.detail.sold')} onPress={() => setSaleOpen(true)} style={styles.action}>
-              <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.detail.sold')}</Text>
+            <Pressable testID="debt-sold" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.debts.detail.sold'))} onPress={() => gate.run(() => setSaleOpen(true))} style={styles.action}>
+              <LockedLabel gated={gate.gated} color={colors.accent}>
+                <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('grow.debts.detail.sold')}</Text>
+              </LockedLabel>
             </Pressable>
           )}
-          <Pressable testID="debt-remove" accessibilityRole="button" accessibilityLabel={t('grow.debts.detail.remove')} onPress={() => setRemoveOpen(true)} style={styles.action}>
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.debts.detail.remove')}</Text>
+          <Pressable testID="debt-remove" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.debts.detail.remove'))} onPress={() => gate.run(() => setRemoveOpen(true))} style={styles.action}>
+            <LockedLabel gated={gate.gated} color={colors.danger}>
+              <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.debts.detail.remove')}</Text>
+            </LockedLabel>
           </Pressable>
         </View>
         <Text style={label}>{t('grow.debts.footer')}</Text>

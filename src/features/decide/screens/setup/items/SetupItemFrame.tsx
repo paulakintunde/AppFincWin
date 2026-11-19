@@ -20,6 +20,7 @@ import { AccessibilityInfo, findNodeHandle, Pressable, StyleSheet, View } from '
 import { useRouter, type Href } from 'expo-router';
 import { usePerfMount } from '@/features/decide/perf/perfMarks';
 import { useT } from '@/i18n';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
@@ -80,6 +81,9 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
   const { colors, pairing } = useTheme();
   const titleRef = useRef<React.ComponentRef<typeof Text>>(null);
   const needRef = useRef<React.ComponentRef<typeof Text>>(null);
+  // 09-25 (A2-W): every setup item saves through here (Save pay details, safety net, debts, rules, bills, records). While the
+  // plan is read-only the primary keeps its place with the lock mark and opens the locked sheet; nothing is saved.
+  const gate = useReadOnlyGate('editRecord');
 
   useEffect(() => {
     const handle = titleRef.current === null ? null : findNodeHandle(titleRef.current);
@@ -111,7 +115,7 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
       }
       return;
     }
-    saveThenLeave();
+    gate.run(saveThenLeave);
   };
 
   return (
@@ -136,9 +140,11 @@ export function SetupItemFrame({ title, why, primaryLabel, primaryDisabled = fal
             variant="primary"
             label={primaryLabel}
             disabled={primaryDisabled}
+            locked={gate.gated}
+            accessibilityLabel={gate.a11ySuffix ? `${primaryLabel}, ${gate.a11ySuffix}` : undefined}
             onPress={() => {
               hapticTap();
-              saveThenLeave();
+              gate.run(saveThenLeave);
             }}
           />
           <NeedLine ref={needRef} text={need} />
