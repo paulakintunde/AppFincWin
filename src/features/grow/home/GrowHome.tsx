@@ -7,7 +7,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useT } from '@/i18n';
 import { DebtsSegment } from '@/features/grow/debts/DebtsSegment';
-import { growFeatureFlags, growSegments, isGrowBasics, type GrowSegment } from '@/features/grow/growFeatureFlags';
+import { growSegments, isGrowBasics, type GrowSegment } from '@/features/grow/growFeatureFlags';
+import { useGrowFeatureFlags } from '@/features/grow/useGrowFeatureFlags';
 import { AddHoldingSheet } from '@/features/grow/investing/AddHoldingSheet';
 import { InvestingSegment } from '@/features/grow/investing/InvestingSegment';
 import { FirstOpenNetSheet } from '@/features/grow/safetyNet/FirstOpenNetSheet';
@@ -83,7 +84,7 @@ export interface GrowHomeProps {
 export function GrowHome({ sheets }: GrowHomeProps = {}) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const flags = useMemo(() => growFeatureFlags(), []);
+  const flags = useGrowFeatureFlags();
   const basics = isGrowBasics(flags);
   const segments = growSegments(flags);
   const params = useLocalSearchParams<{ segment?: string; newGoal?: string; name?: string; target?: string; checkId?: string }>();
