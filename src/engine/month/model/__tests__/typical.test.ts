@@ -409,3 +409,75 @@ describe('typicalOf: D-31 series someone else always pays (05.3-65)', () => {
     expect(JSON.stringify(typicalOf(base({ excludedSeries: new Set(['nope']) })))).toBe(before);
   });
 });
+
+describe('mutation kills (05.4-60)', () => {
+  const perms = <T>(xs: readonly T[]): T[][] => (xs.length <= 1 ? [[...xs]] : xs.flatMap((x, i) => perms([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p])));
+  const OVER = 'typicalOf: result exceeds Number.MAX_SAFE_INTEGER';
+  const BIG = 9_000_000_000_000_000;
+
+  it.each([
+    [[1n, 2n, 3n, 4n], 3n],
+    [[1n, 2n, 3n, 4n, 5n], 3n],
+    [[2n, 2n, 1n, 3n, 2n], 2n],
+    [[5n, 5n, 1n, 1n], 3n],
+  ] as const)('medianHalfUp is the same in every order (case %#)', (values, want) => {
+    for (const p of perms(values)) expect(medianHalfUp(p)).toBe(want);
+  });
+
+  it('everydayByMonth names itself when a month sums past the safe range', () => {
+    const m = monthOf('2026-08', [v3Line({ id: 'a', date: '2026-08-02', amount: 6_000_000_000_000_000 }), v3Line({ id: 'b', date: '2026-08-03', amount: 6_000_000_000_000_000 })]);
+    expect(() => everydayByMonth([m], [])).toThrow('everydayByMonth: result exceeds Number.MAX_SAFE_INTEGER');
+  });
+
+  it('a month well under the others is left out as under-logged, judged against the other months only', () => {
+    const r = typicalOf(input({ history: [everydayMonth('2026-08', 100000), everydayMonth('2026-09', 40000)] }));
+    expect(r.monthsUsed).toEqual(['2026-08']);
+    expect(r.notices).toEqual([{ code: 'month_looks_under_logged', values: { month: '2026-09' } }]);
+    expect(r.e).toBe(100000);
+  });
+
+  it('a fortnightly bill is a plain bill: no yearly-bill notice; yearly bills raise notices in id order and an excluded series none', () => {
+    const fortnight = typicalOf(input({ series: [seriesBill({ id: 'fn', amount: 1000, cadence: { unit: 'week', every: 2 } })] }));
+    expect(fortnight.notices).toEqual([]);
+    expect(fortnight.reasons).not.toContain('typical_choice_defaulted');
+    const yearly = { unit: 'month', every: 12 } as const;
+    const series = ['b', 'c', 'a'].map((id) => seriesBill({ id, amount: 12000, cadence: yearly }));
+    const r = typicalOf(input({ series, excludedSeries: new Set(['c']) }));
+    expect(r.notices).toEqual([
+      { code: 'yearly_bill_choice_needed', values: { seriesId: 'a' } },
+      { code: 'yearly_bill_choice_needed', values: { seriesId: 'b' } },
+    ]);
+    expect(r.recurringBills).toBe(2000);
+  });
+
+  it('the low month: three months give the second lowest; ties break by month; the reason follows the count', () => {
+    const three = typicalOf(input({ history: [everydayMonth('2026-07', 30000), everydayMonth('2026-08', 20000), everydayMonth('2026-09', 25000)] }));
+    expect(three.low).toEqual({ left: 345000, month: '2026-09', reason: 'second_lowest' });
+    const tie = typicalOf(input({ history: [everydayMonth('2026-07', 30000), everydayMonth('2026-08', 30000), everydayMonth('2026-09', 22000)] }));
+    expect(tie.low?.month).toBe('2026-08');
+    const two = typicalOf(input({ history: [everydayMonth('2026-08', 30000), everydayMonth('2026-09', 22000)] }));
+    expect(two.low?.reason).toBe('lowest');
+    expect(typicalOf(input({ history: [everydayMonth('2026-09', 22000)] })).low?.reason).toBe('only_month');
+  });
+
+  it('every figure names typicalOf when it passes the safe range', () => {
+    const bill = (id: string, amount: number, over: Partial<V3Series> = {}) => seriesBill({ id, amount, ...over });
+    // 124: the bills
+    expect(() => typicalOf(input({ series: [bill('a', 6_000_000_000_000_000), bill('b', 6_000_000_000_000_000)] }))).toThrow(OVER);
+    // 125: housing alone, from bills left out of the typical month
+    const housing = ['a', 'b', 'c', 'd'].map((id) => bill(id, 6_000_000_000_000_000, { cadence: { unit: 'month', every: 2 }, isHousing: true, typicalChoice: 'excluded' }));
+    expect(() => typicalOf(input({ series: housing }))).toThrow(OVER);
+    // 177: the quick-estimate everyday, bills plus set-aside
+    const typed = { income: mu(0), expenses: mu(0), saving: mu(0), debt: mu(0), invest: mu(0), asOf: ASOF };
+    expect(() => typicalOf(input({ series: [bill('a', BIG)], setAside: mu(BIG), typedEstimates: typed }))).toThrow(OVER);
+    // 217: a category figure
+    const spend = monthOf('2026-09', [v3Line({ id: 'x', date: '2026-09-10', amount: BIG, categoryId: 'c' })]);
+    expect(() => typicalOf(input({ history: [spend], series: [bill('a', BIG, { categoryId: 'c' })], typicalIncome: mu(BIG), setAside: mu(0) }))).toThrow(OVER);
+    // 222: the typical month's leftover
+    expect(() => typicalOf(input({ series: [bill('a', BIG)], typicalIncome: mu(0), setAside: mu(0), everydayOverride: mu(BIG) }))).toThrow(OVER);
+    // 227: the typical income, from recorded months
+    const one = monthOf('2026-09', [v3Line({ id: 'x', date: '2026-09-10', amount: 1 })]);
+    const income = new Map<string, bigint>([['2026-09', 20_000_000_000_000_000n]]);
+    expect(() => typicalOf(input({ history: [one], series: [bill('a', BIG)], setAside: mu(BIG), incomeByMonth: income }))).toThrow(OVER);
+  });
+});

@@ -149,4 +149,31 @@ describe('historyPay (D-52)', () => {
     expect(r?.hp).toBeNull();
     expect(r?.payDate).toBe('2026-10-25');
   });
+
+  describe('mutation kills (05.4-60)', () => {
+    /** 14 full months 2025-08..2026-09: the two oldest on day 01 at 1,000.00; then six on day 20 and six on day 05 at 3,000.00. */
+    const long = (): V3Inputs => {
+      const yms = ['2025-08', '2025-09', '2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09'];
+      const months = yms.map((m, i) => {
+        const day = i < 2 ? '01' : i < 8 ? '20' : '05';
+        return monthOf(m, [v3Line({ id: `in-${m}`, date: `${m}-${day}`, amount: i < 2 ? 100_000 : 300_000, role: 'income' })]);
+      });
+      return inputsOf({ profile: freelance, months: [...months, monthOf('2026-10', [], { full: false })] });
+    };
+
+    it('reads only the newest 12 months, in date order, whatever order the months arrive in; the payday is the upper median, sorted', () => {
+      const expected = { day: 20, amount: 300_000, months: 12 };
+      expect(historyPay(long())).toMatchObject(expected);
+      const l = long();
+      expect(historyPay({ ...l, months: [...l.months].reverse() })).toMatchObject(expected);
+    });
+
+    it('a payday equal to asOf is not a pay date; a line dated in another month does not count as received this month', () => {
+      // asOf 2026-10-03, payday 3: October has no income, but 2026-10-03 is not after asOf
+      expect(historyPay(earner([300_000, 300_000, 300_000], {}, '03'))?.dates).toEqual(['2026-11-03', '2026-12-03']);
+      const paid = earner([300_000, 300_000, 300_000], {}, '20');
+      const stray = { ...paid, months: [...paid.months.slice(0, -1), monthOf('2026-10', [v3Line({ id: 'old', date: '2026-09-30', amount: 50_000, role: 'income' })], { full: false })] };
+      expect(historyPay(stray)?.dates[0]).toBe('2026-10-20');
+    });
+  });
 });
