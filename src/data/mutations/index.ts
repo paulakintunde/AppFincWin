@@ -48,6 +48,7 @@ import { registerGrowGoalMutations } from './growGoals';
 import { registerGrowDebtMutations } from './growDebts';
 import { registerGrowHoldingMutations } from './growHoldings';
 import { registerHouseholdSharingMutations } from './householdSharing';
+import { registerUserSetupMutations } from './userSetup';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 02-15: undo capture must be registered before the transaction/import mutations that
@@ -115,4 +116,6 @@ export function registerMutationDefaults(qc: QueryClient): void {
   registerDecideHistoryMutations(qc);
   // 08-15: share a line, change a split, change who paid, make a line private, own category on a shared line.
   registerHouseholdSharingMutations(qc);
+  // 09-13: the person's private level, answers and feature switches.
+  registerUserSetupMutations(qc);
 }
