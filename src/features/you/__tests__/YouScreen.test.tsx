@@ -8,6 +8,7 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { QUICK_ACTION_ORDER } from '@/shell/fab/quickActions';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
+import { setPlanWriteState } from '@/data/sync/planWriteGuard';
 import { YouScreen } from '../YouScreen';
 import { expectFits } from '@/test/textFitMatrix';
 
@@ -452,6 +453,34 @@ describe('YouScreen Money section', () => {
     expect(queryByRole('button', { name: 'Pots' })?.props.accessibilityHint).toBeUndefined();
     
     expect(QUICK_ACTION_ORDER).toEqual(['addExpense', 'addIncome', 'transfer', 'newCheck', 'importStatement']);
+  });
+});
+
+// 09-25 (A5-4): in a locked (read-only) home every Money row that only opens a screen to read still opens it. Writes
+// inside those screens are gated there (LockedSheet); the row itself is never gated or dead.
+describe('09-25 A5-4: YouScreen Money rows open in a locked home', () => {
+  afterEach(async () => {
+    await act(() => setPlanWriteState(null));
+  });
+  it('Activity, Accounts, Categories, History, Goals, Household, Features and Subscription all navigate', async () => {
+    mockPlan = { status: 'locked', writable: false, loading: false };
+    setPlanWriteState({ status: 'locked', writable: false, loading: false });
+    const { getByText } = await renderScreen();
+    await act(async () => {
+      for (const name of ['Activity', 'Accounts', 'Categories', 'History', 'Goals', 'Household', 'Features', 'Subscription']) {
+        fireEvent.press(getByText(name));
+      }
+    });
+    expect(mockRouterDismissTo).toHaveBeenCalledWith('/activity');
+    expect(mockRouterPush.mock.calls.map((c) => c[0])).toEqual([
+      '/accounts',
+      '/categories',
+      '/history',
+      '/grow?segment=goals',
+      '/household',
+      '/features',
+      '/subscription',
+    ]);
   });
 });
 
