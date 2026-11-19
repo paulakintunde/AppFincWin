@@ -92,3 +92,12 @@ describe('checkQuoted', () => {
     expect(() => checkQuoted({ ...base, computed: m(1), quoted: m(1), tolerance: m(-1) })).toThrow(RangeError);
   });
 });
+
+describe('quoted.ts mutation kills (05.4-58)', () => {
+  const at = { financed: minorUnits(100_000), count: 12, cadence: MONTHLY, timing: 'ordinary' as const };
+
+  it('a bad tolerance and a bad cadence are refused by name', () => {
+    expect(() => checkQuoted({ ...at, computed: minorUnits(1), quoted: minorUnits(1), tolerance: minorUnits(-1) })).toThrow('checkQuoted: tolerance -1 must be a non-negative integer');
+    expect(() => checkQuoted({ ...at, cadence: { unit: 'week', every: 0 }, computed: null, quoted: minorUnits(9_000), tolerance: minorUnits(100) })).toThrow('checkQuoted: every 0 must be an integer from 1 to 12');
+  });
+});

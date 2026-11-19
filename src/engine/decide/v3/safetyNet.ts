@@ -53,6 +53,7 @@ export interface ResolvedNet {
 export function resolveSafetyNet(inputs: V3Inputs, essential: EssentialCosts): ResolvedNet {
   const sn = inputs.safetyNet ?? null;
   const protect = sn === null ? true : sn.protect;
+  // Stryker disable next-line ArithmeticOperator: NET_STARTER_MONTHS is 1, so x * 1 and x / 1 are the same figure
   const starter = essential.total * NET_STARTER_MONTHS;
   const rawSize = sn === null || sn.size === null ? starter : sn.size;
   const size = rawSize > 0 ? rawSize : 0;

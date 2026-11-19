@@ -108,3 +108,41 @@ describe('v3 dates', () => {
     expect(isValidLocalDate('26-01-01')).toBe(false);
   });
 });
+
+describe('dates.ts mutation kills (05.4-58)', () => {
+  const WEEKLY = { unit: 'week', every: 1 } as const;
+
+  it('every refusal names its function and the offending value', () => {
+    expect(() => cadenceDate('2026-02-31', WEEKLY, 0)).toThrow('cadenceDate: "2026-02-31" is not a valid local date');
+    expect(() => cadenceDate('2026-02-01', { unit: 'month', every: 13 }, 0)).toThrow('cadenceDate: every 13 must be an integer from 1 to 12');
+    expect(() => cadenceDate('2026-02-01', WEEKLY, -1)).toThrow('cadenceDate: n must be a non-negative integer, got -1');
+    expect(() => cadenceDatesBetween('2026-02-31', WEEKLY, '2026-03-01', '2026-04-01', null)).toThrow('cadenceDatesBetween: "2026-02-31" is not a valid local date');
+    expect(() => cadenceDatesBetween('2026-02-01', WEEKLY, '2026-13-01', '2026-04-01', null)).toThrow('cadenceDatesBetween: "2026-13-01" is not a valid local date');
+    expect(() => cadenceDatesBetween('2026-02-01', WEEKLY, '2026-03-01', '2026-00-10', null)).toThrow('cadenceDatesBetween: "2026-00-10" is not a valid local date');
+    expect(() => cadenceDatesBetween('2026-02-01', WEEKLY, '2026-03-01', '2026-04-01', '2026-02-30')).toThrow('cadenceDatesBetween: "2026-02-30" is not a valid local date');
+    expect(() => cadenceDatesBetween('2026-02-01', { unit: 'week', every: 0 }, '2026-03-01', '2026-04-01', null)).toThrow('cadenceDatesBetween: every 0 must be an integer from 1 to 12');
+  });
+
+  it('exactly 1000 occurrences in a window is allowed, 1001 is refused', () => {
+    expect(cadenceDatesBetween('2026-01-05', WEEKLY, '2026-01-05', cadenceDate('2026-01-05', WEEKLY, 1000), null)).toHaveLength(1000);
+    expect(() => cadenceDatesBetween('2026-01-05', WEEKLY, '2026-01-05', cadenceDate('2026-01-05', WEEKLY, 1001), null)).toThrow('cadenceDatesBetween: more than 1000 occurrences');
+  });
+
+  it('a window whose first date is occurrence 20000 is still reached; one past it is too far from the anchor', () => {
+    const far = cadenceDate('2000-01-03', WEEKLY, 20_000);
+    expect(cadenceDatesBetween('2000-01-03', WEEKLY, far, addDays(far, 1), null)).toEqual([far]);
+    const farther = cadenceDate('2000-01-03', WEEKLY, 20_001);
+    expect(() => cadenceDatesBetween('2000-01-03', WEEKLY, farther, addDays(farther, 1), null)).toThrow('cadenceDatesBetween: window too far from the anchor');
+  });
+
+  it('year-months keep their zero padding, and only a whole YYYY-MM is a month', () => {
+    expect(yearMonthOf('0999-03-05')).toBe('0999-03');
+    expect(yearMonthOf('2026-03-05')).toBe('2026-03');
+    expect(addYearMonths('0999-01', 1)).toBe('0999-02');
+    expect(addYearMonths('0999-12', 1)).toBe('1000-01');
+    expect(addYearMonths('2026-01', 1)).toBe('2026-02');
+    expect(addYearMonths('2026-12', 1)).toBe('2027-01');
+    expect(() => addYearMonths('x2026-03', 1)).toThrow('parseYearMonth: "x2026-03" is not a YYYY-MM month');
+    expect(() => addYearMonths('2026-031', 1)).toThrow('parseYearMonth: "2026-031" is not a YYYY-MM month');
+  });
+});
