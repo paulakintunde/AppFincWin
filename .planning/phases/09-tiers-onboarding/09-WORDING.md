@@ -189,6 +189,8 @@ Added after owner sign-off 2026-11-19 - needs owner review. Shown to both payers
 | plans.doubleCover.choiceNew | Keep {{plan}}, paid by {{name}} | sign-off | Button, the takeover (new) plan. Added after owner sign-off 2026-11-19 - needs owner review |
 | plans.doubleCover.choiceOld | Keep {{plan}}, paid by {{name}} | sign-off | Button, the recovered (old) plan. Added after owner sign-off 2026-11-19 - needs owner review |
 | plans.doubleCover.defaultLine | If neither of you picks within 7 days, the newer plan stays. The other payer is told to cancel their plan or ask their store for a refund. | sign-off | Default line under the buttons. Added after owner sign-off 2026-11-19 - needs owner review |
+| plans.doubleCover.notChosen.title | Your plan was not picked | sign-off | Notice title for the payer whose plan was not picked, either side (P4). Added 2026-11-19 - needs owner review |
+| plans.doubleCover.notChosen.body | {{name}}'s plan now covers {{home}}. You do not need yours for it. Cancel it in your app store. Your store decides on any refund. | sign-off | Notice body for the payer not picked (D-19, P4). Added 2026-11-19 - needs owner review |
 
 ## plans.invite, plans.leave, plans.solo, plans.switchRule
 
