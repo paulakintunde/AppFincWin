@@ -30,7 +30,7 @@ describe('subscriptionModel', () => {
     expect(m.rows.map((r) => r.id)).toEqual(['plan', 'paidBy', 'trialEnds', 'firstCharge', 'places']);
     expect(m.rows[0]?.params).toEqual({ plan: 'Duo', count: 2 });
     expect(m.rows[2]?.params).toEqual({ date: 'Dec 4, 2026', time: '6:42 PM UTC' });
-    expect(m.rows[3]?.params).toEqual({ price: '$69.99', period: 'year' });
+    expect(m.rows[3]?.params).toEqual({ price: '$69.99', period: 'plans.paywall.periodWord.year' });
     expect(m.rows[4]?.params).toEqual({ used: 2, count: 2 });
     expect(m.rows[4]?.seeMembers).toBe(true);
   });

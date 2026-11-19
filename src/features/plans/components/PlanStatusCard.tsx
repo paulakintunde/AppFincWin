@@ -27,7 +27,12 @@ export function PlanStatusCard({ title, badge, rows, note, onSeeMembers }: PlanS
   const { t } = useTranslation();
   const { colors, pairing } = useTheme();
   const value = (row: SubscriptionRow): string =>
-    row.valueKey ? tOneOf(t, row.valueKey as ParseKeys<'common'>, row.params) : (row.raw ?? '');
+    row.valueKey
+      ? tOneOf(t, row.valueKey as ParseKeys<'common'>, {
+          ...row.params,
+          ...(typeof row.params?.period === 'string' ? { period: tOneOf(t, row.params.period as ParseKeys<'common'>) } : {}),
+        })
+      : (row.raw ?? '');
   return (
     <View testID="plan-status-card" style={[styles.card, shadows.card, { backgroundColor: colors.surface }]}>
       <View style={styles.head}>

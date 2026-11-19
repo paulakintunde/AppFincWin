@@ -108,7 +108,8 @@ function badgeFor(plan: PlanView, variant: SubscriptionVariant): StatusKey | nul
 
 export function subscriptionModel(plan: PlanView, ctx: SubscriptionCtx): SubscriptionModel {
   const variant = variantFor(plan);
-  const period = plan.period === 'month' ? 'month' : 'year';
+  // A locale key (plans.paywall.periodWord.*), resolved to words by PlanStatusCard, as the paywall disclosure does.
+  const period = plan.period === 'month' ? 'plans.paywall.periodWord.month' : 'plans.paywall.periodWord.year';
   const price = ctx.offerPrice ?? '...';
   const rows: SubscriptionRow[] = [];
   const count = plan.seats || plan.planSize;

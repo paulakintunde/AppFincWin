@@ -28,6 +28,7 @@ import { PlanLink } from './components/NoticeCard';
 import { DisclosureBlock } from './components/DisclosureBlock';
 import { plansHref, PLANS_HREF } from './routes';
 import { loadOffers, openManageSubscription } from './store/purchasesClient';
+import { OfflineSavesNotice } from './OfflineSavesNotice';
 import { subscriptionModel } from './subscriptionModel';
 import { usePlanState } from './usePlanState';
 import { usePurchaseFlow, type RestoreToastKey } from './usePurchaseFlow';
@@ -36,9 +37,9 @@ import type { PlanOffer } from './types';
 const TOAST_MS = 4000;
 const LEAVE_SOLO_HREF = { pathname: '/household/leave', params: { mode: 'solo' } } as unknown as Href;
 
-/** 09-18 replaces the body: the notice cards that belong on Subscription (UI-SPEC section 7). */
+/** The notice cards that belong on Subscription (UI-SPEC section 7): the 09-18 saved-on-this-phone notice. */
 export function SubscriptionNoticeSlot() {
-  return null;
+  return <OfflineSavesNotice />;
 }
 
 export function SubscriptionScreen() {
