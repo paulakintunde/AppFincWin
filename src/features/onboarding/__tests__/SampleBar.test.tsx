@@ -103,3 +103,32 @@ describe('SampleBar', () => {
     expect(view.getByTestId('heights').props.children).toBe('0');
   });
 });
+
+// 09-25 A2.4 (device check, Pixel 6 at the largest text): side by side, "Sample" and "Free for 14 days" broke into one-letter
+// columns and the bar took half the screen. From 1.3 the words sit on top at full width and the button and link stack under.
+describe('SampleBar at large text', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { FontScaleProvider } = require('@/theme/FontScaleProvider') as typeof import('@/theme/FontScaleProvider');
+  const at = (scale: number) =>
+    render(
+      <ThemeProvider>
+        <FontScaleProvider value={scale}>
+          <ShellLayoutProvider>
+            <SampleBar />
+          </ShellLayoutProvider>
+        </FontScaleProvider>
+      </ThemeProvider>,
+    );
+
+  it('stacks the words above the button and link at 2.0', async () => {
+    const view = await at(2);
+    expect(view.getByTestId('sample-bar-stacked')).toBeTruthy();
+    expect(view.getByText('Free for 14 days')).toBeTruthy();
+    expect(view.getByText('Start 14-day free trial')).toBeTruthy();
+  });
+
+  it('keeps one row at 1.0', async () => {
+    const view = await at(1);
+    expect(view.queryByTestId('sample-bar-stacked')).toBeNull();
+  });
+});

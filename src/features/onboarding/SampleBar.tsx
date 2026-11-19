@@ -17,9 +17,14 @@ import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { Glyph } from '@/ui/icons/Glyph';
 import { hapticTap } from '@/ui/haptics';
+import { useFontScale } from '@/theme/FontScaleProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { rowHeight, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+
+// Large text (device check 09-25 A2.4): side by side, the words squeezed into a one-letter column and the bar took half the
+// screen. From 1.3 the words take the full width on top and the button and link stack under them, as ComingUpCard does.
+export const SAMPLE_BAR_STACK_ABOVE = 1.3;
 
 export const SAMPLE_BAR_HREF = plansHref({ mode: 'first_run', trigger: 'sample_bar' });
 
@@ -28,6 +33,7 @@ export function SampleBar(): React.JSX.Element | null {
   const { colors, pairing } = useTheme();
   const plan = usePlanState();
   const { setSampleBarHeight } = useShellLayout();
+  const stacked = useFontScale() >= SAMPLE_BAR_STACK_ABOVE;
   const shown = !plan.loading && plan.status === 'sample';
 
   // Gone means no space: the FAB and toasts drop back onto the tab bar.
@@ -49,15 +55,15 @@ export function SampleBar(): React.JSX.Element | null {
       onLayout={(e) => setSampleBarHeight(e.nativeEvent.layout.height)}
       style={[styles.bar, { backgroundColor: colors.fill1, borderTopColor: colors.line2 }]}
     >
-      <View style={styles.row}>
-        <View style={styles.words}>
+      <View style={stacked ? styles.stack : styles.row} testID={stacked ? 'sample-bar-stacked' : undefined}>
+        <View style={stacked ? styles.wordsStacked : styles.words}>
           <View style={styles.wordRow}>
             <Glyph name="view" size={16} color={colors.inkDim} />
             <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('onboarding.sample.bar.word')}</Text>
           </View>
           <Text style={{ ...textRole(pairing, 'label'), color: colors.inkDim }}>{t('onboarding.sample.bar.sub')}</Text>
         </View>
-        <View style={styles.actions}>
+        <View style={stacked ? styles.actionsStacked : styles.actions}>
           <Pill
             label={t('onboarding.sample.bar.start')}
             variant="primary"
@@ -81,4 +87,7 @@ const styles = StyleSheet.create({
   words: { flex: 1, gap: 2 },
   wordRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   actions: { alignItems: 'flex-end', flexShrink: 1 },
+  stack: { gap: space.gapSm },
+  wordsStacked: { gap: 2 },
+  actionsStacked: { alignItems: 'stretch', gap: space.gapSm },
 });
