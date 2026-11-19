@@ -83,3 +83,15 @@ test('gate: fails below the bar, fails when incomplete or duplicated, passes at 
   assert.match(g.reasons.join('\n'), /a\.ts: 10 of 11/);
   assert.equal(gate(at90, { bar: 90, duplicates: 1 }).pass, false);
 });
+
+test('a part that left out some mutators does not hide or add results (2026-11-18 re-run)', () => {
+  const excluded = { status: 'Ignored', statusReason: 'Ignored because of excluded mutation "EqualityOperator"' };
+  // the BlockStatement-only part reports the other mutators as Ignored, and comes first
+  const blockOnly = report({ 'a.ts': file([mu(1, 1, 'Killed', { mutatorName: 'BlockStatement', replacement: '{}' }), mu(2, 2, 'Ignored', excluded), mu(3, 9, 'Ignored', excluded)]) });
+  const rest = report({ 'a.ts': file([mu(4, 2, 'Survived')]) });
+  const static_ = report({ 'b.ts': file([mu(5, 1, 'Ignored', { statusReason: 'Static mutant (and "ignoreStatic" was enabled)' })]) });
+  const { report: merged, duplicates } = mergeReports([blockOnly, rest, static_]);
+  assert.equal(duplicates, 0);
+  assert.deepEqual(merged.files['a.ts'].mutants.map((m) => m.status).sort(), ['Killed', 'Survived']);
+  assert.equal(merged.files['b.ts'].mutants.length, 1, 'static mutants stay');
+});
