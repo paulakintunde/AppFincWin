@@ -53,3 +53,65 @@ describe('presetQuestions', () => {
     expect(Object.isFrozen(QUESTION_LIBRARY)).toBe(true);
   });
 });
+
+
+describe('presetQuestions exact tables', () => {
+  it('library rows, written out literally', () => {
+    expect(QUESTION_LIBRARY).toEqual([
+    { id: 'insurance_monthly', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'fuel_monthly', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'maintenance_yearly', cadence: 'yearly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'registration_yearly', cadence: 'yearly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'loss_of_value', cadence: 'yearly', cash: false, answer: 'amount', role: 'cost' },
+    { id: 'sales_tax', cadence: 'one_off', cash: true, answer: 'amount', role: 'modelled_elsewhere' },
+    { id: 'dealer_fees', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'trade_in', cadence: 'one_off', cash: true, answer: 'amount', role: 'credit' },
+    { id: 'deposit', cadence: 'one_off', cash: true, answer: 'amount', role: 'modelled_elsewhere' },
+    { id: 'property_tax_yearly', cadence: 'yearly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'home_insurance', cadence: 'yearly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'utilities_change', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'service_charge', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'closing_costs', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'transfer_tax', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'moving_costs', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'rent_stops', cadence: 'none', cash: true, answer: 'yes_no', role: 'cost' },
+    { id: 'books_materials', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'travel', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'accommodation', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'income_changes', cadence: 'none', cash: true, answer: 'yes_no', role: 'cost' },
+    { id: 'due_date', cadence: 'none', cash: true, answer: 'date', role: 'cost' },
+    { id: 'late_penalty', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'instalment_offered', cadence: 'none', cash: true, answer: 'yes_no', role: 'cost' },
+    { id: 'billed_yearly', cadence: 'none', cash: true, answer: 'yes_no', role: 'cost' },
+    { id: 'old_premium_stops', cadence: 'none', cash: true, answer: 'yes_no', role: 'cost' },
+    { id: 'warranty', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'accessories', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'bundled_subscriptions', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'resale', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'joining_fee', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'billing_frequency', cadence: 'none', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'cancellation_fee', cadence: 'one_off', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'price_after_intro', cadence: 'monthly', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'what_broke', cadence: 'none', cash: true, answer: 'amount', role: 'cost' },
+    { id: 'repair_or_replace', cadence: 'none', cash: true, answer: 'yes_no', role: 'cost' },
+    { id: 'cover_insurance', cadence: 'none', cash: true, answer: 'yes_no', role: 'cost' },
+    ]);
+  });
+
+  it('preset sets, written out literally', () => {
+    expect(PRESET_QUESTIONS).toEqual({
+    vehicle: ['insurance_monthly', 'fuel_monthly', 'maintenance_yearly', 'registration_yearly', 'loss_of_value', 'sales_tax', 'dealer_fees', 'trade_in'],
+    property: ['deposit', 'property_tax_yearly', 'home_insurance', 'maintenance_yearly', 'utilities_change', 'service_charge', 'closing_costs', 'transfer_tax', 'moving_costs', 'rent_stops'],
+    tuition: ['books_materials', 'travel', 'accommodation', 'income_changes'],
+    tax: ['due_date', 'late_penalty', 'instalment_offered'],
+    insurance_premium: ['billed_yearly', 'old_premium_stops'],
+    electronics: ['warranty', 'accessories', 'bundled_subscriptions', 'resale'],
+    subscription: ['joining_fee', 'billing_frequency', 'cancellation_fee', 'price_after_intro'],
+    emergency_repair: ['what_broke', 'repair_or_replace', 'cover_insurance'],
+    general: ['insurance_monthly', 'maintenance_yearly', 'loss_of_value'],
+    rent_bill: [],
+    loan_repayment: [],
+    cash_equivalent: [],
+    });
+  });
+});
