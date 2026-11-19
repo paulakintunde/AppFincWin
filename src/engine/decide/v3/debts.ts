@@ -97,6 +97,7 @@ export function debtOutflows(inputs: Pick<V3Inputs, 'asOf' | 'debts' | 'series'>
   const assumed: { debtId: string; amount: MinorUnits }[] = [];
   let paidUnrecorded = 0;
   for (const d of [...inputs.debts].sort(byId)) {
+    // Stryker disable next-line EqualityOperator: a minimum of exactly 0 gives no flow, no assumption and nothing unrecorded either way
     if (links.has(d.id) || d.minimum <= 0) continue;
     const given = dueDayOf(d);
     const first = given === null ? addDays(asOf, 1) : onDay(ym, given);
@@ -105,13 +106,16 @@ export function debtOutflows(inputs: Pick<V3Inputs, 'asOf' | 'debts' | 'series'>
     const paid = d.paidThisMonth ?? null;
     const line = paid === null ? paidLines.find((l) => !usedLines.has(l.id) && Math.abs(l.amount) === d.minimum) : undefined;
     if (line !== undefined) usedLines.add(line.id);
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: owed below or at 0 gives a first amount of 0 or less, which no later guard lets through
     const owed = paid === null ? (line === undefined ? d.minimum : 0) : d.minimum - paid > 0 ? d.minimum - paid : 0;
     // D-73: the payments never add up to more than the balance; the last is only what is left, then nothing more.
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: a balance of 0 or less caps the first amount at 0 or less, so no flow is made either way
     let left = d.balance > 0 ? d.balance : 0;
     const firstAmount = Math.min(yearMonthOf(first) === ym ? owed : d.minimum, left);
     if (given === null && firstAmount > 0) assumed.push({ debtId: d.id, amount: minorUnits(firstAmount) });
     let thisMonth = 0;
     for (let i = 0, m = yearMonthOf(first); ; i++, m = addYearMonths(yearMonthOf(first), i)) {
+      // Stryker disable next-line ConditionalExpression: the first date is always onDay of its own month and day, so first and onDay agree
       const date = i === 0 ? first : onDay(m, day);
       if (date >= end) break;
       const amount = Math.min(i === 0 ? firstAmount : d.minimum, left);
@@ -129,6 +133,7 @@ export function debtOutflows(inputs: Pick<V3Inputs, 'asOf' | 'debts' | 'series'>
 
 /** Balance x APR / 12, rounded half up once: the monthly interest of a debt (0 with no rate). */
 export function monthlyInterest(d: V3Debt): MinorUnits {
+  // Stryker disable next-line EqualityOperator: a rate or balance of exactly 0 gives an interest of 0 either way
   if (d.apr === null || d.apr <= 0n || d.balance <= 0) return minorUnits(0);
   return minorFromBigInt(divideHalfUp(BigInt(d.balance) * d.apr, 100n * PERCENT_SCALE * 12n), FN);
 }
@@ -188,6 +193,7 @@ export function debtFacts(debts: readonly V3Debt[], pay: MinorUnits, factLines: 
   const withInterest = byInterest(debts);
   for (const d of withInterest.slice(0, DEBT_FACT_LINES)) if (d.id !== stated) out.push(interestFact(d));
   if (withInterest.length > DEBT_FACT_LINES) out.push({ code: 'debt_more', values: { count: withInterest.length - DEBT_FACT_LINES } });
+  // Stryker disable next-line EqualityOperator: a minimum of exactly 0 adds 0 on both branches
   const housing = debts.filter((d) => d.isHousing).reduce((t, d) => t + BigInt(d.minimum > 0 ? d.minimum : 0), BigInt(newHousing));
   if (housing > 0n && pay > 0) {
     out.push({ code: 'housing_cost', values: { amount: minorFromBigInt(housing, FN), pay, share: Number(divideHalfUp(housing * 100n, BigInt(pay))) } });

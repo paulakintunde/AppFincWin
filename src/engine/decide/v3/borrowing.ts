@@ -79,6 +79,7 @@ export function cashFits(code: Code): boolean {
 export function cashSoon(cash: Result, asOf: LocalDate): boolean {
   const r = cash.readyBy;
   if (cash.code !== 'not_yet' || r === null) return false;
+  // Stryker disable next-line StringLiteral: a month has 28 or more days, so the two-digit pad never adds a character
   const day = r.kind === 'date' ? r.date : `${r.month}-${String(daysInYearMonth(r.month)).padStart(2, '0')}`;
   return daysBetween(asOf, day) <= SHORT_WAIT_DAYS;
 }

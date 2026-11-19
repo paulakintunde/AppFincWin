@@ -232,3 +232,114 @@ describe('debtsNotRecorded (D-43, QE-01, QE-13)', () => {
     expect(debtsNotRecorded({ debts: [debt({ kind: 'loan' })], accounts: [{ ...current(null), kind: 'savings' }] })).toBe('card');
   });
 });
+
+describe('debts.ts mutation kills (05.4-58)', () => {
+  const inputs = (debts: V3Debt[], series = [] as ReturnType<typeof monthly>[]) => ({ asOf, debts, series });
+  const payLine = (id: string, over: Partial<Parameters<typeof v3Line>[0]> = {}) =>
+    v3Line({ id, date: '2026-11-03', amount: 30_000, role: 'debt_payment', seriesId: null, ...over });
+
+  it('flows land in date order, then debt id order, whatever order the debts come in', () => {
+    const ids = ['q', 'b', 'm', 'a', 'z', 'c', 'k', 'e'];
+    const days = [20, 20, 18, 25, 18, 20, 25, 18];
+    const debts = ids.map((id, i) => debt({ id, dueDay: days[i]!, minimum: mu(1_000) }));
+    const out = debtOutflows(inputs(debts), [], 14).flows.map((f) => `${f.date}|${f.debtId}`);
+    expect(out).toEqual([
+      '2026-11-18|e', '2026-11-18|m', '2026-11-18|z',
+      '2026-11-20|b', '2026-11-20|c', '2026-11-20|q',
+      '2026-11-25|a', '2026-11-25|k',
+    ]);
+  });
+
+  it('series are claimed in id order, by debts in id order, whatever order they arrive in', () => {
+    const series = [monthly('p2', 'debt_payment', 5_000), monthly('p1', 'debt_payment', 5_000)];
+    const links = debtLinks([debt({ id: 'b', minimum: mu(5_000) }), debt({ id: 'a', minimum: mu(5_000) })], series, asOf);
+    expect(links.get('a')?.id).toBe('p1');
+    expect(links.get('b')?.id).toBe('p2');
+  });
+
+  it('a debt whose own series is gone stays unlinked, even when another series matches its minimum', () => {
+    const series = [monthly('pay', 'debt_payment', 15_000)];
+    expect(debtLinks([debt({ id: 'x', seriesId: 'gone', minimum: mu(15_000) })], series, asOf).size).toBe(0);
+  });
+
+  it('a debt takes the series with its own id before one of the same amount', () => {
+    const series = [monthly('a-first', 'debt_payment', 15_000), monthly('d1', 'debt_payment', 99_999)];
+    expect(debtLinks([debt({ id: 'd1' })], series, asOf).get('d1')?.id).toBe('d1');
+  });
+
+  it('a series is not shared: with one series for two debts of one amount only the first debt takes it', () => {
+    const series = [monthly('only', 'debt_payment', 15_000)];
+    const links = debtLinks([debt({ id: 'a' }), debt({ id: 'b' })], series, asOf);
+    expect([...links.keys()]).toEqual(['a']);
+  });
+
+  it('a due day of 1 is a due day, not "not set"', () => {
+    const out = debtOutflows(inputs([debt({ dueDay: 1, minimum: mu(30_000) })]), [], 60);
+    expect(out.assumed).toEqual([]);
+    expect(out.flows.map((f) => f.date)).toEqual(['2026-12-01', '2027-01-01']);
+  });
+
+  it.each([
+    ['a pending line', { status: 'pending' as const }],
+    ['a spending line', { role: 'spending' as const }],
+    ['a line of the debt’s own series', { seriesId: 'some-series' }],
+    ['a line from an earlier month', { date: '2026-10-28' }],
+    ['a line of a different amount', { amount: 29_999 }],
+  ])('%s does not pay the minimum', (_n, over) => {
+    const out = debtOutflows(inputs([debt({ dueDay: 25, minimum: mu(30_000) })]), [payLine('l', over)], 45);
+    expect(out.flows.map((f) => [f.date, f.amount])).toEqual([['2026-11-25', 30_000], ['2026-12-25', 30_000]]);
+  });
+
+  it('a paid, unlinked debt-payment line of the minimum this month pays it, a negative amount too', () => {
+    const out = debtOutflows(inputs([debt({ dueDay: 25, minimum: mu(30_000) })]), [payLine('l', { amount: -30_000 })], 45);
+    expect(out.flows.map((f) => f.date)).toEqual(['2026-12-25']);
+  });
+
+  it('one line pays one minimum: of two debts with the same minimum the first by id gets it', () => {
+    const out = debtOutflows(inputs([debt({ id: 'b', dueDay: 25, minimum: mu(30_000) }), debt({ id: 'a', dueDay: 25, minimum: mu(30_000) })]), [payLine('l')], 14);
+    expect(out.flows.map((f) => [f.date, f.debtId])).toEqual([['2026-11-25', 'b']]);
+  });
+
+  it('a linked debt and a debt with no minimum have no flows of their own', () => {
+    const series = [monthly('d1', 'debt_payment', 30_000)];
+    expect(debtOutflows(inputs([debt({ id: 'd1', dueDay: 25, minimum: mu(30_000) })], series), [], 45).flows).toEqual([]);
+    expect(debtOutflows(inputs([debt({ id: 'z', dueDay: 25, minimum: mu(0) })]), [payLine('l', { amount: 0 })], 45).flows).toEqual([]);
+  });
+
+  it('a part-paid minimum lands as the rest of it, not the sum of the two', () => {
+    const out = debtOutflows(inputs([debt({ dueDay: 25, minimum: mu(30_000), paidThisMonth: mu(10_000) })]), [], 14);
+    expect(out.flows.map((f) => f.amount)).toEqual([20_000]);
+  });
+
+  it('only a debt with no due day and something to pay is stated as assumed', () => {
+    expect(debtOutflows(inputs([debt({ dueDay: 25 })]), [], 45).assumed).toEqual([]);
+    expect(debtOutflows(inputs([debt({ dueDay: null, balance: mu(0) })]), [], 45).assumed).toEqual([]);
+  });
+
+  it('the window ends before its last day, and a payment due today is in it', () => {
+    // asOf 15 Nov, 18 days: the window ends on 3 Dec
+    const out = debtOutflows(inputs([debt({ dueDay: 3, minimum: mu(30_000) }), debt({ id: 'd2', dueDay: 15, minimum: mu(10_000) })]), [], 18);
+    expect(out.flows.map((f) => [f.date, f.debtId])).toEqual([['2026-11-15', 'd2']]);
+  });
+
+  it('interest is nothing for a rate or a balance below 0', () => {
+    expect(monthlyInterest(debt({ apr: -1_200_000_000n as unknown as V3Debt['apr'], balance: mu(100_000) }))).toBe(0);
+    expect(monthlyInterest(debt({ balance: mu(-100_000) }))).toBe(0);
+    expect(monthlyInterest(debt({ apr: percent('0'), balance: mu(100_000) }))).toBe(0);
+  });
+
+  it('housing_cost leaves out a housing debt with a minimum below 0', () => {
+    const facts = debtFacts([debt({ id: 'h1', isHousing: true, minimum: mu(100_000), apr: null }), debt({ id: 'h2', isHousing: true, minimum: mu(-5_000), apr: null })], mu(400_000), true, null);
+    expect(facts.find((f) => f.code === 'housing_cost')?.values).toMatchObject({ amount: 100_000, share: 25 });
+  });
+
+  it('an overdraft is asked about for a checking or a current account alone, and only when none of them has a limit', () => {
+    const acc = (id: string, kind: V3Account['kind'], limit?: number): V3Account => ({ id, balance: mu(0), use: { kind: 'everyday' }, kind, ...(limit === undefined ? {} : { overdraftLimit: mu(limit) }) });
+    const both = [debt({ kind: 'loan' }), debt({ id: 'c', kind: 'card' })];
+    expect(debtsNotRecorded({ debts: both, accounts: [acc('a', 'checking')] })).toBe('overdraft');
+    expect(debtsNotRecorded({ debts: both, accounts: [acc('a', 'current')] })).toBe('overdraft');
+    expect(debtsNotRecorded({ debts: both, accounts: [acc('a', 'savings')] })).toBeNull();
+    expect(debtsNotRecorded({ debts: both, accounts: [acc('a', 'checking', 0), acc('b', 'current')] })).toBeNull();
+    expect(debtsNotRecorded({ debts: both, accounts: [acc('a', 'checking'), acc('b', 'current', 5_000)] })).toBeNull();
+  });
+});

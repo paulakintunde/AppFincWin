@@ -85,6 +85,13 @@ describe('erestOf', () => {
     expect(() => erestOf(mu(1), mu(0), 32, 31)).toThrow(RangeError);
     expect(() => erestOf(mu(1), mu(0), 1, 0)).toThrow(RangeError);
   });
+  it('05.4-60 says which figure is wrong, and a month of 1 day is valid', () => {
+    expect(() => erestOf(mu(1), mu(0), 1, 0)).toThrow('erestOf: daysInMonth 0 must be a positive integer');
+    expect(() => erestOf(mu(1), mu(0), 1, 30.5)).toThrow('erestOf: daysInMonth 30.5 must be a positive integer');
+    expect(() => erestOf(mu(1), mu(0), 32, 31)).toThrow('erestOf: day 32 must be an integer from 1 to 31');
+    expect(() => erestOf(mu(1), mu(0), 1.5, 31)).toThrow('erestOf: day 1.5 must be an integer from 1 to 31');
+    expect(erestOf(mu(100), mu(0), 1, 1)).toBe(0);
+  });
   it('I2 no zero-spend (05.3-75: except on the last day)', () => {
     fcAssert(
       property(

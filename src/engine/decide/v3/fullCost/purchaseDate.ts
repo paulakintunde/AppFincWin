@@ -17,11 +17,13 @@ import type { CheckV2, LocalDate } from '../types';
 
 export function purchaseDateOf(check: Pick<CheckV2, 'purchaseDate'>, asOf: LocalDate): LocalDate {
   const d = check.purchaseDate;
+  // Stryker disable next-line EqualityOperator: a purchase date equal to asOf returns the same date either way
   return d != null && isValidLocalDate(d) && d > asOf ? d : asOf;
 }
 
 export function dayOneDate(buyDate: LocalDate, asOf: LocalDate, days: number): LocalDate {
   const last = addDays(asOf, days - 1);
+  // Stryker disable next-line EqualityOperator: a buy date equal to the last day returns the same date either way
   return buyDate > last ? last : buyDate;
 }
 
@@ -30,16 +32,19 @@ export function monthsBetween(asOf: LocalDate, buyDate: LocalDate): number {
   const a = parseDate(asOf);
   const b = parseDate(buyDate);
   const n = b.y * 12 + b.m - (a.y * 12 + a.m) - 1;
+  // Stryker disable next-line EqualityOperator: a month count of 0 gives 0 either way
   return n > 0 ? n : 0;
 }
 
 /** The usual leftover of the months that end before the purchase month: typicalLeft x monthsBetween, only when above 0. */
 export function laterRoom(typicalLeft: MinorUnits | null, asOf: LocalDate, buyDate: LocalDate): MinorUnits {
+  // Stryker disable next-line EqualityOperator: a leftover of 0 gives 0n either way
   const per = typicalLeft !== null && typicalLeft > 0 ? BigInt(typicalLeft) : 0n;
   return minorFromBigInt(per * BigInt(monthsBetween(asOf, buyDate)), 'laterRoom');
 }
 
 /** The purchase falls in a later month than asOf's: this month's figure loses nothing to it. */
 export function inLaterMonth(asOf: LocalDate, buyDate: LocalDate): boolean {
+  // Stryker disable next-line MethodExpression: a longer asOf string compares the same as its month when the buy month is later, and false when it is the same
   return buyDate.slice(0, 7) > asOf.slice(0, 7);
 }

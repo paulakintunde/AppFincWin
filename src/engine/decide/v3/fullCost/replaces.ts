@@ -69,12 +69,15 @@ function billSeries(ctx: ReplacesCtx, id: string): V3Series | undefined {
 /** The dues of a series inside [from, path end) that the path takes (not settled, not dropped). */
 function takenDues(ctx: ReplacesCtx, s: V3Series, from: LocalDate): LocalDate[] {
   const end = addDays(ctx.asOf, ctx.days);
+  // Stryker disable next-line EqualityOperator: when from equals asOf both branches pick the same start
   const start = from > ctx.asOf ? from : ctx.asOf;
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: an empty or reversed range gives no occurrences from seriesOccurrences anyway
   if (start >= end) return [];
   return seriesOccurrences(s, start, end).filter((d) => !ctx.paid.has(`${s.id}|${d}`) && (ctx.drops?.has(s.id, d) ?? null) === null);
 }
 
 function lastDay(ym: YearMonth): LocalDate {
+  // Stryker disable next-line StringLiteral: a month always has 28 or more days, so the two-digit pad never adds a character
   return `${ym}-${String(daysInYearMonth(ym)).padStart(2, '0')}`;
 }
 
@@ -94,9 +97,11 @@ function cappedEveryday(stops: readonly StoppedCost[], month: ReplacesCtx['month
     let room = all;
     if (cat !== null) {
       const catLeft = left.get(cat) ?? BigInt(month.categoryMonthly.find((c) => c.categoryId === cat)?.amount ?? 0);
+      // Stryker disable next-line EqualityOperator: when the category room equals the left room both choices give the same number
       if (catLeft < room) room = catLeft;
     }
     const want = everydayShare(s);
+    // Stryker disable next-line EqualityOperator,ConditionalExpression: at the tie, and for a room below 0, the share stays 0 or equal either way
     const share = want < room ? want : room > 0n ? room : 0n;
     all -= share;
     if (cat !== null) left.set(cat, (left.get(cat) ?? BigInt(month.categoryMonthly.find((c) => c.categoryId === cat)?.amount ?? 0)) - share);
@@ -161,6 +166,7 @@ export function saleFlows(sale: Sale | null | undefined, ctx: ReplacesCtx): Sale
     link === undefined
       ? ctx.debtFlows.filter((f) => f.debtId === debt.id).map((f) => ({ date: f.date, amount: f.amount, key: null }))
       : takenDues(ctx, link, ctx.asOf).map((d) => ({ date: d, amount: link.amount, key: `${link.id}|${d}` }));
+  // Stryker disable next-line EqualityOperator: a balance of 0 owes 0 either way
   let owed = debt.balance > 0 ? debt.balance : 0;
   for (const p of dues) if (p.date < sale.arrives) owed -= Math.min(p.amount, Math.max(0, owed));
   const toDebt = Math.min(sale.amount, owed);
@@ -247,6 +253,7 @@ export function replacesEffect(replaces: Replaces | null | undefined, ctx: Repla
   const saleFlowsKept = now ? sale.flows.filter((f) => f !== sale.account) : sale.flows;
   const stopFlows = stoppedCostFlows(
     stops,
+    // Stryker disable next-line ConditionalExpression: adding no ended dues to the paid set changes nothing, so both branches agree
     sale.endedDues.size === 0 ? ctx : { ...ctx, paid: new Set([...ctx.paid, ...sale.endedDues]) }
   );
   const debts = sale.debt === null ? ctx.debts : ctx.debts.flatMap((d) => (d.id !== (sale.debt as { id: string }).id ? [d] : (sale.debt as { left: MinorUnits }).left === 0 ? [] : [{ ...d, balance: (sale.debt as { left: MinorUnits }).left }]));

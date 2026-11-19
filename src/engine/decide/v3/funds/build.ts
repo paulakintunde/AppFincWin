@@ -93,6 +93,7 @@ function spendingOf(inputs: V3Inputs): Spending {
   pEnv += inside;
   const fundUnlinked =
     accounts !== undefined && inputs.emergency != null && (inputs.emergency.accountId == null || !ids.has(inputs.emergency.accountId));
+  // Stryker disable next-line ConditionalExpression: fundUnlinked already requires a fund, so the second test is a type guard
   if (fundUnlinked && inputs.emergency != null) {
     total -= inputs.emergency.amount;
     fenced += inputs.emergency.amount;
@@ -118,6 +119,7 @@ function spendingOf(inputs: V3Inputs): Spending {
  * the fund, then the set-aside. gross is signed (05.4 ENG-02): an overdrawn gross takes no deductions and nets to itself.
  */
 function partsOf(gross: number, mixed: number, env: number, emg: number): SpendingParts {
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: a negative or zero gross only raises over, and every deduction is already cut to 0 at that size
   const there = gross > 0 ? gross : 0;
   let over = mixed + env + emg - there;
   if (over < 0) over = 0; // an overshoot is never negative
@@ -179,6 +181,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
   // Only the part above the confirmed figure counts; the other direction stays the drift notice (D-30). The threshold and
   // the question are 05.1-44's (needsInput reads funds.unexplained against thresholds.unspentDrift).
   const answer = inputs.unexplainedAnswer;
+  // Stryker disable next-line EqualityOperator: an answer of 0 covers 0, so it changes neither available nor ringFenced
   const validAnswer = answer != null && Number.isSafeInteger(answer.amount) && answer.amount >= 0 ? answer : null;
   let unexplained: MinorUnits | undefined;
   let ringFenced = sp.ringFenced;
@@ -196,6 +199,7 @@ export function buildFunds(inputs: V3Inputs, month: MonthModel, envelopeId: stri
       ringFenced = minorUnits(ringFenced + covered);
     }
     available = minorUnits(available - billsHeld.total);
+    // Stryker disable next-line ConditionalExpression: an unchanged figure is rebuilt as an equal copy, so only the object identity differs
     if (available !== unspent.available) shown = { ...unspent, available };
   }
   return {

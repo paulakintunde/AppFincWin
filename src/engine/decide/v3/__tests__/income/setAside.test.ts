@@ -218,3 +218,50 @@ describe('FIN-20 through prepare', () => {
     expect(none.result.facts.some((f) => f.code === 'tax_set_aside')).toBe(false);
   });
 });
+
+describe('withTaxSetAside mutation kills (05.4-58)', () => {
+  const pf: IncomeProfile = { types: ['freelance'], variable: null, steady: null, billsHorizonMonths: null };
+  const only = (over: Partial<V3Inputs>): V3Inputs => inputsOf({ profile: pf, taxSetAsideBp: 2000, balance: mu(500_000), ...over });
+  const monthlyPay = (id: string, role: 'pay' | 'bill', amount: number) => v3Series({ id, role, cadence: { unit: 'month', every: 1 }, anchorDate: '2026-04-01', amount });
+
+  it('freelance income logged on the as-of day is held back from the balance', () => {
+    const raw = only({ months: [monthOf('2026-10', [v3Line({ id: 'x', date: ASOF, amount: 100_000, role: 'income' })], { full: false })] });
+    const r = withTaxSetAside(raw);
+    expect(r.inputs.balance).toBe(480_000);
+    expect(r.fact).toEqual({ code: 'tax_set_aside', values: { percent: '20', amount: 20_000 } });
+  });
+
+  it('a freelance pay series alone is cut by the share, and that alone is a change', () => {
+    const r = withTaxSetAside(only({ series: [monthlyPay('p', 'pay', 100_000)] }));
+    expect(r.inputs.series[0]!.amount).toBe(80_000);
+    expect(r.fact).not.toBeNull();
+  });
+
+  it('a pay too small to carry a share, and a bill, are left alone and change nothing', () => {
+    const tiny = withTaxSetAside(only({ taxSetAsideBp: 10, series: [monthlyPay('p', 'pay', 1)] }));
+    expect(tiny.fact).toBeNull();
+    expect(tiny.inputs.series[0]!.amount).toBe(1);
+    const bill = withTaxSetAside(only({ series: [monthlyPay('b', 'bill', 100_000)] }));
+    expect(bill.fact).toBeNull();
+    expect(bill.inputs.series[0]!.amount).toBe(100_000);
+  });
+
+  it('a stated steady income alone is cut by the share, and that alone is a change', () => {
+    const r = withTaxSetAside(only({ profile: { ...pf, steady: mu(100_000) } }));
+    expect(r.inputs.profile!.steady).toBe(80_000);
+    expect(r.fact).toEqual({ code: 'tax_set_aside', values: { percent: '20', amount: 20_000 } });
+  });
+
+  it('an expected income too small to carry a share changes nothing; a larger one is cut', () => {
+    const tiny = withTaxSetAside(only({ taxSetAsideBp: 10, expectedIncome: [{ month: '2026-11', amount: mu(1), at: ASOF }] }));
+    expect(tiny.fact).toBeNull();
+    const big = withTaxSetAside(only({ expectedIncome: [{ month: '2026-11', amount: mu(100_000), at: ASOF }] }));
+    expect(big.inputs.expectedIncome![0]!.amount).toBe(80_000);
+    expect(big.fact).not.toBeNull();
+  });
+
+  it('with no expected income given, the result has no expected income key', () => {
+    const r = withTaxSetAside(only({ series: [monthlyPay('p', 'pay', 100_000)] }));
+    expect(Object.keys(r.inputs)).not.toContain('expectedIncome');
+  });
+});

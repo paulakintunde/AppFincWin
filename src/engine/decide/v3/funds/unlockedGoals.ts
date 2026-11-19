@@ -33,10 +33,12 @@ export function unlockedOutside(inputs: Pick<V3Inputs, 'accounts' | 'envelopes'>
     let unlocked = 0;
     let locked = 0;
     for (const e of inputs.envelopes) {
+      // Stryker disable next-line EqualityOperator: a goal holding exactly 0 adds 0 to both sums, so <= and < agree
       if (e.accountId !== a.id || e.saved <= 0) continue;
       if (e.locked === false) unlocked += e.saved;
       else locked += e.saved;
     }
+    // Stryker disable next-line EqualityOperator: a room of exactly 0 gives 0 on both branches
     const room = a.balance - locked > 0 ? a.balance - locked : 0;
     const counted = Math.min(unlocked, room);
     outside += counted;

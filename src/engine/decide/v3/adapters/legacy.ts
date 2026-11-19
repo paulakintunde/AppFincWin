@@ -64,7 +64,9 @@ function firstPaymentOf(x: unknown): FirstPayment | null {
 
 function shareOf(scope: unknown, split: unknown): ShareScope {
   if (scope !== 'household' || !isRecord(split)) return { kind: 'personal' };
+  // Stryker disable next-line ArrayDeclaration: a missing weights list gives one member or none, and both fall under the 2 member minimum
   const weights = Array.isArray(split.weights) ? split.weights : [];
+  // Stryker disable next-line ArrayDeclaration: a missing amounts list gives one member or none, and both fall under the 2 member minimum
   const amounts = Array.isArray(split.amounts) ? split.amounts : [];
   const n = split.kind === 'weight' ? weights.length : split.kind === 'amount' ? amounts.length : 2;
   if (n < 2 || n > 20) return { kind: 'personal' };

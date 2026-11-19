@@ -61,6 +61,7 @@ export function potSetAside(pot: PotInput, asOf: string): PotLine {
   const stated = pot.kind === 'wait' ? BigInt(pot.monthlyAmount ?? ZERO) : BigInt(pot.planMonthly ?? ZERO);
   if (pot.kind === 'wait' && stated === 0n) return line(pot.id, 0n, null, 'active');
   if (stated > 0n) {
+    // Stryker disable next-line EqualityOperator: when the stated amount equals what remains both choices give the same monthly amount
     const monthly = stated < remaining ? stated : remaining;
     return line(pot.id, monthly, Number(ceilDivide(remaining, monthly)), 'active');
   }
