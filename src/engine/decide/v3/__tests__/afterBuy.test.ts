@@ -187,3 +187,38 @@ describe('afterBuy.ts helpers', () => {
     expect(withCarried(already, mu(1_000)).notices).toEqual([{ code: 'month_heading_short', values: { month: '2026-11', short: 6_000, categoryId: 'food', largest: 900 } }, other]);
   });
 });
+
+describe('afterBuy.ts mutation kills (05.4-58)', () => {
+  const MAX = Number.MAX_SAFE_INTEGER;
+  const at = { asOf: '2026-11-15', byCash: false, fromThisMonth: null };
+
+  it('each sum names itself when it overflows a safe integer', () => {
+    expect(() => openingBalance(mu(MAX), [], '2026-11', mu(1))).toThrow(/^openingBalance: /);
+    const base = { month: '2026-11', monthLeft: mu(-MAX), notices: [] } as unknown as MonthModel;
+    expect(() => withCarried(base, mu(10))).toThrow(/^withCarried: /);
+    const weekly = { ...SCHEDULE, firstDate: '2026-11-16', cadence: { unit: 'week', every: 1 }, lastPaying: 3, payment: mu(MAX), finalPayment: mu(MAX) } as unknown as Schedule;
+    expect(() => laterThisMonth(purchaseOf({ schedule: weekly }), '2026-11-15', '2026-11')).toThrow(/^laterThisMonth: /);
+    const usualOver = { month: '2026-11', monthLeft: mu(0), typicalLeft: mu(MAX) };
+    expect(() => afterBuyBlock({ ...at, month: usualOver, purchase: purchaseOf({ schedule: SCHEDULE }), replaces: { freed: mu(10), shows: false } })).toThrow(/^afterBuyBlock: /);
+    const monthOver = { month: '2026-11', monthLeft: mu(-MAX), typicalLeft: null };
+    expect(() => afterBuyBlock({ ...at, month: monthOver, purchase: purchaseOf({ dayOne: mu(10) }) })).toThrow(/^afterBuyBlock: /);
+    const ab: AfterBuy = { lead: 'month', month: mu(10), usualMonth: null, before: mu(0), monthName: '2026-11' };
+    expect(() => rebased(ab, mu(MAX))).toThrow(/^rebased: /);
+  });
+
+  it('homeFigure names itself when there are no readings', () => {
+    expect(() => homeFigure({ readings: [] })).toThrow(/^homeFigure: /);
+  });
+
+  it('carriedOverdraft of an opening of exactly 0 is a plain 0', () => {
+    expect(carriedOverdraft(mu(0))).toBe(0);
+  });
+
+  it('withCarried leaves no overspent notice when the overdraft takes the month to exactly 0', () => {
+    const typical: Notice = { code: 'typical_short', values: { short: 1 } };
+    const base = { month: '2026-11', monthLeft: mu(10_000), notices: [typical] } as unknown as MonthModel;
+    const r = withCarried(base, mu(10_000));
+    expect(r.monthLeft).toBe(0);
+    expect(r.notices).toEqual([typical]);
+  });
+});

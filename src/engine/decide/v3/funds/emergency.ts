@@ -17,6 +17,7 @@ export function emergencyOf(e: EmergencyFund | null): { readonly amount: MinorUn
  * account holds. A fund with no link, or linked to an account that is not listed, stays as stored. Integer minor units.
  */
 export function liveEmergencyOf(e: EmergencyFund | null, accounts: readonly V3Account[] | undefined): EmergencyFund | null {
+  // Stryker disable next-line ConditionalExpression: a fund with no account link and an unmatched id both come back unchanged, so the null test is redundant
   if (e === null || e.accountId == null || accounts === undefined) return e;
   const acct = accounts.find((a) => a.id === e.accountId);
   if (acct === undefined) return e;

@@ -3,7 +3,7 @@ import { minorUnits as mu } from '../../../../money/types';
 import { erestOf } from '../../../../month/model/thisMonth';
 import { dueDrops } from '../../../../month/model/dueDrops';
 import type { LineRole, ReadinessWaiver, SkippedOccurrence, V3Line, V3Month, V3Series } from '../../types';
-import { afterAnchor, billsAndErest, rollForward, suggestedUnspent, unspentState } from '../unspent';
+import { afterAnchor, billsAndErest, heldBackOf, rollForward, suggestedUnspent, unspentState } from '../unspent';
 
 function ser(over: Partial<V3Series> & { id: string }): V3Series {
   return {
@@ -403,5 +403,159 @@ describe('unspentState', () => {
     expect(s?.drifted).toBe(true);
     const low = st({ value: 100000, suggested: 400000 });
     expect(low?.value).toBe(100000);
+  });
+});
+
+describe('mutation kills (05.4-58): heldBackOf and billsAndErest', () => {
+  test('a zero-amount bridge still claims its id, so a later bridge with the same id is skipped', () => {
+    expect(heldBackOf([{ id: 'a', amount: mu(0) }, { id: 'a', amount: mu(500) }])).toBe(0);
+    expect(heldBackOf([{ id: 'a', amount: mu(0) }, { id: 'b', amount: mu(500) }])).toBe(500);
+  });
+
+  test.each([
+    ['balance with no horizon', 'balance', null],
+    ['a steady profile with a horizon', 'steady', 2],
+    ['a spread profile with a horizon', 'spread', 2],
+  ] as const)('%s keeps the bills due and the Erest as given', (_n, variable, billsHorizonMonths) => {
+    const profile = { types: ['mix' as const], variable, steady: null, billsHorizonMonths };
+    const r = billsAndErest({ asOf: '2026-10-03', billsDue: mu(30000), erest: mu(137500), profile, series: [rent, util] });
+    expect(r.bills).toBe(30000);
+    expect(r.erest).toBe(137500);
+  });
+});
+
+describe('mutation kills (05.4-58): rollForward', () => {
+  const rentAt = (anchorDate: string) => ser({ id: 'rent', anchorDate, amount: mu(150000) });
+
+  test('a pending line never counts toward what was logged at the anchor', () => {
+    // e 310000 on day 3 of 31: pace 280000, so a paid-only log of 0 gives Erest 310000 and the 300000 line is no excess
+    const r = roll({
+      e: mu(310000),
+      lines: [
+        line({ id: 'p', date: '2026-10-01', amount: mu(310000), status: 'pending' }),
+        line({ id: 'a', date: '2026-10-10', amount: mu(300000) }),
+      ],
+    });
+    expect(r.breakdown.everyday).toBe(0);
+    expect(r.value).toBe(240000);
+  });
+
+  test('only anchor-month lines on or before the anchor day count as logged at the anchor', () => {
+    const r = roll({
+      e: mu(310000),
+      lines: [
+        line({ id: 'later', date: '2026-11-15', amount: mu(100000) }),
+        line({ id: 'a', date: '2026-10-10', amount: mu(300000) }),
+      ],
+    });
+    // logged at the anchor 0: planned 310000, so the 300000 is under it and only the November 100000 counts
+    expect(r.breakdown.everyday).toBe(100000);
+    expect(r.value).toBe(140000);
+  });
+
+  test('an everyday line before the anchor day in the anchor month raises what was logged at the anchor', () => {
+    const r = roll({
+      e: mu(310000),
+      lines: [
+        line({ id: 'before', date: '2026-10-01', amount: mu(310000) }),
+        line({ id: 'a', date: '2026-10-10', amount: mu(300000) }),
+      ],
+    });
+    // logged 310000: Erest is the pace 280000, so 300000 - 280000 is excess
+    expect(r.breakdown.everyday).toBe(20000);
+    expect(r.value).toBe(220000);
+  });
+
+  test('a refund before the anchor day lowers what was logged at the anchor', () => {
+    const r = roll({
+      e: mu(100000),
+      lines: [
+        line({ id: 'spent', date: '2026-10-01', amount: mu(20000) }),
+        line({ id: 'back', date: '2026-10-02', amount: mu(15000), role: 'refund' }),
+        line({ id: 'a', date: '2026-10-10', amount: mu(94000) }),
+      ],
+    });
+    // logged 5000: Erest 95000 (gap), so 94000 is inside it
+    expect(r.breakdown.everyday).toBe(0);
+    expect(r.value).toBe(240000);
+  });
+
+  test('a line on the anchor day cannot settle a bill due after it (the nearer line is on the anchor day)', () => {
+    const r = roll({
+      anchor: anchor(240000, '2026-10-09'),
+      series: [rentAt('2026-01-10')],
+      lines: [
+        line({ id: 'x', date: '2026-10-09', seriesId: 'rent', amount: mu(150000) }),
+        line({ id: 'y', date: '2026-10-13', seriesId: 'rent', amount: mu(150000) }),
+      ],
+    });
+    expect(r.breakdown.bills).toBe(0);
+    expect(r.value).toBe(240000);
+  });
+
+  test('a line in the month after the anchor cannot settle a bill due in the anchor month', () => {
+    const r = roll({
+      series: [rentAt('2026-01-30')],
+      lines: [line({ id: 'n', date: '2026-11-01', seriesId: 'rent', amount: mu(150000) })],
+    });
+    expect(r.breakdown.bills).toBe(150000);
+    expect(r.value).toBe(90000);
+  });
+
+  test('a line dated after today cannot settle a bill (a nearer-dated earlier line does)', () => {
+    const r = roll({
+      asOf: '2026-10-09',
+      series: [rentAt('2026-01-10')],
+      lines: [
+        line({ id: 'a', date: '2026-10-08', seriesId: 'rent', amount: mu(150000) }),
+        line({ id: 'b', date: '2026-10-10', seriesId: 'rent', amount: mu(150000) }),
+      ],
+    });
+    expect(r.breakdown.bills).toBe(0);
+    expect(r.value).toBe(240000);
+  });
+
+  test('a line dated today settles a bill due today', () => {
+    const r = roll({
+      asOf: '2026-10-10',
+      series: [rentAt('2026-01-10')],
+      lines: [line({ id: 'a', date: '2026-10-10', seriesId: 'rent', amount: mu(150000) })],
+    });
+    expect(r.breakdown.bills).toBe(0);
+    expect(r.value).toBe(240000);
+  });
+
+  test('an unlinked income line is never matched to a bill, even at the bill amount', () => {
+    const r = roll({
+      series: [rentAt('2026-01-10')],
+      lines: [line({ id: 'inc', date: '2026-10-10', role: 'income', amount: mu(150000) })],
+    });
+    expect(r.breakdown.in).toBe(150000);
+    expect(r.value).toBe(390000);
+  });
+
+  test('everyday in a later month is not netted against the anchor month Erest', () => {
+    const r = roll({ e: mu(100000), lines: [line({ id: 'n', date: '2026-11-05', amount: mu(5000) })] });
+    expect(r.breakdown.everyday).toBe(5000);
+    expect(r.value).toBe(235000);
+  });
+
+  test('a refund after the anchor in the anchor month, with nothing spent, comes back as a negative everyday', () => {
+    const r = roll({ lines: [line({ id: 'back', date: '2026-10-10', amount: mu(7000), role: 'refund' })] });
+    expect(r.breakdown.everyday).toBe(-7000);
+    expect(r.value).toBe(247000);
+  });
+
+  test.each([
+    ['income', { role: 'income' as const }, 'in'],
+    ['everyday', {}, 'everyday'],
+    ['an unmatched bill', { seriesId: 'util' }, 'bills'],
+    ['a debt payment', { role: 'debt_payment' as const }, 'loans'],
+    ['saved', { role: 'saved_invested' as const }, 'investedSaved'],
+    ['other money in', { role: 'other_in' as const }, 'other'],
+  ] as const)('%s alone marks the roll as rolled', (_n, over, key) => {
+    const r = roll({ series: [util], lines: [line({ id: 'x', date: '2026-11-05', amount: mu(1234), ...over })] });
+    expect(r.rolled).toBe(true);
+    expect(Math.abs(r.breakdown[key])).toBe(1234);
   });
 });
