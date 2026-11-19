@@ -138,7 +138,7 @@ export function QuestionScreen({
           <Text
             ref={titleRef}
             accessibilityRole="header"
-            accessibilityLabel={`${title}. ${label}`}
+            accessibilityLabel={`${/[?!.]$/.test(title) ? title : `${title}.`} ${label}`}
             style={{ ...textRole(pairing, 'heading'), color: colors.ink }}
           >
             {title}
