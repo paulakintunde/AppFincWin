@@ -32,6 +32,7 @@ import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
 import { HouseholdRealtimeHost } from '@/data/realtime/HouseholdRealtimeHost';
 import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost';
+import { AppPartnerFigurePublisher } from '@/features/household/decide/PartnerFigurePublisher';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -170,6 +171,8 @@ export default function AppLayout() {
               <HouseholdRealtimeHost />
               {/* 08-24 (D-28): "You're no longer in ..." once, for a person the owner removed. */}
               <RemovedNoticeHost />
+              {/* 08.1-10: a partner's figure and the shared net's saved amount refresh from anywhere in the app, not only Household home. */}
+              <AppPartnerFigurePublisher />
               <DeviceHomeCurrencyDefault />
             </View>
             </TesterBuildProvider>
