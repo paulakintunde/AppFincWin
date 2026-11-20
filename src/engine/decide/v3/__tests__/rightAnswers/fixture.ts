@@ -5,7 +5,7 @@
  */
 import { currencyCode, minorUnits, type MinorUnits } from '../../../../money/types';
 import { percent } from '../../../../payoff/types';
-import type { AccountUse, Cadence, CheckV2, FirstPayment, PayV2, QuickLine, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
+import type { AccountUse, Cadence, CheckV2, FirstPayment, LocalDate, PayV2, QuickLine, ReadinessWaiver, Replaces, V3Account, V3Debt, V3Inputs, V3Line, V3Month, V3Series } from '../../types';
 import { addMonthsClamped, cadenceDate } from '../../dates';
 import { buildFunds } from '../../funds/build';
 import { buildMonthModel } from '../../../../month/model/model';
@@ -104,6 +104,8 @@ function payOf(p: RightAnswerFixture['check']['pay'], asOf: string): PayV2 {
     deferredInterestTerm: p.deferredInterest === true,
     // 05.4-22 (D-39c): a mortgage or other home loan skips the 10%-of-amount interest test.
     ...(p.housing === true ? { housing: true } : {}),
+    // 08.1-11 FIN-12: present (even null) = the plan step asked for the end date and the rate after it.
+    ...(p.promoEnds !== undefined || p.rateAfter !== undefined ? { promoEnd: (p.promoEnds ?? null) as LocalDate | null, rateAfter: p.rateAfter == null ? null : percent(p.rateAfter) } : {}),
   };
 }
 

@@ -99,7 +99,7 @@ const FIX_ROUTE: Readonly<Record<string, string>> = {
   // volatile_cover_question too (CoverQuestionSheet, 05.5-29): answered here, saved as a decide_answers row.
 };
 /** Missing figures that belong to the price and payment steps of this check. */
-const PRICE_STEP_FIXES: ReadonlySet<string> = new Set(['no_price', 'price_too_large', 'plan_count_missing', 'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'first_payment_passed']);
+const PRICE_STEP_FIXES: ReadonlySet<string> = new Set(['no_price', 'price_too_large', 'plan_count_missing', 'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'promo_end_missing', 'first_payment_passed']);
 
 type SheetKey = 'later' | 'cheaper' | 'fullCost' | 'monthAfter' | 'stops' | 'everyDate' | 'monthByMonth' | 'worked' | 'giveMore' | 'help' | 'about' | 'plan' | 'spare' | 'unexplained' | 'cover';
 

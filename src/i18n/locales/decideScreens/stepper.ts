@@ -45,6 +45,16 @@ export const stepper = {
     household: 'Household',
     helper: 'Uses shared money and anything a partner has agreed to share.',
   },
+  // 08.1-11 FIN-12 (UI-SPEC section 4): the "0% if paid in full" switch on the plan sheet, its two fields and their errors. Draft copy, wording sign-off in plan 14.
+  deferred: {
+    switch: '0% if paid in full',
+    endsLabel: 'Promotion ends',
+    rateLabel: 'Rate if not paid in full',
+    helper: 'If it isn’t paid off by then, interest is charged back to the first day.',
+    endMissing: 'A promotion end date is needed.',
+    rateMissing: 'A rate is needed.',
+    warning: 'Warning',
+  },
   price: {
     title: 'Price and how you pay',
     why: 'Tax and fees are part of what you pay on the day.',

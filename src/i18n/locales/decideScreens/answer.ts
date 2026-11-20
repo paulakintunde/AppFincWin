@@ -99,6 +99,7 @@ export const answer = {
     first_payment_not_chosen: 'the first payment date',
     pause_interest_not_answered: 'whether interest runs during the pause',
     plan_rate_missing: 'the plan’s rate',
+    promo_end_missing: 'the promotion’s end date', // 08.1-11 FIN-12 (draft)
     everyday_unknown: 'your everyday spending',
     legacy_invest_check: 'this check again',
     share_invalid: 'your share',

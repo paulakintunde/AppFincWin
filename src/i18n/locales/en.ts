@@ -2302,6 +2302,8 @@ const en = {
         quoted_differs: 'The quoted payment of {{quoted}} differs from the {{computed}} worked out here.',
         implied_rate: 'The figures given imply about {{rate}}%\u00A0a year.',
         deferred_interest_term: 'If the balance isn’t cleared by the end of the pause, interest back to the start could apply.',
+        back_charge_cost: 'If not paid in full by {{date}}, about {{amount}} of interest is charged back.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
+        promo_cleared: 'The promotion ends on {{date}}. Paid off by then, no interest is charged.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
         at_todays_rate: 'Converted from {{currency}} at today’s rate.',
         low_month: 'In {{month}}, a low month, about {{left}} remains against {{monthly}} a month.',
         // 05.4 FIN-08 (05.4-23, QE-04 / QE-14): savings are tried first; the safety net only ever by name.
@@ -2402,6 +2404,7 @@ const en = {
         first_payment_not_chosen: 'The first payment date isn’t chosen yet.',
         pause_interest_not_answered: 'Whether interest builds during a pause isn’t answered yet.',
         plan_rate_missing: 'The plan’s rate isn’t entered yet.',
+        promo_end_missing: 'The promotion’s end date isn’t entered yet.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
         everyday_unknown: 'Everyday spending isn’t known yet.',
         legacy_invest_check: 'This older investing check needs its figures entered again.',
         share_invalid: 'The share given isn’t a valid amount.',

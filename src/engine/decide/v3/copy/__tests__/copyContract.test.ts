@@ -139,6 +139,10 @@ function buildCorpus(): Emitted[] {
       deferredInterestTerm: true,
     })
   );
+  // back_charge_cost, promo_cleared (08.1-11 FIN-12)
+  for (const count of [16, 10]) {
+    collect(out, sam, checkPlan(120_000, { count, apr: percent('0'), firstPayment: { kind: 'one_period' }, deferredInterestTerm: true, promoEnd: '2027-10-03', rateAfter: percent('24.99') }));
+  }
   collect(out, sam, checkOnce(10_000, { foreign: { currency: 'EUR' as never, atTodaysRate: true } }));
   // typical_short, month_heading_short with and without a category
   const short = toV3Inputs(personById('sam'), { everydayOverride: mu(900_000) });

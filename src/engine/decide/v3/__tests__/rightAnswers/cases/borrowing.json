@@ -2316,6 +2316,325 @@
       "ownerReason": "Owner, D-14 review of FIN-01b (2026-11-03): approved all seven D-68 drafts BR-17..BR-23 as right answers; \"choices 1 and 2 stay\" (an already-short month gets the D-65 tier a cash buy of the same total would get; money on hand must cover the plan's whole cost). (c) dropping volatile_cover_declined and the Instead options, (d) only the interest line on a not-already-short D-68 answer and (e) single-payment plans inside 90 days qualifying: all OK as built.",
       "expertNote": null,
       "plannerNote": "Engine (first payment read as today, as in BR-16; table.test pins it): fits_unspent, variant null, split month 50000 + unspent_earlier 130000, short_plan_from_cash {monthly 97500}, month_left_after 0. Plain: the same code and variant, plainPlanMonthly 97500, planPathLow 220000. Hand, plain and engine agree. Through the fixture as written the engine asks the pause question first (needs_input), as every BR case does (FIN-05 / BO-05 first-payment mapping)."
+    },
+    {
+      "id": "BR-24",
+      "topic": "borrowing",
+      "fixIds": [
+        "FIN-12"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Owner, 2026-11-20 (08.1-11 popup): approve; full cost with the stated rate from day one on the declining balance, charged back on the end date, the rest carried on at that rate; \"can it clear in time\" = the plan's own payments finish on or before the end date.",
+      "expertNote": null,
+      "reviewNote": null,
+      "plannerNote": null,
+      "persona": "Case a: 0% for 12 months, cleared in 10 (08.1-11, invented)",
+      "situation": "A $1,200 sofa on a \"0% if paid in full\" deal for 12 months. The user pays $120 a month, so it is cleared in 10 payments, before the end date. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. The promotion ends on 15 November 2027. A usual month: pay $3,000, bills $1,400 and everyday spending $1,200 ($780 of it on essentials), so $400 is left. Only the cash-price fixture fields are read by the engine today; promoEnds and rateAfter are the plan-step fields FIN-12 adds (08.1-11 Task 3).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 140000,
+          "everyday": 120000,
+          "essentialEveryday": 78000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 140000,
+          "billsDue": 0,
+          "everydaySoFar": 60000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 50000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 700000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 700000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 10,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15",
+            "deferredInterest": true,
+            "promoEnds": "2027-11-15",
+            "rateAfter": "24.99"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 28000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "promo_cleared"
+        ],
+        "mustNotHaveFacts": [
+          "back_charge_cost",
+          "interest_is_a_cost",
+          "deferred_interest_term"
+        ]
+      },
+      "why": "Ten payments of $120 finish on 15 September 2027, two months before the promotion ends on 15 November 2027, so nothing is charged back and the plan costs the $1,200 price. The usual month keeps $400 - $120 = $280, above the floor (a tenth of $2,600 = $260). The answer names the end date and says no interest is charged if it is cleared by then; the back-charge fact shows the end date only (no amount, as nothing is charged). (Wording of the fact is for the plan 14 sign-off.)"
+    },
+    {
+      "id": "BR-25",
+      "topic": "borrowing",
+      "fixIds": [
+        "FIN-12"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Owner, 2026-11-20 (08.1-11 popup): approve; full cost with the stated rate from day one on the declining balance, charged back on the end date, the rest carried on at that rate; \"can it clear in time\" = the plan's own payments finish on or before the end date.",
+      "expertNote": null,
+      "reviewNote": null,
+      "plannerNote": null,
+      "persona": "Case b: 0% for 12 months, needs 16 (08.1-11, invented)",
+      "situation": "The same $1,200 sofa and deal, but the user pays $75 a month, which needs 16 payments, longer than the 12 months of the promotion. The stated rate after the promotion is 24.99%. His everyday account holds $500 and his savings above the safety net cover the rest, so he could pay cash from savings. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. The promotion ends on 15 November 2027. A usual month: pay $3,000, bills $1,400 and everyday spending $1,200 ($780 of it on essentials), so $400 is left. Only the cash-price fixture fields are read by the engine today; promoEnds and rateAfter are the plan-step fields FIN-12 adds (08.1-11 Task 3).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 140000,
+          "everyday": 120000,
+          "essentialEveryday": 78000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 140000,
+          "billsDue": 0,
+          "everydaySoFar": 60000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 50000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 700000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 700000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 16,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15",
+            "deferredInterest": true,
+            "promoEnds": "2027-11-15",
+            "rateAfter": "24.99"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_by_borrowing",
+        "variant": "borrowing_costs_more",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": 32500
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "back_charge_cost",
+          "interest_is_a_cost",
+          "save_vs_borrow",
+          "net_covers_surprises",
+          "income_or_costs_first"
+        ],
+        "mustNotHaveFacts": [
+          "deferred_interest_term",
+          "promo_cleared"
+        ]
+      },
+      "why": "Twelve payments of $75 repay $900 by 15 November 2027, so $300 is still owed on the end date. Back-charge method: interest at 24.99% a year (2.0825% a month) is worked from day one on the balance left each month, with each payment taken off the next month. Over the first 12 months that is $196.80, charged on the end date. The $300 left plus the $196.80 then carries on at 24.99% while $75 payments continue: 8 more payments and $43.47 more interest. Total interest $240.27, total paid $1,440.27 for a $1,200 sofa; the 0% label is not used. Monthly payment stays $75 so the usual month keeps $400 - $75 = $325. Interest of $240.27 is above a tenth of the price ($120) and the rate is above 20%, so with cash available from savings the answer is \"Fits, but borrowing costs more\" (borrowing_costs_more), costing $240 more than paying cash. The back-charge line reads: \"If not paid in full by 15 November 2027, about $197 of interest is charged back.\""
+    },
+    {
+      "id": "BR-26",
+      "topic": "borrowing",
+      "fixIds": [
+        "FIN-12"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Owner, 2026-11-20 (08.1-11 popup): approve; full cost with the stated rate from day one on the declining balance, charged back on the end date, the rest carried on at that rate; \"can it clear in time\" = the plan's own payments finish on or before the end date.",
+      "expertNote": null,
+      "reviewNote": null,
+      "plannerNote": null,
+      "persona": "Case c: 0% for 12 months, no rate after (08.1-11, invented)",
+      "situation": "The same deal, but the user has not typed the rate charged after the promotion. It is bought on 15 November 2026 (today), with the first payment on 15 December 2026. The promotion ends on 15 November 2027. A usual month: pay $3,000, bills $1,400 and everyday spending $1,200 ($780 of it on essentials), so $400 is left. Only the cash-price fixture fields are read by the engine today; promoEnds and rateAfter are the plan-step fields FIN-12 adds (08.1-11 Task 3).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 140000,
+          "everyday": 120000,
+          "essentialEveryday": 78000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 140000,
+          "billsDue": 0,
+          "everydaySoFar": 60000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 50000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "n1",
+            "kind": "savings",
+            "name": "Safety net",
+            "balance": 700000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "emergency"
+          }
+        ],
+        "safetyNet": {
+          "protect": true,
+          "size": null,
+          "saved": 700000
+        },
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 120000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 16,
+            "apr": null,
+            "fees": 0,
+            "deposit": 0,
+            "firstPaymentDate": "2026-12-15",
+            "deferredInterest": true,
+            "promoEnds": "2027-11-15",
+            "rateAfter": null
+          }
+        }
+      },
+      "expected": {
+        "code": "needs_input",
+        "variant": null,
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "back_charge_cost",
+          "promo_cleared",
+          "interest_is_a_cost"
+        ]
+      },
+      "why": "Without the rate charged if it is not paid in full the back-charge cannot be worked out, and assuming 0% would show a plan that may cost a fifth more as free. The answer asks for the rate (needs_input) and shows no cost figure until it is given. The same holds when the end date is missing. The inline errors \"A rate is needed.\" and \"A promotion end date is needed.\" are the plan step wording."
     }
   ]
 }
