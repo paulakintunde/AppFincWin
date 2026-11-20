@@ -141,7 +141,7 @@ beforeEach(() => {
 });
 
 describe('06.1-28 routes are inside the Decide gate', () => {
-  const gated = protectedNames('DECIDE_OPEN');
+  const gated = protectedNames('DECIDE_OPEN && !decideOff');
   it.each(NEW_ROUTES)('%s is registered inside DECIDE_OPEN and has a file', (name) => {
     expect(gated).toContain(name);
     expect(fs.existsSync(path.join(APP, `${name}.tsx`))).toBe(true);
@@ -158,9 +158,9 @@ describe('06.1-28 routes are inside the Decide gate', () => {
     expect(fs.existsSync(path.join(APP, 'decide/setup.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(APP, 'decide/setup/index.tsx'))).toBe(true);
   });
-  it('the Decide tab renders DecideHome behind DECIDE_OPEN', () => {
+  it('the Decide tab renders DecideHome behind DECIDE_OPEN and not off', () => {
     const tab = fs.readFileSync(path.join(APP, '(tabs)/decide.tsx'), 'utf8');
-    expect(tab).toContain('DECIDE_OPEN ? <DecideHome />');
+    expect(tab).toContain('DECIDE_OPEN && !off ? <DecideHome />');
   });
   it('no route file under app/(app)/decide imports an old Decide folder', () => {
     const old = /features\/decide\/(check|home|quick|setup|settings|pots|ui|judgeOn|onboarding|copy|past)\//;

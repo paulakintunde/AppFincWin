@@ -56,7 +56,7 @@ import { addDays, addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
 import { costlyDebt, costlyFacts, debtFacts } from '../debts';
-import { belowZeroWithoutFacts, depletionFacts,monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
+import { belowZeroWithoutFacts, depletionFacts, placeBelowZeroWithout,monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
 import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
 import { lastPaymentBefore, paymentsInRange } from '../plan/schedule';
 import { afterBuyBlock, firstPaymentLater } from '../afterBuy';
@@ -975,8 +975,7 @@ export function judge(j: JudgeInput): Result {
   // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, yearly bills, emergency, envelope, plan, low month,
   // why months, bridge, lines, other accounts below 0.
   // 05.4 D-54 / D-60 / D-63: the depletion lines lead the answer (computed after the code; they never change it).
-  const facts: Fact[] = [
-    ...belowZeroWithoutFacts(j.belowZeroWithout ?? null),
+  const rest: Fact[] = [
     ...depletionFacts({
       code,
       monthly: purchase.monthly,
@@ -993,6 +992,8 @@ export function judge(j: JudgeInput): Result {
     }),
     ...(od?.facts ?? []),
   ];
+  // 08.1 D-07 / CO-D-36: below_zero_without leads, except that the approved not-cleared warning stays first and it follows directly.
+  const facts: Fact[] = placeBelowZeroWithout(belowZeroWithoutFacts(j.belowZeroWithout ?? null), rest);
   // 05.4 FIN-05: the save-or-borrow line goes right after the depletion and overdraft lines (they lead, I-D54).
   const compareAt = facts.length;
   // 05.4 FIN-07 / D-40: the floor a tight answer is under. Not under a D-63 / D-65 month-short headline (it reads after the tight body).
