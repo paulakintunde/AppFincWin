@@ -34,6 +34,8 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, today: '2026-11-12', timeZone: 'UTC' }),
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideChecks: () => mockData.checks, useDebts: () => mockData.debts }));
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: undefined }) }));
+jest.mock('@/data/queries/householdBalances', () => ({ useSplitDefaults: () => ({ data: undefined }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => mockData.series }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => mockData.goals }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockData.accounts }));

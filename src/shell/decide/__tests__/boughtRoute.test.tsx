@@ -20,6 +20,8 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 jest.mock('@/data/queries/decide', () => ({ useDecideChecks: () => mockData.checks, useDebts: () => mockData.debts }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [], isError: false }) }));
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: undefined }) }));
+jest.mock('@/data/queries/householdBalances', () => ({ useSplitDefaults: () => ({ data: undefined }) }));
 jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => mockData.series }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => mockData.goals }));
 jest.mock('@/features/decide/screens/engine/useCheckEngine', () => ({ useCheckEngine: () => ({ status: 'ready', evaluation: {}, readyDate: () => null }) }));
