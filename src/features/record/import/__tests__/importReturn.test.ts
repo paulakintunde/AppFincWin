@@ -14,10 +14,13 @@ describe('importReturn', () => {
     expect(parseImportReturn(undefined)).toBe('activity');
     expect(parseImportReturn('activity')).toBe('activity');
     expect(parseImportReturn('../x')).toBe('activity');
+    expect(parseImportReturn('decide')).toBe('decide');
+    expect(parseImportReturn('https://x.example')).toBe('activity');
   });
   it('maps to hrefs', () => {
     expect(importReturnHref('home')).toBe(APP_HOME_HREF);
     expect(importReturnHref('activity')).toBe(ACTIVITY_HREF);
+    expect(importReturnHref('decide')).toBe('/decide');
   });
   const withTabs = { routes: [{ name: '(app)', state: { routes: [{ name: '(tabs)' }, { name: 'import' }] } }] };
   const noTabs = { routes: [{ name: '(app)', state: { routes: [{ name: 'setup/account' }, { name: 'import' }] } }] };
