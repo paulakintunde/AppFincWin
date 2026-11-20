@@ -35,7 +35,7 @@ Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
 Phase: 04 (decide-engine) — COMPLETE 2026-10-16; the v1 engine was deleted on purpose in 05.5 (04-VERIFICATION.md is historical).
 Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple enrolment).
-Phase: 00 (foundation) — 18/20; 00-07 and 00-20 wait on Apple enrolment.
+Phase: 00 (foundation) — 18/20. 2026-11-19: D-U-N-S issued; Apple org enrolment submitted, awaiting Apple review; Play Console org set up, Android developer verification pending. 00-07 and 00-20 stay open until Apple membership is active and Play verification clears.
 Decide: open to every tester since 2026-11-06 (quick 261106-bf2, `DECIDE_OPEN = true`); `profiles.decide_v3` no longer gates anything.
 Status: Executing (two phase branches)
 Last activity: 2026-11-19 -- whole-app review and doc tidy
@@ -153,7 +153,7 @@ Recent decisions affecting current work:
 
 - **Decide test flag in production** — count the accounts with `profiles.decide_v3` on (not yet checked; the auto-mode classifier blocked a read-only production query on 2026-11-02). First step of BO-06 in 05.4.
 - **Decide owner decisions** — fix plan section 11, question 10 is open (3, 4 and 5 were answered in 05.4-CONTEXT); question 12 (legal launch countries) is open; the Free vs Pro list is needed by APP-18 (05.5) as well as Phase 9; decide whether to insert the home-buying phase (FIN-30) and 06.1 into ROADMAP.
-- **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files (triggered by the D-U-N-S number, ETA 2026-10-13, then Apple enrolment).
+- **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files. As of 2026-11-19 the D-U-N-S is issued; waits now on Apple review of the submitted enrolment and Play developer verification (see `docs/dependency-register.md`).
 - **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
 - **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
 - **Public repo privacy** — a personal test Gmail address is committed in `docs/acceptance/phase-00-android.md` and `docs/acceptance/phase-01-money-core.md`; the repo is public.
