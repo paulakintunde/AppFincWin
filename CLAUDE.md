@@ -81,7 +81,7 @@ It is a **money-management tool, not a financial institution and not a lender.**
 ### Services
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| `react-native-purchases` (RevenueCat) | **10.9.1** | Pro tier entitlements | Confirmed current; wraps StoreKit 2 / Play Billing with server-side validation, unchanged rationale from the brief |
+| `react-native-purchases` (RevenueCat) | **10.16.0** (installed in Phase 9; was 10.9.1) | Pro tier entitlements | Confirmed current; wraps StoreKit 2 / Play Billing with server-side validation, unchanged rationale from the brief |
 | `expo-notifications` | current, SDK-locked (~57.x) | Push: bills due, over cap, goal reached, etc. | Unchanged; confirm FCM v1 / APNs config at implementation time, no architectural change found |
 | `expo-local-authentication` | **57.0.2** | Face ID / Touch ID / Android biometric + PIN lock | Confirmed current, SDK-locked versioning |
 | `expo-secure-store` | **57.0.3** | Token storage (not the query cache, not bulk financial data) | Confirmed current. Scope: session tokens and small secrets only — the persisted query cache goes through AsyncStorage per the TanStack Query persister pattern, not SecureStore, because SecureStore has small per-key size limits and is not designed as a bulk cache store |

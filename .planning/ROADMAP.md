@@ -1570,7 +1570,7 @@ Plans:
   3. A user is offered a specific hidden feature in context, at the moment it would have helped, and is told which specific feature a paywall is gating and why.
   4. Household features are governed by whether the user shares money, independently of level.
   5. A user can purchase a subscription recognised across their devices, restore a previous purchase, and cancel through a path no harder to find than account deletion.
-**Plans**: 25 plans in 6 waves (planned 2026-11-18 against 09-CONTEXT revision 3 D-01..D-45 and the owner answers in 09-RESEARCH). Owner gates: 09-01 (signed level map, wording file, planner defaults P1-P8) before 09-11/09-12; 09-08 production push. Open human items that do not block close: real Google purchase tests (Play account), iOS products/purchase/DeviceCheck (Apple enrolment, D-24).
+**Plans**: 26 plans in 6 waves (09-26 added 2026-11-19 as a gap fix; planned 2026-11-18 against 09-CONTEXT revision 3 D-01..D-45 and the owner answers in 09-RESEARCH). Owner gates: 09-01 (signed level map, wording file, planner defaults P1-P8) before 09-11/09-12; 09-08 production push. Open human items that do not block close: real Google purchase tests (Play account), iOS products/purchase/DeviceCheck (Apple enrolment, D-24).
 
 Plans:
 **Wave 1**
@@ -1606,7 +1606,7 @@ Plans:
 **Wave 5** *(blocked on Wave 4 completion)*
 - [x] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
 - [x] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
-- [x] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read)
+- [x] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read) — *the First read tag itself waits for 08.1-20 (`TODO(08.1-20)` in SampleAnswerIntro.tsx)*
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [x] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
@@ -1704,6 +1704,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 26/26 | Complete   | 2026-11-20 |
+| 9. Tiers & Onboarding | 26/26 | Complete on branch, not merged (PR #170): device pass passed 2026-11-19; open: RevenueCat setup (ENV-12), owner review list, Kint rename, First read tag (08.1-20) | 2026-11-19 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
