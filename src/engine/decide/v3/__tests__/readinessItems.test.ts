@@ -459,3 +459,139 @@ describe('05.3-54 waiver and skip properties', () => {
     );
   });
 });
+
+// ---- 05.4-62: boundary cases that pin each readiness rule on both sides ----
+describe('05.4-62 readiness boundaries', () => {
+  const SEP = '2026-09';
+  const octItems = (r: Readiness) => (r.items ?? []).filter((i) => i.month === '2026-10');
+  const sepSkips = (...s: { seriesId: string; date: string }[]) => evidence({ skipped: s });
+
+  it('two skipped bills each settle their own due (a skip never reuses another skip)', () => {
+    const r = readinessFor(sepSkips({ seriesId: 'netflix', date: '2026-09-03' }, { seriesId: 'lunch', date: '2026-09-21' }));
+    expect(r.items).toEqual([EV[0], SPEND_OCT]);
+  });
+
+  it('a skipped bill settles inside the 3 day window and not outside it', () => {
+    expect(readinessFor(sepSkips({ seriesId: 'netflix', date: '2026-09-06' })).items).toEqual([EV[0], LUNCH_SEP, SPEND_OCT]);
+    expect(readinessFor(sepSkips({ seriesId: 'netflix', date: '2026-09-07' })).items).toEqual([EV[0], NETFLIX_SEP, LUNCH_SEP, SPEND_OCT]);
+  });
+
+  it('a skipped pay settles inside the 7 day window and not outside it', () => {
+    expect(readinessFor(sepSkips({ seriesId: 'pay', date: '2026-09-10' })).items).toEqual([NETFLIX_SEP, LUNCH_SEP, SPEND_OCT]);
+    expect(readinessFor(sepSkips({ seriesId: 'pay', date: '2026-09-11' })).items).toEqual(EVIDENCE_ITEMS);
+  });
+
+  it('other income gets the 7 day window too', () => {
+    const side = v3Series({ id: 'side', role: 'other_income', cadence: MONTHLY, anchorDate: '2026-06-10', amount: 5000, name: 'Side' });
+    const base = evidence({ series: [...SERIES, side] });
+    const sideItems = (r: Readiness) => (r.items ?? []).filter((i) => i.seriesId === 'side');
+    expect(sideItems(readinessFor(base))).toHaveLength(1);
+    expect(sideItems(readinessFor({ ...base, skipped: [{ seriesId: 'side', date: '2026-09-15' }] }))).toHaveLength(0);
+    expect(sideItems(readinessFor({ ...base, skipped: [{ seriesId: 'side', date: '2026-09-18' }] }))).toHaveLength(1);
+  });
+
+  it('the late start date is the earliest line whatever the order', () => {
+    const e = evidence();
+    const lines = [v3Line({ id: 'a', date: '2026-09-20', amount: 100 }), v3Line({ id: 'b', date: '2026-09-14', amount: 100 }), v3Line({ id: 'c', date: '2026-09-25', amount: 100 })];
+    const r = readinessFor({ ...e, months: e.months.map((m) => (m.month === SEP ? monthOf(SEP, lines, { full: false }) : m)) });
+    expect(r.items?.[0]).toEqual(item({ kind: 'late_start', code: 'past_month_missing', month: SEP, date: '2026-09-14' }));
+  });
+
+  it('the newest everyday date ignores pending lines, bill lines and older lines listed later', () => {
+    const r = readinessFor(
+      editLines(evidence(), '2026-10', (lines) => [
+        ...lines,
+        v3Line({ id: 'p', date: '2026-10-28', amount: 100, status: 'pending' }),
+        v3Line({ id: 'nf2', date: '2026-10-29', amount: 100, seriesId: 'netflix' }),
+        v3Line({ id: 'early', date: '2026-10-05', amount: 100 }),
+      ]),
+    );
+    expect(r.items).toEqual(EVIDENCE_ITEMS);
+  });
+
+  it('the spending pace is behind only when strictly under half of the typical month so far', () => {
+    const e = evidence();
+    const ev = evaluate(e, check);
+    const at = (logged: number) => readinessOf(e, { ...ev.month, e: 300, everydayLogged: logged, daysInMonth: 30, day: 20 } as never);
+    const spendingOct = (r: Readiness) => (r.items ?? []).filter((i) => i.kind === 'spending' && i.month === '2026-10');
+    expect(spendingOct(at(100))).toHaveLength(0); // 100 * 30 * 100 == 50 * 300 * 20: on the line is not behind
+    expect(spendingOct(at(99))).toHaveLength(1);
+  });
+
+  it('a bill is overdue only when more than the entry age (10 days) has passed', () => {
+    const lines = () => [v3Line({ id: 'pay-oct', date: '2026-10-03', amount: 1619942, role: 'income', seriesId: 'pay' }), v3Line({ id: 'e-oct', date: '2026-10-10', amount: 5000 })];
+    const at = (asOf: string) => {
+      const e = evidence({ asOf });
+      return readinessFor({ ...e, months: e.months.map((m) => (m.month === '2026-10' ? monthOf('2026-10', lines(), { full: false }) : m)) });
+    };
+    expect(octItems(at('2026-10-13'))).toEqual([]);
+    expect(octItems(at('2026-10-14')).map((i) => [i.kind, i.seriesId, i.date])).toEqual([['bill', 'netflix', '2026-10-03']]);
+  });
+
+  it('an answer is fresh for exactly 10 days', () => {
+    expect(readinessFor(evidence({ waivers: [{ kind: 'nothing_to_add', month: '2026-10', at: '2026-10-20' }] })).waived).toHaveLength(1);
+    expect(readinessFor(evidence({ waivers: [{ kind: 'nothing_to_add', month: '2026-10', at: '2026-10-19' }] })).waived).toEqual([]);
+  });
+
+  it('nothing_to_add settles only spending items of its own month', () => {
+    const r = readinessFor(evidence({ waivers: [{ kind: 'nothing_to_add', month: SEP, at: '2026-10-29' }] }));
+    expect(r.items).toEqual(EVIDENCE_ITEMS);
+    expect(r.waived).toEqual([]);
+  });
+
+  it('this month: a bill answer compares its date, anything else compares the answer age', () => {
+    const noOct = editLines(evidence(), '2026-10', (lines) => lines.filter((l) => l.id !== 'netflix-oct'));
+    const on = (at: string) => readinessFor({ ...noOct, waivers: [{ kind: 'month_complete', month: '2026-10', at }] });
+    // not recent, but after the bill date: settles the bill, not the spending clock
+    expect(waivedBy(on('2026-10-18'))).toEqual([['netflix', 'bill', 'month_complete']]);
+    expect(octItems(on('2026-10-18'))).toEqual([SPEND_OCT]);
+    // the bill date is on the answer date: settled; the day before: not
+    expect(waivedBy(on('2026-10-03'))).toEqual([['netflix', 'bill', 'month_complete']]);
+    expect(on('2026-10-02').waived).toEqual([]);
+  });
+
+  it('always_other settles only bills of that series', () => {
+    const pay = readinessFor(evidence({ waivers: [{ kind: 'always_other', seriesId: 'pay' }] }));
+    expect(pay.items).toEqual(EVIDENCE_ITEMS);
+    const netflix = readinessFor(evidence({ waivers: [{ kind: 'always_other', seriesId: 'netflix' }] }));
+    expect(netflix.items).toEqual([EV[0], LUNCH_SEP, SPEND_OCT]);
+  });
+
+  it.each(['paid_by_other', 'didnt_happen'] as const)('%s needs a bill, its series and its date', (kind) => {
+    const on = (seriesId: string, date: string) => readinessFor(evidence({ waivers: [{ kind, seriesId, date }] }));
+    expect(on('pay', '2026-09-03').items).toEqual(EVIDENCE_ITEMS); // a pay item is not a bill
+    expect(on('lunch', '2026-09-03').items).toEqual(EVIDENCE_ITEMS); // right series, wrong date
+    expect(on('netflix', '2026-09-21').items).toEqual(EVIDENCE_ITEMS); // right date of another series
+    expect(on('ghost', '2026-09-03').items).toEqual(EVIDENCE_ITEMS); // unknown series
+    expect(on('netflix', '2026-09-03').items).toEqual([EV[0], LUNCH_SEP, SPEND_OCT]);
+  });
+
+  it('no_pay needs a pay item, its series and its date', () => {
+    const on = (seriesId: string, date: string) => readinessFor(evidence({ waivers: [{ kind: 'no_pay', seriesId, date }] }));
+    expect(on('netflix', '2026-09-03').items).toEqual(EVIDENCE_ITEMS); // a bill is not a pay item
+    expect(on('ghost', '2026-09-03').items).toEqual(EVIDENCE_ITEMS);
+    expect(on('pay', '2026-09-03').items).toEqual([NETFLIX_SEP, LUNCH_SEP, SPEND_OCT]);
+  });
+
+  it('precedence follows the written order, not the alphabet of the answer text', () => {
+    const paid = { kind: 'paid_by_other', seriesId: 'netflix', date: '2026-09-03' } as const;
+    const never = { kind: 'didnt_happen', seriesId: 'netflix', date: '2026-09-03' } as const;
+    for (const waivers of [[paid, never], [never, paid]]) {
+      expect(readinessFor(evidence({ waivers })).waived?.[0]?.by).toBe('paid_by_other');
+    }
+  });
+
+  it('a gap is named only by a pending line, never by a paid line of the same series', () => {
+    const paidAsSpending = editLines(evidence(), '2026-09', (lines) => lines.map((l) => (l.id === 'pay-sep' ? { ...l, status: 'paid' as const, role: 'spending' as const } : l)));
+    const r = readinessFor(paidAsSpending);
+    expect(r.items?.[0]).toMatchObject({ kind: 'pay', seriesId: 'pay', lineId: null, name: 'Salary' });
+  });
+
+  it('items come out sorted whatever order they were found in', () => {
+    const ids = (envelopes: Envelope[]) => readinessFor(evidence({ envelopes })).items?.filter((i) => i.kind === 'envelopes').map((i) => i.envelopeId);
+    const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((id) => envelope(id, null));
+    for (const order of [[a, b, c, d], [d, c, b, a], [c, a, d, b]]) expect(ids(order as Envelope[])).toEqual(['a', 'b', 'c', 'd']);
+    const all = readinessFor(evidence({ envelopes: [d!, a!] })).items?.map((i) => i.kind);
+    expect(all).toEqual(['pay', 'bill', 'bill', 'spending', 'envelopes', 'envelopes']);
+  });
+});

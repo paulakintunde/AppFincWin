@@ -27,6 +27,7 @@ export function lookupTaxDefault(region: { readonly country: string | null; read
   const { country, subdivision } = region;
   if (country === null) return { kind: 'unknown' };
   if (INCLUDED_COUNTRIES.includes(country)) return { kind: 'included' };
+  // Stryker disable next-line ConditionalExpression,LogicalOperator: a country outside US and CA, or a null subdivision, has no row, so the lookup is unknown on the next lines anyway
   if (!BY_SUBDIVISION.includes(country) || subdivision === null) return { kind: 'unknown' };
   const row = TAX_DEFAULTS[`${country}-${subdivision}`];
   if (row === undefined) return { kind: 'unknown' };

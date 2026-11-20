@@ -30,6 +30,7 @@ export function seenOf(r: Result): SeenV3 {
 }
 
 function readyByKey(r: ReadyBy | null): string {
+  // Stryker disable next-line StringLiteral: the empty key only has to differ from a date or month key, any other text does too
   return r === null ? '' : r.kind === 'date' ? `d:${r.date}` : `m:${r.month}`;
 }
 
@@ -40,6 +41,7 @@ function isSeenV3(x: unknown): x is SeenV3 {
 /** null or a legacy 4-state string (or anything unreadable) re-baselines: never a change (C7). */
 export function changeSinceLooked(prev: SeenV3 | LegacyState | null, next: Result): { readonly changed: boolean; readonly reasons: readonly ChangeReason[]; readonly seen: SeenV3 } {
   const seen = seenOf(next);
+  // Stryker disable next-line ConditionalExpression,LogicalOperator: null and legacy strings are also rejected by isSeenV3, so dropping either test changes nothing
   if (prev === null || typeof prev === 'string' || !isSeenV3(prev)) {
     return { changed: false, reasons: [], seen };
   }

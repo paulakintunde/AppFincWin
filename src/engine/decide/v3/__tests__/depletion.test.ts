@@ -169,3 +169,32 @@ describe('depletionFacts (every branch)', () => {
     expect(at({ schedule: s54, dayOne: mu(28_000), firstNow: mu(27_000) })).toEqual({ interest: 2_000, total: 55_000 });
   });
 });
+
+describe('depletion.ts mutation kills (05.4-58)', () => {
+  const unlockedNet: ResolvedNet = { ...NO_NET, protect: true, off: false, locked: false, saved: mu(100_000), size: mu(100_000), floor: mu(100_000), usable: mu(100_000), state: 'full' };
+  const base: DepletionInput = {
+    code: 'monthly_short',
+    monthly: mu(10_000),
+    whole: mu(60_000),
+    dayOne: mu(0),
+    schedule: null,
+    share: { weights: [1], myIndex: 0 },
+    typicalLeft: mu(10_000),
+    typicalIncome: mu(300_000),
+    net: unlockedNet,
+    netTaken: mu(0),
+    firstNow: mu(0),
+  };
+
+  it('a plan that leaves the usual month at exactly 0 does not make it short', () => {
+    expect(depletionFacts(base)).toEqual([]);
+    expect(depletionFacts({ ...base, typicalLeft: mu(9_999) }).map((f) => f.code)[0]).toBe('plan_makes_short');
+  });
+
+  it('net_lasts counts what is left of the net after the split took its part', () => {
+    const facts = depletionFacts({ ...base, typicalLeft: mu(-10_000), monthly: mu(2_000), netTaken: mu(40_000) });
+    // shortfall 2,000 + 10,000 = 12,000 a month; (100,000 - 40,000) / 12,000 = 5 months
+    expect(facts.find((f) => f.code === 'net_lasts')?.values).toEqual({ shortfall: 12_000, months: 5 });
+    expect(facts.find((f) => f.code === 'net_lasts_without')?.values).toEqual({ months: 10 });
+  });
+});

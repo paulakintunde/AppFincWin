@@ -265,6 +265,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
   const planTradeIn = pay.mode === 'plan' && pay.tradeIn > 0;
   for (const s of specs) {
     const amount = check.extras[s.id];
+    // Stryker disable next-line EqualityOperator: an amount of 0 adds 0 to every total, so skipping it or not gives the same figures
     if (amount === undefined || !Number.isSafeInteger(amount) || amount <= 0) continue;
     if (!s.cash || s.cadence === 'none' || s.role === 'modelled_elsewhere') continue;
     // M-08: a typed trade-in lowers day one, and is ignored when the plan already carries pay.tradeIn (one route per fact).
@@ -299,10 +300,12 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
 
   if (pay.mode === 'once') {
     const onceTotal = fullWhole + oneOffExtras - credits;
+    // Stryker disable next-line EqualityOperator: at onceTotal === 0 both branches give 0
     dayOne = BigInt(myPart(mb(onceTotal < 0n ? 0n : onceTotal), share));
     monthly = BigInt(myPart(mb(runningFull), share));
   } else {
     const financedBig = fullWhole - BigInt(pay.deposit) - BigInt(pay.tradeIn);
+    // Stryker disable next-line EqualityOperator: at financedBig === 0 both branches give 0
     const financed = mb(financedBig < 0n ? 0n : financedBig);
     const quoteOnly = pay.apr === null;
     const aprUsed = pay.apr ?? ZERO_PERCENT;
@@ -358,6 +361,7 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     // A first payment dated today is part of day one (P); purchaseCashFlows removes it from the dated schedule flows.
     const firstNow = paymentsInRange(sched, ctx.asOf, addDays(ctx.asOf, 1)).reduce((a, p) => a + BigInt(p.amount), 0n);
     const upfrontRaw = BigInt(pay.deposit) + BigInt(pay.fees.setup) + firstNow + oneOffExtras - credits;
+    // Stryker disable next-line EqualityOperator: at upfrontRaw === 0 both branches give 0
     dayOne = BigInt(myPart(mb(upfrontRaw < 0n ? 0n : upfrontRaw), share));
     monthly = BigInt(myPart(mb(BigInt(sched.monthlyEquivalent) + runningFull), share));
     card = planCard({ price, tax, oneOffFees: check.oneOffFees, schedule: sched, runningMonthly: mb(runningFull) });

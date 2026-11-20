@@ -32,6 +32,7 @@ const LONG_EVERY: readonly number[] = [3, 12];
 
 /** Whole months from `from` to `to` (the largest n with from + n months on or before to); 0 when to is before from. */
 export function wholeMonthsBetween(from: LocalDate, to: LocalDate): number {
+  // Stryker disable next-line EqualityOperator: at equal dates both give 0 months (the clamp lands on from), so <= and < agree
   if (to <= from) return 0;
   const a = from.split('-').map(Number) as [number, number, number];
   const b = to.split('-').map(Number) as [number, number, number];
@@ -74,12 +75,15 @@ export function heldBackForBills(
   let total = 0n;
   const bills = liveSeriesOf(series, asOf, 'bill')
     .filter((s) => s.cadence.unit === 'month' && LONG_EVERY.includes(s.cadence.every) && s.amount > 0 && !skip.has(s.id))
+    // Stryker disable next-line EqualityOperator: series ids are unique, so the tie branch of the comparator is never reached
     .sort((a, b) => (a.id < b.id ? -1 : 1));
   for (const s of bills) {
     const paidLine = lines
       .filter((l) => l.seriesId === s.id && l.status === 'paid' && l.date <= asOf)
+      // Stryker disable next-line EqualityOperator: equal dates give the same newest date, so > and >= agree
       .reduce<LocalDate | null>((t, l) => (t === null || l.date > t ? l.date : t), null);
     const lastDue = lastDueOnOrBefore(s, asOf);
+    // Stryker disable next-line EqualityOperator: equal dates give the same last-paid date, so > and >= agree
     const paid = paidLine !== null && (lastDue === null || paidLine > lastDue) ? paidLine : lastDue;
     const dueDate = paid === null ? s.anchorDate : dueAfter(s, paid);
     if (s.endDate !== null && dueDate > s.endDate) continue;
@@ -87,11 +91,13 @@ export function heldBackForBills(
     const every = BigInt(s.cadence.every);
     const since = BigInt(paid === null ? 0 : wholeMonthsBetween(paid, asOf));
     const share = divideHalfUp(bill * since, every);
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: the last due date is at most one period back, so the share never exceeds the bill and the cap is a guard
     const builtUp = share < bill ? share : bill;
     // D-70: the usual month already sets this bill's monthly share aside unless the bill is left out of it, so it counts once.
     const own = s.typicalChoice === 'excluded' ? 0n : BigInt(monthlyEquivalentOf(s.amount, s.cadence));
     const perMonth = usualLeftover === null ? 0n : BigInt(usualLeftover) + own;
     // D-47: what the whole months before the due date cannot cover from the usual leftover, capped at the built-up share.
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: a negative cover only raises uncovered above the bill, which the built-up cap then hides
     const uncovered = bill - (perMonth > 0n ? perMonth : 0n) * BigInt(wholeMonthsBetween(asOf, dueDate));
     let holdBack = uncovered > 0n ? uncovered : 0n;
     if (holdBack > builtUp) holdBack = builtUp;

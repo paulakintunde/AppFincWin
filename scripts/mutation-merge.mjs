@@ -22,6 +22,9 @@ const keyOf = (m) => {
   return `${start.line}:${start.column}-${end.line}:${end.column}|${m.mutatorName}|${m.replacement}`;
 };
 
+/** An Ignored mutant whose mutator the part left out (not a static one): not a result. */
+export const isExcludedHere = (m) => m.status === 'Ignored' && /^Ignored because of excluded mutation/.test(m.statusReason ?? '');
+
 /** Join part reports: mutants by file (no duplicates, fresh unique ids), test files by file and test id. */
 export function mergeReports(reports) {
   const files = {};
@@ -36,6 +39,9 @@ export function mergeReports(reports) {
       const keys = seen.get(name) ?? new Set();
       seen.set(name, keys);
       for (const m of f.mutants ?? []) {
+        // A part that leaves out some mutators (stryker.part.config.mjs MUTATORS_EXCLUDED) still reports their
+        // mutants as Ignored. They were never meant to run there: another part runs them, or the scope leaves them out.
+        if (isExcludedHere(m)) continue;
         const key = keyOf(m);
         if (keys.has(key)) {
           duplicates++;

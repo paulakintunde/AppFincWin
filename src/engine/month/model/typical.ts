@@ -43,9 +43,11 @@ export function everydayByMonth(months: readonly V3Month[], series: readonly V3S
       if (l.categoryId !== null) cats.set(l.categoryId, (cats.get(l.categoryId) ?? 0n) + signed);
     }
     const byCategory = new Map<string, bigint>();
+    // Stryker disable next-line EqualityOperator: at a figure of 0 both branches give 0
     for (const [k, v] of cats) byCategory.set(k, v < 0n ? 0n : v);
     return {
       month: m.month,
+      // Stryker disable next-line EqualityOperator: at a total of 0 both branches give 0
       everyday: minorFromBigInt(total < 0n ? 0n : total, 'everydayByMonth'),
       mark: m.mark,
       byCategory,
@@ -90,10 +92,12 @@ export interface TypicalResult {
  */
 export function typedEverydayOf(expenses: MinorUnits, recorded: MinorUnits): MinorUnits {
   const rest = BigInt(expenses) - BigInt(recorded);
+  // Stryker disable next-line EqualityOperator,StringLiteral: at 0 both branches give 0; expenses minus a recorded sum cannot overflow so the label is never shown
   return minorFromBigInt(rest > 0n ? rest : 0n, 'typedEverydayOf');
 }
 
 // Keys (ids, months) are unique, so equal never occurs.
+// Stryker disable next-line EqualityOperator: keys are unique, so equal never occurs and < and <= give the same order
 const cmp = (a: string, b: string): number => (a < b ? -1 : 1);
 
 export function typicalOf(input: TypicalInput): TypicalResult {
@@ -151,6 +155,7 @@ export function typicalOf(input: TypicalInput): TypicalResult {
     }
     return true;
   });
+  // Stryker disable next-line MethodExpression: kept is not read after this line, so sorting it in place gives the same result
   const used = kept
     .slice()
     .sort((a, b) => cmp(b.month, a.month))
@@ -185,6 +190,7 @@ export function typicalOf(input: TypicalInput): TypicalResult {
     const r = input.typedEstimates;
     // D-74: the money out holds the recorded bills and set-asides; when those add up to more, the larger figure goes out.
     const recorded = bills + BigInt(input.setAside);
+    // Stryker disable next-line EqualityOperator: when the expense equals the recorded sum either branch gives the same value
     const out = BigInt(r.expenses) > recorded ? BigInt(r.expenses) : recorded;
     typicalLeftBig = BigInt(r.income) - out - BigInt(r.debt) - BigInt(r.saving) - BigInt(r.invest);
   } else if (eBig !== null) {
@@ -203,6 +209,7 @@ export function typicalOf(input: TypicalInput): TypicalResult {
     const pick = left[left.length >= 3 ? LOW_MONTH_RANK - 1 : 0] as { month: string; left: bigint };
     const reason: LowMonth['reason'] = left.length >= 3 ? 'second_lowest' : left.length === 2 ? 'lowest' : 'only_month';
     low = {
+      // Stryker disable next-line EqualityOperator: when the two lefts are equal either branch gives the same value
       left: minorFromBigInt(pick.left < typicalLeftBig ? pick.left : typicalLeftBig, 'typicalOf'),
       month: pick.month,
       reason,
@@ -218,6 +225,7 @@ export function typicalOf(input: TypicalInput): TypicalResult {
   });
 
   return {
+    // Stryker disable next-line StringLiteral: eBig comes from safe-integer inputs, so it can never overflow and the label is never shown
     e: eBig === null ? null : minorFromBigInt(eBig, 'typicalOf'),
     typicalLeft: typicalLeftBig === null ? null : minorFromBigInt(typicalLeftBig, 'typicalOf'),
     recurringBills,

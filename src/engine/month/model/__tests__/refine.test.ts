@@ -308,6 +308,32 @@ describe('cards, buckets, unspent and under-logged months', () => {
   });
 });
 
+describe('05.4-60 kills', () => {
+  const repeating = { candidates: [{ key: 'k', occurrences: 3, amount: mu(1000) }] };
+
+  it('refineNoise: exactly 3 months already give a spread; months older than the last 6 are not read', () => {
+    expect(refineNoise(mu(100000), [mu(90000), mu(100000), mu(110000)])).toBe(10000);
+    const old = [0, 200000, 400000, 600000, 800000, 1000000].map(mu);
+    expect(refineNoise(mu(100000), [...old, ...Array.from({ length: 6 }, () => mu(100000))])).toBe(5000);
+  });
+
+  it('a check-in 30 days ago no longer holds a card back; 29 days ago still does', () => {
+    expect(refine(inp({}, { ...repeating, lastAt: '2026-09-03' })).triggers).toEqual(['new_repeating']);
+    expect(refine(inp({}, { ...repeating, lastAt: '2026-09-04' }))).toEqual({ due: false, triggers: [], cards: [] });
+  });
+
+  it('an override is old only after 90 days: on day 90 nothing, on day 91 the expiring card', () => {
+    const at = (overrideAt: string) => kinds(refine(inp({ months: [], everydayOverride: mu(100000) }, { overrideAt })));
+    expect(at('2026-07-05')).toEqual([]);
+    expect(at('2026-07-04')).toEqual(['everyday_override_expiring']);
+  });
+
+  it('a month is judged under-logged against the other months only, not against itself', () => {
+    const r = refine(inp({ months: [everyday('2026-08', 100000), everyday('2026-09', 40000)] }));
+    expect(r.cards).toEqual([{ kind: 'under_logged_month', ref: null, month: '2026-09', current: null, suggested: null, noise: null }]);
+  });
+});
+
 describe('order and codes only', () => {
   it('lists cards in the D-59 order and holds only codes and integers', () => {
     const bill = v3Series({ id: 'rent', role: 'bill', cadence: MONTH, anchorDate: '2026-01-05', amount: 100000 });

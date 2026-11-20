@@ -2,7 +2,7 @@ import fc from 'fast-check';
 import { minorUnits } from '../../../../money/types';
 import { SOLE_SHARE } from '../../../share';
 import { addDays, daysInYearMonth, dayOfMonth, yearMonthOf } from '../../dates';
-import { buildCashPathV3, cashCheck, nextPayDate, purchaseFlows, spreadThrough } from '../path';
+import { buildCashPathV3, cashCheck, nextPayDate, openCashFlows, openCashPath, payDatesIn, purchaseFlows, spreadThrough } from '../path';
 import type { ReadinessWaiver, Schedule, SkippedOccurrence, V3Series } from '../../types';
 import { v3Series } from '../../__tests__/helpers/fixtures';
 import { dueDrops } from '../../../../month/model/dueDrops';
@@ -384,5 +384,71 @@ describe('dropped dues leave the cash path (05.3-64; D-27, D-31, skips)', () => 
     const paid = new Set(['rent|2026-10-10']);
     const p = run([{ kind: 'paid_by_other', seriesId: 'rent', date: '2026-10-10' }], [], paid);
     expect(p).toEqual(path({ asOf, series, paidThisMonth: paid }));
+  });
+});
+
+describe('cash/path.ts mutation kills (05.4-58)', () => {
+  const base = { asOf: '2026-11-01', paidThisMonth: none, erest: mu(0), e: mu(0) };
+  const pay = (id: string, anchorDate: string, amount: number) => v3Series({ id, role: 'pay', cadence: MONTH, anchorDate, amount });
+
+  it('the error messages name the module and the limit', () => {
+    expect(() => spreadThrough(-1, { erest: mu(0), e: mu(0), asOf: '2026-11-01' })).toThrow('cash/path: day must be a non-negative integer');
+    expect(() => openCashPath({ ...base, days: 0, series: [] })).toThrow('cash/path: days must be 1..90');
+  });
+
+  it('days 1 and 90 are the ends of the allowed range, and openCashFlows checks it too', () => {
+    expect(openCashPath({ ...base, days: 1, series: [] }).spread).toHaveLength(1);
+    expect(openCashPath({ ...base, days: 90, series: [] }).net).toHaveLength(90);
+    expect(() => openCashFlows({ ...base, days: 0, series: [] })).toThrow(RangeError);
+    expect(() => openCashFlows({ ...base, days: 91, series: [] })).toThrow(RangeError);
+  });
+
+  it('the spread has one entry per day, and a flow dated on the end day is outside the path', () => {
+    const open = openCashPath({ ...base, days: 5, series: [], debts: [{ date: '2026-11-06', amount: mu(1_000) }, { date: '2026-11-05', amount: mu(7) }] });
+    expect(open.spread).toHaveLength(5);
+    expect(open.net.map(Number)).toEqual([0, 0, 0, 0, -7]);
+  });
+
+  it('a cap that binds is shared out in date order, then series id, whatever order the series arrive in', () => {
+    const series = [pay('a', '2026-01-05', 80_000), pay('c', '2026-01-03', 80_000), pay('b', '2026-01-20', 80_000)];
+    const { flows, capped } = openCashFlows({ ...base, days: 30, series, payCaps: new Map([['2026-11', mu(150_000)]]) });
+    expect(flows.map((f) => [f.date, f.seriesId, Number(f.amount)])).toEqual([
+      ['2026-11-03', 'c', 80_000],
+      ['2026-11-05', 'a', 70_000],
+      ['2026-11-20', 'b', 0],
+    ]);
+    expect(capped).toBe(90_000n);
+  });
+
+  it('a pay expected from history comes after a series pay of the same date under a cap, and is listed as income', () => {
+    const series = [pay('a', '2026-01-05', 80_000)];
+    const { flows } = openCashFlows({ ...base, days: 30, series, extraPays: [{ date: '2026-11-05', amount: mu(80_000) }], payCaps: new Map([['2026-11', mu(100_000)]]) });
+    expect(flows.map((f) => [f.kind, f.seriesId, Number(f.amount)])).toEqual([
+      ['pay', 'a', 80_000],
+      ['income', null, 20_000],
+    ]);
+  });
+
+  it('a debt-payment series is a debt flow, a bill series a bill flow', () => {
+    const series = [
+      v3Series({ id: 'loan', role: 'debt_payment', cadence: MONTH, anchorDate: '2026-01-10', amount: 5_000 }),
+      v3Series({ id: 'rent', role: 'bill', cadence: MONTH, anchorDate: '2026-01-12', amount: 9_000 }),
+    ];
+    const { flows } = openCashFlows({ ...base, days: 30, series });
+    expect(flows.map((f) => [f.kind, f.seriesId, Number(f.amount)])).toEqual([
+      ['bill', 'rent', -9_000],
+      ['debt', 'loan', -5_000],
+    ]);
+  });
+
+  it('pay dates come back in date order, whatever order the series arrive in', () => {
+    const series = [pay('late', '2026-01-20', 1), pay('early', '2026-01-05', 1)];
+    expect(payDatesIn(series, '2026-11-01', 60)).toEqual(['2026-11-05', '2026-11-20', '2026-12-05', '2026-12-20']);
+  });
+
+  it('a pay on the day the account must be back at 0 counts: a low balance on that day is not a payday fix', () => {
+    const points = [-10, -5, 3, 4].map((b, i) => ({ date: `2026-11-0${i + 1}`, balance: mu(b) }));
+    expect(cashCheck({ asOf: '2026-11-01', points }, '2026-11-02')).toMatchObject({ kind: 'not_covered', shortBy: 10 });
+    expect(cashCheck({ asOf: '2026-11-01', points }, '2026-11-03')).toMatchObject({ kind: 'payday', until: '2026-11-03' });
   });
 });

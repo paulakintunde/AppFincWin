@@ -14,6 +14,10 @@ describe('countsForMe', () => {
   it('my own personal line counts in full', () => {
     expect(countsForMe(line({ amount: m(-5000), isShared: false, isMine: true }))).toBe(-5000);
   });
+  it('05.4-60 a total past the safe range names itself', () => {
+    const big = [line({ id: 'a', amount: m(6_000_000_000_000_000), isShared: false, isMine: true }), line({ id: 'b', amount: m(6_000_000_000_000_000), isShared: false, isMine: true })];
+    expect(() => countsForMeTotal(big)).toThrow('month/countsForMe: result exceeds Number.MAX_SAFE_INTEGER');
+  });
   it('a settlement of mine counts 0', () => {
     expect(countsForMe(line({ amount: m(-5000), isShared: false, isMine: true, isSettlement: true }))).toBe(0);
   });

@@ -96,6 +96,7 @@ function pastMonthItems(ctx: Ctx, ym: YearMonth): { readonly items: readonly Rea
   const prevMonth = inputs.months.find((m) => m.month === prev);
   if (prevMonth === undefined || !prevMonth.full) {
     let earliest: LocalDate | null = null;
+    // Stryker disable next-line EqualityOperator: on equal dates the kept date is the same either way
     for (const l of prevMonth?.lines ?? []) if (earliest === null || l.date < earliest) earliest = l.date;
     return { items: [plainItem('late_start', code, prev, earliest)], gaps: [] };
   }
@@ -181,12 +182,14 @@ const KIND_RANK: Readonly<Record<ReadinessItemKind, number>> = { late_start: 0, 
 /** Month, then kind, then date, then series or envelope id; plain string order, never localeCompare. */
 function itemKey(i: ReadinessItem): string {
   const sep = String.fromCharCode(1);
+  // Stryker disable next-line StringLiteral: a missing date or id only has to sort the same way for every item of one month and kind, and each such group holds one item
   return [i.month, String(KIND_RANK[i.kind]), i.date ?? '', i.seriesId ?? i.envelopeId ?? ''].join(sep);
 }
 
 function sortItems<T>(list: readonly T[], itemOf: (t: T) => ReadinessItem): T[] {
   return list
     .map((t) => ({ t, k: itemKey(itemOf(t)) }))
+    // Stryker disable next-line EqualityOperator: two items never share a key (the series or envelope id is part of it), so the equal case is never compared
     .sort((a, b) => (a.k < b.k ? -1 : a.k > b.k ? 1 : 0))
     .map((x) => x.t);
 }
@@ -197,6 +200,7 @@ const PRECEDENCE: readonly ReadinessWaiverKind[] = ['start_from', 'month_complet
 /** Rank, then `at` newest first (digits inverted so plain string order is descending), then a fixed canonical order. */
 function waiverKey(w: ReadinessWaiver): string {
   const sep = String.fromCharCode(1);
+  // Stryker disable next-line StringLiteral: only waivers of one kind are compared on this part, and a kind either always has an answer date or never does
   const at = 'at' in w ? w.at.replace(/\d/g, (d) => String(9 - Number(d))) : '';
   return [String(PRECEDENCE.indexOf(w.kind)), at, JSON.stringify(w)].join(sep);
 }
@@ -250,6 +254,7 @@ export function readinessOf(inputs: V3Inputs, month: MonthModel): Readiness {
     const best = live
       .filter((w) => settles(w, item, ym, fresh))
       .map((w) => ({ w, k: waiverKey(w) }))
+      // Stryker disable next-line EqualityOperator: equal keys mean the same waiver twice, so either one is kept
       .reduce<{ w: ReadinessWaiver; k: string } | null>((b, x) => (b === null || x.k < b.k ? x : b), null);
     if (best === null) open.push(item);
     else waived.push({ item, by: best.w.kind, waiver: best.w });

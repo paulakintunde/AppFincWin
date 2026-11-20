@@ -102,12 +102,15 @@ export function rollForward(input: {
 
   const all: V3Line[] = [];
   for (const m of input.months) for (const l of m.lines) if (l.status === 'paid') all.push(l);
+  // Stryker disable next-line ConditionalExpression,EqualityOperator,UnaryOperator: the sort only orders sums and a set, so no order changes a result (settle is order-free)
   const byDateThenId = (a: V3Line, b: V3Line): number => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  // Stryker disable next-line MethodExpression: sorting changes no result: the lines only feed order-free sums
   all.sort(byDateThenId);
   // Two-date refunds: cash after the anchor is read from the months as logged, so a linked refund counts on the day it
   // arrived. Over-refunds and plan refunds net to the same value as the month view; only the everyday breakdown line can differ.
   const cash: V3Line[] = [];
   for (const m of input.logged ?? input.months) for (const l of m.lines) if (l.status === 'paid') cash.push(l);
+  // Stryker disable next-line MethodExpression: sorting changes no result: settle and the sums are order-free (month/settle.ts)
   cash.sort(byDateThenId);
 
   // Everyday logged in the anchor month up to and including the anchor day: the base Erest was held back from.
@@ -118,6 +121,7 @@ export function rollForward(input: {
     if (c === 'everyday') loggedAtAnchor += BigInt(Math.abs(l.amount));
     else if (c === 'refund') loggedAtAnchor -= BigInt(Math.abs(l.amount));
   }
+  // Stryker disable next-line EqualityOperator: a zero total is set to zero, so < and <= agree
   if (loggedAtAnchor < 0n) loggedAtAnchor = 0n;
   const planned =
     input.e === null
@@ -199,6 +203,7 @@ export function rollForward(input: {
   }
 
   const anchorExcess =
+    // Stryker disable next-line EqualityOperator: at equality both branches give 0n, so > and >= agree; a zero net gives 0n either way
     anchorMonthEveryday > planned ? anchorMonthEveryday - planned : anchorMonthEveryday < 0n ? anchorMonthEveryday : 0n;
   const everyday = anchorExcess + laterEveryday;
 
@@ -239,6 +244,7 @@ export function unspentState(input: {
   if (input.anchor === null) return null;
   const roll = input.roll ?? { value: input.anchor.amount, breakdown: ZERO, rolled: false };
   const diff = BigInt(roll.value) - BigInt(input.suggested);
+  // Stryker disable next-line EqualityOperator: negating 0n gives 0n, so < and <= agree
   const abs = diff < 0n ? -diff : diff;
   const suggestedAbs = BigInt(Math.abs(input.suggested));
   const heldBack = BigInt(heldBackOf(input.heldBridges)); // D-38

@@ -15,6 +15,7 @@ import { sameCalendarMonth } from './incomePattern';
 /** What a month saves: last year's leftover of the same calendar month plus the what-if lift (D-12), never below zero. */
 function savedIn(picture: Pick<IncomePicture, 'months'>, ym: string, lift: bigint): bigint {
   const left = BigInt(sameCalendarMonth(picture.months, ym)?.left ?? 0) + lift;
+  // Stryker disable next-line EqualityOperator: at 0 both branches give 0
   return left > 0n ? left : 0n;
 }
 
@@ -30,6 +31,7 @@ export function seasonalReadyMonth(
 ): { readonly months: number; readonly month: string } | null {
   if (lift < 0n) throw new RangeError('seasonalReadyMonth: lift must be >= 0');
   let cycle = 0n;
+  // Stryker disable next-line AssignmentOperator: the cycle total is only compared with 0, and a negated sum is 0 exactly when the sum is
   for (let i = 1; i <= SEASON_CYCLE_MONTHS; i++) cycle += savedIn(picture, addYearMonths(fromYm, i), lift);
   if (cycle === 0n) return null;
   let total = 0n;

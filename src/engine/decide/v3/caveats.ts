@@ -62,6 +62,7 @@ function largeForMonth(src: CaveatSource): Caveat | null {
 
 function recordsOutOfDate(inputs: V3Inputs): Caveat | null {
   const at = inputs.recordsAsOf ?? null;
+  // Stryker disable next-line EqualityOperator,ConditionalExpression: a future or bad date gives a negative or NaN day count, never over the limit, so the result is null anyway
   if (at === null || !isValidLocalDate(at) || at > inputs.asOf) return null;
   return daysBetween(at, inputs.asOf) > RECORDS_FRESH_SYNC_DAYS ? { code: 'records_out_of_date', values: { date: at } } : null;
 }
@@ -92,8 +93,10 @@ export function caveatsFor(src: CaveatSource, inputs: V3Inputs, check: CheckV2):
   add('close_to_line', conf.has('close_to_line') || facts.has('tight_floor'));
   add('rate_estimated', facts.has('implied_rate') || reasons.has('quote_used_no_rate'));
   add('tax_not_included', reasons.has('tax_not_included'));
+  // Stryker disable next-line ConditionalExpression: a once check has no schedule, so planMonths gives null the same as the guard does
   const months = check.pay.mode === 'plan' && src.purchase !== null ? planMonths(src.purchase) : null;
   if (months !== null && months > LONG_PLAN_MONTHS) found.push({ code: 'long_plan', values: { months } });
   const rank = (c: Caveat): number => CAVEAT_ORDER.indexOf(c.code);
+  // Stryker disable next-line MethodExpression,ArithmeticOperator: the caveats are pushed in CAVEAT_ORDER already, so the sort never moves one
   return found.sort((a, b) => rank(a) - rank(b));
 }

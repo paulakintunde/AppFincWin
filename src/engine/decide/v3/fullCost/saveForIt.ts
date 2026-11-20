@@ -17,6 +17,7 @@ import type { CheckV2, LocalDate } from '../types';
 
 /** What of `saved` counts: never below 0, never more than the kept savings accounts hold. */
 export function savedCounted(prepared: Prepared, saved: number): number {
+  // Stryker disable next-line EqualityOperator: a saved figure of 0 gives min(0, kept) = 0 either way
   if (!Number.isSafeInteger(saved) || saved <= 0) return 0;
   return Math.min(saved, keptSavings(prepared.inputs.accounts));
 }
