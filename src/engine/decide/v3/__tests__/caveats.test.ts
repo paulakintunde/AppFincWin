@@ -143,8 +143,9 @@ describe('05.4-37 caveats (D-64, D-118, D-119)', () => {
     const plan = checkPlan(120000, { count: 24, apr: percent('9.9'), firstPayment: { kind: 'one_period' } }, T);
     const pev = evaluate(sam(), plan);
     const purchase = { ...pev.purchase!, whole: mu(base.month.typicalIncome) };
-    const got = caveatsFor({ ...s, purchase }, { ...sam(), recordsAsOf: '2026-09-01' }, plan).map((c) => c.code);
-    expect(got).toEqual(CAVEAT_ORDER.filter((c) => c !== 'expected_bills' && c !== 'shared_money'));
+    const withHousehold: V3Inputs = { ...sam(), recordsAsOf: '2026-09-01', household: { scope: 'household', notShared: ['noa'] }, accounts: [{ id: 'a1', balance: mu(1000), use: null, joint: true }] };
+    const got = caveatsFor({ ...s, purchase }, withHousehold, plan).map((c) => c.code);
+    expect(got).toEqual(CAVEAT_ORDER.filter((c) => c !== 'expected_bills'));
     expect(new Set(got).size).toBe(got.length);
   });
 
@@ -162,5 +163,34 @@ describe('05.4-37 caveats (D-64, D-118, D-119)', () => {
       }),
       { numRuns: fcRuns(200), seed: 0x0575 }
     );
+  });
+  describe('08.1-08 household_not_shared (D-03) and shared_money (UX-21)', () => {
+    const acct = (over: Partial<NonNullable<V3Inputs['accounts']>[number]> = {}) => ({ id: 'a1', balance: mu(100000), use: null, ...over });
+    const withH = (household: V3Inputs['household'], accounts?: V3Inputs['accounts']): V3Inputs => ({ ...sam(), household, ...(accounts === undefined ? {} : { accounts }) });
+    it('household_not_shared: Household asked for and a partner has not shared, names comma-joined', () => {
+      const got = caveatsFor(src(), withH({ scope: 'household', notShared: ['noa', 'lee'] }), ONCE);
+      expect(got).toEqual([{ code: 'household_not_shared', values: { names: 'noa,lee' } }]);
+    });
+    it('household_not_shared: not on Just me, not with nobody missing, not without a household block', () => {
+      expect(codes(src(), withH({ scope: 'me', notShared: ['noa'] }))).toEqual([]);
+      expect(codes(src(), withH({ scope: 'household', notShared: [] }))).toEqual([]);
+      expect(codes(src(), withH(null))).toEqual([]);
+    });
+    it('shared_money: a joint account with money in it names the first one, in either scope', () => {
+      const accounts = [acct({ id: 'own' }), acct({ id: 'j1', joint: true }), acct({ id: 'j2', joint: true })];
+      expect(caveatsFor(src(), withH({ scope: 'me', notShared: [] }, accounts), ONCE)).toEqual([{ code: 'shared_money', values: { account: 'j1' } }]);
+      expect(codes(src(), withH({ scope: 'household', notShared: [] }, accounts))).toEqual(['shared_money']);
+      expect(codes(src(), withH(undefined, accounts))).toEqual(['shared_money']);
+    });
+    it('shared_money: not for an empty joint account, one no rate converts, or an account not in both names', () => {
+      expect(codes(src(), withH(null, [acct({ joint: true, balance: mu(0) })]))).toEqual([]);
+      expect(codes(src(), withH(null, [acct({ joint: true, noRate: true })]))).toEqual([]);
+      expect(codes(src(), withH(null, [acct({ joint: false })]))).toEqual([]);
+      expect(codes(src(), { ...sam(), accounts: undefined })).toEqual([]);
+    });
+    it('D-119 order: household_not_shared comes before shared_money', () => {
+      const got = codes(src(), withH({ scope: 'household', notShared: ['noa'] }, [acct({ joint: true })]));
+      expect(got).toEqual(['household_not_shared', 'shared_money']);
+    });
   });
 });

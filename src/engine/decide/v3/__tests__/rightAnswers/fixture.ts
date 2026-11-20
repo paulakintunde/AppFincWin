@@ -10,9 +10,31 @@ import { addMonthsClamped, cadenceDate } from '../../dates';
 import { buildFunds } from '../../funds/build';
 import { buildMonthModel } from '../../../../month/model/model';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
-import type { RightAnswerFixture } from './schema';
+import { monthPicture } from '../../../../month/picture';
+import { prepare } from '../../prepare';
+import { applyHouseholdMoney } from '../../householdMoney';
+import { householdDelta } from '../../../../household/pool';
+import type { FixtureHousehold, RightAnswerFixture } from './schema';
 
 const mu = (n: number): MinorUnits => minorUnits(n);
+
+/**
+ * 08.1-08: the household block as the builder reads it. A partner counts only with both opt-ins and a figure (pool and split,
+ * owner 2026-11-20); the slice less my own left is laid into the month; the inputs carry the caveat and settle-up facts.
+ */
+function withHousehold(inputs: V3Inputs, h: FixtureHousehold | undefined): V3Inputs {
+  if (h === undefined) return inputs;
+  const pf = h.partnerFigure;
+  const counted = h.scope === 'household' && pf !== undefined && pf.bothOn && pf.roundedLeft !== null;
+  const own = monthPicture(prepare(inputs)).leftAfterPlans;
+  const delta = counted ? householdDelta(mu(Number(own)), [mu(pf.roundedLeft as number)], h.weights ?? [1], h.myIndex ?? 0) : mu(0);
+  const moved = applyHouseholdMoney(inputs, delta);
+  const notShared = h.scope === 'household' && pf !== undefined && !counted ? [pf.name] : [];
+  return {
+    ...moved,
+    household: { scope: h.scope, notShared, settleUp: h.settleUp === undefined ? null : { lapsedAsPayer: h.settleUp.lapsed, owed: mu(h.settleUp.owed) } },
+  };
+}
 
 /** 05.4 ARC-07: the category the fixture's essential everyday spending is logged under, marked essential in the inputs. */
 const ESSENTIAL = 'essential';
@@ -348,6 +370,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     overdraftLimit: a.overdraftLimit === null ? null : mu(a.overdraftLimit),
     overdraftRate: a.overdraftRate === null ? null : percent(a.overdraftRate),
     ...(a.noRate === true ? { noRate: true } : {}), // 05.4 ENG-17 (D-114)
+    ...(f.household?.jointAccountIds?.includes(a.id) === true ? { joint: true } : {}), // 08.1-08 UX-21
   }));
   // 05.4-20 (FIN-04, FIN-10, FIN-14): due day, joint and the part already paid as stated. A debt the situation pays as one of its
   // bills (DB-03, DB-04, DB-06, DB-07, DB-12: "pays her $300 card minimum as a monthly bill") is the bills list's monthly bill of
@@ -441,7 +464,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
   const toArrive = mm.moneyIn - inNow > 0 ? mm.moneyIn - inNow : 0;
   // 05.4 ENG-17 (D-114): the app cannot convert an account with no rate, so its suggested figure leaves that account out too.
   const rated: V3Inputs = { ...inputs0, accounts: accounts.filter((a) => a.noRate !== true) };
-  const inputs: V3Inputs = { ...inputs0, unspent: { amount: mu(buildFunds(rated, mm, null).suggested + toArrive), at: f.asOf } };
+  const inputs: V3Inputs = withHousehold({ ...inputs0, unspent: { amount: mu(buildFunds(rated, mm, null).suggested + toArrive), at: f.asOf } }, f.household);
   const c = f.check;
   const check = checkOnce(c.price ?? 0, {
     price: c.price === null ? null : mu(c.price),

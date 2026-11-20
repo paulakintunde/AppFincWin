@@ -1,8 +1,14 @@
-// BO-07 Phase 8 contracts. Owners: 08-30 (settlements, on), 08-25 (visibility, on), 08.1 (income profile, still a todo).
+// BO-07 Phase 8 contracts. Owners: 08-30 (settlements, on), 08-25 (visibility, on), 08.1 (income profile, on in 08.1-08).
 // Switching a todo on keeps the exact title. The frozen list lives in src/test/contracts/contractManifest.test.ts.
 import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { minorUnits } from '../../money/types';
+import { applyHouseholdMoney } from '../../decide/v3/householdMoney';
+import { prepare } from '../../decide/v3/prepare';
+import { personById, toV3Inputs } from '../../decide/v3/__tests__/golden/adapter';
+import { householdDelta } from '../../household/pool';
+import { buildMonthModel } from '../model/model';
+import { monthPicture } from '../picture';
 import { countsLineOf, mineAmountOf, type ScopeLine } from '../../household/countsForMeInput';
 import { monthTotals } from '../../activity/totals';
 import { excludeSettlements, isSettlement } from '../../household/settlement';
@@ -46,7 +52,22 @@ describe('BO-07 Phase 8 contracts (settlements, income profile, visibility)', ()
     expect(excludeSettlements(rows).map((r) => r.id)).toEqual(['b', 'c']);
     expect(rows.filter(isSettlement)).toHaveLength(1);
   });
-  test.todo("one income profile per member; a partner's pay never overwrites mine");
+  it("one income profile per member; a partner's pay never overwrites mine", () => {
+    // 08.1-08 (ARC-19): the profile is a per-member record (one decide_settings row each, pgTAP 111) and the household reaches a check
+    // as ONE signed money figure (engine/household/pool). Pooling a partner in changes no part of my income profile: not the profile,
+    // not my pay series, and not the usual income the month model reads. The builder half (a partner's personal lines never reach my
+    // inputs) is src/features/decide/snapshot/v3/__tests__/householdScope.test.ts.
+    const mine = toV3Inputs(personById('sam'));
+    const own = Number(monthPicture(prepare(mine)).leftAfterPlans);
+    const pooled = applyHouseholdMoney(mine, householdDelta(minorUnits(own), [minorUnits(900_000)], [1, 1], 0));
+    expect(pooled.profile).toBe(mine.profile);
+    expect(pooled.series).toBe(mine.series);
+    expect(pooled.typedEstimates).toBe(mine.typedEstimates);
+    expect(pooled.months.length).toBe(mine.months.length);
+    expect(buildMonthModel(pooled).typicalIncome).toBe(buildMonthModel(mine).typicalIncome);
+    // a partner's pay series is not mine: the pooled inputs hold no series I did not have
+    expect(pooled.series.map((x) => x.id)).toEqual(mine.series.map((x) => x.id));
+  });
   it('database rules gate reading; countsForMe gates counting; no screen adds its own filter', () => {
     // Counting: whatever the database let the viewer read, the Mine figure is exactly countsForMe over the adapter's line.
     const lines: ScopeLine[] = [

@@ -424,6 +424,27 @@ function withGoal(f: RightAnswerFixture, g: GoalRaw): RightAnswerFixture {
   return { ...f, accounts: [...f.accounts, account], goals: [{ ...goal, accountId: 'k1' }] };
 }
 
+/**
+ * 08.1-08 (CMP-F19, QA-03): one fixture in four is a Household check with one partner: both opt-ins on or off, a rounded figure
+ * (a multiple of 1000, from a little overdrawn to well in credit), an agreed split and which side the viewer is.
+ */
+const householdArb = fc.option(
+  fc.record({
+    bothOn: fc.boolean(),
+    thousands: fc.integer({ min: -200, max: 2000 }),
+    weight: fc.integer({ min: 1, max: 9 }),
+    me: fc.constantFrom(0, 1),
+  }),
+  { nil: null, freq: 1 }
+);
+
+type HouseholdRaw = typeof householdArb extends fc.Arbitrary<infer T> ? T : never;
+
+function withHousehold(f: RightAnswerFixture, h: HouseholdRaw): RightAnswerFixture {
+  if (h === null) return f;
+  return { ...f, household: { scope: 'household', weights: [h.weight, 10 - h.weight], myIndex: h.me, partnerFigure: { name: 'partner', bothOn: h.bothOn, roundedLeft: h.thousands * 1000 } } };
+}
+
 export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc
-  .tuple(peopleArb, taxArb, fullCostArb, replacesArb, goalArb)
-  .map(([f, t, x, r, g]) => withGoal(withReplaces(withFullCost({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }, x), r), g));
+  .tuple(peopleArb, taxArb, fullCostArb, replacesArb, goalArb, householdArb)
+  .map(([f, t, x, r, g, h]) => withHousehold(withGoal(withReplaces(withFullCost({ ...f, region: t.region, check: { ...f.check, taxPercent: t.typed, taxIncluded: t.included } }, x), r), g), h));

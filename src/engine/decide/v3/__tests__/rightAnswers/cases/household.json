@@ -490,6 +490,673 @@
       "approvedAt": null,
       "ownerReason": null,
       "expertNote": null
+    },
+    {
+      "id": "HH-07",
+      "topic": "household",
+      "persona": "Ali and Noa, just me (invented)",
+      "situation": "Ali has $1,000 left this month. Noa has $4,000 and both have agreed to count each other in Decide. Ali picks \"Just me\" and looks at a $2,000 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Ali",
+          "weights": [
+            60,
+            40
+          ],
+          "myIndex": 0,
+          "partnerFigure": {
+            "name": "Noa",
+            "bothOn": true,
+            "roundedLeft": 400000
+          }
+        }
+      },
+      "expected": {
+        "variant": "payday",
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "household_not_shared",
+          "shared_money"
+        ],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "Just me counts only Ali's own money, so Noa's $4,000 is ignored: $1,000 is not enough for $2,000. This is the answer the app gives today (the same as HH-02). On 1 December, $1,000 left from November plus $1,000 spare in December covers it.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-08",
+      "topic": "household",
+      "persona": "Ali and Noa, household (invented)",
+      "situation": "Same couple. Ali picks \"Household\" and looks at a $2,500 purchase. Both have opted in, so the app knows Noa has $4,000 left this month (a rounded figure, never her items). Ali and Noa agree a 60/40 split.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 250000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ali",
+          "weights": [
+            60,
+            40
+          ],
+          "myIndex": 0,
+          "partnerFigure": {
+            "name": "Noa",
+            "bothOn": true,
+            "roundedLeft": 400000
+          }
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "household_not_shared"
+        ],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "The two together have $1,000 + $4,000 = $5,000. Ali's agreed 60% of that is $3,000, so $3,000 - $2,500 = $500 left. No \"not shared\" line, because Noa has shared.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-09",
+      "topic": "household",
+      "persona": "Ali and Noa, Noa has not shared (invented)",
+      "situation": "Ali picks \"Household\" and looks at a $2,000 purchase. Noa has not turned on sharing, so Ali has only his own $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ali",
+          "weights": [
+            60,
+            40
+          ],
+          "myIndex": 0,
+          "partnerFigure": {
+            "name": "Noa",
+            "bothOn": false,
+            "roundedLeft": null
+          }
+        }
+      },
+      "expected": {
+        "variant": "payday",
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "household_not_shared"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "With no opt-in only Ali's money is counted, so the answer is the same as Just me (not yet, 1 December). One plain line under the answer names who has not shared: \"Only your money is counted. Noa hasn't shared theirs.\" The answer is still given (D-37).",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-10",
+      "topic": "household",
+      "persona": "Ali and Noa, Noa checks too (invented)",
+      "situation": "The same day, Noa picks \"Household\" and looks at a $1,500 purchase. She has $4,000 left herself; Ali has shared his $1,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 600000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 440000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Noa",
+          "weights": [
+            60,
+            40
+          ],
+          "myIndex": 1,
+          "partnerFigure": {
+            "name": "Ali",
+            "bothOn": true,
+            "roundedLeft": 100000
+          }
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "household_not_shared"
+        ],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "The pool is the same $5,000. Noa's agreed 40% is $2,000, so $2,000 - $1,500 = $500 left. Ali (HH-08) can spend up to $3,000 and Noa up to $2,000: the two slices add up to exactly $5,000, so both saying Fits ($2,500 + $1,500 = $4,000) can never spend more than the shared money.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-11",
+      "topic": "household",
+      "persona": "Ali and Noa, joint account (invented)",
+      "situation": "Ali's everyday account is a joint account with Noa. His $1,000 spare sits in it. He picks \"Just me\" and looks at a $500 purchase.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Ali",
+          "weights": [
+            60,
+            40
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "a1"
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "shared_money"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "$1,000 - $500 = $500 left, so it fits. Because the money counted sits in an account in both names, one plain line says so, naming the account (\"Everyday\"), so Ali knows Noa can also spend from it.",
+      "fixIds": [
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-12",
+      "topic": "household",
+      "persona": "Eve, a settle-up that has lapsed (invented)",
+      "situation": "Eve owes Dan $200 from settling up shared costs. Dan asked 40 days ago and it is still unpaid (lapsed). Eve has $1,000 left this month and looks at a $500 purchase. She lives in the US.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": true,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Eve",
+          "settleUp": {
+            "role": "payer",
+            "owed": 20000,
+            "lapsed": true
+          }
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "free_help"
+        ],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "$1,000 - $500 = $500 left, so the answer is Fits and does not change. A lapsed settle-up as the person who owes is one of the signs the free help pointer now covers, so the answer also carries the free-help line for the US (NFCC).",
+      "fixIds": [
+        "CMP-F04",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-13",
+      "topic": "household",
+      "persona": "Eve, owes more than she has (invented)",
+      "situation": "Eve owes Dan $1,500 from settling up, not yet late. She has $1,000 left this month and looks at a $500 purchase. She lives in the US.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": {
+          "country": "US",
+          "subdivision": null
+        },
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": true,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Eve",
+          "settleUp": {
+            "role": "payer",
+            "owed": 150000,
+            "lapsed": false
+          }
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "free_help"
+        ],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "The answer is Fits ($1,000 - $500 = $500 left) and does not change. She owes $1,500 and her spendable money is $1,000, so what she owes is above what she can spend: the free-help line for the US appears.",
+      "fixIds": [
+        "CMP-F04",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
     }
   ]
 }

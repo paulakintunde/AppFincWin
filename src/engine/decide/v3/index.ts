@@ -88,3 +88,5 @@ export type { ShadowAnswer, ShadowRun } from './shadow/run';
 // 06.1 D-21: quick-estimate lines for one check only
 export { withQuickLines, withQuickLinesPrepared, judgeWithQuickLines } from './quick/overlay';
 export type { QuickOverlay } from './quick/overlay';
+// 08.1-08 CMP-F19: the household's pooled money laid into the inputs
+export { applyHouseholdMoney, HOUSEHOLD_LINE_ID } from './householdMoney';
