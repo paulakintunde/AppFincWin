@@ -38,6 +38,13 @@ export const stepper = {
     addOwnSub: 'A kind that is not listed',
     readFrom: 'Read from the words: {{kind}}',
   },
+  // 08.1-10 (D-01, D-02): Who pays on the price step, shown only for a household of 2 or more. Draft copy, wording sign-off in 08.1-14.
+  whoPays: {
+    label: 'Who pays',
+    justMe: 'Just me',
+    household: 'Household',
+    helper: 'Uses shared money and anything a partner has agreed to share.',
+  },
   price: {
     title: 'Price and how you pay',
     why: 'Tax and fees are part of what you pay on the day.',

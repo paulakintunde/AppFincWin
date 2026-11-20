@@ -64,6 +64,8 @@ jest.mock('@/data/mutations/decideChecks', () => ({
 let mockEvaluation: unknown = null;
 jest.mock('../../engine/useCheckEngine', () => ({ useCheckEngine: () => ({ evaluation: mockEvaluation, readyDate: () => null }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+// 08.1-10: Who pays reads the household; here a household of one, so it renders nothing (whoPays.test covers it).
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }) }));
 
 const baseInputs = (over: Record<string, unknown> = {}) => ({ currency: 'USD', region: 'US', regionSubdivision: 'CA', series: [], debts: [], ...over });
 

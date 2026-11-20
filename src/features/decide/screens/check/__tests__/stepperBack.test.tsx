@@ -58,6 +58,8 @@ jest.mock('@/data/mutations/decideChecks', () => ({
 jest.mock('../../engine/useCheckEngine', () => ({ useCheckEngine: () => ({ evaluation: null, readyDate: () => null }) }));
 jest.mock('../../engine/useMonthPicture', () => ({ useMonthPicture: () => ({ picture: null }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+// 08.1-10: Who pays reads the household; a household of one renders nothing here.
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }) }));
 
 function seed(name: string, check: CheckV2 = checkOnce(120_000)): void {
   mockRow = { id: ID, name, inputs: toStoredV2(check), furthest_step: 1 };

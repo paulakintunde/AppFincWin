@@ -61,6 +61,7 @@ jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () =>
 // 08-23: the layout opens the household live channel; wiring only here.
 jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
+jest.mock('@/features/household/decide/PartnerFigurePublisher', () => ({ AppPartnerFigurePublisher: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1' }),
