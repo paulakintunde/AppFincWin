@@ -76,6 +76,12 @@ export function belowZeroWithoutFacts(date: string | null): Fact[] {
   return date === null ? [] : [{ code: 'below_zero_without', values: { date, zero: 0 } }];
 }
 
+/** Put the below-zero-without fact first, or directly after overdraft_not_cleared when that warning leads (CO-D-36). */
+export function placeBelowZeroWithout(below: Fact[], rest: Fact[]): Fact[] {
+  if (rest.length > 0 && rest[0]!.code === 'overdraft_not_cleared') return [rest[0]!, ...below, ...rest.slice(1)];
+  return [...below, ...rest];
+}
+
 export function depletionFacts(d: DepletionInput): Fact[] {
   const TL = d.typicalLeft;
   if (TL === null || d.code === 'needs_input') return [];

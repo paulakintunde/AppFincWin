@@ -3,7 +3,7 @@
  * corpus, golden/gen126-depletion.json) and the Riley and Leo plans, locked and unlocked, plus every branch of depletion.ts.
  */
 import { minorUnits } from '../../../money/types';
-import { belowZeroWithoutFacts, depletionFacts, monthAlreadyShort, type DepletionInput } from '../depletion';
+import { belowZeroWithoutFacts, depletionFacts, monthAlreadyShort, placeBelowZeroWithout, type DepletionInput } from '../depletion';
 import { evaluate } from '../evaluate';
 import { NO_NET, type ResolvedNet } from '../safetyNet';
 import type { CheckV2, Fact, Result, Schedule, V3Inputs } from '../types';
@@ -204,5 +204,21 @@ describe('belowZeroWithoutFacts (D-07)', () => {
   it('is one fact naming the first day below 0, and nothing when the account never goes below 0', () => {
     expect(belowZeroWithoutFacts('2027-01-26')).toEqual([{ code: 'below_zero_without', values: { date: '2027-01-26', zero: 0 } }]);
     expect(belowZeroWithoutFacts(null)).toEqual([]);
+  });
+});
+
+describe('placeBelowZeroWithout (CO-D-36 order)', () => {
+  const bz = belowZeroWithoutFacts('2027-01-26');
+  const notCleared = { code: 'overdraft_not_cleared', values: {} } as unknown as Fact;
+  const other = { code: 'month_left_after', values: {} } as unknown as Fact;
+  it('leads when there is no not-cleared warning', () => {
+    expect(placeBelowZeroWithout(bz, [other]).map((f) => f.code)).toEqual(['below_zero_without', 'month_left_after']);
+    expect(placeBelowZeroWithout(bz, []).map((f) => f.code)).toEqual(['below_zero_without']);
+  });
+  it('follows the not-cleared warning when that leads', () => {
+    expect(placeBelowZeroWithout(bz, [notCleared, other]).map((f) => f.code)).toEqual(['overdraft_not_cleared', 'below_zero_without', 'month_left_after']);
+  });
+  it('changes nothing when there is no below-zero fact', () => {
+    expect(placeBelowZeroWithout([], [notCleared, other])).toEqual([notCleared, other]);
   });
 });
