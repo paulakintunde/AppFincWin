@@ -733,7 +733,9 @@ describe('regression: a dip inside the overdraft does not wait for payday (D-80,
     expect(plainCashReady(once)).toEqual({ month: '2026-11' });
     expect(plainShortWait(once)).toBe(false);
     const e = toEngineInputs(once);
-    expect(pick(evaluate(e.inputs, e.check))).toMatchObject({ code: 'not_yet', variant: 'not_covered', readyBy: '2026-11' });
+    // 08.1 D-05: the ladder's month (November) is only the earliest it can be; the date is the first day a fresh check stays at or above 0
+    // for its 90 days, and until January the account still dips below 0 inside the overdraft
+    expect(pick(evaluate(e.inputs, e.check))).toMatchObject({ code: 'not_yet', variant: 'not_covered', readyBy: '2027-01' });
   });
   it('the plan: plain and engine both say "Only by borrowing", with no "costs more" line', () => {
     const { inputs, check } = toEngineInputs(f);

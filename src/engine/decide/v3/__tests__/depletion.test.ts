@@ -3,7 +3,7 @@
  * corpus, golden/gen126-depletion.json) and the Riley and Leo plans, locked and unlocked, plus every branch of depletion.ts.
  */
 import { minorUnits } from '../../../money/types';
-import { depletionFacts, monthAlreadyShort, type DepletionInput } from '../depletion';
+import { belowZeroWithoutFacts, depletionFacts, monthAlreadyShort, type DepletionInput } from '../depletion';
 import { evaluate } from '../evaluate';
 import { NO_NET, type ResolvedNet } from '../safetyNet';
 import type { CheckV2, Fact, Result, Schedule, V3Inputs } from '../types';
@@ -196,5 +196,13 @@ describe('depletion.ts mutation kills (05.4-58)', () => {
     // shortfall 2,000 + 10,000 = 12,000 a month; (100,000 - 40,000) / 12,000 = 5 months
     expect(facts.find((f) => f.code === 'net_lasts')?.values).toEqual({ shortfall: 12_000, months: 5 });
     expect(facts.find((f) => f.code === 'net_lasts_without')?.values).toEqual({ months: 10 });
+  });
+});
+
+// 08.1 D-07 (08.1-06): the first day below 0 with no purchase
+describe('belowZeroWithoutFacts (D-07)', () => {
+  it('is one fact naming the first day below 0, and nothing when the account never goes below 0', () => {
+    expect(belowZeroWithoutFacts('2027-01-26')).toEqual([{ code: 'below_zero_without', values: { date: '2027-01-26', zero: 0 } }]);
+    expect(belowZeroWithoutFacts(null)).toEqual([]);
   });
 });

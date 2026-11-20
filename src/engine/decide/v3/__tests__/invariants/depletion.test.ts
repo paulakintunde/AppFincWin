@@ -6,11 +6,14 @@
  */
 import * as fc from 'fast-check';
 import { evaluate } from '../../evaluate';
-import type { V3Inputs } from '../../types';
+import type { Fact, Result, V3Inputs } from '../../types';
 import { fcRuns } from '../helpers/fcRuns';
 import { checkArb, inputsArb, netInputsArb, withSafetyNet } from './arbitraries';
 
 const DEPLETION = new Set(['usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost', 'balanced_month_room', 'month_balance_gap']);
+// 08.1 D-06 / D-07: not_within_year and below_zero_without are their own lines near the top; this file reads the depletion block without them
+const D08 = new Set(['not_within_year', 'below_zero_without']);
+const plainFacts = (r: Result): Fact[] => r.facts.filter((f) => !D08.has(f.code));
 const TIERS = ['month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra'];
 const TIER_FACTS = new Set(['month_short_fits', 'money_lasts_shorter']);
 const anyInputsArb: fc.Arbitrary<V3Inputs> = fc.oneof(inputsArb, netInputsArb.map(({ base, n }) => withSafetyNet(base, n)));
@@ -24,23 +27,23 @@ describe('depletion invariants', () => {
         const tl = ev.month.typicalLeft;
         // 05.4-22 (D-48): every plan with interest carries interest_is_a_cost, so outside the depletion block it is the borrowing line,
         // never a twin; the other depletion lines are the core.
-        const core = r.facts.filter((f) => DEPLETION.has(f.code) && f.code !== 'interest_is_a_cost');
-        expect(r.facts.filter((f) => f.code === 'interest_is_a_cost').length).toBeLessThanOrEqual(1);
+        const core = plainFacts(r).filter((f) => DEPLETION.has(f.code) && f.code !== 'interest_is_a_cost');
+        expect(plainFacts(r).filter((f) => f.code === 'interest_is_a_cost').length).toBeLessThanOrEqual(1);
         // D-68 branch (owner, 2026-11-03: "judge by cash better by a slim margin, with caution"): a short plan judged by cash reads
         // as a one-off of its whole cost (monthly 0 here), with its caution line after any tier line; its interest line still shows.
-        const d68 = r.facts.some((f) => f.code === 'short_plan_from_cash');
+        const d68 = plainFacts(r).some((f) => f.code === 'short_plan_from_cash');
         const M = d68 ? 0 : (ev.purchase?.monthly ?? 0);
         const interest = d68 && (ev.purchase?.schedule?.totalInterest ?? 0) > 0;
         const applies = r.code !== 'needs_input' && tl !== null && (tl < 0 || interest || (M > 0 && tl - M < 0 && (r.code === 'monthly_short' || r.code === 'not_yet')));
-        let lead = r.facts.length > 0 && TIER_FACTS.has(r.facts[0]!.code) ? 1 : 0;
+        let lead = plainFacts(r).length > 0 && TIER_FACTS.has(plainFacts(r)[0]!.code) ? 1 : 0;
         if (d68) {
-          expect(r.facts[lead]?.code).toBe('short_plan_from_cash');
+          expect(plainFacts(r)[lead]?.code).toBe('short_plan_from_cash');
           lead += 1;
         }
         // the block of depletion lines right after the lead
         let end = lead;
-        while (end < r.facts.length && DEPLETION.has(r.facts[end]!.code)) end += 1;
-        const block = r.facts.slice(lead, end);
+        while (end < plainFacts(r).length && DEPLETION.has(plainFacts(r)[end]!.code)) end += 1;
+        const block = plainFacts(r).slice(lead, end);
         if (applies) {
           expect(block.length).toBeGreaterThan(0);
           for (const f of core) expect(block).toContainEqual(f);
@@ -71,16 +74,16 @@ describe('depletion invariants', () => {
         if (r.variant === 'month_short_small' || r.variant === 'month_short_moderate' || r.variant === 'month_short_moderate_extra') {
           // 05.4 FIN-05 with D-68 (nightly 2026-11-07..11, seed 21605): an expensive plan judged by cash keeps the tier on
           // fits_by_borrowing (verdictTable fits_by_borrowing.month_short_*); its one-off part is still the cash fit.
-          const d68Borrowing = r.code === 'fits_by_borrowing' && r.facts[1]?.code === 'short_plan_from_cash';
+          const d68Borrowing = r.code === 'fits_by_borrowing' && plainFacts(r)[1]?.code === 'short_plan_from_cash';
           expect(['fits_month', 'fits_unspent']).toContain(d68Borrowing ? r.parts.oneOff : r.code);
           // D-68 branch (owner, 2026-11-03: "judge by cash better by a slim margin, with caution"; refinement (a): the tier of a
           // cash buy of the same total): a short plan judged by cash keeps its monthly figure, with the caution line second.
-          if (r.facts[1]?.code === 'short_plan_from_cash') expect(ev.purchase?.schedule).not.toBeNull();
+          if (plainFacts(r)[1]?.code === 'short_plan_from_cash') expect(ev.purchase?.schedule).not.toBeNull();
           else expect(ev.purchase?.monthly).toBe(0);
-          expect(TIER_FACTS.has(r.facts[0]?.code ?? '')).toBe(true);
+          expect(TIER_FACTS.has(plainFacts(r)[0]?.code ?? '')).toBe(true);
         }
         if (r.variant === 'month_short_moderate_extra') expect(r.split.some((s) => s.source === 'extra_savings')).toBe(true);
-        if (ev.net?.locked === true) expect(r.facts.some((f) => f.code === 'net_lasts' || f.code === 'net_lasts_without')).toBe(false);
+        if (ev.net?.locked === true) expect(plainFacts(r).some((f) => f.code === 'net_lasts' || f.code === 'net_lasts_without')).toBe(false);
       }),
       { numRuns: fcRuns(300), seed: 0x5465 }
     );

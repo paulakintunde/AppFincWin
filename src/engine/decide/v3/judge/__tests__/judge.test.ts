@@ -1426,3 +1426,59 @@ describe('05.4-23 low months: savings first, the safety net named, then the ques
     expect(r.facts.map((f) => f.code)).not.toContain('covered_from_savings');
   });
 });
+
+/**
+ * 08.1 D-05 / D-06 / D-07 (08.1-06): the ready-by date is the first day a fresh check stays at or above $0 (safeStart, built in
+ * prepare.ts), no date more than 12 months out, and the fact for an account that goes below $0 even without the purchase.
+ */
+describe('judge: D-05 ready-by search, D-06 beyond a year, D-07 below $0 without', () => {
+  const cash: CashCheck = { kind: 'payday', until: '2026-10-28', shortBy: mu(5_000) };
+  // the I13 case: not covered, ready 2027-01 as judged
+  const waits = (over: Partial<JudgeInput> = {}) => judge(input({ cash, funds: funds(10_000), ...over }));
+
+  it('with no search the date as judged stays', () => {
+    expect(waits().readyBy).toEqual({ kind: 'month', month: '2027-01' });
+  });
+
+  it('the search starts from the date as judged and a later first safe day gives that day’s month', () => {
+    const seen: string[] = [];
+    const r = waits({ safeStart: (notBefore) => (seen.push(notBefore), { date: '2027-03-01' }) });
+    expect(seen).toEqual(['2027-01-01']);
+    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-03' });
+    expect(r.facts.map((f) => f.code)).not.toContain('not_within_year');
+  });
+
+  it('the first safe day being the date as judged changes nothing', () => {
+    expect(waits({ safeStart: () => ({ date: '2027-01-01' }) }).readyBy).toEqual({ kind: 'month', month: '2027-01' });
+  });
+
+  it('a search that cannot read the records (null) keeps the date as judged', () => {
+    expect(waits({ safeStart: () => null }).readyBy).toEqual({ kind: 'month', month: '2027-01' });
+  });
+
+  it('no first safe day inside 12 months: no date, and not_within_year leads the facts (D-06)', () => {
+    const r = waits({ safeStart: () => ({ beyond: true }) });
+    expect(r.code).toBe('not_yet');
+    expect(r.readyBy).toBeNull();
+    expect(r.facts[0]).toEqual({ code: 'not_within_year', values: {} });
+    expect(r.facts.map((f) => f.code)).not.toContain('ready_without_interest');
+  });
+
+  it('no search when there is no date to check (a usual month that leaves nothing) or the usual month is already short', () => {
+    const search = jest.fn(() => ({ beyond: true }) as const);
+    expect(waits({ month: month({ typicalLeft: mu(0) }), safeStart: search }).readyBy).toBeNull();
+    expect(waits({ month: month({ typicalLeft: mu(-10_000) }), safeStart: search }).readyBy).toBeNull();
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it('below_zero_without is one fact with the first day, and never changes the code, variant or date (D-07)', () => {
+    const plain = waits();
+    const r = waits({ belowZeroWithout: '2027-01-26' });
+    expect(r.facts.filter((f) => f.code === 'below_zero_without')).toEqual([{ code: 'below_zero_without', values: { date: '2027-01-26', zero: 0 } }]);
+    expect(r.code).toBe(plain.code);
+    expect(r.variant).toBe(plain.variant);
+    expect(r.readyBy).toEqual(plain.readyBy);
+    expect(r.facts.filter((f) => f.code !== 'below_zero_without')).toEqual(plain.facts);
+    expect(waits({ belowZeroWithout: null }).facts).toEqual(plain.facts);
+  });
+});

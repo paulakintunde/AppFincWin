@@ -56,7 +56,7 @@ import { addDays, addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
 import { costlyDebt, costlyFacts, debtFacts } from '../debts';
-import { depletionFacts, monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
+import { belowZeroWithoutFacts, depletionFacts,monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
 import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
 import { lastPaymentBefore, paymentsInRange } from '../plan/schedule';
 import { afterBuyBlock, firstPaymentLater } from '../afterBuy';
@@ -93,6 +93,7 @@ import type {
 import { evaluateLines } from './lines';
 import { needsInput } from './needsInput';
 import { firstPaymentsToday } from './purchase';
+import type { SafeStart } from './readyBy';
 import { shortPlanByCash } from './shortPlan';
 import { inLaterMonth, laterRoom } from '../fullCost/purchaseDate';
 
@@ -128,6 +129,14 @@ export interface JudgeInput {
   readonly replaces?: { readonly freed: MinorUnits; readonly showsUsual: boolean; readonly saleLater: SaleLater | null } | null;
   /** 05.4 BO-05 (D-108, fullCost/saveForIt.ts): money set aside for the item in kept savings; it counts toward the ready date too. Absent = 0. */
   readonly savedFor?: number;
+  /**
+   * 08.1 D-05 / D-06 (08.1-06): reads a fresh 90-day window on each later start day (readyBy.ts firstSafeStart, built in prepare.ts). A
+   * Not yet answer's date becomes the first day that stays at or above $0, never earlier than the date as judged. Absent in hand-built
+   * judge tests and when the records cannot give it: the date as judged stays.
+   */
+  readonly safeStart?: (notBefore: string) => SafeStart;
+  /** 08.1 D-07: the first day inside the 90 days the account is below $0 with no purchase at all; null or absent = never. */
+  readonly belowZeroWithout?: LocalDate | null;
 }
 
 /** 05.4 BO-05 (05.4-27): a sale's account part that arrives after the purchase date. */
@@ -935,6 +944,7 @@ export function judge(j: JudgeInput): Result {
   // When both parts are not yet, the later ready-by leads; ties go to the one-off part (D-36).
   let notYetVariant: Variant | null = null;
   let readyBy: ReadyBy | null = null;
+  let beyondYear = false;
   if (code === 'not_yet') {
     const monthlyLeads = mon !== null && mon.code === 'not_yet' && (one.code !== 'not_yet' || readyKey(mon.readyBy) > readyKey(one.readyBy));
     notYetVariant = monthlyLeads ? 'not_covered' : one.variant;
@@ -949,12 +959,24 @@ export function judge(j: JudgeInput): Result {
     const s = purchase.schedule;
     const endsInside = s !== null && lastPaymentBefore(s, addDays(j.inputs.asOf, CASH_PATH_DAYS_V3));
     if (s !== null && !endsInside && month.typicalLeft !== null && purchase.monthly > month.typicalLeft) readyBy = null;
+    // 08.1 D-05 / D-06: the date that is left means a fresh check stays at or above $0 for 90 days, never earlier than the date as judged.
+    // No such day inside 12 months: no date, and the answer says so. A short month (no date above) and an already-short month (D-63) keep none.
+    if (readyBy !== null && !monthAlreadyShort(month.typicalLeft) && j.safeStart !== undefined) {
+      const found = j.safeStart(readyKey(readyBy));
+      if (found !== null && 'beyond' in found) {
+        readyBy = null;
+        beyondYear = true;
+      } else if (found !== null && found.date > readyKey(readyBy)) {
+        readyBy = { kind: 'month', month: yearMonthOf(found.date) };
+      }
+    }
   }
 
   // Facts (fixed order): overdraft or the no-limit question, month, unspent, held back, yearly bills, emergency, envelope, plan, low month,
   // why months, bridge, lines, other accounts below 0.
   // 05.4 D-54 / D-60 / D-63: the depletion lines lead the answer (computed after the code; they never change it).
   const facts: Fact[] = [
+    ...belowZeroWithoutFacts(j.belowZeroWithout ?? null),
     ...depletionFacts({
       code,
       monthly: purchase.monthly,
@@ -1124,7 +1146,7 @@ export function judge(j: JudgeInput): Result {
   const borrowed = finalCode === 'fits_by_borrowing';
   if (compare !== null) facts.splice(compareAt, 0, compare);
   // D-68: the caution line comes right after the tier line when there is one, otherwise first.
-  const lead: Fact[] = [];
+  const lead: Fact[] = beyondYear ? [{ code: 'not_within_year', values: {} }] : [];
   if (tier !== null && tier.fact !== null) lead.push(tier.fact);
   if (cashPlan !== null) lead.push({ code: 'short_plan_from_cash', values: { monthly: purchase.monthly } });
   return {
