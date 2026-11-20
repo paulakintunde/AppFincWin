@@ -18,6 +18,25 @@ function lastYear(leftOf: (calendar: string) => number): { readonly months: read
 
 const seasonal = lastYear((mm) => (['05', '06', '07', '08', '09'].includes(mm) ? 150_000 : 20_000));
 
+describe('seasonalReadyMonth (05.4-60 boundaries)', () => {
+  const only = (calendar: string, left: number): { readonly months: readonly IncomeMonth[] } => ({
+    months: [{ month: `2025-${calendar}`, income: mu(0), everyday: mu(0), left: mu(left), lean: false }],
+  });
+
+  it('a year that saves only in the twelfth month ahead still counts as a year that saves', () => {
+    expect(seasonalReadyMonth(only('10', 50_000), '2026-10', 30_000n)).toEqual({ months: 12, month: '2027-10' });
+  });
+
+  it('a year that saves nothing is null even when the gap is 0', () => {
+    expect(seasonalReadyMonth({ months: [] }, '2026-10', 0n)).toBeNull();
+  });
+
+  it('the walk reaches the simulation cap exactly: month 600 is ready, one more month of gap is not', () => {
+    expect(seasonalReadyMonth(only('10', 50_000), '2026-10', 2_500_000n)).toEqual({ months: 600, month: addYearMonths('2026-10', 600) });
+    expect(seasonalReadyMonth(only('10', 50_000), '2026-10', 2_500_001n)).toBeNull();
+  });
+});
+
 describe('seasonalReadyMonth (D-60)', () => {
   it('D-60 walks the season: 300,000 from November is ready in June, the second busy month', () => {
     // Dec..Apr save 5 x 20,000 = 100,000; May adds 150,000 (250,000); June adds 150,000 (400,000).

@@ -52,7 +52,7 @@ Pause (run from `C:\dev\fincwin`, where the FincWin token lives; export the Finc
 
 Resume: the same update with `'false'`. Never use the Supabase MCP connector (it points at a different account).
 
-The value is `'false'` by default (migration `20261123000300_app_config_decide_off.sql`). Clients can read the row and cannot write it (pgTAP 113).
+The value is `'false'` by default (migration `20261125000300_app_config_decide_off.sql`). Clients can read the row and cannot write it (pgTAP 113).
 
 ## Turn Decide on slowly (per account)
 

@@ -23,6 +23,7 @@ export interface ShadowRound {
 
 /** 2 significant figures, ties away from zero (exact on safe integers): 62743 -> 63000, -1250 -> -1300, 99 -> 99. Never -0. */
 export function roundSig2(v: number): number {
+  // Stryker disable next-line ConditionalExpression: toPrecision on 0 still gives 0, so the early return only saves work
   if (v === 0) return 0;
   return Number(v.toPrecision(2));
 }
@@ -66,7 +67,9 @@ export function roundForShadow(result: Result, asOf: LocalDate): ShadowRound {
   for (const [source, amount] of split) put(`s.${source}`, amount);
   if (result.band !== null) put('band', result.band);
   if (result.readyBy !== null) {
+    // Stryker disable next-line MethodExpression: monthsBetween reads only the year and month characters, so a longer date string gives the same figure
     const to = result.readyBy.kind === 'date' ? result.readyBy.date.slice(0, 7) : result.readyBy.month;
+    // Stryker disable next-line MethodExpression: monthsBetween reads only the year and month characters, so a longer date string gives the same figure
     put('rbm', monthsBetween(asOf.slice(0, 7), to));
   }
   put('ready', result.readiness?.ready === false ? 0 : 1);

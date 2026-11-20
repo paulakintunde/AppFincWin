@@ -203,3 +203,43 @@ describe('the hold-back in the answer (D-47)', () => {
     expect(f.billsHeld?.total).toBe(583_333);
   });
 });
+
+describe('heldBackForBills mutation kills (05.4-58)', () => {
+  const quarterly = (over: Partial<V3Series> & { anchorDate: string }) =>
+    yearly({ id: 'water', amount: 30_000, cadence: { unit: 'month', every: 3 }, ...over });
+  const paidOn = (id: string, date: string, over: { status?: 'paid' | 'pending'; seriesId?: string } = {}) =>
+    v3Line({ id, date, amount: 120_000, seriesId: over.seriesId ?? 'ins', status: over.status ?? 'paid' });
+
+  it('a bill due on the as-of day counts as just paid: nothing built up, the next due date a period on', () => {
+    const r = heldBackForBills([yearly({ anchorDate: '2026-03-01' })], [], '2027-03-01', mu(0));
+    expect(r.parts[0]).toMatchObject({ builtUp: 0, holdBack: 0, dueDate: '2028-03-01' });
+  });
+
+  it('a due date exactly half a period after a payment is not the next one', () => {
+    // paid 15 Mar, half a period is one month, so 15 Apr is not past it: the next due date is 15 Jul
+    const r = heldBackForBills([quarterly({ anchorDate: '2026-01-15' })], [paidOn('p', '2026-03-15', { seriesId: 'water' })], '2026-03-20', mu(0));
+    expect(r.parts[0]!.dueDate).toBe('2026-07-15');
+  });
+
+  it('a pending payment does not count as paid', () => {
+    const r = heldBackForBills([yearly({ anchorDate: '2026-03-01' })], [paidOn('p', '2026-09-01', { status: 'pending' })], '2026-10-01', mu(0));
+    expect(r.parts[0]!.builtUp).toBe(70_000);
+  });
+
+  it('a payment dated after the as-of day does not count as paid', () => {
+    const r = heldBackForBills([yearly({ anchorDate: '2026-03-01' })], [paidOn('p', '2026-12-01')], '2026-10-01', mu(0));
+    expect(r.parts[0]!.builtUp).toBe(70_000);
+  });
+
+  it('the newest paid line wins, wherever it sits in the list', () => {
+    const lines = [paidOn('old', '2026-06-01'), paidOn('new', '2026-09-01')];
+    const r = heldBackForBills([yearly({ anchorDate: '2026-03-01' })], lines, '2026-10-01', mu(0));
+    expect(r.parts[0]!.builtUp).toBe(10_000);
+  });
+
+  it('a payment older than the last due date does not move the last-paid date back', () => {
+    // dues 15 Jan, 15 Apr, 15 Jul, 15 Oct; a payment on 20 Apr is older than the 15 Oct due date
+    const r = heldBackForBills([quarterly({ anchorDate: '2026-01-15' })], [paidOn('p', '2026-04-20', { seriesId: 'water' })], '2026-10-20', mu(0));
+    expect(r.parts[0]).toMatchObject({ builtUp: 0, dueDate: '2027-01-15' });
+  });
+});

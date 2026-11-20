@@ -1,9 +1,9 @@
 -- pgTAP: 08.1-02 ARC-24 -- Record as bought is one save: an 'expected' kind of monthly line (recurring_series.amount_kind),
 -- the sale money in, the old loan's payoff and the goal close, all inside record_decide_go with ONE undo step.
--- Migration 20261123000100 (D-09, D-10, D-11). The sale and payoff run through the same private function Grow's
+-- Migration 20261125000100 (D-09, D-10, D-11). The sale and payoff run through the same private function Grow's
 -- record_debt_sale uses (grow_sale_and_payoff).
 --
--- Needs 20261016000300, 20261021000100, 20261110000100, 20261116000100, 20261122000300 and 20261123000100.
+-- Needs 20261016000300, 20261021000100, 20261110000100, 20261116000100, 20261122000300 and 20261125000100.
 -- Dates are relative to current_date so the monthly materialiser horizon never changes what is asserted.
 
 begin;

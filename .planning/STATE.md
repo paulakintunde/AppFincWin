@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: 08.1 wave 1 done (plans 01-05), merged on feat/08.1-build
+stopped_at: 08.1 wave 1 and plan 07 done (01-05, 07); main merged in 2026-11-19; wave 2 plan 06 next
 last_updated: "2026-11-18T23:13:01.887Z"
-last_activity: 2026-11-18 -- Phase 08.1 execution started
+last_activity: 2026-11-19 -- main merged into feat/08.1-build
 progress:
   total_phases: 30
   completed_phases: 16
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-09-21)
 
 ## Current Position
 
-Phase: 08.1 (decide-rebuild-on-real-data) — EXECUTING
+Phase: 08.1 (decide-rebuild-on-real-data) — EXECUTING on feat/08.1-build, 6/18 plans (01-05, 07), 10 waves after the 2026-11-19 trim. Next: wave 2 plan 06. main merged in 2026-11-19.
 Phase: 08 (household) — COMPLETE 2026-11-17, 28/28 plans. Migrations 20261122000100..000900 in production (08-PUSH-LOG.md); delete-account Edge Function v1 deployed. Owner device sign-off on preview APK 167f43e3 (adds expo-clipboard). 08-25 ran before 08-27 by owner choice. Merged to main as PR #134 (69e42491). Open: iPhone XR check with the next iOS build; DPIA retention left to Phase 11.
 Phase: 05.5 (one-shared-money-model) — COMPLETE 2026-11-16, 29/29 plans (0.2.0 released; Band B in production; G-PD-2 root fix in 05.5-28, engine revision 06.8)
 Phase: 06.1 (Decide screens from the prototype) — MERGED 2026-11-14 (PR #102, main 9472c6f3); shipped as preview Android build 051b0232 (owner confirmed 2026-11-14).
@@ -33,7 +33,7 @@ Phase: 06 (grow) — COMPLETE 2026-11-11, 37/37 plans. Code review: 73 findings 
 Phase: 05.3 (decide-screens-v3) — STOPPED 2026-11-01 (fix plan Theme N, BO-01). Branch phase/05.3-decide-screens-v3 is pushed and parked (518 commits ahead of main), never merged. Its engine and plumbing changes are harvested in 05.4 (BO-02, BO-03); the screens are not reused (BO-09).
 Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Merged to main as PR #86 (2026-10-29). in C:/dev/fincwin-p5.
 Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
-Plan: 1 of 21
+Plan: 7 of 18 (06 next)
 Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
 Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
 Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
@@ -41,7 +41,7 @@ Phase 02.1 (PDF statement import): COMPLETE 2026-10-11 — 17/17 plans (PR #60 m
 Phase 05 (decide-ui): planned 2026-10-15, revised 2026-10-16 for the planning-review decisions D-38..D-44, DCU-12..DCU-24 and the final Phase 4 API (D-61..D-63) — 53 plans in 10 waves, plan checker passed (3 iterations, final 0 blockers, 0 warnings); originally against 05-CONTEXT D-01..D-37 (incl. the depth expansion D-24..D-37 and the amended D-24) and the 22-plan Phase 4 `decide()` API; research with a depth addendum, pattern map, VALIDATION.md (nyquist_compliant); plan checker passed after the scope expansion (3 iterations, final 0 blockers; earlier 29-plan set had 2 iterations), decision coverage D-01..D-37 and DCU-01..DCU-11, ANL-06 verified; defaults and items for user review in 05-PLANNING-NOTES.md (OQ1/OQ3 debts table and full-month rule, OQ-A1 FX stamps, OQ-A2/A3/A9 UI-SPEC touch-ups, card minimum gap R4-W2, A19/A21). Execution unblocked once the Phase 4 PR merges; migrations ship via the human-gated `npm run supabase:db:push` in 05-25.
 Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
 Status: Executing Phase 08.1
-Last activity: 2026-11-18 -- Phase 08.1 execution started
+Last activity: 2026-11-19 -- main merged into feat/08.1-build
 
 ## Performance Metrics
 
@@ -105,6 +105,7 @@ Last activity: 2026-11-18 -- Phase 08.1 execution started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+- [05.4-43/45 close, 2026-11-19]: Owner: the full mutation score (QA-04, 90% per group, break 90) is taken once before launch (Phase 11 criterion 8), not during the build. Gap-closure tests 05.4-58..62 merged via PR #168; the weekly mutation-full schedule is paused (workflow disabled); 05.4-45 closed on four green nightlies. 08.1-06's audit gate now checks the deferral, so 08.1 can build.
 - [05.4 merge, 2026-11-06, D-182]: Owner 2026-11-06: merge 05.4 now; 43 and 45 run on main after the merge. 05.4-43 (raise the mutation score to 90% and lock it, prove pending/knownRed empty) and 05.4-45 (three consecutive green nightly runs) are a follow-up on main; after the merge Decide is turned on for all testers with the v3 engine (separate task).
 - [Decide visibility, 2026-11-02]: Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (fix plan BO-08). From 08.1 only named testers see it, behind the per-account switch and the BO-06 release check; the public gets it after 08.2. The closed beta (question 11) is retired. Until then the `profiles.decide_v3` flag is on only for accounts on the repo tester list (account IDs: the owner's accounts plus each tester the owner names; 05.4 D-29, D-30), and stays off until 08.1; shadow runs use the separate server-only `profiles.decide_shadow` flag (05.4-30, BO-08). 05.4 closes today's gap where a flagged account can open the 05.2 setup page and engine readout. Reading-test round 1 is about 5 people on Variant C (owner, 2026-11-02).
 - [Decide design, 2026-11-01]: the owner chose Variant C ("Decide redesign: three variants" canvas, 40 screens) as the Decide design; Variants A and B are retired and the A+B blend is dropped. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; findings are fixed, then the screens are frozen (QA-01). Grow stays out of the Decide reading test. Quick task 261101-jee.
@@ -221,6 +222,8 @@ Recent decisions affecting current work:
 | 261115-kog | PR auto-merge: repo auto-merge + update-branch on, `hold` label, auto-merge.yml sweep (all ready PRs except drafts, `hold`, forks, Dependabot majors; one-at-a-time update queue keeps strict up-to-date rule). Needs owner AUTOMERGE_TOKEN secret | 2026-11-15 | (this PR) | [261115-kog-pr-auto-merge-with-one-at-a-time-update-](./quick/261115-kog-pr-auto-merge-with-one-at-a-time-update-/) |
 | 261117-abh | Docs tidy after Phase 8 merge: STATE, ROADMAP (05.4 ticked, 05.3 replaced), stale G-PD-2 Maestro note | 2026-11-17 | 9c06ba88 | [261117-abh-docs-tidy-after-phase-8-merge](./quick/261117-abh-docs-tidy-after-phase-8-merge/) |
 | 261117-sn1 | SN-18 wording (text only) and SN-27 proposal; owner chose option (a), built in PR #149: no ready-by date when a plan's own payment makes the usual month short (engine revision 06.9, SN-27 approved, 49/2000 I44 cases lose a date only) | 2026-11-17 | bf173562 | [261117-sn1-sn-18-wording-and-sn-27-proposal](./quick/261117-sn1-sn-18-wording-and-sn-27-proposal/) |
+| 261118-u83 | ASO re-check: 4 new "can I afford it" apps (incl. Verdict Money), hard-paywall copy fixes, features to compete on; LAUNCH-POSITIONING §4/§5 updated | 2026-11-18 | (this PR) | [261118-u83-aso-re-check-2026-11-18](./quick/261118-u83-aso-re-check-2026-11-18/) |
+| 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
 
 ## Deferred Items
 
@@ -233,5 +236,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-11-18T23:13:01.825Z
-Stopped at: 08.1 wave 1 done (plans 01-05), merged on feat/08.1-build
+Stopped at: 08.1 wave 1 and plan 07 done (01-05, 07); main merged in 2026-11-19; wave 2 plan 06 next
 Resume file: None

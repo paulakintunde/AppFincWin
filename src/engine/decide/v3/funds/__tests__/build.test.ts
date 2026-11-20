@@ -294,3 +294,42 @@ describe('buildFunds', () => {
     });
   });
 });
+
+describe('buildFunds mutation kills (05.4-58)', () => {
+  const locked = (id: string, saved: number, accountId: string, lockedFlag: boolean): Envelope => ({ ...env(id, saved, accountId), locked: lockedFlag });
+
+  it('unlocked goal money counts only for goals that are unlocked: a locked goal in the same account is left out', () => {
+    const f = fundsOf({
+      accounts: [acct('a1', 100_000, { kind: 'everyday' })],
+      envelopes: [locked('lock', 30_000, 'a1', true), locked('open', 20_000, 'a1', false), locked('empty', 0, 'a1', false)],
+    });
+    expect(f.spending).toBe(70_000);
+    expect(f.unlockedSaved).toBe(20_000);
+    expect(f.lockedNamedSaved).toBe(30_000);
+  });
+
+  it('an unlocked goal in an account its locked goals have overdrawn counts for nothing, even when another account has room', () => {
+    const f = fundsOf({
+      accounts: [acct('a1', 10_000, { kind: 'everyday' }), acct('a2', 100_000, { kind: 'everyday' })],
+      envelopes: [locked('lock', 30_000, 'a1', true), locked('open', 20_000, 'a1', false)],
+    });
+    expect(f.spending).toBe(80_000);
+    expect(f.unlockedSaved).toBeUndefined();
+  });
+
+  it('the unexplained key is absent when no unspent figure was confirmed', () => {
+    const f = fundsOf({ balance: mu(100_000) });
+    expect(f.unspent).toBeNull();
+    expect(Object.keys(f)).not.toContain('unexplained');
+  });
+
+  it('a fund linked to a listed account is not taken off the spending balance a second time', () => {
+    const f = fundsOf({
+      accounts: [acct('e', 300_000, { kind: 'everyday' }), acct('d', 50_000, { kind: 'dedicated', purpose: { kind: 'emergency' } })],
+      emergency: { amount: mu(50_000), accountId: 'd' },
+    });
+    expect(f.spending).toBe(300_000);
+    expect(f.fundUnlinked).toBe(false);
+    expect(f.ringFenced).toBe(0);
+  });
+});

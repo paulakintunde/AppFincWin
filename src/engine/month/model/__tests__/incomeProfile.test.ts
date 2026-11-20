@@ -17,6 +17,7 @@ import type {
 import {
   eligibility,
   incomeThisMonth,
+  payBasis,
   planOf,
   typicalIncome,
   type IncomeInput,
@@ -1019,5 +1020,109 @@ describe("exports used by the income pattern (05.1-43)", () => {
     const ok = eligibility(line({ id: "a", seriesId: "pay" }), idx, planOf(null), NO_CUSTOM);
     expect(ok).toEqual({ ok: true, salary: true, reasons: [] });
     expect(eligibility(line({ id: "b", role: "spending" }), idx, planOf(null), NO_CUSTOM).ok).toBe(false);
+  });
+});
+
+describe("mutation kills (05.4-60)", () => {
+  const idx = new Map([["pay", PAY]]);
+  const salaried = planOf(null);
+  const freelance = planOf(prof({ types: ["freelance"] }));
+  const BIG6 = 6_000_000_000_000_000;
+  const OVER = (fn: string): string => `${fn}: result exceeds Number.MAX_SAFE_INTEGER`;
+
+  it("eligibility: a spending line is not income, and says nothing", () => {
+    expect(eligibility(line({ id: "s", role: "spending" }), idx, salaried, NO_CUSTOM)).toEqual({ ok: false, salary: false, reasons: [] });
+  });
+
+  it("eligibility: an available line counts but is not salary; an unmarked or kept line does not, and only unmarked says so", () => {
+    expect(eligibility(line({ id: "a", countsAs: "available" }), idx, salaried, NO_CUSTOM)).toEqual({ ok: true, salary: false, reasons: [] });
+    expect(eligibility(line({ id: "k", countsAs: "kept" }), idx, salaried, NO_CUSTOM)).toEqual({ ok: false, salary: false, reasons: [] });
+    expect(eligibility(line({ id: "u" }), idx, salaried, NO_CUSTOM)).toEqual({ ok: false, salary: false, reasons: ["income_kind_unmarked"] });
+  });
+
+  it("eligibility: under a variable plan only a line with no kind and no mark is the profile's own income", () => {
+    expect(eligibility(line({ id: "n" }), idx, freelance, NO_CUSTOM)).toEqual({ ok: true, salary: false, reasons: [] });
+    const family = line({ id: "g", incomeKind: { kind: "preset", value: "family" } });
+    expect(eligibility(family, idx, freelance, NO_CUSTOM)).toEqual({ ok: false, salary: false, reasons: ["income_kind_unmarked"] });
+    expect(eligibility(line({ id: "k", countsAs: "kept" }), idx, freelance, NO_CUSTOM)).toEqual({ ok: false, salary: false, reasons: [] });
+  });
+
+  describe("payBasis", () => {
+    const at = (date: string, amount: number, id: string): V3Line => line({ id, date, amount: mu(amount), seriesId: "pay" });
+    const full = (m: string, lines: V3Line[]): V3Month => ({ ...month(m, lines), full: true });
+    const s = ser({ id: "pay", amount: mu(300000) });
+
+    it("judges on the middle of the last three arrivals by date, whatever order they come in", () => {
+      const history = [
+        full("2026-08", [at("2026-08-01", 275000, "b")]),
+        full("2026-05", [at("2026-05-01", 100000, "a")]),
+        full("2026-09", [at("2026-09-01", 272000, "c")]),
+        full("2026-07", [at("2026-07-01", 270000, "d")]),
+      ];
+      expect(payBasis(s, history, "2026-10-03")).toEqual({ amount: 272000n, gap: { setup: 300000, middle: 272000, gapBp: 933 } });
+    });
+
+    it("a gap needs the middle to be more than 500 basis points below: exactly 500 is none", () => {
+      const history = ["2026-07", "2026-08", "2026-09"].map((m, i) => full(m, [at(`${m}-01`, 9500, `x${i}`)]));
+      expect(payBasis(ser({ id: "pay", amount: mu(10000) }), history, "2026-10-03")).toEqual({ amount: 9500n, gap: null });
+    });
+  });
+
+  it("this month's expected pending lines: due when inside the month and not past the grace; a line a week old is missed", () => {
+    const pend = (id: string, date: string, amount: number, over: Partial<V3Line> = {}): V3Line =>
+      line({ id, date, amount: mu(amount), status: "pending", expected: true, ...over });
+    const cur = month("2026-10", [
+      pend("on", "2026-10-03", 1000), // asOf 10-10, cutoff 10-03: on the cutoff still counts
+      pend("in", "2026-10-04", 2000),
+      pend("old", "2026-10-02", 4000), // before the cutoff: missed
+      pend("later", "2026-10-30", 8000),
+      pend("next", "2026-11-01", 16000), // not this month
+      pend("prev", "2026-09-30", 32000), // not this month
+      pend("unexpected", "2026-10-20", 64000, { expected: false }),
+      line({ id: "paid", date: "2026-10-05", amount: mu(128000) }),
+    ]);
+    const r = incomeThisMonth(inp({ asOf: "2026-10-10", current: cur, profile: prof({ types: ["freelance"], variable: "match" }) }));
+    expect(r.received).toBe(128000);
+    expect(r.dueConfirmed).toBe(1000 + 2000 + 8000);
+    expect(r.total).toBe(128000 + 1000 + 2000 + 8000);
+    expect(r.reasons).toContain("missed_pay_excluded");
+  });
+
+  it("a stated steady amount of 0 stands even with money received; no steady amount on another rule is ignored", () => {
+    const typed = { income: mu(77000), expenses: mu(0), saving: mu(0), debt: mu(0), invest: mu(0), asOf: "2026-10-03" };
+    const steady = (n: number | null, variable: "steady" | "match" = "steady") => prof({ types: ["freelance"], variable, steady: n === null ? null : mu(n) });
+    expect(incomeThisMonth(inp({ profile: steady(50000), typedEstimates: typed }))).toMatchObject({ received: 0, dueConfirmed: 0, total: 50000 });
+    const got = month("2026-10", [line({ id: "v", amount: mu(5000) })]);
+    expect(incomeThisMonth(inp({ current: got, profile: steady(0), typedEstimates: typed }))).toMatchObject({ received: 5000, total: 0, reasons: [] });
+    expect(incomeThisMonth(inp({ current: got, profile: steady(12345, "match"), typedEstimates: typed })).total).toBe(5000);
+    expect(typicalIncome(inp({ series: [PAY], profile: steady(12345, "match") })).amount).toBe(400000);
+  });
+
+  it("a spending line is never matched to a pay date, and last month's lines count only when paid, linked to a counted series and in reach", () => {
+    const spendingMatch = month("2026-10", [line({ id: "sp", role: "spending", amount: mu(400000) })]);
+    expect(incomeThisMonth(inp({ current: spendingMatch, series: [PAY] }))).toMatchObject({ received: 0, total: 0 });
+    const prev = (lines: V3Line[], m = "2026-09"): V3Month[] => [month(m, lines)];
+    const stray = [
+      line({ id: "pending", date: "2026-09-30", seriesId: "pay", status: "pending" }),
+      line({ id: "typed", date: "2026-09-30" }),
+      line({ id: "other", date: "2026-09-30", seriesId: "elsewhere" }),
+    ];
+    expect(incomeThisMonth(inp({ history: prev(stray), series: [PAY] })).received).toBe(0);
+    // the line on the first day of reach (09-24) settles the 10-01 pay; a month label that is not last month is not read
+    expect(incomeThisMonth(inp({ history: prev([line({ id: "edge", date: "2026-09-24", seriesId: "pay" })]), series: [PAY] })).received).toBe(400000);
+    expect(incomeThisMonth(inp({ history: prev([line({ id: "edge", date: "2026-09-30", seriesId: "pay" })], "2026-08"), series: [PAY] })).received).toBe(0);
+  });
+
+  it("every month figure names incomeThisMonth when it passes the safe range, and typicalIncome names itself", () => {
+    const pa = ser({ id: "pa", amount: mu(BIG6) });
+    const pb = ser({ id: "pb", anchorDate: "2026-04-02", amount: mu(BIG6) });
+    const paid = month("2026-10", [line({ id: "la", seriesId: "pa", amount: mu(BIG6) }), line({ id: "lb", date: "2026-10-02", seriesId: "pb", amount: mu(BIG6) })]);
+    expect(() => incomeThisMonth(inp({ current: paid, series: [pa, pb] }))).toThrow(OVER("incomeThisMonth"));
+    const dueA = ser({ id: "da", anchorDate: "2026-04-20", amount: mu(BIG6) });
+    const dueB = ser({ id: "db", anchorDate: "2026-04-25", amount: mu(BIG6) });
+    expect(() => incomeThisMonth(inp({ current: month("2026-10", []), series: [dueA, dueB] }))).toThrow(OVER("incomeThisMonth"));
+    const mixed = month("2026-10", [line({ id: "la", seriesId: "pa", amount: mu(BIG6) })]);
+    expect(() => incomeThisMonth(inp({ current: mixed, series: [pa, dueB] }))).toThrow(OVER("incomeThisMonth"));
+    expect(() => typicalIncome(inp({ series: [pa, pb] }))).toThrow(OVER("typicalIncome"));
   });
 });

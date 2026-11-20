@@ -268,4 +268,15 @@ describe('usualPayOf (audit fix 261114: quick income in the usual month)', () =>
     const march = ser({ id: 'march', role: 'pay', anchorDate: '2027-03-01' });
     expect(usualPayOf([march, monthly], asOf).map((s) => s.id)).toEqual(['pay']);
   });
+  it('05.4-60 only a longer-than-monthly pay marked excluded is left out; a pay starting exactly one month on is kept', () => {
+    const pay = (id: string, over: Partial<V3Series>): V3Series => ser({ id, role: 'pay', anchorDate: '2026-11-01', ...over });
+    const out = (s: V3Series): string[] => usualPayOf([s], asOf).map((x) => x.id);
+    expect(out(pay('biweekly', { cadence: { unit: 'week', every: 2 }, typicalChoice: 'excluded' }))).toEqual(['biweekly']);
+    expect(out(pay('monthly', { typicalChoice: 'excluded' }))).toEqual(['monthly']);
+    expect(out(pay('quarterly', { cadence: { unit: 'month', every: 3 } }))).toEqual(['quarterly']);
+    expect(out(pay('quarterly-in', { cadence: { unit: 'month', every: 3 }, typicalChoice: 'included' as never }))).toEqual(['quarterly-in']);
+    expect(out(pay('quarterly-out', { cadence: { unit: 'month', every: 3 }, typicalChoice: 'excluded' }))).toEqual([]);
+    expect(out(pay('on-the-line', { anchorDate: '2026-12-14' }))).toEqual(['on-the-line']);
+    expect(out(pay('a-day-past', { anchorDate: '2026-12-15' }))).toEqual([]);
+  });
 });

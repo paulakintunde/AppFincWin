@@ -1,5 +1,5 @@
 -- pgTAP: 08.1-05 APP-21 -- app_config key decide_off exists, defaults to 'false', clients read it and cannot write it.
--- Needs 20260922000200 and 20261123000300.
+-- Needs 20260922000200 and 20261125000300.
 
 begin;
 create extension if not exists pgtap with schema extensions;

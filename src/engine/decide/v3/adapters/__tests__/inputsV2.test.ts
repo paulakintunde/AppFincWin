@@ -163,3 +163,78 @@ describe('parseCheckV2', () => {
     expect(readStoredCheck({ method: 'cash', advertised: 5 }).reasons).toContain('legacy_upgraded');
   });
 });
+
+describe('parseCheckV2 boundaries (05.4-62 mutation kills)', () => {
+  const parse = (over: Record<string, unknown>) => parseCheckV2({ v: 2, ...over })!;
+
+  it('foreign currency is 2 to 4 capitals or digits', () => {
+    const f = (currency: unknown) => parse({ foreign: { currency } }).foreign;
+    expect(f('EUR')).toEqual({ currency: 'EUR', atTodaysRate: true });
+    expect(f('EU')).toEqual({ currency: 'EU', atTodaysRate: true });
+    expect(f('AB12')).toEqual({ currency: 'AB12', atTodaysRate: true });
+    for (const bad of ['E', 'EURO1', 'eur', 'EU-', '', 5]) expect(f(bad)).toBeNull();
+  });
+
+  it('ids are 1 to 80 characters', () => {
+    expect(parse({ categoryId: 'a'.repeat(80) }).categoryId).toBe('a'.repeat(80));
+    expect(parse({ categoryId: 'a'.repeat(81) }).categoryId).toBeNull();
+    expect(parse({ categoryId: '' }).categoryId).toBeNull();
+    expect(parse({ categoryId: 'a' }).categoryId).toBe('a');
+  });
+
+  it('item type and purpose need the right kind as well as the value', () => {
+    expect(parse({ itemType: { kind: 'bogus', value: 'electronics' } }).itemType).toEqual({ kind: 'preset', value: 'general' });
+    expect(parse({ itemType: { kind: 'preset', value: 'electronics' } }).itemType).toEqual({ kind: 'preset', value: 'electronics' });
+    expect(parse({ purpose: { kind: 'bogus', value: 'treat' } }).purpose).toBeNull();
+    expect(parse({ purpose: { kind: 'preset', value: 'treat' } }).purpose).toEqual({ kind: 'preset', value: 'treat' });
+  });
+
+  it('a deferred first payment needs kind, a string date and reads the pause flag', () => {
+    const fp = (firstPayment: unknown) => (parse({ pay: { mode: 'plan', firstPayment } }).pay as { firstPayment: unknown }).firstPayment;
+    expect(fp({ kind: 'bogus', firstDate: '2026-12-01' })).toBeNull();
+    expect(fp({ kind: 'deferred' })).toBeNull();
+    expect(fp({ kind: 'deferred', firstDate: 20261201 })).toBeNull();
+    expect(fp({ kind: 'deferred', firstDate: '2026-12-01', interestDuringPause: 'yes' })).toEqual({ kind: 'deferred', firstDate: '2026-12-01', interestDuringPause: null });
+    expect(fp({ kind: 'deferred', firstDate: '2026-12-01', interestDuringPause: false })).toEqual({ kind: 'deferred', firstDate: '2026-12-01', interestDuringPause: false });
+    expect(fp(5)).toBeNull();
+  });
+
+  it('a split rule needs its kind and its list', () => {
+    const hh = (rule: unknown) => parse({ share: { kind: 'household', memberCount: 2, myIndex: 0, rule } }).share;
+    expect(hh({ kind: 'weight' })).toEqual({ kind: 'personal' });
+    expect(hh({ kind: 'bogus', weights: [1, 2] })).toEqual({ kind: 'personal' });
+    expect(hh({ kind: 'amount' })).toEqual({ kind: 'personal' });
+    expect(hh({ kind: 'bogus', amounts: [1, 2] })).toEqual({ kind: 'personal' });
+    expect(hh({ kind: 'weight', weights: [1, 2] })).toEqual({ kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'weight', weights: [1, 2] } });
+    expect(hh({ kind: 'amount', amounts: [1, 2] })).toMatchObject({ rule: { kind: 'amount', amounts: [1, 2] } });
+  });
+
+  it('my index runs from 0 to the member count minus one', () => {
+    const at = (memberCount: number, myIndex: number) => parse({ share: { kind: 'household', memberCount, myIndex, rule: { kind: 'even' } } }).share;
+    expect(at(2, 1)).toEqual({ kind: 'household', memberCount: 2, myIndex: 1, rule: { kind: 'even' } });
+    expect(at(2, 2)).toEqual({ kind: 'personal' });
+    expect(at(3, 3)).toEqual({ kind: 'personal' });
+    expect(at(20, 19)).toMatchObject({ kind: 'household', myIndex: 19 });
+  });
+
+  it('extras keys are 1 to 80 characters and need a number', () => {
+    const k80 = 'k'.repeat(80);
+    expect(parse({ extras: { [k80]: 5, ['k'.repeat(81)]: 6, '': 7, x: 'no', y: 8 } }).extras).toEqual({ [k80]: 5, y: 8 });
+  });
+
+  it('a note name is trimmed, cut to 80 and trimmed again', () => {
+    const name = (n: unknown) => (parse({ quickLines: [{ id: 'q', kind: 'savings', amount: 1, name: n }] }).quickLines as unknown as { name: string }[])[0]!.name;
+    expect(name('   ' + 'a'.repeat(100))).toBe('a'.repeat(80));
+    expect(name('a'.repeat(79) + ' ' + 'b'.repeat(10))).toBe('a'.repeat(79));
+    expect(name('  hi  ')).toBe('hi');
+    expect(name(5)).toBe('');
+  });
+
+  it('a stopped cost source needs the bill kind for a series id', () => {
+    const stop = (source: unknown) => (parse({ replaces: { stops: [{ id: 's', amount: 1, everyMonths: 1, stopDate: '2026-12-01', source }] } }).replaces as unknown as { stops: unknown[] }).stops;
+    expect(stop({ kind: 'bogus', seriesId: 'b1' })).toEqual([]);
+    expect(stop({ kind: 'bill', seriesId: 'b1' })).toEqual([{ id: 's', amount: 1, everyMonths: 1, stopDate: '2026-12-01', source: { kind: 'bill', seriesId: 'b1' } }]);
+    expect(stop({ kind: 'bill' })).toEqual([]);
+    expect(stop({ kind: 'everyday', categoryId: 'c' })).toHaveLength(1);
+  });
+});

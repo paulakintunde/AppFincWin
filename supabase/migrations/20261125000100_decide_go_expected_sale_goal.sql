@@ -1,5 +1,5 @@
 -- 08.1-02 ARC-24 (CONTEXT D-09, D-10, D-11; 05.5-13 option B): the server half of Record as bought. Proven by
--- supabase/tests/database/112_decide_go_one_save.test.sql. Not pushed by this plan: plan 16 pushes every 08.1 migration.
+-- supabase/tests/database/112_decide_go_one_save.test.sql. Not pushed by this plan: plan 15 pushes every 08.1 migration.
 --
 --   1. recurring_series.amount_kind ('exact' | 'expected', default 'exact'): an expected line is a monthly Activity line
 --      for a varying running cost. Every existing series reads exact, so old builds are unaffected. create_recurring_series

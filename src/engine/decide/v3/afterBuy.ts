@@ -80,6 +80,7 @@ export function homeFigure(prepared: { readonly readings: readonly { readonly mo
   let low: MinorUnits | null = null;
   for (const r of prepared.readings) {
     const m = monthAfterPlans(r.month);
+    // Stryker disable next-line EqualityOperator: equal readings give the same lowest figure, so < and <= agree
     if (low === null || m < low) low = m;
   }
   if (low === null) throw new RangeError('homeFigure: a Prepared has at least one reading');

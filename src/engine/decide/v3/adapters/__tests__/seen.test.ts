@@ -40,6 +40,7 @@ describe('changeSinceLooked', () => {
     const base = seenOf(result({ code: 'not_yet', readyBy: date('2026-12-01'), facts: [after(10_000), line('debt_share')] }));
     const same = changeSinceLooked(base, result({ code: 'not_yet', readyBy: date('2026-12-01'), facts: [after(10_001), line('debt_share')] }));
     expect(same).toMatchObject({ changed: false, reasons: [] });
+    expect(changeSinceLooked(base, result({ code: 'not_yet', readyBy: date('2027-01-01'), facts: [after(10_000), line('debt_share')] })).changed).toBe(true);
     expect(changeSinceLooked(base, result({ code: 'not_yet', readyBy: date('2027-01-01'), facts: [after(10_000), line('debt_share')] })).reasons).toEqual(['ready_by_changed']);
     expect(changeSinceLooked(base, result({ code: 'not_yet', readyBy: { kind: 'month', month: '2026-12' }, facts: [after(10_000), line('debt_share')] })).reasons).toEqual(['ready_by_changed']);
     expect(changeSinceLooked(base, result({ code: 'not_yet', readyBy: null, facts: [after(10_000), line('debt_share')] })).reasons).toEqual(['ready_by_changed']);
@@ -65,5 +66,31 @@ describe('changeSinceLooked', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'seen.ts'), 'utf8');
     expect(src).not.toMatch(/verdict_at_decision/);
     expect(changeSinceLooked.length).toBe(2);
+  });
+});
+
+describe('seen boundaries (05.4-62 mutation kills)', () => {
+  it('only line_crossed facts carry line ids, and a null id is no line', () => {
+    expect(seenOf(result({ facts: [{ code: 'other_fact' as never, values: { lineId: 'z' } }] })).lineFacts).toEqual([]);
+    expect(seenOf(result({ facts: [{ code: 'line_crossed', values: { lineId: null } }] })).lineFacts).toEqual([]);
+    expect(seenOf(result({ facts: [{ code: 'line_crossed', values: { lineId: 'q' } }] })).lineFacts).toEqual(['q']);
+  });
+
+  it('a stored seen record must be an object with v 3 and a string code', () => {
+    const fn = Object.assign(() => undefined, { v: 3, code: 'fits_month' });
+    const bad: unknown[] = [undefined, 5, fn, { v: 2, code: 'fits_month' }, { v: 3, code: 5 }, { v: 3 }, { code: 'fits_month' }];
+    for (const prev of bad) {
+      const r = changeSinceLooked(prev as never, result());
+      expect(r.changed).toBe(false);
+      expect(r.reasons).toEqual([]);
+    }
+  });
+
+  it('a ready-by month and a date are told apart, and no ready-by is its own key', () => {
+    const a = seenOf(result({ readyBy: { kind: 'month', month: '2026-12' } }));
+    expect(changeSinceLooked(a, result({ readyBy: { kind: 'month', month: '2026-12' } })).changed).toBe(false);
+    expect(changeSinceLooked(a, result({ readyBy: { kind: 'month', month: '2027-01' } })).reasons).toEqual(['ready_by_changed']);
+    expect(changeSinceLooked(seenOf(result()), result({ readyBy: { kind: 'date', date: '2026-12-01' } })).reasons).toEqual(['ready_by_changed']);
+    expect(changeSinceLooked(seenOf(result()), result()).changed).toBe(false);
   });
 });

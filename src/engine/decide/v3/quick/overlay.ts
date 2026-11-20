@@ -40,7 +40,9 @@ const validDate = (d: LocalDate | null): d is LocalDate => d !== null && isValid
 /** The first occurrence on or after `from`, stepping `every` months from `start`; and how many steps that took. */
 function rollForward(start: LocalDate, every: number, from: LocalDate): { readonly date: LocalDate; readonly steps: number } {
   let steps = 0;
+  // Stryker disable next-line ArithmeticOperator: rollForward is only called with every = 1, so steps * every and steps / every are the same
   while (addMonthsClamped(start, steps * every) < from) steps += 1;
+  // Stryker disable next-line ArithmeticOperator: rollForward is only called with every = 1, so steps * every and steps / every are the same
   return { date: addMonthsClamped(start, steps * every), steps };
 }
 
@@ -105,6 +107,7 @@ function foldLine(line: QuickLine, asOf: LocalDate, acc: Folded): 0 | 1 {
       if (!positive(line.amount)) return 0;
       const date = dated(line.date);
       if (line.everyMonths === 0) {
+        // Stryker disable next-line EqualityOperator: a date equal to asOf gives asOf either way
         const on = date !== null && date > asOf ? date : asOf;
         acc.series.push(series(line.id, line.name, 'bill', line.amount, on, on, 'excluded'));
       } else {
@@ -113,6 +116,7 @@ function foldLine(line: QuickLine, asOf: LocalDate, acc: Folded): 0 | 1 {
       return 1;
     }
     case 'loan': {
+      // Stryker disable next-line ConditionalExpression: a payment count below 1 leaves nothing owed, which the positive check on the next lines rejects the same way
       if (!positive(line.monthly) || !Number.isInteger(line.payments) || line.payments < 1) return 0;
       const rolled = rollForward(dated(line.firstDate) ?? addMonthsClamped(asOf, 1), 1, asOf);
       const owed = line.monthly * (line.payments - rolled.steps);
@@ -125,6 +129,7 @@ function foldLine(line: QuickLine, asOf: LocalDate, acc: Folded): 0 | 1 {
       const from = addDays(asOf, 1);
       const date = dated(line.date) ?? from;
       if (line.everyMonths === 0) {
+        // Stryker disable next-line EqualityOperator: a date equal to tomorrow gives tomorrow either way
         const on = date < from ? from : date;
         acc.series.push(series(line.id, line.name, 'pay', line.amount, on, on, 'excluded'));
         if (inThisMonth(on, asOf)) acc.arriving += line.amount;
@@ -182,6 +187,7 @@ export function withQuickLinesPrepared(
 
 /** judgeCheck for this check with its quick lines counted; with none, exactly judgeCheck. */
 export function judgeWithQuickLines(prepared: Prepared, check: CheckV2): Evaluation {
+  // Stryker disable next-line ConditionalExpression,ArrayDeclaration: with no quick lines, the second path folds nothing and returns the same judgeCheck answer
   if ((check.quickLines ?? []).length === 0) return judgeCheck(prepared, check);
   const overlay = withQuickLinesPrepared(prepared, check);
   if (overlay.counted === 0) return judgeCheck(prepared, overlay.check);

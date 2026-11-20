@@ -16,6 +16,7 @@ export function envelopesOf(envs: readonly Envelope[], asOf: string): { readonly
  * goal gives 0 too, because its money is already counted as spare money through its account (funds/unlockedGoals.ts).
  */
 export function ownEnvelope(envs: readonly Envelope[], envelopeId: string | null): MinorUnits {
+  // Stryker disable next-line ConditionalExpression: a null id finds no envelope and gives 0 as well, so the early return is a shortcut
   if (envelopeId === null) return minorUnits(0);
   const e = envs.find((x) => x.id === envelopeId);
   return e === undefined || e.locked === false ? minorUnits(0) : e.saved;

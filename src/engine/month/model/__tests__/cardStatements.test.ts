@@ -65,4 +65,17 @@ describe('cardPaidInFullHistory', () => {
     const big = Number.MAX_SAFE_INTEGER;
     expect(() => cardPaidInFullHistory(base({ fromMonth: '2026-07', balanceNow: mu(big), lines: [L('2026-08-10', -big)] }))).toThrow(RangeError);
   });
+
+  it('05.4-60 the error names the function', () => {
+    const six = 6_000_000_000_000_000;
+    const input = base({ fromMonth: '2026-07', balanceNow: mu(-six), lines: [L('2026-08-10', six)] });
+    expect(() => cardPaidInFullHistory(input)).toThrow('cardPaidInFullHistory: result exceeds Number.MAX_SAFE_INTEGER');
+  });
+
+  it('05.4-60 a line on the month end belongs to that month; a payment on the last day of the window still counts', () => {
+    // 07-31: the 5,000.00 charge on the month end is inside July, so 5,000.00 is owed at its end and nothing pays it
+    expect(cardPaidInFullHistory(base({ fromMonth: '2026-07', balanceNow: mu(-5000), lines: [L('2026-07-31', -5000)] }))).toEqual([false]);
+    // 09-30 is the last day of the two-month window: a 50.00 payment that day clears the 50.00 owed on 07-31
+    expect(cardPaidInFullHistory(base({ fromMonth: '2026-07', balanceNow: mu(0), lines: [L('2026-09-30', 5000)] }))).toEqual([true]);
+  });
 });

@@ -122,3 +122,10 @@ describe('salesTaxOf', () => {
     expect(() => salesTaxOf(m(1), -1n as never)).toThrow(RangeError);
   });
 });
+
+describe('salesTaxOf mutation kills (05.4-58)', () => {
+  it('a negative rate is refused by name and a result too large for a safe integer names the function', () => {
+    expect(() => salesTaxOf(minorUnits(1_000), -1n as never)).toThrow('salesTaxOf: tax percent -1 must be >= 0');
+    expect(() => salesTaxOf(minorUnits(Number.MAX_SAFE_INTEGER), percent('200'))).toThrow(/^salesTaxOf: /);
+  });
+});

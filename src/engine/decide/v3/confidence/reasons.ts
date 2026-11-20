@@ -100,6 +100,7 @@ export function pickNextStep(reasons: readonly ReasonItem[]): NextStep | null {
 }
 
 function baseOf(b: Basis): BasisBase {
+  // Stryker disable next-line StringLiteral: a typed-only basis never prints its upTo date, so the empty string is not observable
   if (b.kind === 'quick_estimates') return { typedOnly: true, monthsUsed: 0, upTo: '' };
   return { typedOnly: false, monthsUsed: b.kind === 'partial' ? b.used : b.months, upTo: b.upTo };
 }

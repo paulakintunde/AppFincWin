@@ -6,7 +6,7 @@
 //   WR-A02 (20261021000100): the row-payload overload. The server inserts the rows in the same transaction as
 //   the decision, so a refusal leaves nothing behind; the old row-id overload (rows inserted first in a
 //   separate request) is no longer called.
-//   08.1-02 (20261123000100): three optional trailing arguments, sent only when the user ticked them, all in the same
+//   08.1-02 (20261125000100): three optional trailing arguments, sent only when the user ticked them, all in the same
 //   transaction and under the same single undo step: p_sale (the sale money in), p_payoff (the old loan's final payment)
 //   and p_goal_close ({ goal_id }, closes a goal made by this check). A goal that is not the caller's or not linked to the
 //   check is refused as 'goal_not_linked' (see isDecideGoGoalNotLinked). Series may carry amount_kind 'expected'.
