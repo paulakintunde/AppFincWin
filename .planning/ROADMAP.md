@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide, reading test round 2, public switch-on. Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
-- [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
+- [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
 
@@ -1605,7 +1605,7 @@ Plans:
 - [x] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
+- [x] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
 **UI hint**: yes
 **Research flag**: Two blocking decisions, both currently open in PROJECT.md, must be resolved before gating is implemented — not during: (1) which of the ~50 features are Free versus Pro, since the paywall's original five-item pitch lost cloud sync and tax export to the architecture decision; (2) whether the Coach ships as a real LLM and on what terms, including a server-side post-filter against prescriptive language before implementation. Everything built before these decisions stays tier-agnostic behind a single entitlement check.
 
@@ -1699,6 +1699,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 0/19 | Planned | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 25/26 | In Progress|  |
+| 9. Tiers & Onboarding | 26/26 | Complete   | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |

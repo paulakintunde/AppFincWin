@@ -25,6 +25,7 @@ It records build ids and results only. No keys, emails or account ids go here (T
 - Build id: a577d4c4-3e89-4a83-972e-08790cc55aae (EAS preview, Android, app 0.2.0, runtime 583da0c2, from phase/09-tiers-onboarding @ 93b8b866, finished 2026-11-19). RevenueCat Android key not yet set in EAS, so Plans shows its store-error state.
 - Install link: https://expo.dev/artifacts/eas/MsfJIONxulD7jTn6E_hrpNy8KldtfhMmrsV9ABJ1k8c.apk (install over the current preview with `adb install -r` to keep data)
 - OTA 2026-11-19: update group 99300f1e-a8e3-4fd4-b83e-80f6e72bad0f (branch preview, runtime 583da0c2, commit c0e2bb1e): device-check fixes A2.4 (Sample bar at large text), A2-W (read-only guard at the write layer, lock marks, sample writes never queued), Features switches work in sample (owner choice). Full jest 37,022 passed; CI green.
+- Build f1139d8f-1632-4de4-811f-c6ccc46b9ef6 (from 91c1efc8, all device-check fixes built in): https://expo.dev/artifacts/eas/LJYoP_3W6NRn2iXZqr34aIzoh1ODWx1pwMd9qd2bOIE.apk; final OTA 12fc258c (read-only Activity empty month).
 - Why a new build is needed: react-native-purchases changes the native fingerprint, so an OTA update cannot deliver it. The iOS build waits for Apple enrolment.
 
 ---
@@ -35,42 +36,42 @@ Before the pass: with the owner's OK, Claude adds the test account's user id to 
 
 ### A1. First run, every question skipped (TIER-01, D-28)
 expected: Sign in with a new test account. Skip every question. You reach the summary on Everyday, then the sample Decide answer. Time it: under 60 seconds and 8 taps.
-result: [pending]
+result: pass (Pixel 6, account #7 reset to new and on enforce_for). Fast; Skip the rest available. First attempt hit the first-account screen because the Pixel 6 still ran an older build; fine on build fcc53439.
 
 ### A2. Look-around in sample mode (D-28, D-17b)
 expected: Look around all five tabs. The Sample bar is pinned on every tab. Tap Add, Import and a new check: each says "That needs your own records". The sample figures card shows once with "Explore the app".
-result: [pending]
+result: pass after fixes. Sample bar on every tab; Add/Import/new check/Grow + show "That needs your own records". Fixed during the pass: Sample bar at large text (A2.4, 5c241f7c); every create/update/delete refused in sample by a central write-layer guard, lock marks swept across Decide/Activity/Grow/Home/You, sample writes never queued (A2-W, c0e2bb1e). Server check: 0 own records, 0 of 112 sample lines changed.
 
 ### A3. Plans screen (TIER-07, TIER-08)
 expected: Tap "Start 14-day free trial". The Plans screen shows Yearly selected, the plans with both prices (or "Plans could not load" while the Play products are not set up, which is a valid check of that state), the disclosure lines, the price pledge and Restore purchases.
-result: [pending]
+result: pass for this build: "Plans could not load" store-error state, Restore purchases (RevenueCat not set up, ENV-12). Note: heading repeated in body copy (review list).
 
 ### A4. Subscription and Features (TIER-10, TIER-03, TIER-05)
 expected: You > Subscription: Manage subscription is first. You > Features: each row shows its reason. Switch a feature above your level on, then off with Undo.
-result: [pending]
+result: pass. Subscription "No plan yet" with trial button, Restore, pledge, Terms/Privacy. Features: owner chose switches work in sample with no per-row Needs a plan (f92f769a); level card and count correct; Repeating bills held on by sample records (review list).
 
 ### A5. Lock with the enforce_for test account (TIER-09, D-02, D-03)
 expected: The Read-only banner shows on every tab. Add says "Adding a transaction needs a plan". The "Your plan has ended" screen lists Read, Export, Free help, Manage subscription, Restore, Sign out and Delete account. Export your data produces CSV files.
-result: [pending]
+result: pass after fixes (account #4 with a test lapsed plan). Read-only banner, Your plan has ended screen, Export CSV, Free help, sign in/out lands on plan ended. Fixed: locked home no longer forced to the first-account screen, Money rows open, Manage subscription opens the store page, Needs a plan lines read as a list (A5-1..4), banner double status-bar gap, FAB lock mark, no Add a bill / Add a transaction / Paste a list while read-only.
 
 ### A6. Offline saves while locked (D-40)
 expected: Turn on airplane mode, add an entry, turn airplane mode off. "Saved on this phone. Choose a plan to sync" appears with the count. Nothing is lost.
-result: [pending]
+result: pass: with the central guard, an offline save while locked opens the needs-a-plan sheet and nothing is kept or sent (owner: works well). D-40 kept-writes path still covers refusals from other devices.
 
 ### A7. TalkBack (UI-SPEC accessibility)
 expected: TalkBack on the Plans screen and on one question screen. The reading order matches UI-SPEC.
-result: [pending]
+result: pass after fix (Pixel 9, driven via uinput virtual touchscreen). Focus now lands on each question heading and reads "<title> n of 11. Heading" after Skip/Continue (500 ms delay so TalkBack placement does not win; punctuation fixed).
 
 ### A8. Existing account (D-29)
 expected: The owner's own account: no onboarding, Everything level, the "Run setup to simplify the app" card on Home, and "Free access" in Subscription.
-result: [pending]
+result: pass. Owner account: no onboarding, Everything, Run setup card (margin fixed), Free access. Owner grant (no end date) waits for RevenueCat.
 
 ### A9. Device looks raised during the build (see Part C1)
 expected: While on the device, also look at: Android back on question 1 (C1.10), the Sample bar at large font (C1.14), where "Explore the app" goes (C1.13), and the Rust and Brick member colours side by side (C1.15).
-result: [pending]
+result: pass: Android back on Q1, Sample bar at large font (fixed), Explore the app destination and Rust/Brick colours left for the owner review list.
 
 ### Device pass
-result: [pending: owner response and date go here; enforce_for restored, confirmed with a read-only select]
+result: PASSED 2026-11-19, owner ("Everything tested okay"). Devices: Pixel 6 and Pixel 9, builds a577d4c4 / fcc53439 / f1139d8f plus OTAs 99300f1e, 79a157af, 47171e95, 3f88c955, e2e22fef, 12fc258c. Test setup removed: #4 lapsed test row deleted and enforce_for emptied, confirmed with a read-only select (enforce_for 0, lapsed 0, promo 4, paid_from null).
 
 ---
 
