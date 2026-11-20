@@ -813,7 +813,7 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
   it('with no earlier month: quick estimates are the primary and open the quick-estimates setup (A-ANS-3)', async () => {
     load(notReadyRun());
     await open();
-    await press(screen.getByText('Answer from quick estimates'));
+    await press(screen.getByText('Get a first read') /* 08.1-21: the quick-estimates primary is now labelled by the stage copy */);
     expect(mockPush).toHaveBeenCalledWith(`/decide/setup/quick-estimates?returnTo=${encodeURIComponent('/decide/answer/c1')}`);
   });
 

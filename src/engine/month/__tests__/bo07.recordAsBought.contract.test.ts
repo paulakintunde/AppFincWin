@@ -39,7 +39,7 @@ describe('BO-07: record as bought', () => {
 
   it('fixed running costs become Activity bills; varying costs become expected spending', () => {
     // Writer side: a line that varies is written as an 'expected' series; a fixed one carries no kind (read back as exact).
-    expect(WRITER).toContain("line.varies === true ? { ...bill, amount_kind: 'expected' } : bill");
+    expect(WRITER).toContain("line.varies === true ? { ...bill, amount_kind: 'expected' as const } : bill");
     // Engine side: an exact bill counts whole; an expected line counts max(0, expected - real spending in its category), once.
     const spent: V3Line = {
       id: 'l1', date: '2026-11-10', amount: minorUnits(-5000), role: 'spending', status: 'paid', seriesId: null,
