@@ -2430,7 +2430,8 @@ const en = {
         irregular_income: 'Your income changes from month to month. This counts your lower months.',
         close_to_line: 'This is close to your limit. A small change in any figure can change the answer.',
         expected_bills: 'Some bills this month are expected, not yet confirmed paid.',
-        shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21 interim couples note; emitted from Phase 8
+        household_not_shared: 'Only your money is counted. {{names}} hasn’t shared theirs.', // D-03 (08.1-08), wording sign-off pending
+        shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21, emitted from 08.1-08
         rate_estimated: 'This rate is FincWin’s estimate from the payment, not the rate on your agreement.',
         long_plan: 'Over {{months}} months, a change in income or costs matters more than it does today.',
         // D-64 (5): the figures a big purchase rests on, then the one line under them.

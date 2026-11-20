@@ -1,7 +1,7 @@
 /**
  * 05.4-43 (QA-02, QA-03): the end-of-phase conditions, asserted in code.
  * - QA-03: no rule pending between the engine and the plain calculator (PENDING_RULES empty).
- * - QA-02: every approved right-answer case passes, so every knownRed list is empty; household stays to_do (6 cases).
+ * - QA-02: every approved right-answer case passes, so every knownRed list is empty; household: 6 older cases stay to_do, HH-07..13 approved by 08.1-08.
  * - No draft case is left except drafts added from shadow-run surprises (marked "from shadow run").
  *
  * OPEN_AT_43 is what was still open when 05.4-43 was built (2026-11-06): the PLAIN-PLANS pending entry (no plan
@@ -33,10 +33,11 @@ describe('05.4 phase gate', () => {
     for (const topic of TOPICS) expect({ topic, red: loadKnownRed(topic) }).toEqual({ topic, red: [] });
   });
 
-  it('household has exactly 6 cases, all to_do', () => {
+  it('household has the 6 older cases still to_do and, from 08.1-08, HH-07 to HH-13 approved', () => {
     const household = loadCases().filter((c) => c.topic === 'household');
-    expect(household).toHaveLength(6);
-    expect(household.every((c) => c.status === 'to_do')).toBe(true);
+    expect(household).toHaveLength(13);
+    expect(household.filter((c) => c.status === 'to_do').map((c) => c.id)).toEqual(['HH-01', 'HH-02', 'HH-03', 'HH-04', 'HH-05', 'HH-06']);
+    expect(household.filter((c) => c.status === 'approved').map((c) => c.id)).toEqual(['HH-07', 'HH-08', 'HH-09', 'HH-10', 'HH-11', 'HH-12', 'HH-13']);
   });
 
   it('no draft outside household except shadow-run drafts and those open when 05.4-43 was built', () => {

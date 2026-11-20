@@ -51,6 +51,7 @@ export const V3_RUNTIME_EXPORTS = [
   'FURTHER_SHORTFALL_MAJOR',
   'FUTURE_ORDER',
   'HISTORY_PAY_MIN_MONTHS',
+  'HOUSEHOLD_LINE_ID', // 08.1-08 CMP-F19
   'INCLUDED_COUNTRIES', // 05.4-25 FIN-27 (D-19): UK and EU, prices include tax
   'INCOME_SWING_CV_PERCENT',
   'INCOME_SWING_MIN_MONTHS',
@@ -129,6 +130,7 @@ export const V3_RUNTIME_EXPORTS = [
   'V3_ITEM_TYPES',
   'V3_VARIABLE_HISTORY_MONTHS',
   'VERDICT_TABLE',
+  'applyHouseholdMoney', // 08.1-08 CMP-F19
   'bandOf',
   'buildMonthModel',
   'buildSchedule',

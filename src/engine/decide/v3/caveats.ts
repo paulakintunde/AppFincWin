@@ -20,6 +20,7 @@ export const CAVEAT_ORDER: readonly CaveatCode[] = Object.freeze([
   'irregular_income',
   'close_to_line',
   'expected_bills',
+  'household_not_shared',
   'shared_money',
   'rate_estimated',
   'tax_not_included',
@@ -91,6 +92,13 @@ export function caveatsFor(src: CaveatSource, inputs: V3Inputs, check: CheckV2):
   add('irregular_income', reasons.has('lean_months_used') || reasons.has('volatile_cover_declined') || r.notices.some((n) => n.code === 'income_volatile'));
   // The tight rule's floor fact is the answer sitting close to the line (FIN-07, D-40); the confidence reason is declared for it too.
   add('close_to_line', conf.has('close_to_line') || facts.has('tight_floor'));
+  // 08.1-08 D-03: Household was asked for and some partner's money is not counted; the screen resolves the names (D-32).
+  const notShared = inputs.household?.scope === 'household' ? inputs.household.notShared : [];
+  if (notShared.length > 0) found.push({ code: 'household_not_shared', values: { names: notShared.join(',') } });
+  // 08.1-08 UX-21 (owner 2026-11-20, either scope): money counted that sits in an account in both names. A joint account with no
+  // money in it, or one no rate converts (it counts nowhere), is not "used".
+  const joint = (inputs.accounts ?? []).find((a) => a.joint === true && a.noRate !== true && a.balance > 0);
+  if (joint !== undefined) found.push({ code: 'shared_money', values: { account: joint.id } });
   add('rate_estimated', facts.has('implied_rate') || reasons.has('quote_used_no_rate'));
   add('tax_not_included', reasons.has('tax_not_included'));
   // Stryker disable next-line ConditionalExpression: a once check has no schedule, so planMonths gives null the same as the guard does

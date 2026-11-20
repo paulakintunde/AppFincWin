@@ -583,9 +583,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
       "expertNote": null
     },
     {
@@ -659,7 +659,7 @@
         }
       },
       "expected": {
-        "variant": null,
+        "variant": "no_net",
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [],
@@ -679,9 +679,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
       "expertNote": null
     },
     {
@@ -775,9 +775,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
       "expertNote": null
     },
     {
@@ -851,7 +851,7 @@
         }
       },
       "expected": {
-        "variant": null,
+        "variant": "no_net",
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [],
@@ -871,9 +871,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
       "expertNote": null
     },
     {
@@ -945,7 +945,7 @@
         }
       },
       "expected": {
-        "variant": null,
+        "variant": "no_net",
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [],
@@ -965,9 +965,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
       "expertNote": null
     },
     {
@@ -1039,7 +1039,7 @@
         }
       },
       "expected": {
-        "variant": null,
+        "variant": "no_net",
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
@@ -1059,9 +1059,9 @@
         "CMP-F04",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
       "expertNote": null
     },
     {
@@ -1133,7 +1133,7 @@
         }
       },
       "expected": {
-        "variant": null,
+        "variant": "no_net",
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [
@@ -1153,9 +1153,9 @@
         "CMP-F04",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
       "expertNote": null
     }
   ]

@@ -883,8 +883,40 @@ export function withoutUnrated(f: RightAnswerFixture): RightAnswerFixture {
 }
 
 /** The answer, with D-65's headline (D-63's on the Large tier) on every answer but an ask when the usual month is already short. */
+/**
+ * 08.1-08 (CMP-F19, QA-03): the money a Household check counts, restated from the owner-approved rule (2026-11-20): my money left this
+ * month plus the rounded figure of each partner who has both opt-ins on, of which I count my agreed share (largest remainder, the
+ * leftover units to the lowest index first). The difference from my own money is laid into the month like pay already in. Just me, no
+ * opt-in and no figure change nothing. Not read from the engine.
+ */
+export function plainHouseholdShare(pool: Cents, weights: readonly number[], me: number): Cents {
+  const sign = pool < 0n ? -1n : 1n;
+  const abs = pool < 0n ? -pool : pool;
+  const all = weights.reduce((s, w) => s + BigInt(w), 0n);
+  const parts = weights.map((w, i) => ({ i, floor: (abs * BigInt(w)) / all, rem: (abs * BigInt(w)) % all }));
+  const left = abs - parts.reduce((s, p) => s + p.floor, 0n);
+  const order = [...parts].sort((x, y) => (y.rem > x.rem ? 1 : y.rem < x.rem ? -1 : x.i - y.i));
+  const extra = order.slice(0, Number(left)).some((p) => p.i === me) ? 1n : 0n;
+  return sign * ((parts[me] as { floor: bigint }).floor + extra);
+}
+
+export function foldHousehold(f: RightAnswerFixture): RightAnswerFixture {
+  const h = f.household;
+  const p = h?.partnerFigure;
+  if (h === undefined || h.scope !== 'household' || p === undefined || !p.bothOn || p.roundedLeft === null) return f;
+  const own = leftThisMonth(f);
+  const slice = plainHouseholdShare(own + big(p.roundedLeft), h.weights ?? [1, 1], h.myIndex ?? 0);
+  const delta = Number(slice - own);
+  const first = f.accounts.findIndex((a) => a.kind === 'checking' || a.kind === 'current');
+  return {
+    ...f,
+    thisMonth: { ...f.thisMonth, received: f.thisMonth.received + delta },
+    accounts: f.accounts.map((a, i) => (i === first ? { ...a, balance: a.balance + delta } : a)),
+  };
+}
+
 export function plainAnswer(f0: RightAnswerFixture): PlainAnswer {
-  const f = withoutUnrated(foldQuickLines(withTaxSetAside(f0)));
+  const f = withoutUnrated(foldQuickLines(withTaxSetAside(foldHousehold(f0))));
   const a = plainCode(f);
   if (a.code === 'needs_input' || !usualMonthShort(f)) return a;
   // 05.4-22: "Only by borrowing" keeps the headline the plan's own fit gets when the month is already short

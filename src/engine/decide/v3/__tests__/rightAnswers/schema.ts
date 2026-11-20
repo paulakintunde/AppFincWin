@@ -26,7 +26,20 @@ export interface FixtureCheck {
   /** the check's existing `purpose` preset; necessity and for_work read as a need, nice_to_have/treat/luxury as a want (D-41: words and order only) */
   purpose?: 'invest_in_me'|'for_work'|'necessity'|'nice_to_have'|'treat'|'luxury'|null;
 }
+/**
+ * 08.1-08 (CMP-F19, UX-21, CMP-F04): the household side of a case. scope: the viewer's choice; weights/myIndex: the agreed split of
+ * the pool; partnerFigure: one partner's rounded money left (bothOn = both opt-ins on, roundedLeft = null when none is published);
+ * jointAccountIds: accounts in both names; settleUp: the viewer's settle-up as the payer. Absent = a one-person check.
+ */
+export interface FixtureHousehold {
+  scope: 'me' | 'household'; viewer?: string; weights?: number[]; myIndex?: number;
+  partnerFigure?: { name: string; bothOn: boolean; roundedLeft: number | null };
+  jointAccountIds?: string[];
+  settleUp?: { role: 'payer'; owed: number; lapsed: boolean };
+}
 export interface RightAnswerFixture {
+  /** 08.1-08: the household side; absent = a one-person check */
+  household?: FixtureHousehold;
   asOf: string; currency: 'USD'|'CAD'|'GBP'|'EUR'; region: { country: string; subdivision: string|null } | null;
   pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[];
     /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number; /** 06.1 FIN-20 (TX-16): false = no steady figure was set (the profile counts what comes in, so a quick income estimate stands in while nothing has come in); absent = pay.amount is the steady figure */ steady?: false };
@@ -51,7 +64,7 @@ export interface RightAnswerFixture {
   taxSetAsideBp?: number|null;
   check: FixtureCheck;
 }
-export interface Expected { code: string; variant: string|null; afterBuy: { month: number|null; usualMonth: number|null }; readyBy: string|null; mustHaveReasons: string[]; mustHaveFacts: string[]; mustNotHaveFacts: string[] }
+export interface Expected { /** 08.1-08: caveat codes the answer must / must not carry; absent = not asserted */ mustHaveCaveats?: string[]; mustNotHaveCaveats?: string[]; code: string; variant: string|null; afterBuy: { month: number|null; usualMonth: number|null }; readyBy: string|null; mustHaveReasons: string[]; mustHaveFacts: string[]; mustNotHaveFacts: string[] }
 export interface RightAnswerCase { id: string; topic: Topic; persona: string; situation: string; fixture: RightAnswerFixture; expected: Expected; why: string; fixIds: string[]; status: CaseStatus; approvedAt: string|null; ownerReason: string|null; expertNote: string|null; changeApproved?: string|null;
   /** round 1b: an "Owner check" note the review page shows, for a pending change the owner sees before it is applied; absent = none */
   reviewNote?: string|null;

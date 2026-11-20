@@ -56,7 +56,7 @@ import { expectedFor } from '../../month/model/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from '../../month/model/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../../month/model/settle';
 import { caveatsFor } from './caveats';
-import { freeHelpFacts } from './help/freeHelp';
+import { freeHelpFacts, settleUpTrouble } from './help/freeHelp';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
 import type { CheckV2, Fact, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Account, V3Inputs, YearMonth } from './types';
@@ -577,7 +577,7 @@ export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Ev
   // 05.4 D-64 (4), D-119 (05.4-37): read from the finished answer; it never changes it (I75).
   const caveats = caveatsFor({ result, month: chosen.month, purchase: chosen.purchase }, p.inputs, check);
   // 05.4 CMP-F04 (D-123, 05.4-38): the money-help pointer goes last, read from the finished answer; it never changes it (I76).
-  const help = freeHelpFacts(result, p.inputs.region);
+  const help = freeHelpFacts(result, p.inputs.region, settleUpTrouble(p.inputs.household, homeFigure(p)));
   return { ...chosen, result: { ...result, facts: [...result.facts, ...help], caveats } };
 }
 

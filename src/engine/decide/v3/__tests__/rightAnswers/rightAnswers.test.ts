@@ -29,6 +29,8 @@ function mismatches(c: RightAnswerCase, got: Picked): string[] {
   for (const r of e.mustHaveReasons) if (!got.reasons.includes(r)) out.push(`missing reason ${r}`);
   for (const f of e.mustHaveFacts) if (!got.facts.includes(f)) out.push(`missing fact ${f}`);
   for (const f of e.mustNotHaveFacts) if (got.facts.includes(f)) out.push(`unwanted fact ${f}`);
+  for (const c of e.mustHaveCaveats ?? []) if (!got.caveats.includes(c)) out.push(`missing caveat ${c}`);
+  for (const c of e.mustNotHaveCaveats ?? []) if (got.caveats.includes(c)) out.push(`unwanted caveat ${c}`);
   return out;
 }
 

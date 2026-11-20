@@ -5,7 +5,8 @@
  * the first one). GB, US and CA only for now (D-125); a country with no checked row gets no line.
  * The answer line (fact free_help, D-123) and the About sheet's section (08.1) read this one table.
  */
-import type { Fact, Result } from '../types';
+import type { MinorUnits } from '../../../money/types';
+import type { Fact, Result, V3Household } from '../types';
 
 export interface FreeHelpEntry {
   readonly name: string;
@@ -34,9 +35,20 @@ export function usualMonthShort(r: Pick<Result, 'code' | 'variant' | 'readiness'
   return r.code === 'monthly_short' || (r.variant !== null && MONTH_SHORT_VARIANTS.includes(r.variant));
 }
 
-/** The free_help fact for a finished answer, or none. Never changes the answer (I76). */
-export function freeHelpFacts(r: Pick<Result, 'code' | 'variant' | 'readiness'>, country: string | null): readonly Fact[] {
+/**
+ * 08.1-08 CMP-F04: a settle-up that is in trouble: a lapsed one the viewer owes, or an amount owed above the money the answer
+ * counts as left this month (owner 2026-11-20: spendable is the same figure the answer uses). Pure; the inputs carry the facts.
+ */
+export function settleUpTrouble(h: V3Household | null | undefined, spendable: MinorUnits): boolean {
+  const s = h?.settleUp;
+  if (s === null || s === undefined) return false;
+  return s.lapsedAsPayer || s.owed > spendable;
+}
+
+/** The free_help fact for a finished answer, or none. Never changes the answer (I76). `settleTrouble` adds the settle-up trigger (CMP-F04, 08.1-08). */
+export function freeHelpFacts(r: Pick<Result, 'code' | 'variant' | 'readiness'>, country: string | null, settleTrouble = false): readonly Fact[] {
   const entry = freeHelpFor(country);
-  if (entry === null || !usualMonthShort(r)) return [];
+  const answered = r.code !== 'needs_input' && r.readiness?.ready !== false;
+  if (entry === null || !(usualMonthShort(r) || (settleTrouble && answered))) return [];
   return [{ code: 'free_help', values: { country: country as string, name: entry.name } }];
 }
