@@ -8,8 +8,3 @@
  */
 // Owner 2026-11-06 (quick-261106-bf2): Decide opens for every tester. The app is testers-only, not on any store.
 export const DECIDE_OPEN: boolean = true;
-
-/**
- * 05.4 BO-06: the 05.2 setup page, engine readout and Decide settings are hidden from every account until 08.1.
- */
-export const DECIDE_SETUP_VISIBLE: boolean = false;
