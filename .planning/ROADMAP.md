@@ -1684,13 +1684,14 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 18/20 | In Progress | - |
+| 0. Foundation | 18/20 | In Progress: 00-07 Apple enrolment submitted and D-U-N-S issued, Play verification pending (PR #174); 00-20 iOS build on the iPhone XR waits on enrolment (due before 2026-12-02) | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 50/50 | Complete | 2026-10-09 |
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 38/38 | Complete    | 2026-10-14 |
+| 3. Shell | 38/38 | Complete | 2026-10-14 |
+| 03.1 Activity header redesign | 15/15 | Complete (PR #76) | 2026-10-15 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (screens rebuilt in 06.1; Decide open to every tester since 2026-11-06) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
@@ -1703,8 +1704,8 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 6/18 | In progress on branch `feat/08.1-build` (wave 1 built: 01-05, 07; wave 2 plan 06 next) | - |
+| 08.1 Decide rebuild on real data | 15/18 | In progress on branch `feat/08.1-build` (built: 01-12, 19-21; left: 13 changed-answers review, 14 wording sign-off, 15 production push); not merged | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 26/26 | Complete, merged to main via PR #170 (2026-11-20): device pass passed 2026-11-19; migrations and Edge Functions live in production since 09-08; open: RevenueCat setup (ENV-12), owner review list, app rename, First read tag (08.1-20) | 2026-11-20 |
+| 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
