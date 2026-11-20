@@ -7,6 +7,7 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 let mockParams: Record<string, string | undefined> = {};
 
+jest.mock('@/features/decide/screens/answer/TesterBuildProvider', () => ({ TesterBuildProvider: ({ children }: { children: unknown }) => children })); // 08.1-05: keeps the profile query (and the Supabase client) out of the shell test
 jest.mock('expo-router', () => {
   const R = require('react');
   function Stack({ children }: { children?: React.ReactNode }) {

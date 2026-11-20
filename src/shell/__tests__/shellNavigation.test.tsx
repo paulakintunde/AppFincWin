@@ -19,6 +19,7 @@ import IndexRoute from '../../../app/index';
 
 let mockAccounts: { data?: { archived_at: string | null }[]; isLoading: boolean; isError: boolean };
 // 08-23: the (app) layout opens the household live channel; wiring only here.
+jest.mock('@/features/decide/screens/answer/TesterBuildProvider', () => ({ TesterBuildProvider: ({ children }: { children: unknown }) => children })); // 08.1-05: keeps the profile query (and the Supabase client) out of the shell test
 jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
 jest.mock('@/features/household/decide/PartnerFigurePublisher', () => ({ AppPartnerFigurePublisher: () => null }));
