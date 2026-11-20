@@ -49,7 +49,7 @@ export function expectedDueCounts(input: ExpectedDueInput): ReadonlyMap<string, 
     pool.set(l.categoryId, (pool.get(l.categoryId) ?? 0n) + BigInt(Math.abs(l.amount)));
   }
 
-  dues.sort((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  dues.sort((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : a.id < b.id ? -1 : 1));
   for (const d of dues) {
     const spent = pool.get(d.category) ?? 0n;
     out.set(d.key, expectedCount(d.amount, spent));

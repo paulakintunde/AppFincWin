@@ -108,6 +108,26 @@ describe('expectedDueCounts', () => {
     expect(m.get('b|2026-11-25')).toBe(3000n);
   });
 
+  it('dues on different days share the pool earlier day first, whichever order the series arrive in', () => {
+    const early = series({ id: 'a', anchorDate: '2026-11-14', amount: minorUnits(6000) });
+    const late = series({ id: 'b', anchorDate: '2026-11-25', amount: minorUnits(6000) });
+    for (const list of [[early, late], [late, early]]) {
+      const m = expectedDueCounts({ asOf, series: list, lines: [line('l1', 9000)] });
+      expect(m.get('a|2026-11-14')).toBe(0n);
+      expect(m.get('b|2026-11-25')).toBe(3000n);
+    }
+  });
+
+  it('two expected dues on the same day share the pool by series id, whichever order they arrive in', () => {
+    const a = series({ id: 'a', amount: minorUnits(6000) });
+    const b = series({ id: 'b', amount: minorUnits(6000) });
+    for (const list of [[a, b], [b, a]]) {
+      const m = expectedDueCounts({ asOf, series: list, lines: [line('l1', 9000)] });
+      expect(m.get('a|2026-11-20')).toBe(0n);
+      expect(m.get('b|2026-11-20')).toBe(3000n);
+    }
+  });
+
   it('property: the counted amounts add up to the expected total less what spending covered, between max(0, total - spent) and total', () => {
     assert(
       property(integer({ min: 1, max: 1_000_000 }), integer({ min: 1, max: 1_000_000 }), integer({ min: 0, max: 3_000_000 }), (e1, e2, spent) => {

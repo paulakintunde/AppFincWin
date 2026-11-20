@@ -366,6 +366,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   from: 'February',
   fromMonth: '$200.00',
   gap: '$180.00',
+  goal: 'Car fund', // 08.1-09 Record as bought: Close the goal
   goals: '$640.00',
   income: '$3,200.00', // 06.1-65: Records rough figures in use
   interest: '$412.00',
