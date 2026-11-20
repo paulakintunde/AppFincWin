@@ -309,11 +309,30 @@ describe('sayResult: the Result in reading order', () => {
 
   it('basis reads every kind; records_with_reason reads its reason', () => {
     const basis = (b: Result['confidence']['basis']): Line | null => sayResult(result({ confidence: { reasons: [], basis: b, nextStep: null } }), deps).basis;
-    expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on 6 months of your records, up to <2026-11-09>.' });
-    expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on 2 of the 3 months of records Decide looks for.');
+    expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on your last 6 months of records, up to <2026-11-09>.' });
+    expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your last 2 months of records, up to <2026-11-09>.');
+    expect(basis({ kind: 'partial', used: 1, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your one full month of records, up to <2026-11-09>.');
+    expect(basis({ kind: 'quick_estimates' })?.text).toBe('Based on the figures you typed, not your records.');
     expect(basis({ kind: 'quick_estimates' })?.key).toBe(BASIS_KEYS.quick_estimates);
     expect(basis({ kind: 'records_with_reason', months: 6, upTo: '2026-11-09', reason: 'close_to_line' })?.key).toBe(BASIS_REASON_KEYS.close_to_line);
     expect(() => basis({ kind: 'records_with_reason', months: 6, upTo: '2026-11-09', reason: 'few_months' })).toThrow(MissingCopyError);
+  });
+
+  it('08.1-20: the pay window row shows only when the caller passes a pay window', () => {
+    expect(sayResult(result(), deps, { payMonths: 9 }).payWindow?.text).toBe('Pay is judged over your last 9 months.');
+    expect(sayResult(result(), deps, { payMonths: null }).payWindow).toBeNull();
+    expect(sayResult(result(), deps).payWindow).toBeNull();
+  });
+
+  it('08.1-20: below the deeper stage the first caveat skips quick_estimates and few_months; About keeps them', () => {
+    const r = result({ caveats: [{ code: 'quick_estimates', values: {} }, { code: 'no_debts_recorded', values: {} }] as Caveat[] });
+    expect(sayResult(r, deps, { stage: 'first_read' }).caveat?.code).toBe('no_debts_recorded');
+    expect(sayResult(r, deps).caveat?.code).toBe('quick_estimates');
+    expect(sayResult(r, deps, { stage: 'deeper' }).caveat?.code).toBe('quick_estimates');
+    expect(sayCaveats(r, deps).map((l) => l.code)).toEqual(['quick_estimates', 'no_debts_recorded']);
+    const few = result({ caveats: [{ code: 'few_months', values: { months: 2, lookedFor: 3 } }] as Caveat[] });
+    expect(sayResult(few, deps, { stage: 'full' }).caveat).toBeNull();
+    expect(sayCaveats(few, deps)).toHaveLength(1);
   });
 
   it('next step, missing and readiness lines', () => {

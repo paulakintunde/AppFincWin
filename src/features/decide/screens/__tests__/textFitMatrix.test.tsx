@@ -268,6 +268,7 @@ describe.each(MATRIX)('Decide screens at $width dp x $scale', (m) => {
         onAction={() => undefined}
         onOption={() => undefined}
         onCantSee={() => undefined}
+      onImport={() => undefined}
       />,
     );
     expect(screen.getByTestId('answer-footer')).toBeTruthy();

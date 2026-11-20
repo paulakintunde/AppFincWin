@@ -1,4 +1,4 @@
-// 06.1-14 (CO-D-64 (4), CO-D-119, CO-D-118, CMP-F02, audit F2): the legal block under every answer. In order: the basis sentence, the first
+// 06.1-14 (CO-D-64 (4), CO-D-119, CO-D-118, CMP-F02, audit F2): the legal block under every answer. In order: the basis sentence, the pay-window row and StageLine (08.1-20), the first
 // caveat only (or the large_for_month figure list then the wrong-figure line), the caveat line, the cant-see link, the footer.
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -13,13 +13,17 @@ import type { Line } from '../logic/sayResult';
 
 export interface LegalBlockProps {
   basis: Line | null;
+  /** 08.1-20: "Pay is judged over your last {{months}} months." after the basis, for pay judged over more than 6 months. */
+  payWindow?: Line | null;
+  /** 08.1-20: the StageLine (stages 1 and 2 only), after the pay-window row and before the first caveat. */
+  stageLine?: React.ReactNode;
   caveat: Line | null;
   /** large_for_month: one line per figure, then the wrong-figure line (CO-D-118). Empty for any other caveat. */
   caveatFigures: readonly Line[];
   onCantSee: () => void;
 }
 
-export function LegalBlock({ basis, caveat, caveatFigures, onCantSee }: LegalBlockProps) {
+export function LegalBlock({ basis, payWindow = null, stageLine = null, caveat, caveatFigures, onCantSee }: LegalBlockProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   // 06.1-62 (CB-5 / CB-6): links show a press at once and reach 52 dp tall.
@@ -32,6 +36,12 @@ export function LegalBlock({ basis, caveat, caveatFigures, onCantSee }: LegalBlo
           {basis.text}
         </Text>
       ) : null}
+      {payWindow !== null ? (
+        <Text testID="answer-pay-window" style={body}>
+          {payWindow.text}
+        </Text>
+      ) : null}
+      {stageLine}
       {caveat !== null ? (
         <View testID="answer-caveat" style={styles.block}>
           <Text style={body}>{caveat.text}</Text>

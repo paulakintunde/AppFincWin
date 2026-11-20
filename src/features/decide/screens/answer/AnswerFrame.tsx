@@ -10,7 +10,7 @@
 // 06.1-67 (H-6, DS-3): short line first. One notice above the verdict (splitNotices: the one that changes the answer most); the
 // verdict, the first fact, one short missing-figures line whose More opens Give it more to go on, then Why? for every other fact
 // and notice (FactLines).
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Evaluation, LocalDate, Purpose, Result, YearMonth } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
@@ -27,8 +27,10 @@ import { FactLines } from './FactLines';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 import type { Line } from '../logic/sayResult';
 import { splitNotices } from '../logic/answerLines';
+import { stageReadingOf } from '../logic/stageReading';
 import { LegalBlock } from './LegalBlock';
 import { OptionChips, type OptionKey } from './OptionChips';
+import { StageLine } from './StageLine';
 import { ErrorCard, NotReadyCard, NotReadyExits, OfflineCard, OutcomeLine } from './StatusCards';
 import { VerdictCard } from './VerdictCard';
 import { useSaid, type UseSaidOptions } from './useSaid';
@@ -82,6 +84,8 @@ export interface AnswerFrameProps {
   onAction: (action: AnswerAction) => void;
   onOption: (key: OptionKey) => void;
   onCantSee: () => void;
+  /** 08.1-20: the StageLine link opens import (/import from decide). */
+  onImport: () => void;
   /** 06.1-23: extra content under a fact or missing line (factAction buttons, Fix links). */
   renderAfterFact?: (line: Line, index: number) => React.ReactNode;
   /** The "More detail" rows (plan 23). */
@@ -116,6 +120,7 @@ export function AnswerFrame({
   onAction,
   onOption,
   onCantSee,
+  onImport,
   renderAfterFact,
   children,
   readinessRows = NO_ROWS,
@@ -131,7 +136,9 @@ export function AnswerFrame({
   const insets = useScreenInsets();
   const fmt = useMoneyFormatter(said.showCents ?? true, said.currency);
   const result = status === 'ready' ? (evaluation?.result ?? null) : null;
-  const lines = useSaid(result, said);
+  // 08.1-20: the stage of this answer (read from the evaluation), the pay window and the caveat order follow from it.
+  const reading = useMemo(() => stageReadingOf(status === 'ready' ? evaluation : null), [status, evaluation]);
+  const lines = useSaid(result, said, reading);
 
   const top: AnswerTopBarProps = {
     name: check.name,
@@ -229,7 +236,13 @@ export function AnswerFrame({
             {children}
           </View>
         ) : null}
-        <LegalBlock basis={lines.basis} caveat={lines.caveat} caveatFigures={lines.caveatFigures} onCantSee={onCantSee} />
+        <LegalBlock
+          basis={lines.basis}
+          payWindow={lines.payWindow}
+          stageLine={reading !== null ? <StageLine reading={reading} onImport={onImport} /> : null}
+          caveat={lines.caveat} caveatFigures={lines.caveatFigures}
+          onCantSee={onCantSee}
+        />
       </>
     );
   } else {
