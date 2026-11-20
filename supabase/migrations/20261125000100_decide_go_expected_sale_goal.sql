@@ -1123,7 +1123,11 @@ end;
 $$;
 
 -- The 7-argument overloads give way to the 10-argument ones (the new arguments default to null).
+-- Older clients keep working: PostgREST resolves their 7 named arguments to the 10-argument
+-- function through the defaults. Keeping both overloads would make those calls ambiguous.
+-- contract-ok: min_version >= 0.2.0
 drop function if exists public.record_decide_go(uuid, uuid[], jsonb, jsonb, jsonb, jsonb, jsonb);
+-- contract-ok: min_version >= 0.2.0
 drop function if exists public.record_decide_go(uuid, jsonb, jsonb, jsonb, jsonb, jsonb, jsonb);
 
 create or replace function public.record_decide_go(

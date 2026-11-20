@@ -2505,7 +2505,8 @@
       "approvedAt": "2026-11-17",
       "ownerReason": "Owner (2026-11-17, SN-27 option a): no ready-by date when the plan itself makes the usual month short; waiting never makes it fit. Shown the hand figures, the engine trace and the re-checks on later dates (08.1-PROPOSED-SN-27.md).",
       "expertNote": null,
-      "plannerNote": null
+      "plannerNote": null,
+      "changeApproved": "2026-11-18"
     },
     {
       "id": "SN-28",
