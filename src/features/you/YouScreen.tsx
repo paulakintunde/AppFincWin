@@ -5,7 +5,7 @@
 // row label itself is plain ink (00-UI-SPEC.md Color).
 // 06.2-15 (L04, D-06, D-21): groups Add, Money, Appearance, Alerts and feel, Privacy and data, Account. Every row has
 // one 36 accent tile (YOU_ROW_ICON) and its word, and shows its current setting where it has one. Only rows whose
-// feature exists are shown (no Face ID, PIN lock, Alerts or Delete account row yet).
+// feature exists are shown (no Face ID, PIN lock or Alerts row yet; Delete account is in the Account group).
 import { useCallback, useRef, type ReactNode, type RefObject } from 'react';
 import { router, useLocalSearchParams, useNavigation, type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';

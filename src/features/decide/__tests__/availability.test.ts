@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import * as availability from '../availability';
 
-const { DECIDE_OPEN, DECIDE_SETUP_VISIBLE } = availability;
+const { DECIDE_OPEN } = availability;
 
 const ROOT = path.join(__dirname, '..', '..', '..', '..');
 // Built at runtime so this file does not itself contain the removed names.
@@ -30,10 +30,6 @@ describe('Decide availability switches', () => {
       return REMOVED.some((n) => text.includes(n));
     });
     expect(hits.map((f) => path.relative(ROOT, f))).toEqual([]);
-  });
-
-  it('05.4 BO-06 the setup page stays hidden', () => {
-    expect(DECIDE_SETUP_VISIBLE).toBe(false);
   });
 
   it('owner 2026-11-06: Decide is open', () => {

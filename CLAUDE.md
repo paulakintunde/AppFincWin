@@ -166,13 +166,30 @@ It is a **money-management tool, not a financial institution and not a lender.**
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+- **Money:** integer minor units everywhere; never floats. Rounding lives in `src/engine/money`, and the SQL side must match it (`npm run check:money-mirror` checks the generated pgTAP mirror).
+- **Engine purity:** `src/engine/**` imports no React, React Native, I/O, `db`, `data`, `state`, `services`, `ui` or `features`. `dependency-cruiser` enforces this in CI, and so does `eslint-plugin-boundaries`. Pure decision modules elsewhere (for example `src/shell/backHistory`, `src/features/system/routeDecision.ts`) follow the same rule.
+- **Comments cite the plan and decision:** `// 08-19 (D-13): ...`. Keep the ID when you edit nearby code.
+- **Tests:** next to the code in `__tests__/`. Jest for the app, `jest.engine.config.js` for the engine (100% coverage folders; any ignore needs a written reason, `check:ignores`). Database: pgTAP in `supabase/tests/database/NNN_name.test.sql`. Edge Functions: Deno.
+- **Decide right answers:** cases in `src/engine/decide/v3/__tests__/rightAnswers/cases/*.json`. Changing an approved case's expected block needs the owner's approval and a `changeApproved` date (`check:right-answers`).
+- **Copy:** every user-facing string goes in `src/i18n/locales/**`. Decide copy is declarative: never "advice", "recommend" or "you should". Plain words, short first.
+- **Design:** colours, type, spacing, shadows only from `src/theme/tokens.ts`. Icons only through `Glyph` from `src/ui/icons` (`check:icons`). No third-party icon sets and no emoji.
+- **Migrations:** `supabase/migrations/YYYYMMDDHHMMSS_name.sql`, append-only. A new file must sort after everything already in production, or `db push` needs `--include-all`. Destructive statements need `-- contract-ok: min_version >= X.Y.Z` directly above them (`lint:migrations`). Production pushes are owner-approved and go through `npm run supabase:db:push`.
+- **Cache shapes:** changing a cached row's shape needs a `CACHE_SCHEMA_VERSION` bump (`check:cache-version`).
+- **Flow:** `main` is protected; work lands through branch and PR. Phase work runs through GSD (`/gsd-execute-phase`, `/gsd-quick`).
+
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
-Architecture not yet mapped. Follow existing patterns found in the codebase.
+- **Expo Router app** in `app/`: `(auth)` sign-in, `(app)` signed-in routes with `(tabs)` (Home, Activity, Decide, Grow) plus stack screens (you, accounts, import, household, setup, delete-account, ...).
+- **`src/engine/`**: pure logic: money, Decide v3, payoff, split, grow, month, recurring, and the import parsers (csv, ofx, paste, statement). The Decide answer comes from `src/engine/decide/v3`, fed by a snapshot that `src/features/decide/snapshot` builds from the user's real records.
+- **`src/db/`**: the Supabase client, row types and query/RPC builders. **`src/data/`**: TanStack Query hooks, the persisted cache (AsyncStorage) and paused mutations as the offline write queue.
+- **`src/features/<area>/`**: screens and feature logic (record, decide, grow, household, home, income, you, consent, auth, system). **`src/shell/`**: tab bar, back history, FAB, headers. **`src/ui/`** primitives (including `Sheet`), **`src/theme/`** tokens, **`src/i18n/`** copy.
+- **`src/services/`**: third-party SDKs and platform APIs behind interfaces (analytics, auth, storage, files, locale, statement PDF; RevenueCat arrives with Phase 9).
+- **Backend:** one Supabase project (production). Postgres with RLS on every table, server rules as SQL functions and RPCs, Realtime for household tables, and Edge Functions in `supabase/functions` (resolve-rate, read-pdf-statement, purge-statement-uploads, delete-account; plan-* on the Phase 9 branch).
+- **Switches:** `DECIDE_OPEN` in `src/features/decide/availability.ts` (build switch, on for testers). On the 08.1 branch, `app_config.decide_off` is the server kill switch.
+
 <!-- GSD:architecture-end -->
 
 <!-- GSD:skills-start source:skills/ -->
