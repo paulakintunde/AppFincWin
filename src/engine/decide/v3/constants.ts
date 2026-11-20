@@ -161,6 +161,7 @@ export const MISSING_PRIORITY = [
   'first_payment_passed',
   'pause_interest_not_answered',
   'plan_rate_missing',
+  'promo_end_missing',
 ] as const satisfies readonly MissingCode[]; // D-59
 
 // Cite: UP §4.12 noise floor, $25 in a 2-decimal currency (minor units). FincWin choice (05.2 OQ2, owner approved 2026-10-28).

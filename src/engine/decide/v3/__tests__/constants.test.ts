@@ -101,6 +101,7 @@ describe('v3 constants.ts citations', () => {
       first_payment_not_chosen: true,
       pause_interest_not_answered: true,
       plan_rate_missing: true,
+      promo_end_missing: true,
       everyday_unknown: true,
       legacy_invest_check: true,
       share_invalid: true,

@@ -177,6 +177,8 @@ export const FACT_KEYS = Object.freeze({
   quoted_differs: 'decide.v3.fact.quoted_differs',
   implied_rate: 'decide.v3.fact.implied_rate',
   deferred_interest_term: 'decide.v3.fact.deferred_interest_term',
+  back_charge_cost: 'decide.v3.fact.back_charge_cost', // 08.1-11 FIN-12
+  promo_cleared: 'decide.v3.fact.promo_cleared', // 08.1-11 FIN-12
   at_todays_rate: 'decide.v3.fact.at_todays_rate',
   low_month: 'decide.v3.fact.low_month',
   lean_bridge: 'decide.v3.fact.lean_bridge',
@@ -300,6 +302,7 @@ export const MISSING_KEYS = Object.freeze({
   first_payment_not_chosen: 'decide.v3.missing.first_payment_not_chosen',
   pause_interest_not_answered: 'decide.v3.missing.pause_interest_not_answered',
   plan_rate_missing: 'decide.v3.missing.plan_rate_missing',
+  promo_end_missing: 'decide.v3.missing.promo_end_missing', // 08.1-11 FIN-12
   everyday_unknown: 'decide.v3.missing.everyday_unknown',
   legacy_invest_check: 'decide.v3.missing.legacy_invest_check',
   share_invalid: 'decide.v3.missing.share_invalid',
@@ -371,6 +374,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   quoted_differs: ['quoted', 'computed'],
   implied_rate: ['rate'], // readable decimal string, e.g. "22.9"
   deferred_interest_term: [],
+  back_charge_cost: ['amount', 'date'], // 08.1-11 FIN-12
+  promo_cleared: ['date'], // 08.1-11 FIN-12
   at_todays_rate: ['currency'],
   low_month: ['month', 'left', 'monthly'],
   // 05.4 FIN-08 (05.4-23): source 'savings' | 'net' picks the variant; times low months over the term's payments (QE-04).

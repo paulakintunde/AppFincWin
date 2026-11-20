@@ -26,6 +26,7 @@ import { amortBase, countFromTerm, monthlyEquivalentOf } from '../plan/cadence';
 import { effectiveAprArea, periodicRateFor } from '../plan/rateConvention';
 import { planCard, salesTaxOf, type PlanCard } from '../plan/planCard';
 import { checkQuoted, scoredPayment, type QuotedCheck } from '../plan/quoted';
+import { deferredInterest } from '../plan/deferredInterest';
 import { buildSchedule, paymentsInRange } from '../plan/schedule';
 import type {
   Band,
@@ -36,6 +37,7 @@ import type {
   Layer,
   LocalDate,
   MissingCode,
+  PayV2,
   Purchase,
   ReasonCode,
   Schedule,
@@ -199,6 +201,11 @@ export function buildPurchase(check: CheckV2, ctx: PurchaseContext): PurchaseBui
   }
 }
 
+/** 08.1-11 FIN-12: the plan step asked for the promotion's end date and the rate after it (the fields exist, even when empty). */
+function isCostedDeferred(pay: Extract<PayV2, { mode: 'plan' }>): boolean {
+  return pay.promoEnd !== undefined || pay.rateAfter !== undefined;
+}
+
 function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShare): PurchaseBuild {
   const { pay } = check;
   const missing: MissingCode[] = [];
@@ -215,6 +222,11 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     count = pay.count ?? (pay.termMonths === null ? null : countFromTerm(pay.cadence, pay.termMonths));
     if (count === null || count === 0) missing.push('plan_count_missing');
     if (pay.apr === null && pay.quotedPayment === null) missing.push('plan_rate_missing');
+    // 08.1-11 FIN-12: a '0% if paid in full' plan whose end date and rate were asked for needs both; it never assumes 0% after the end.
+    if (pay.deferredInterestTerm && isCostedDeferred(pay)) {
+      if (pay.promoEnd == null || pay.promoEnd < ctx.asOf) missing.push('promo_end_missing');
+      if (pay.rateAfter == null && !missing.includes('plan_rate_missing')) missing.push('plan_rate_missing');
+    }
     if (pay.firstPayment === null) missing.push('first_payment_not_chosen');
     else if (pay.firstPayment.kind === 'deferred' && pay.firstPayment.interestDuringPause === null) {
       missing.push('pause_interest_not_answered');
@@ -352,7 +364,20 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
         });
       }
     }
-    if (pay.deferredInterestTerm) facts.push({ code: 'deferred_interest_term', values: {} });
+    if (pay.deferredInterestTerm) {
+      if (isCostedDeferred(pay) && pay.promoEnd != null && pay.rateAfter != null) {
+        // 08.1-11 FIN-12: the back-charge is costed; the schedule below carries it (a cleared plan costs the 0% plan's price).
+        const deferred = deferredInterest({ asOf: ctx.asOf, schedule: sched, promoEnd: pay.promoEnd, rateAfter: pay.rateAfter, country });
+        if (deferred.kind === 'back_charge') {
+          sched = deferred.schedule;
+          facts.push({ code: 'back_charge_cost', values: { amount: myPart(deferred.backCharge, share), date: deferred.endDate } });
+        } else {
+          facts.push({ code: 'promo_cleared', values: { date: deferred.endDate } });
+        }
+      } else {
+        facts.push({ code: 'deferred_interest_term', values: {} });
+      }
+    }
     // 06.1 FIN-23: the line shows only on a plan whose typed rate it changed (a typed APR above 0%, region UK or EU).
     const area = effectiveAprArea(country);
     if (area !== null && aprUsed > 0n) facts.push({ code: 'rate_convention_effective', values: { area } });

@@ -144,6 +144,7 @@ export const V3_RUNTIME_EXPORTS = [
   'changeSinceLooked',
   'cheaperOption', // 05.4-28 UX-28 (D-111): The cheaper one, figures only
   'checkQuoted',
+  'deferredInterest',
   'detectCandidates',
   'evaluate',
   'everydayByMonth',

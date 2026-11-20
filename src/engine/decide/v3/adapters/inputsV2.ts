@@ -98,6 +98,9 @@ function payOf(x: unknown): PayV2 {
     firstPayment: firstPaymentOf(x.firstPayment), deferredInterestTerm: x.deferredInterestTerm === true,
     // 05.4 D-39c / D-143: a home loan; only true is kept (absent = not a home loan, so an unmarked plan reads exactly as before)
     ...(x.housing === true ? { housing: true } : {}),
+    // 08.1-11 FIN-12: the end date and the rate after it are kept only when the plan step asked for them (null = asked, not given).
+    ...(x.promoEnd !== undefined ? { promoEnd: typeof x.promoEnd === 'string' && isValidLocalDate(x.promoEnd) ? x.promoEnd : null } : {}),
+    ...(x.rateAfter !== undefined ? { rateAfter: percentOf(x.rateAfter, MAX_PERCENT_TEXT) } : {}),
   };
 }
 
@@ -271,7 +274,8 @@ export function percentText(p: Percent): string {
 
 /** JSON-safe form: Percent becomes decimal text, everything else is already plain data. */
 export function toStoredV2(c: CheckV2): unknown {
-  const pay = c.pay.mode === 'plan' ? { ...c.pay, apr: c.pay.apr === null ? null : percentText(c.pay.apr) } : c.pay;
+  const after = c.pay.mode === 'plan' && c.pay.rateAfter !== undefined ? { rateAfter: c.pay.rateAfter === null ? null : percentText(c.pay.rateAfter) } : {};
+  const pay = c.pay.mode === 'plan' ? { ...c.pay, apr: c.pay.apr === null ? null : percentText(c.pay.apr), ...after } : c.pay;
   const closing = c.closingPercent === undefined ? {} : { closingPercent: c.closingPercent === null ? null : percentText(c.closingPercent) };
   return { ...c, taxPercent: c.taxPercent === null ? null : percentText(c.taxPercent), pay, ...closing };
 }
