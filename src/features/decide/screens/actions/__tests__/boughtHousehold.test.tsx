@@ -90,6 +90,22 @@ describe('Bought screen: household sub-line (D-12)', () => {
     expect(screen.getByText('Saved as a shared line, split by agreed share.')).toBeTruthy();
   });
 
+  it('names the current household rule when it differs from the rule on the check', async () => {
+    await wrap(<BoughtScreen {...props(householdCheck)} currentRule="mine" />);
+    expect(screen.getByText(`Saved as a shared line, split ${a.bought.shareRule.mine}.`)).toBeTruthy();
+    expect(screen.queryByText('Saved as a shared line, split evenly.')).toBeNull();
+  });
+
+  it('falls back to the rule on the check while the current rule loads', async () => {
+    await wrap(<BoughtScreen {...props(householdCheck)} currentRule={undefined} />);
+    expect(screen.getByText('Saved as a shared line, split evenly.')).toBeTruthy();
+  });
+
+  it('is hidden when the line will not be shared (household of one)', async () => {
+    await wrap(<BoughtScreen {...props(householdCheck)} currentRule={null} />);
+    expect(screen.queryByTestId('bought-shared-sub')).toBeNull();
+  });
+
   it('is not shown for Just me', async () => {
     await wrap(<BoughtScreen {...props(personalCheck)} />);
     expect(screen.queryByTestId('bought-shared-sub')).toBeNull();

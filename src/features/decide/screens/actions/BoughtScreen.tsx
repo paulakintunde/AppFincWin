@@ -90,6 +90,12 @@ export interface BoughtScreenProps {
   payoff?: BoughtPayoff | null;
   /** The goal this check made and has not closed (the only goal the server lets this save close), or null. */
   goal?: { id: string; name: string } | null;
+  /**
+   * 08.1-12 follow-up (owner 2026-11-20): the household's CURRENT split rule for the line this save writes, as the server will resolve it
+   * (the written row has no category, so it is the household default). Undefined while it loads: the check's own rule shows meanwhile.
+   * Null when the line will not be shared (the household is down to one person): the sub-line is hidden.
+   */
+  currentRule?: 'even' | 'weight' | 'mine' | null;
   formatMoney: (minor: number) => string;
   formatDate: (date: LocalDate) => string;
   onDone: () => void;
@@ -105,7 +111,7 @@ const STEPPER_LABEL: Readonly<Record<string, 'insurance' | 'fuel' | 'maintenance
 };
 
 export function BoughtScreen(props: BoughtScreenProps) {
-  const { goAhead, checkId, ownerId, householdId, homeCurrency, currency, timeZone, today, itemName, v3, evaluation, accounts, accountsLoading = false, stopRows = [], payoff = null, goal = null, formatMoney, formatDate, onDone } = props;
+  const { goAhead, checkId, ownerId, householdId, homeCurrency, currency, timeZone, today, itemName, v3, evaluation, accounts, accountsLoading = false, stopRows = [], payoff = null, goal = null, currentRule, formatMoney, formatDate, onDone } = props;
   const t = useT();
   const { colors, pairing } = useTheme();
   const undoer = useUndo();
@@ -219,9 +225,9 @@ export function BoughtScreen(props: BoughtScreenProps) {
         <Text accessibilityRole="header" style={head}>
           {t('decide.screens.answerActions.bought.title')}
         </Text>
-        {v3.share.kind === 'household' ? (
+        {v3.share.kind === 'household' && currentRule !== null ? (
           <Text testID="bought-shared-sub" style={sharedSub}>
-            {t('decide.screens.answerActions.bought.sharedSub', { rule: t(`decide.screens.answerActions.bought.shareRule.${v3.share.rule.kind}`) })}
+            {t('decide.screens.answerActions.bought.sharedSub', { rule: t(`decide.screens.answerActions.bought.shareRule.${currentRule ?? v3.share.rule.kind}`) })}
           </Text>
         ) : null}
         <Text testID="no-money-moves" style={label}>

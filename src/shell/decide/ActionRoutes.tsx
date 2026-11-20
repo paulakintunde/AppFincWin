@@ -10,6 +10,8 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { readStoredCheck } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money';
+import { useHouseholdMembers } from '@/data/queries/household';
+import { useSplitDefaults } from '@/data/queries/householdBalances';
 import { useAccounts } from '@/data/queries/accounts';
 import { useDebts, useDecideChecks } from '@/data/queries/decide';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
@@ -143,6 +145,11 @@ export function BoughtRoute({ id }: { id: string }) {
     const g = (goals.data ?? []).find((x) => x.check_id === id && x.done_at == null && x.deleted_at == null && x.created_by === rc.userId);
     return g === undefined ? null : { id: g.id, name: g.name };
   }, [goals.data, id, rc.userId]);
+  // The sub-line names the rule the server will use now: share_on_insert resolves it at save time, and a Decide row carries no category,
+  // so it is the household default. Loading (undefined) keeps the check's rule; under two people the line stays personal (null).
+  const members = useHouseholdMembers(rc.householdId ?? undefined).data;
+  const splitDefaults = useSplitDefaults(rc.householdId).data;
+  const currentRule = members === undefined || splitDefaults === undefined ? undefined : members.length < 2 ? null : (splitDefaults.find((d) => d.category_ref === null)?.rule ?? 'even');
   const accountsQuery = useAccounts(rc.householdId ?? undefined);
   const accounts = useMemo(
     () =>
@@ -161,6 +168,7 @@ export function BoughtRoute({ id }: { id: string }) {
       stopRows={stopRows}
       payoff={payoff}
       goal={goal}
+      currentRule={currentRule}
       checkId={id}
       ownerId={rc.userId}
       householdId={rc.householdId}
