@@ -118,6 +118,8 @@ export const V3_RUNTIME_EXPORTS = [
   'SHADOW_CODES_MAX', // 05.4-36 BO-08
   'SHADOW_SAMPLE_IDS', // 05.4-36 BO-08 (D-12)
   'SHORT_WAIT_DAYS',
+  'STAGE_DEEPER_MIN_MONTHS', // 08.1-19
+  'STAGE_FULL_MIN_MONTHS', // 08.1-19
   'TAX_KEYS', // 05.4-37 APP-20 typecheck
   'TIGHT_FLOOR_DIVISOR',
   'TIGHT_SHARE_BP',
@@ -146,6 +148,7 @@ export const V3_RUNTIME_EXPORTS = [
   'evaluate',
   'everydayByMonth',
   'explore',
+  'firstShownCaveat', // 08.1-19
   'freeHelpFor', // 05.4-38 CMP-F04
   'homeFigure', // 05.4-24 FIN-09 (D-24): Decide Home's month figure
   'homeThresholds',
@@ -183,6 +186,7 @@ export const V3_RUNTIME_EXPORTS = [
   'seriesDrift',
   'shadowRun', // 05.4-36 BO-08 (D-11)
   'shadowSamples', // 05.4-36 BO-08 (D-147)
+  'stageOf', // 08.1-19
   'stagedRequired',
   'stoppedCostFlows', // 05.4-27 BO-05
   'suggestItemType', // 05.5-26: the kept card-rule leaf

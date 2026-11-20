@@ -90,3 +90,6 @@ export { withQuickLines, withQuickLinesPrepared, judgeWithQuickLines } from './q
 export type { QuickOverlay } from './quick/overlay';
 // 08.1-08 CMP-F19: the household's pooled money laid into the inputs
 export { applyHouseholdMoney, HOUSEHOLD_LINE_ID } from './householdMoney';
+// 08.1-19 DCU-10: stages by data (read-model only; the screens never compute a stage)
+export { stageOf, firstShownCaveat } from './stage'; // 08.1-19 stages by data
+export type { DecideStage, HeldBackPart, StageReading, StageWindow, StageSource } from './stage';

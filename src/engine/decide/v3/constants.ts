@@ -80,6 +80,12 @@ export const CONFIDENCE_FIRM_MIN_DAY = 20; // I8
 // Cite: I5, I25 (00-UPGRADE-PLAN): confidence needs at least 3 full months. FincWin choice.
 export const CONFIDENCE_MIN_MONTHS = 3; // I5, I25
 
+// Cite: owner 2026-11-18 stages by data; DCU-10 (04-CONTEXT D-11): one real full month gives the full verdict.
+export const STAGE_FULL_MIN_MONTHS = 1; // 08.1-19
+
+// Cite: owner 2026-11-18 stages by data; the deeper parts need CONFIDENCE_MIN_MONTHS, INCOME_SWING_MIN_MONTHS, HISTORY_PAY_MIN_MONTHS (08.1-STAGE-CHECK.md).
+export const STAGE_DEEPER_MIN_MONTHS = CONFIDENCE_MIN_MONTHS; // 08.1-19
+
 // Cite: recurring/payMatch.ts PAY_MATCH_AFTER_DAYS (7 days), D-18 missed paycheque, A7. Kept equal by constants.test.ts.
 export const MISSED_PAY_GRACE_DAYS = 7; // D-18, A7
 
