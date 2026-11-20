@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
-- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until the Variant C rebuild: named testers in 08.1, the public after 08.2)
+- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged; the screens were rebuilt in 06.1. Decide has been open to every tester since 2026-11-06, quick 261106-bf2, `DECIDE_OPEN = true`; the public store switch-on follows 08.2)
 - [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [x] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations (completed 2026-10-29)
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - REPLACED by 05.4, not to be resumed. STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
@@ -1678,7 +1678,7 @@ Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. 
 
 **Execution Order:**
 Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 08.2 → 7 → 9 → 10 → 11
-The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. Two agreed phases are not inserted yet: home buying (FIN-30), after 08.2, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08).
+The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. Two agreed phases are not inserted yet: home buying (FIN-30), after 08.2, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). *Superseded 2026-11-06 (owner, quick 261106-bf2): Decide is open to every tester; the store switch-on follows 08.2.*
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
 2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
 
@@ -1692,18 +1692,19 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
 | 3. Shell | 38/38 | Complete    | 2026-10-14 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 08.1 for named testers and after 08.2 for the public) | 2026-10-25 |
+| 5. Decide UI | 145/145 | Complete (screens rebuilt in 06.1; Decide open to every tester since 2026-11-06) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
-| 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
+| 05.4 Decide safety patch | 62/62 | Complete (merged; QA-04 full mutation score 83.6% vs 90% deferred to pre-launch) | 2026-11-19 |
 | 05.5 One shared money model | 29/29 | Complete | 2026-11-16 |
+| 06.1 Decide screens from the prototype | 82/82 | Complete (PR #102) | 2026-11-14 |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 0/19 | Planned | - |
+| 08.1 Decide rebuild on real data | 6/18 | In progress on branch `feat/08.1-build` (wave 1 built: 01-05, 07; wave 2 plan 06 next) | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 26/26 | Complete on branch, not merged (PR #170): device pass passed 2026-11-19; open: RevenueCat setup (ENV-12), owner review list, Kint rename, First read tag (08.1-20) | 2026-11-19 |
+| 9. Tiers & Onboarding | 26/26 | Complete, merged to main via PR #170 (2026-11-20): device pass passed 2026-11-19; migrations and Edge Functions live in production since 09-08; open: RevenueCat setup (ENV-12), owner review list, app rename, First read tag (08.1-20) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
