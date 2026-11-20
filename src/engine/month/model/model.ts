@@ -12,6 +12,7 @@ import type { AlwaysOtherSeries, IncomePicture, MonthModel, Notice, NoticeCode, 
 import { confidenceOf } from '../../decide/v3/confidence/reasons';
 import { debtsInMonth } from '../../decide/v3/debts';
 import { dueDrops } from './dueDrops';
+import { expectedDueCounts } from './expected';
 import { incomeThisMonth, lowPayMonths, typicalIncome, type IncomeInput } from './incomeProfile';
 import {
   buildIncomeMonths,
@@ -157,6 +158,7 @@ export function buildMonthModel(inputs: V3Inputs): MonthModel {
     typedEveryday: inputs.typedEstimates === null ? null : typedEverydayOf(inputs.typedEstimates.expenses, minorFromBigInt(BigInt(typical.recurringBills) + BigInt(setAside), 'buildMonthModel')), // ENG11-QE-BILLS, D-74
     setAside,
     drops,
+    expected: expectedDueCounts({ asOf: inputs.asOf, series: inputs.series, lines: current?.lines ?? [] }), // 08.1-09 D-09
   });
 
   const reasonSet = new Set<ReasonCode>([...income.reasons, ...ti.reasons, ...typical.reasons]);
