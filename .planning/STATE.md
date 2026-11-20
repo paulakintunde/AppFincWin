@@ -222,6 +222,7 @@ Recent decisions affecting current work:
 | 261118-u83 | ASO re-check: 4 new "can I afford it" apps (incl. Verdict Money), hard-paywall copy fixes, features to compete on; LAUNCH-POSITIONING §4/§5 updated | 2026-11-18 | (this PR) | [261118-u83-aso-re-check-2026-11-18](./quick/261118-u83-aso-re-check-2026-11-18/) |
 | 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
 | 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18 and Phase 9 26/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
+| 261119-vjo | Phase 0 enrolment status: D-U-N-S issued, Apple submitted, Play verification pending, third-party stores declined | 2026-11-19 | 998a63f8 | [261119-vjo-phase-0-enrolment-status](./quick/261119-vjo-phase-0-enrolment-status/) |
 
 ## Deferred Items
 
@@ -230,7 +231,6 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | *(none — first milestone)* | | | |
-| 261119-vjo | Phase 0 enrolment status: D-U-N-S issued, Apple submitted, Play verification pending, third-party stores declined | 2026-11-19 | 998a63f8 | [261119-vjo-phase-0-enrolment-status](./quick/261119-vjo-phase-0-enrolment-status/) |
 
 ## Session Continuity
 
