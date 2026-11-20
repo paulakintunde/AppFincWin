@@ -85,6 +85,8 @@ export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
   canUseEstimates: boolean;
   onFinishSetup: () => void;
   onFromEstimates: () => void;
+  /** 08.1-21 (DCU-10): opens the statement import, returning to Decide. */
+  onImport: () => void;
 }
 
 /**
@@ -94,7 +96,7 @@ export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
  * 06.1-66 (OQ-66-1, DN-10): no count. Decide finds some items only after earlier ones are done, so the card names the first item
  * ("First: …") and says more may follow; answering it re-judges and the next one shows.
  */
-export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSetup, onFromEstimates, ...list }: NotReadyCardProps) {
+export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSetup, onFromEstimates, onImport, ...list }: NotReadyCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   // 06.1-68 (CB-11): a row just answered stays in view as "Saved, updating…" over the next open row until the engine drops it.
@@ -120,7 +122,12 @@ export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSe
       {hasItem ? <MoreRow testID="answer-not-ready-more">{t('decide.screens.answer.notReady.moreMayFollow')}</MoreRow> : null}
       {canUseEstimates ? (
         <>
-          <Pill variant="primary" label={t('decide.screens.answer.notReady.fromEstimates')} onPress={onFromEstimates} />
+          {/* 08.1-21 (UI-SPEC owner answer 3): "Get a first read" leads, then the import path, then the note. Never disabled by stage. */}
+          <Pill variant="primary" label={t('decide.screens.stage.notReady.firstRead')} onPress={onFromEstimates} />
+          <Pill variant="secondary" label={t('decide.screens.stage.notReady.import')} onPress={onImport} />
+          <Text testID="answer-not-ready-note" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {t('decide.screens.stage.notReady.note')}
+          </Text>
           <Pressable testID="answer-not-ready-finish" accessibilityRole="link" onPress={onFinishSetup} style={styles.link}>
             <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.notReady.finishSetup')}</Text>
           </Pressable>
