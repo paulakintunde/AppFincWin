@@ -1,4 +1,5 @@
 import type { RightAnswerFixture } from '../rightAnswers/schema';
+import { plainCashWaitsShort } from './plain';
 
 /**
  * Rules the engine has not landed yet. A fixture that triggers one is skipped (and counted) by the comparison.
@@ -28,6 +29,10 @@ export const PENDING_RULES: PendingRule[] = [
   // 05.4-28 (ENG-15, ENG-17; D-109, D-114): no pending entry. The price limits (plain.ts priceAsks, PLAIN_PRICE_LIMIT) and accounts
   // with no exchange rate (withoutUnrated) landed on both sides; crosscheck.test compares both on every random fixture (price 0 and
   // over the limit, plus an unrated account added). The unsaved-changes note and The cheaper one change no code or figure.
+  // 08.1-13: D-05 (08.1-06) dates a Not yet by the first day a fresh 90-day check stays at or above $0, which the plain calculator does not
+  // restate yet. A plan whose cash route waits inside the 31-day short wait can read "borrowing costs more" on the plain side and "Only by
+  // borrowing" on the engine's (random seed 1217261865, plan 1119). Deleted when plain.ts restates D-05 on a 12-month path.
+  { fixId: 'D05-CASH-ROUTE', applies: (f) => plainCashWaitsShort(f), note: 'the cash route waits inside the short wait; the plain date is not D-05 yet (08.1-13 follow-up)' },
   { fixId: 'PLAIN-PLANS', applies: (f) => plan(f), note: 'plans (the plain plan branch is borrowing-complete, not ladder-complete; D-98, D-107); closed before 05.4-43' },
 ];
 
