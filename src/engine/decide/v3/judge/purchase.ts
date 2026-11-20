@@ -296,12 +296,14 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
   let card: PlanCard | null = null;
   let quoted: QuotedCheck = NONE;
   let dayOne: bigint;
+  let dayOneFull: bigint;
   let monthly: bigint;
 
   if (pay.mode === 'once') {
     const onceTotal = fullWhole + oneOffExtras - credits;
     // Stryker disable next-line EqualityOperator: at onceTotal === 0 both branches give 0
-    dayOne = BigInt(myPart(mb(onceTotal < 0n ? 0n : onceTotal), share));
+    dayOneFull = onceTotal < 0n ? 0n : onceTotal;
+    dayOne = BigInt(myPart(mb(dayOneFull), share));
     monthly = BigInt(myPart(mb(runningFull), share));
   } else {
     const financedBig = fullWhole - BigInt(pay.deposit) - BigInt(pay.tradeIn);
@@ -362,7 +364,8 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     const firstNow = paymentsInRange(sched, ctx.asOf, addDays(ctx.asOf, 1)).reduce((a, p) => a + BigInt(p.amount), 0n);
     const upfrontRaw = BigInt(pay.deposit) + BigInt(pay.fees.setup) + firstNow + oneOffExtras - credits;
     // Stryker disable next-line EqualityOperator: at upfrontRaw === 0 both branches give 0
-    dayOne = BigInt(myPart(mb(upfrontRaw < 0n ? 0n : upfrontRaw), share));
+    dayOneFull = upfrontRaw < 0n ? 0n : upfrontRaw;
+    dayOne = BigInt(myPart(mb(dayOneFull), share));
     monthly = BigInt(myPart(mb(BigInt(sched.monthlyEquivalent) + runningFull), share));
     card = planCard({ price, tax, oneOffFees: check.oneOffFees, schedule: sched, runningMonthly: mb(runningFull) });
   }
@@ -387,6 +390,8 @@ function buildResolved(check: CheckV2, ctx: PurchaseContext, share: ResolvedShar
     envelopeId: check.envelopeId,
     volatileCover: check.volatileCover ?? null, // D-48: the user's answer rides with the plan
     ...(lines.length > 0 ? { runningCosts: lines } : {}), // 05.4 BO-05: absent when none, so a check without lines is unchanged
+    // 08.1-12 (D-12): the whole purchase and the up-front part before my share; only when the share really splits (a sole share is whole itself)
+    ...(share.weights.length > 1 ? { full: { whole: mb(fullWhole), dayOne: mb(dayOneFull) } } : {}),
   };
   return { purchase, planCard: card, quoted, missing: [], reasons, facts, preview: { band, layers } };
 }

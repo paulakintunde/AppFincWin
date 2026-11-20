@@ -26,6 +26,7 @@ import {
   type DecideGoEndSeries,
   type DecideGoGoalClose,
   type DecideGoPayoff,
+  type DecideGoRow,
   type DecideGoSale,
   type DecideLinkRole,
 } from '@/db/decideOutcomes';
@@ -55,7 +56,7 @@ export interface GoAheadWrite {
   sale: DecideGoSale | null;
   payoff: DecideGoPayoff | null;
   goalClose: DecideGoGoalClose | null;
-  rows: NewTransaction[];
+  rows: DecideGoRow[];
   series: NewRecurringSeries[];
   endSeries: DecideGoEndSeries[];
   debt: DecideGoDebt | null;
@@ -91,7 +92,7 @@ export interface GoAheadVars {
   householdId: string;
   homeCurrency: string;
   name: string;
-  rows: NewTransaction[];
+  rows: DecideGoRow[];
   series: NewRecurringSeries[];
   endSeries: DecideGoEndSeries[];
   debt: DecideGoDebt | null;
@@ -293,8 +294,13 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
   // 06.1-77 (DC-3): the date written and the today it is compared with come from the same clock (the caller's ctx).
   const date = ctx.date === undefined || ctx.date > ctx.today ? ctx.today : ctx.date;
   const name = ctx.name.trim();
+  // 08.1-12 (D-12): a Household purchase is one shared line at its FULL amount; the share is applied only by Phase 8's readers (T-08.1-32).
+  const shared = check.share.kind === 'household';
+  const full = shared ? purchase.full : undefined;
+  const wholeOf = full?.whole ?? purchase.whole;
+  const dayOneOf = full?.dayOne ?? purchase.dayOne;
 
-  const rows: NewTransaction[] = [];
+  const rows: DecideGoRow[] = [];
   const rowRoles: DecideLinkRole[] = [];
   const series: NewRecurringSeries[] = [];
   const seriesRoles: DecideLinkRole[] = [];
@@ -316,6 +322,7 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
       status: localDate <= ctx.today ? 'paid' : 'pending',
       // D-66 (WR-A06): the up-front money won't recur, so it is a one-off and stays out of later spending averages.
       ...(role === 'day_one' ? { one_off: true } : {}),
+      ...(shared ? { is_shared: true as const } : {}),
     });
     rowRoles.push(role);
   };
@@ -329,12 +336,12 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
   const userPickedFirst = check.pay.mode === 'plan' && check.pay.firstPayment?.kind === 'deferred';
   const first = sched === null ? '' : userPickedFirst ? sched.firstDate : shiftDays(sched.firstDate, utcDay(date) - utcDay(ctx.today));
   if (check.pay.mode === 'once' || sched === null) {
-    if (purchase.whole > 0) addRow(-purchase.whole, date, 'day_one');
+    if (wholeOf > 0) addRow(-wholeOf, date, 'day_one');
   } else {
-    if (purchase.dayOne > 0) addRow(-purchase.dayOne, date, 'day_one');
+    if (dayOneOf > 0) addRow(-dayOneOf, date, 'day_one');
     const freq = freqOfCadence(sched.cadence);
     // A payment's amount on the lender's full schedule, with fees, then my share (types.ts SHARE CONVENTION).
-    const mine = (full: number): number => myShareOf(full as MinorUnits, purchase.share);
+    const mine = (amount: number): number => (shared ? amount : myShareOf(amount as MinorUnits, purchase.share));
     const regular = mine(sched.payment + sched.fees.perPeriod);
     const last = mine(sched.finalPayment + sched.fees.perPeriod + sched.fees.end);
     const n = sched.lastPaying;
@@ -357,6 +364,7 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
             time_zone: ctx.timeZone,
             end_date: null,
             occurrence_count: runOfRegular,
+            ...(shared ? { is_shared: true } : {}),
           });
           seriesRoles.push('payment');
         } else if (runOfRegular === 1) {
@@ -374,7 +382,8 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
   for (const { line, name } of extras.runningCosts ?? []) {
     const bill = runningCostBillOf(line, ctx.name, check.categoryId, { householdId: ctx.householdId, accountId, currency: ctx.currency, timeZone: ctx.timeZone, label: name, mint: ctx.mint });
     if (bill === null) continue;
-    series.push(line.varies === true ? { ...bill, amount_kind: 'expected' } : bill);
+    const kinded = line.varies === true ? { ...bill, amount_kind: 'expected' as const } : bill;
+    series.push(shared ? { ...kinded, is_shared: true } : kinded);
     seriesRoles.push('running_cost');
   }
 

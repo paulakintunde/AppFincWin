@@ -117,6 +117,7 @@ export function BoughtScreen(props: BoughtScreenProps) {
   const busy = useRef(false);
 
   const label = { ...textRole(pairing, 'label'), color: colors.inkDim };
+  const sharedSub = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   const body = { ...textRole(pairing, 'body'), color: colors.ink };
   const head = { ...textRole(pairing, 'heading'), color: colors.ink };
@@ -209,7 +210,8 @@ export function BoughtScreen(props: BoughtScreenProps) {
     );
   }
 
-  const amount = purchase === null ? 0 : v3.pay.mode === 'plan' ? purchase.dayOne : purchase.whole;
+  // 08.1-12 (D-12): a Household purchase is written at its full amount, so that is the amount shown.
+  const amount = purchase === null ? 0 : v3.pay.mode === 'plan' ? (purchase.full?.dayOne ?? purchase.dayOne) : (purchase.full?.whole ?? purchase.whole);
   const plan = v3.pay.mode === 'plan' && purchase !== null ? purchase.schedule : null;
   return (
     <DetailScreen title={frameTitle}>
@@ -217,6 +219,11 @@ export function BoughtScreen(props: BoughtScreenProps) {
         <Text accessibilityRole="header" style={head}>
           {t('decide.screens.answerActions.bought.title')}
         </Text>
+        {v3.share.kind === 'household' ? (
+          <Text testID="bought-shared-sub" style={sharedSub}>
+            {t('decide.screens.answerActions.bought.sharedSub', { rule: t(`decide.screens.answerActions.bought.shareRule.${v3.share.rule.kind}`) })}
+          </Text>
+        ) : null}
         <Text testID="no-money-moves" style={label}>
           {t('decide.screens.answerActions.bought.sub')}
         </Text>
@@ -232,7 +239,7 @@ export function BoughtScreen(props: BoughtScreenProps) {
           {plan === null ? null : (
             <>
               <Text style={small}>{t('decide.screens.answerActions.bought.planRow')}</Text>
-              <Text style={body}>{t('decide.screens.answerActions.bought.planSummary', { up: formatMoney(purchase?.dayOne ?? 0), count: plan.count })}</Text>
+              <Text style={body}>{t('decide.screens.answerActions.bought.planSummary', { up: formatMoney(amount), count: plan.count })}</Text>
             </>
           )}
           <Text style={small}>{t('decide.screens.answerActions.bought.account')}</Text>
