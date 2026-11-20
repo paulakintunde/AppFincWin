@@ -7,7 +7,8 @@
 import * as Crypto from 'expo-crypto';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
-import { myShareOf, type Cadence, type CheckV2, type Evaluation } from '@/engine/decide/v3';
+import { myShareOf, type Cadence, type CheckV2, type Evaluation, type RunningCostLine, type StoppedCost } from '@/engine/decide/v3';
+import { addDays } from '@/engine/time/calendar';
 import type { MinorUnits } from '@/engine/money/types';
 import { buildTransferLegs } from '@/engine/transfer';
 import { occurrenceDate } from '@/engine/recurring/schedule';
@@ -23,11 +24,14 @@ import {
   type DecideGoDebt,
   type DecideGoDecision,
   type DecideGoEndSeries,
+  type DecideGoGoalClose,
+  type DecideGoPayoff,
+  type DecideGoSale,
   type DecideLinkRole,
 } from '@/db/decideOutcomes';
 import type { DecideCheckRow } from '@/db/decideChecks';
 import type { NewRecurringSeries } from '@/db/recurringSeries';
-import type { NewTransaction } from '@/db/rows';
+import type { NewTransaction, RecurringSeriesRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
 import type { WithPending } from '@/data/types';
 import {
@@ -42,10 +46,15 @@ import { showToast } from '@/state/undoToast';
 import { writeClient } from './writeClient';
 import { optimisticTransactionRow } from './batchInsert';
 import { newStepId } from './undoCapture';
+import { runningCostBillOf } from './runningCostBills';
 import { coolingOffAt } from './coolingOff';
 import { invalidateDerivedReads, patchMonthCacheIfLoaded, placeRowInMonth } from './transactionCache';
 
 export interface GoAheadWrite {
+  /** 08.1-09 (D-10, D-11): only the parts the user ticked; null = not ticked, nothing written for it. */
+  sale: DecideGoSale | null;
+  payoff: DecideGoPayoff | null;
+  goalClose: DecideGoGoalClose | null;
   rows: NewTransaction[];
   series: NewRecurringSeries[];
   endSeries: DecideGoEndSeries[];
@@ -74,6 +83,9 @@ export { coolingOffAt };
 
 /** The persisted variables of a Go ahead (JSON only). */
 export interface GoAheadVars {
+  sale?: DecideGoSale | null;
+  payoff?: DecideGoPayoff | null;
+  goalClose?: DecideGoGoalClose | null;
   checkId: string;
   ownerId: string;
   householdId: string;
@@ -100,6 +112,9 @@ export function registerDecideGoAheadMutations(qc: QueryClient): void {
           endSeries: vars.endSeries,
           debt: vars.debt,
           decision: vars.decision,
+          sale: vars.sale ?? null,
+          payoff: vars.payoff ?? null,
+          goalClose: vars.goalClose ?? null,
           undo: { id: vars.stepId, labelKey: 'decisionWritten', labelParams: { name: vars.name } },
         })
       ),
@@ -140,6 +155,7 @@ export function registerDecideGoAheadMutations(qc: QueryClient): void {
       void qc.invalidateQueries({ queryKey: queryKeys.decideChecks(vars.ownerId, vars.householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.debts(vars.householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.decideLinks(vars.ownerId, vars.householdId) });
+      if (vars.goalClose != null) void qc.invalidateQueries({ queryKey: queryKeys.savingsGoals(vars.ownerId, vars.householdId) });
       void qc.invalidateQueries({ queryKey: queryKeys.undoLog(vars.ownerId) });
       invalidateDerivedReads(qc, vars.householdId);
     },
@@ -172,6 +188,56 @@ export function registerDecideGoAheadMutations(qc: QueryClient): void {
 
 
 // ---- 06.1-13 (ARC-24): I bought it from a v3 check -------------------------------------------------------------------------
+
+/** The part of a recorded bill the stop needs. */
+export type StoppableSeries = Pick<RecurringSeriesRow, 'id' | 'version' | 'anchor_date' | 'end_date'>;
+
+/**
+ * 05.5-13 (ARC-23): the recorded bills a purchase's costs-that-stop end. One entry per bill, ending the day before the stop date
+ * (the same end_date the Activity Stopped action writes, seriesStatusPatch) with end_reason 'stopped'. An everyday stop names no bill
+ * and writes nothing (it lowers usual spending through the check's replaces). A bill that is not recorded, or already ended on or
+ * before that day, is left alone. 08.1-09: the one place this is worked out (the Bought screen, the harness and the save all call it).
+ */
+export function endSeriesOf(stops: readonly StoppedCost[] | undefined, recorded: readonly StoppableSeries[] | undefined): DecideGoEndSeries[] {
+  const out: DecideGoEndSeries[] = [];
+  const seen = new Set<string>();
+  for (const stop of stops ?? []) {
+    if (stop.source.kind !== 'bill') continue;
+    const id = stop.source.seriesId;
+    if (seen.has(id)) continue;
+    const series = recorded?.find((r) => r.id === id);
+    if (series === undefined) continue;
+    seen.add(id);
+    let endDate = addDays(stop.stopDate, -1);
+    if (endDate < series.anchor_date) endDate = series.anchor_date;
+    if (series.end_date !== null && series.end_date <= endDate) continue;
+    out.push({ id, expected_version: series.version, end_date: endDate, end_reason: 'stopped' });
+  }
+  return out;
+}
+
+/**
+ * 08.1-09 (D-09..D-11): the parts of Record as bought the user ticked, each its own row on the screen. Anything not passed is not
+ * written: the app applies nothing on its own (T-08.1-22).
+ * - runningCosts: a fixed line becomes a bill (an exact series); a line that varies becomes an 'expected' series (D-09). Never a row.
+ * - stops + recorded: the bills that end (endSeriesOf), end_reason 'stopped'.
+ * - sale: the money in from selling the old one. payoff: the old loan's final payment (names the loan and the version the screen read).
+ * - goalId: close the goal this check made (D-11).
+ */
+export interface GoAheadExtras {
+  runningCosts?: readonly { readonly line: RunningCostLine; readonly name: string }[];
+  stops?: readonly StoppedCost[];
+  recorded?: readonly StoppableSeries[];
+  sale?: { readonly amount: number; readonly name: string } | null;
+  payoff?: { readonly amount: number; readonly name: string; readonly debtId: string; readonly version: number } | null;
+  goalId?: string | null;
+}
+
+/** A leg's name is 1..200 characters on the server. */
+function legName(name: string, fallback: string): string {
+  const n = name.trim().slice(0, 200).trim();
+  return n === '' ? fallback : n;
+}
 
 export interface GoAheadV3Context {
   householdId: string;
@@ -221,7 +287,7 @@ function shiftDays(d: string, days: number): string {
  * first payment date, each my share of the lender's amount including the per-period and end fees. Running costs are NOT
  * written here: the user adds each as a bill by their own tap (APP-29). No debt row is made (Grow records debts).
  */
-export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, accountId: string, ctx: GoAheadV3Context): GoAheadWrite {
+export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, accountId: string, ctx: GoAheadV3Context, extras: GoAheadExtras = {}): GoAheadWrite {
   const purchase = evaluation.purchase;
   if (purchase === null) throw refuse(new TypeError('goAheadInputOfV3: the check has no purchase to write'));
   // 06.1-77 (DC-3): the date written and the today it is compared with come from the same clock (the caller's ctx).
@@ -304,6 +370,14 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
     }
   }
 
+  // 08.1-09 (D-09): each ticked running cost is one series. Fixed = a bill; varies = expected spending, never a transaction (T-08.1-20).
+  for (const { line, name } of extras.runningCosts ?? []) {
+    const bill = runningCostBillOf(line, ctx.name, check.categoryId, { householdId: ctx.householdId, accountId, currency: ctx.currency, timeZone: ctx.timeZone, label: name, mint: ctx.mint });
+    if (bill === null) continue;
+    series.push(line.varies === true ? { ...bill, amount_kind: 'expected' } : bill);
+    seriesRoles.push('running_cost');
+  }
+
   if (rows.length > DECIDE_GO_MAX_ROWS) {
     throw refuse(new RangeError(`goAheadInputOfV3: ${rows.length} rows is over ${DECIDE_GO_MAX_ROWS}`));
   }
@@ -320,7 +394,25 @@ export function goAheadInputOfV3(check: CheckV2, evaluation: Evaluation, account
     row_roles: rowRoles,
     series_roles: seriesRoles,
   };
-  return { rows, series, endSeries: [], debt: null, decision };
+  if (series.length > DECIDE_GO_MAX_SERIES) throw refuse(new RangeError(`goAheadInputOfV3: ${series.length} series is over ${DECIDE_GO_MAX_SERIES}`));
+  const endSeries = endSeriesOf(extras.stops, extras.recorded);
+  if (endSeries.length > DECIDE_GO_MAX_SERIES) throw refuse(new RangeError(`goAheadInputOfV3: more than ${DECIDE_GO_MAX_SERIES} ended series`));
+
+  // 08.1-09 (D-10): the sale money in and the old loan's payoff are legs of the same save. The sale names the loan too when the payoff
+  // is ticked, so the two read as one sale that paid the loan off (the same pair Grow's "I sold it" writes).
+  const leg = (amount: number, name: string, fallback: string) => {
+    assertSafeInteger('a sale or payoff amount', amount);
+    if (amount < 1) throw refuse(new RangeError('goAheadInputOfV3: a sale or payoff amount must be at least 1'));
+    return { id: ctx.mint(), account_id: accountId, amount, currency: ctx.currency, local_date: date, time_zone: ctx.timeZone, name: legName(name, fallback) };
+  };
+  const payoff: DecideGoPayoff | null =
+    extras.payoff == null ? null : { ...leg(extras.payoff.amount, extras.payoff.name, ctx.name), debt_id: extras.payoff.debtId, expected_version: extras.payoff.version };
+  const sale: DecideGoSale | null =
+    extras.sale == null
+      ? null
+      : { ...leg(extras.sale.amount, extras.sale.name, ctx.name), ...(payoff === null ? {} : { debt_id: payoff.debt_id, expected_version: payoff.expected_version }) };
+  const goalClose: DecideGoGoalClose | null = extras.goalId == null ? null : { goal_id: extras.goalId };
+  return { rows, series, endSeries, debt: null, decision, sale, payoff, goalClose };
 }
 
 export interface GoAheadV3Args {
@@ -331,6 +423,8 @@ export interface GoAheadV3Args {
   evaluation: Evaluation;
   accountId: string;
   ctx: GoAheadV3Context;
+  /** 08.1-09: the ticked rows of the Bought screen; absent = just the purchase. */
+  extras?: GoAheadExtras;
 }
 
 /** 06.1 ARC-24: "I bought it" on a v3 check: ONE record_decide_go call, one Undo. Returns the undo step id. */
@@ -345,7 +439,7 @@ export function useGoAheadV3(): { goAhead(args: GoAheadV3Args): string } {
         .map((m) => m.state.variables as GoAheadVars | undefined)
         .find((v) => v?.checkId === args.checkId);
       if (queued) return queued.stepId;
-      const write = goAheadInputOfV3(args.check, args.evaluation, args.accountId, args.ctx);
+      const write = goAheadInputOfV3(args.check, args.evaluation, args.accountId, args.ctx, args.extras);
       const stepId = newStepId();
       mutation.mutate({
         checkId: args.checkId,
@@ -358,6 +452,9 @@ export function useGoAheadV3(): { goAhead(args: GoAheadV3Args): string } {
         endSeries: write.endSeries,
         debt: write.debt,
         decision: write.decision,
+        sale: write.sale,
+        payoff: write.payoff,
+        goalClose: write.goalClose,
         stepId,
       });
       getAnalytics().track('decision_recorded', { decision: 'go' });

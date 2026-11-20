@@ -233,6 +233,7 @@ export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource 
       categoryId,
       isHousing: categoryKey(categoryId) === 'Housing',
       savingMode: saving ? (x.saving_mode ?? 'fixed') : null,
+      ...(seriesRow.get(id)?.amount_kind === 'expected' ? { amountKind: 'expected' as const } : {}), // 08.1-09 D-09
     };
   };
 

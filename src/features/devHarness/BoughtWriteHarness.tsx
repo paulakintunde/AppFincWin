@@ -1,7 +1,7 @@
 // 05.4-34 (BO-03, D-128, D-129; T-05.4-34-03): the Record-as-bought harness for the Maestro flow. Dev builds only (the caller
 // checks boughtHarnessEnabled). There is no shipped Record-as-bought screen while Decide is off, so this creates an open check
 // (record_decide_go refuses one that is missing, not yours or not open), waits until it saves, then records the fixed sample as
-// bought through the harvested useRecordBought: a day-one row, a payment series, a running-cost series and a debt. The undo toast
+// bought through the one Record-as-bought writer (useGoAheadV3, 08.1-09): a day-one row, a payment series and a running-cost series. The undo toast
 // carries the step, so the flow can take it all back. Developer strings, never shipped; no amounts or names in logs.
 import { useCallback, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -12,14 +12,15 @@ import type { DecideCheckRow } from '@/db/decideChecks';
 import { useAccounts } from '@/data/queries/accounts';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useCreateCheck } from '@/data/mutations/decideChecks';
-import { useRecordBought, type BoughtContext } from '@/data/mutations/boughtWrite';
+import { isGoAheadRefusal, useGoAheadV3, type GoAheadV3Context } from '@/data/mutations/decideGoAhead';
+import { captureError } from '@/services/errors/errorReporter';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { space } from '@/theme/layout';
-import { SAMPLE_NAME, samplePurchase } from './sampleBought';
+import { SAMPLE_NAME, sampleEvaluation } from './sampleBought';
 
 const LABEL_TITLE = 'Record as bought (harness)';
 const LABEL_BUTTON = 'Record the sample as bought';
@@ -69,10 +70,10 @@ export function BoughtWriteHarness() {
   const lookup = useCategoryLookup(userId);
   const qc = useQueryClient();
   const { create } = useCreateCheck();
-  const bought = useRecordBought();
+  const bought = useGoAheadV3();
   const [phase, setPhase] = useState<Phase>('idle');
 
-  const ctx = useMemo((): BoughtContext | null => {
+  const ctx = useMemo((): (GoAheadV3Context & { cashAccountId: string }) | null => {
     if (!rc.ready || rc.householdId === null) return null;
     const cash = (accounts ?? []).find(
       (a) => a.deleted_at === null && a.archived_at === null && CASH_KINDS.has(a.kind) && a.currency === rc.homeCurrency
@@ -86,8 +87,8 @@ export function BoughtWriteHarness() {
       today: rc.today,
       cashAccountId: cash.id,
       debtCategoryId,
-      runningCostCategoryId: lookup.builtinIds.get('Insurance') ?? null,
       name: SAMPLE_NAME,
+      mint: () => Crypto.randomUUID(),
     };
   }, [rc.ready, rc.householdId, rc.homeCurrency, rc.timeZone, rc.today, accounts, lookup.builtinIds]);
 
@@ -98,13 +99,29 @@ export function BoughtWriteHarness() {
     setPhase('saving');
     create({ userId: rc.userId, id: checkId, householdId: ctx.householdId, kind: 'buy', name: SAMPLE_NAME, inputs: { harness: true }, furthestStep: 1 });
     const row = await waitForSavedCheck(qc, queryKeys.decideChecks(rc.userId, ctx.householdId), checkId);
-    const { purchase, result } = samplePurchase(ctx.today, ctx.currency);
-    const sent = row === null || purchase === null ? null : bought.record({ check: row, purchase, result, ctx });
-    if (sent === null) {
+    const { check, evaluation } = sampleEvaluation(ctx.today, ctx.currency);
+    let stepId: string | null = null;
+    if (row !== null && evaluation.purchase !== null) {
+      try {
+        stepId = bought.goAhead({
+          checkId: row.id,
+          ownerId: row.created_by,
+          homeCurrency: ctx.currency,
+          check,
+          evaluation,
+          accountId: ctx.cashAccountId,
+          ctx,
+          extras: { runningCosts: (check.runningCosts ?? []).map((line) => ({ line, name: 'Insurance' })) },
+        });
+      } catch (error) {
+        if (!isGoAheadRefusal(error)) captureError(error, { area: 'ui' });
+      }
+    }
+    if (stepId === null) {
       setPhase('refused');
       return;
     }
-    showToast({ kind: 'ordinary', text: undoLabelText('decisionWritten', { name: SAMPLE_NAME }), stepId: sent.stepId });
+    showToast({ kind: 'ordinary', text: undoLabelText('decisionWritten', { name: SAMPLE_NAME }), stepId });
     setPhase('done');
   }, [ctx, rc.userId, create, qc, bought]);
 

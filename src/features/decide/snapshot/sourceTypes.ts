@@ -104,7 +104,7 @@ export interface SnapshotSource {
     RecurringSeriesRow,
     'id' | 'account_id' | 'amount' | 'currency' | 'freq' | 'anchor_date' | 'end_date' | 'occurrence_count' | 'category_id' | 'deleted_at'
   > &
-    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group' | 'goal_id'>>)[];
+    Partial<Pick<RecurringSeriesRow, 'counts_as' | 'income_kind' | 'saving_mode' | 'pay_group' | 'goal_id' | 'amount_kind'>>)[];
   accounts: readonly (Pick<AccountRow, 'id' | 'name' | 'kind' | 'currency' | 'archived_at' | 'deleted_at'> &
     Partial<Pick<AccountRow, 'use' | 'use_purpose' | 'use_envelope_id' | 'use_extra_set_aside' | 'overdraft_limit' | 'overdraft_rate' | 'is_shared'>>)[];
   balances: Readonly<Record<string, number>>; // account id → paid-only balance in the account's currency

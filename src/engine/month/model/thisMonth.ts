@@ -47,6 +47,8 @@ export interface ThisMonthInput {
   readonly setAside: MinorUnits;
   /** 05.3-63: dues that no longer count (D-27, D-31, skips); absent = none. */
   readonly drops?: DueDrops;
+  /** 08.1-09 (D-09): what this month's expected-line dues count (month/model/expected.ts), by 'seriesId|date'; a due not in the map counts whole. */
+  readonly expected?: ReadonlyMap<string, bigint>;
 }
 
 export interface ThisMonthResult {
@@ -142,7 +144,7 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
     if (settled.has(`${d.seriesId}|${d.date}`)) continue;
     const dropped = input.drops?.has(d.seriesId, d.date) ?? null;
     if (dropped === null) {
-      billsDue += BigInt(Math.abs(d.amount));
+      billsDue += input.expected?.get(`${d.seriesId}|${d.date}`) ?? BigInt(Math.abs(d.amount)); // 08.1-09 D-09: an expected line counts what real spending has not replaced
     } else if (dropped !== 'skipped') {
       const s = cadenceOf.get(d.seriesId) as V3Series;
       paidByOther.push({

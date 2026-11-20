@@ -39,6 +39,7 @@ const IMPERATIVE_LEAD = /^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Inves
 // Controls and field labels name an action the user takes in the app (a button, a dialog choice, a field caption); they
 // are not a prescription about money. Each one is listed by key so a new descriptive string cannot slip through.
 const ACTION_LABELS = new Set([
+  'decide.screens.answerActions.bought.rowPayoff', // tick row on Record as bought: names paying off the old loan the sale pays (08.1-09, UI-SPEC section 5), not advice
   'income.pay.defaultName', // the noun "Pay": the name a new pay series gets (05.2-49), not an instruction
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
   // 05.2 (plan 20): setup controls and UI-SPEC titles that open with a verb. Each names an action in the app, not advice about money.
@@ -115,9 +116,6 @@ const CONTROL_LABELS = new Set([
   'decide.screens.answerDetail.stops.add', // button
   'decide.screens.answerActions.goal.changeAmount', // link
   'decide.screens.answerActions.bought.title', // sheet title
-  'decide.screens.answerActions.bought.add', // button
-  'decide.screens.answerActions.bought.addBill', // button
-  'decide.screens.answerActions.runningCost.add', // button
   'decide.screens.setupPayBills.otherIncome.title', // sheet title
   'decide.screens.setupPayBills.otherIncome.add', // button
   'decide.screens.setupPayBills.billAdd.title', // sheet title

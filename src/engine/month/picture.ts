@@ -9,6 +9,9 @@
  *   paid by someone else or skipped is never taken twice;
  * - leftAfterPlans: "left after the month's plans", always homeFigure(prepared) (pinned by a property test). 05.5 owner of this
  *   figure (D-04); moved from decide/v3/month.
+ * 08.1-09 (D-09): an expected line (a varying running cost recorded as bought) counts max(0, expected - real spending in its category
+ * this month) in afterBillsBeforePayday and leftAfterPlans, never both in full (month/model/expected.ts, one map read by the month
+ * model and the open cash path).
  * The unused overdraft sits on its own line and is never added into the three (D-57). After-bills and month-end are whole-picture
  * figures, never per account (bills carry no account id; 05.4-D55-RESEARCH).
  *

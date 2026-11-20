@@ -48,6 +48,7 @@ import { withRedatedRefunds } from '../../month/model/refunds';
 import { withTaxSetAside } from './income/setAside';
 import { recordsSynced } from '../../month/model/freshness';
 import { dueDrops } from '../../month/model/dueDrops';
+import { expectedDueCounts } from '../../month/model/expected';
 import { buildMonthModel } from '../../month/model/model';
 import { historyPay, type HistoryPay } from '../../month/model/historyPay';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, savingTransferFlows, spareInAccount } from './moneySource';
@@ -233,6 +234,7 @@ function openInputOf(inputs: V3Inputs, built: MonthModel): { readonly input: Ope
     e: built.e ?? minorUnits(0),
     payCaps: payCapsOf(inputs, built),
     drops, // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
+    expected: expectedDueCounts({ asOf: inputs.asOf, series: inputs.series, lines: inputs.months.find((m) => m.month === ym)?.lines ?? [] }), // 08.1-09 D-09: the month model's own rule
     extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
     savings,
     debts: debts.flows,

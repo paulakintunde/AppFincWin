@@ -159,7 +159,7 @@ function runningCostOf(x: Record<string, unknown>): RunningCostLine | null {
   const start = localDateOf(x.start);
   if (id === null || amount === null || everyMonths === null || start === null) return null;
   const end = localDateOf(x.end);
-  return { id, amount, everyMonths, start, end: end !== null && end >= start ? end : null, on: x.on !== false };
+  return { id, amount, everyMonths, start, end: end !== null && end >= start ? end : null, on: x.on !== false, ...(x.varies === true ? { varies: true } : {}) };
 }
 
 function stopSourceOf(x: unknown): StoppedCost['source'] | null {
