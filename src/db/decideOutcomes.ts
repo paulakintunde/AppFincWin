@@ -21,6 +21,9 @@ import type { NewRecurringSeries } from './recurringSeries';
 import { BAD_RESPONSE } from './recurringSeries';
 import { assertAllowedKeys, type DbClient, type NewTransaction } from './rows';
 
+/** 08.1-12 (D-12): a row of the one save; is_shared: true writes it as a shared line (Phase 8 share_on_insert applies the household's split rule). */
+export type DecideGoRow = NewTransaction & { is_shared?: true };
+
 export const DECIDE_GO_MAX_ROWS = 60;
 export const DECIDE_GO_MAX_SERIES = 24;
 
@@ -40,7 +43,8 @@ export const DECIDE_GO_ROW_KEYS = [
   'status',
   'transfer_id',
   'one_off',
-] as const satisfies readonly (keyof NewTransaction)[];
+  'is_shared',
+] as const satisfies readonly (keyof DecideGoRow)[];
 
 export interface DecideGoDebt {
   id: string;
@@ -120,7 +124,7 @@ export interface DecideGoDecision {
 export interface DecideGoInput {
   checkId: string;
   /** The pending rows Go ahead writes; the server inserts them (client uuids, so a replay never doubles them). */
-  rows: readonly NewTransaction[];
+  rows: readonly DecideGoRow[];
   series: readonly NewRecurringSeries[];
   endSeries: readonly DecideGoEndSeries[];
   debt: DecideGoDebt | null;

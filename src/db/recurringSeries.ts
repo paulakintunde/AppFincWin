@@ -40,6 +40,8 @@ export interface NewRecurringSeries {
   is_automatic?: boolean;
   /** 08.1-02: 'expected' for a varying running cost; left out (the server's default) it is 'exact'. */
   amount_kind?: SeriesAmountKind;
+  /** 08.1-12 (D-12): true = a shared bill (Phase 8 D-16); the household's split rule applies to its lines. Absent = personal. */
+  is_shared?: boolean;
 }
 
 // Mirrors edit_recurring_series_from's allowed patch keys (plan 02-08): any other key

@@ -3,13 +3,13 @@
 -- Migration 20261125000100 (D-09, D-10, D-11). The sale and payoff run through the same private function Grow's
 -- record_debt_sale uses (grow_sale_and_payoff).
 --
--- Needs 20261016000300, 20261021000100, 20261110000100, 20261116000100, 20261122000300 and 20261125000100.
+-- Needs 20261016000300, 20261021000100, 20261110000100, 20261116000100, 20261122000300, 20261122000600, 20261125000100 and 20261125000500.
 -- Dates are relative to current_date so the monthly materialiser horizon never changes what is asserted.
 
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(44);
+select extensions.plan(65);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -283,6 +283,119 @@ select extensions.ok((select done_at is null from public.savings_goals where id 
   'undo: the goal is open again');
 select extensions.is((select status from public.decide_checks where id = 'c1120000-0000-0000-0000-000000000005'), 'open',
   'undo: the check is open again');
+
+-- ====================================================================================================================
+-- 08.1-12 (D-12): a Household purchase is written as shared money. Needs 20261122000600 (Phase 8 splits) and 20261125000500.
+-- Rows carry is_shared: true; Phase 8's share_on_insert gives them the household's split rule (even here) and stores both people's
+-- parts. The save never makes an owing row (settlements are only ever made by the settle-up RPCs): who owes whom is read from the
+-- lines (a personal account) and is not tracked for a joint account (D-17).
+-- ====================================================================================================================
+reset role;
+insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
+values ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'b@test.local', '{}', now(), now());
+delete from public.household_members where user_id = '22222222-2222-2222-2222-222222222222';
+insert into public.household_members (household_id, user_id, is_owner, weight, created_at) values
+  ((select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'), '22222222-2222-2222-2222-222222222222', false, 50, now() - interval '1 day');
+update public.household_members set weight = 50, created_at = now() - interval '2 days' where user_id = '11111111-1111-1111-1111-111111111111';
+update public.households set reporting_currency = 'USD' where id = (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111');
+insert into public.accounts (id, household_id, created_by, name, kind, currency, opening_balance, is_shared) values
+  ('a1120000-0000-0000-0000-0000000000a2', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+   '11111111-1111-1111-1111-111111111111', 'Joint', 'checking', 'USD', 0, true);
+insert into public.decide_checks (id, household_id, created_by, kind, name)
+select ('c1120000-0000-0000-0000-0000000000' || n)::uuid, (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+       '11111111-1111-1111-1111-111111111111', 'buy', 'Household check ' || n
+  from (values ('11'), ('12'), ('13')) v(n);
+insert into public.decide_checks (id, household_id, created_by, kind, name) values
+  ('c1120000-0000-0000-0000-0000000000c2', (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'),
+   '33333333-3333-3333-3333-333333333333', 'buy', 'Their second check');
+
+-- One row of the save: the key set the client sends. p_shared adds is_shared.
+create function public.t112_row(p_id uuid, p_account uuid, p_amount bigint, p_shared boolean, p_household uuid default null) returns jsonb language sql as $$
+  select jsonb_build_object('id', p_id, 'household_id', coalesce(p_household, (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')),
+           'account_id', p_account, 'original_amount', p_amount, 'original_currency', 'USD', 'local_date', current_date,
+           'time_zone', 'UTC', 'note', null, 'name', 'Sofa', 'status', 'paid', 'one_off', true)
+         || case when p_shared then jsonb_build_object('is_shared', true) else '{}'::jsonb end
+$$;
+create function public.t112_go_jsonb(p_check uuid, p_rows jsonb, p_series jsonb, p_step uuid) returns jsonb language sql as $$
+  select public.record_decide_go(p_check, p_rows, p_series, '[]'::jsonb, null::jsonb,
+    jsonb_build_object('verdict', 'fits', 'estimate_day_one', 1000, 'estimate_monthly', 0, 'estimate_monthly_payment', 0,
+      'estimate_running', 0, 'broke_line', false,
+      'row_roles', (select coalesce(jsonb_agg('day_one'::text), '[]'::jsonb) from jsonb_array_elements(p_rows)),
+      'series_roles', (select coalesce(jsonb_agg('running_cost'::text), '[]'::jsonb) from jsonb_array_elements(p_series))),
+    jsonb_build_object('id', p_step, 'label_key', 'decisionWritten'))
+$$;
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+-- Household, paid from a personal account: a shared line at the full amount and a shared bill.
+select extensions.is(
+  public.t112_go_jsonb('c1120000-0000-0000-0000-000000000011',
+    jsonb_build_array(public.t112_row('79112000-0000-0000-0000-000000000011', 'a1120000-0000-0000-0000-000000000001', -10001, true)),
+    jsonb_build_array(public.t112_series('5e112000-0000-0000-0000-0000000000b1', 'Sofa cover') || jsonb_build_object('is_shared', true)),
+    'e1120000-0000-0000-0000-000000000011') ->> 'status',
+  'applied', 'a household save applies');
+select extensions.ok((select is_shared and split_rule = 'even' and original_amount = -10001 from public.transactions where id = '79112000-0000-0000-0000-000000000011'),
+  'the row is a shared line at its full amount, split by the household rule');
+select extensions.is((select count(*)::integer from public.transaction_splits where transaction_id = '79112000-0000-0000-0000-000000000011'), 2,
+  'both people have a part');
+select extensions.is((select sum(share)::bigint from public.transaction_splits where transaction_id = '79112000-0000-0000-0000-000000000011'), -10001::bigint,
+  'the parts add up to the full amount (the share is applied once)');
+select extensions.ok((select is_shared from public.recurring_series where id = '5e112000-0000-0000-0000-0000000000b1'), 'the running cost is a shared bill');
+select extensions.is((select count(*)::integer from public.settlements where household_id = (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')), 0,
+  'paid from a personal account the save itself makes no settlement: owing is read from the shared line (Phase 8 rule, unchanged)');
+
+-- The partner reads the shared line and the shared bill, and not what is personal.
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+select extensions.is((select count(*)::integer from public.transactions_active where id = '79112000-0000-0000-0000-000000000011'), 1, 'the partner can read the shared line');
+select extensions.is((select count(*)::integer from public.recurring_series where id = '5e112000-0000-0000-0000-0000000000b1'), 1, 'the partner can read the shared bill');
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+
+-- Household, paid from a joint account: shared, and still no owing row (D-17).
+select extensions.is(
+  public.t112_go_jsonb('c1120000-0000-0000-0000-000000000012',
+    jsonb_build_array(public.t112_row('79112000-0000-0000-0000-000000000012', 'a1120000-0000-0000-0000-0000000000a2', -4001, true)),
+    '[]'::jsonb, 'e1120000-0000-0000-0000-000000000012') ->> 'status',
+  'applied', 'a household save from a joint account applies');
+select extensions.ok((select is_shared and original_amount = -4001 from public.transactions where id = '79112000-0000-0000-0000-000000000012'),
+  'the joint-account line is shared at its full amount');
+select extensions.is((select count(*)::integer from public.settlements where household_id = (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111')), 0,
+  'a joint-account purchase creates no owing row');
+
+-- Just me: nothing shared, nothing split.
+select extensions.is(
+  public.t112_go_jsonb('c1120000-0000-0000-0000-000000000013',
+    jsonb_build_array(public.t112_row('79112000-0000-0000-0000-000000000013', 'a1120000-0000-0000-0000-000000000001', -2500, false)),
+    '[]'::jsonb, 'e1120000-0000-0000-0000-000000000013') ->> 'status',
+  'applied', 'a just-me save applies');
+select extensions.is((select is_shared from public.transactions where id = '79112000-0000-0000-0000-000000000013'), false, 'a just-me line stays personal');
+select extensions.is((select count(*)::integer from public.transaction_splits where transaction_id = '79112000-0000-0000-0000-000000000013'), 0, 'a just-me line has no split');
+select set_config('request.jwt.claims', '{"sub":"22222222-2222-2222-2222-222222222222","role":"authenticated"}', true);
+select extensions.is((select count(*)::integer from public.transactions_active where id = '79112000-0000-0000-0000-000000000013'), 0, 'the partner cannot read a just-me line');
+
+-- A household of one: the flag is accepted but the line stays personal (Phase 8 share_on_insert).
+select set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
+select extensions.is(
+  public.t112_go_jsonb('c1120000-0000-0000-0000-0000000000c2',
+    jsonb_build_array(public.t112_row('79112000-0000-0000-0000-0000000000c2', 'a1120000-0000-0000-0000-0000000000c1', -1500, true,
+      (select id from hh where owner_id = '33333333-3333-3333-3333-333333333333'))),
+    '[]'::jsonb, 'e1120000-0000-0000-0000-0000000000c2') ->> 'status',
+  'applied', 'a save with the shared flag in a household of one applies');
+select extensions.is((select is_shared from public.transactions where id = '79112000-0000-0000-0000-0000000000c2'), false,
+  'in a household of one the line stays personal');
+
+-- Any other key is still refused.
+select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
+select extensions.throws_ok(
+  $$select public.record_decide_go('c1120000-0000-0000-0000-000000000011',
+      jsonb_build_array(public.t112_row('79112000-0000-0000-0000-0000000000f1', 'a1120000-0000-0000-0000-000000000001', -100, false) || jsonb_build_object('split_rule', 'mine')),
+      '[]'::jsonb, '[]'::jsonb, null::jsonb, '{}'::jsonb, jsonb_build_object('id', 'e1120000-0000-0000-0000-0000000000f1'))$$,
+  '42501', null, 'a row still cannot write the split rule itself');
+
+-- One Undo takes the shared line and the shared bill away.
+select extensions.is(public.apply_undo_step('e1120000-0000-0000-0000-000000000011') ->> 'status', 'undone', 'one Undo reverses a household save');
+select extensions.ok((select deleted_at is not null from public.transactions where id = '79112000-0000-0000-0000-000000000011'), 'undo: the shared line is gone');
+select extensions.ok((select deleted_at is not null from public.recurring_series where id = '5e112000-0000-0000-0000-0000000000b1'), 'undo: the shared bill is gone');
 
 select * from extensions.finish();
 rollback;
