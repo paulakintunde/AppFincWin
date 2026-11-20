@@ -28,6 +28,8 @@ import {
   type MissingCode,
   type Notice,
   type Result,
+  type DecideStage,
+  firstShownCaveat,
 } from '@/engine/decide/v3';
 
 /** One sentence: the copy key it was read from, the text, and the engine code behind it. */
@@ -69,6 +71,8 @@ export interface SaidResult {
   readonly notices: readonly Line[];
   readonly facts: readonly Line[];
   readonly basis: Line | null;
+  /** 08.1-20: "Pay is judged over your last {{months}} months." for pay judged over more than 6 months; null otherwise. */
+  readonly payWindow: Line | null;
   readonly caveat: Line | null;
   readonly caveatFigures: readonly Line[];
   readonly nextStep: Line | null;
@@ -209,7 +213,8 @@ function basisLine(r: Result, deps: SayDeps): Line {
     case 'quick_estimates':
       return fill(b.kind, BASIS_KEYS.quick_estimates, {}, deps, ALL_PLAIN);
     case 'partial':
-      return fill(b.kind, BASIS_KEYS.partial, { used: b.used, lookedFor: b.lookedFor }, deps, ALL_PLAIN);
+      // 08.1-20: the sentence names the window the engine used; one month reads "your one full month".
+      return b.used === 1 ? fill(b.kind, BASIS_KEYS.partialOne, { date: b.upTo }, deps, ALL_PLAIN) : fill(b.kind, BASIS_KEYS.partial, { used: b.used, date: b.upTo }, deps, ALL_PLAIN);
     case 'records':
       return fill(b.kind, BASIS_KEYS.records, { months: b.months, date: b.upTo }, deps, ALL_PLAIN);
     case 'records_with_reason':
@@ -256,7 +261,7 @@ function afterBuyLead(r: Result, deps: SayDeps): Line | null {
 }
 
 /** The whole Result as sentences, in reading order. */
-export function sayResult(r: Result, deps: SayDeps): SaidResult {
+export function sayResult(r: Result, deps: SayDeps, opts?: { readonly stage?: DecideStage; readonly payMonths?: number | null }): SaidResult {
   const g = (make: () => Line): Line | null => guard(deps, make);
   // CO-D-113: unsaved_changes is always the first notice; the rest keep the engine's order.
   const notices = [...r.notices.filter((n) => n.code === 'unsaved_changes'), ...r.notices.filter((n) => n.code !== 'unsaved_changes')];
@@ -265,7 +270,10 @@ export function sayResult(r: Result, deps: SayDeps): SaidResult {
   const factLines = present(r.facts.map((f) => g(() => sayCode('fact', f, deps))));
   const basis = g(() => basisLine(r, deps));
   // CO-D-119: only the first caveat shows under the answer; the About sheet lists them all.
-  const { caveat, figures } = caveatLines(r.caveats?.[0], deps);
+  // 08.1-20: below the deeper stage the StageLine already says quick_estimates / few_months, so the next caveat is the one shown.
+  const { caveat, figures } = caveatLines(firstShownCaveat(r.caveats ?? [], opts?.stage ?? 'deeper'), deps);
+  const payMonths = opts?.payMonths ?? null;
+  const payWindow = payMonths === null ? null : g(() => fill('pay_window', BASIS_KEYS.payWindow, { months: payMonths }, deps, ALL_PLAIN));
   const step = r.confidence.nextStep;
   const nextStep = step === null ? null : g(() => fill(step.step, NEXT_STEP_KEYS[step.step], {}, deps));
   const missing = present(r.missing.map((m) => g(() => missingLine(m, r, deps))));
@@ -274,5 +282,5 @@ export function sayResult(r: Result, deps: SayDeps): SaidResult {
   // D-42: when it is to be bought, on every answer.
   const today = r.purchaseDate === deps.today;
   const boughtOn = g(() => fill(today ? 'afterBuy.boughtToday' : 'afterBuy.boughtOn', today ? AFTER_BUY_KEYS.boughtToday : AFTER_BUY_KEYS.boughtOn, { date: r.purchaseDate }, deps));
-  return { notices: noticeLines, facts: factLines, basis, caveat, caveatFigures: figures, nextStep, missing, readiness, afterBuy: { lead, boughtOn } };
+  return { notices: noticeLines, facts: factLines, basis, payWindow, caveat, caveatFigures: figures, nextStep, missing, readiness, afterBuy: { lead, boughtOn } };
 }

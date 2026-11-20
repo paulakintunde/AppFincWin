@@ -17,6 +17,7 @@ import { setupPayBills } from './setupPayBills';
 import { sheetsCosts } from './sheetsCosts';
 import { sheetsHome } from './sheetsHome';
 import { sheetsInput } from './sheetsInput';
+import { stage } from './stage';
 import { stepper } from './stepper';
 
 export const decideScreens = {
@@ -34,4 +35,5 @@ export const decideScreens = {
   sheetsCosts,
   past,
   safetyNet,
+  stage,
 } as const;

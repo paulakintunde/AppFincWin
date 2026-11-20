@@ -4,7 +4,7 @@
  */
 import en from '../../../../../i18n/locales/en';
 import { REASON_AUDIENCE } from '../../confidence/reasons';
-import type { ConfidenceReason, NextStepCode } from '../../types';
+import type { Basis, ConfidenceReason, NextStepCode } from '../../types';
 import { BASIS_KEYS, BASIS_REASON_KEYS, BASIS_VALUE_KEYS, NEXT_STEP_KEYS } from '../verdictTable';
 
 function resolve(path: string): string {
@@ -18,7 +18,9 @@ const placeholders = (s: string): string[] => [...s.matchAll(/\{\{(\w+)\}\}/g)].
 describe('basis copy', () => {
   it('each kind has its sentence with exactly its placeholders', () => {
     for (const [kind, key] of Object.entries(BASIS_KEYS)) {
-      expect({ kind, keys: placeholders(resolve(key)) }).toEqual({ kind, keys: [...BASIS_VALUE_KEYS[kind as keyof typeof BASIS_KEYS]].sort() });
+      if (kind === 'partialOne') expect(placeholders(resolve(key))).toEqual(['date']);
+      else if (kind === 'payWindow') expect(placeholders(resolve(key))).toEqual(['months']);
+      else expect({ kind, keys: placeholders(resolve(key)) }).toEqual({ kind, keys: [...BASIS_VALUE_KEYS[kind as Basis['kind']]].sort() });
     }
     for (const key of Object.values(BASIS_REASON_KEYS)) expect(placeholders(resolve(key))).toEqual([...BASIS_VALUE_KEYS.records_with_reason].sort());
   });
@@ -29,9 +31,11 @@ describe('basis copy', () => {
   });
 
   it('the sentences the cases quote (QE-02, Theme H)', () => {
-    expect(resolve(BASIS_KEYS.partial)).toBe('Based on {{used}} of the {{lookedFor}} months of records Decide looks for.');
-    expect(resolve(BASIS_KEYS.records)).toBe('Based on {{months}} months of your records, up to {{date}}.');
-    expect(resolve(BASIS_KEYS.quick_estimates)).toBe('Based on your quick estimates, not your records.');
+    expect(resolve(BASIS_KEYS.partialOne)).toBe('Based on your one full month of records, up to {{date}}.');
+    expect(resolve(BASIS_KEYS.partial)).toBe('Based on your last {{used}} months of records, up to {{date}}.');
+    expect(resolve(BASIS_KEYS.records)).toBe('Based on your last {{months}} months of records, up to {{date}}.');
+    expect(resolve(BASIS_KEYS.quick_estimates)).toBe('Based on the figures you typed, not your records.');
+    expect(resolve(BASIS_KEYS.payWindow)).toBe('Pay is judged over your last {{months}} months.');
     expect(resolve('decide.v3.fact.no_full_month')).toBe('No full month of records yet.');
   });
 

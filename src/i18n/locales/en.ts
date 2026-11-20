@@ -2372,14 +2372,16 @@ const en = {
       },
       // 05.4 UX-04 / CMP-F12: the one plain sentence under every answer, never more confident than the answer.
       basis: {
-        partial: 'Based on {{used}} of the {{lookedFor}} months of records Decide looks for.',
-        records: 'Based on {{months}} months of your records, up to {{date}}.',
-        quickEstimates: 'Based on your quick estimates, not your records.',
+        partialOne: 'Based on your one full month of records, up to {{date}}.',
+        partial: 'Based on your last {{used}} months of records, up to {{date}}.',
+        records: 'Based on your last {{months}} months of records, up to {{date}}.',
+        quickEstimates: 'Based on the figures you typed, not your records.',
+        payWindow: 'Pay is judged over your last {{months}} months.',
         recordsWithReason: {
-          user_said_cover: 'Based on {{months}} months of your records, up to {{date}}, and on what you said about covering it.',
-          quick_estimates: 'Based on {{months}} months of your records, up to {{date}}, and your quick estimates.',
-          pay_missed: 'Based on {{months}} months of your records, up to {{date}}, leaving out pay that hasn’t arrived.',
-          close_to_line: 'Based on {{months}} months of your records, up to {{date}}. This is close to your limit.',
+          user_said_cover: 'Based on your last {{months}} months of records, up to {{date}}, and on what you said about covering it.',
+          quick_estimates: 'Based on your last {{months}} months of records, up to {{date}}, and your quick estimates.',
+          pay_missed: 'Based on your last {{months}} months of records, up to {{date}}, leaving out pay that hasn’t arrived.',
+          close_to_line: 'Based on your last {{months}} months of records, up to {{date}}. This is close to your limit.',
         },
       },
       // 05.4 FIN-25: at most one next step, stated as a fact.

@@ -316,8 +316,12 @@ export const MISSING_KEYS = Object.freeze({
 export const BASIS_KEYS = Object.freeze({
   quick_estimates: 'decide.v3.basis.quickEstimates',
   partial: 'decide.v3.basis.partial',
+  /** 08.1-20: one full month of records reads "your one full month". */
+  partialOne: 'decide.v3.basis.partialOne',
   records: 'decide.v3.basis.records',
-} as const satisfies Record<Exclude<Basis['kind'], 'records_with_reason'>, string>);
+  /** 08.1-20: the pay-window row under the basis, for pay judged over more than 6 months. */
+  payWindow: 'decide.v3.basis.payWindow',
+} as const satisfies Record<Exclude<Basis['kind'], 'records_with_reason'> | 'partialOne' | 'payWindow', string>);
 
 /**
  * The 'answer' reasons that can lead a records basis. few_months never does: under 3 months the basis is partial first
@@ -333,7 +337,7 @@ export const BASIS_REASON_KEYS = Object.freeze({
 /** The placeholders in each basis sentence: date is basis.upTo; quick_estimates has none. */
 export const BASIS_VALUE_KEYS: Readonly<Record<Basis['kind'], readonly string[]>> = Object.freeze({
   quick_estimates: [],
-  partial: ['used', 'lookedFor'],
+  partial: ['used', 'date'],
   records: ['months', 'date'],
   records_with_reason: ['months', 'date'],
 });
