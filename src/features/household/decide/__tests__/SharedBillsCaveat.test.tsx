@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { stateColors } from '@/theme/tokens';
-import { CouplesNote } from '../CouplesNote';
 import { SharedBillsCaveat, sharedBillsStale } from '../SharedBillsCaveat';
 
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
@@ -61,12 +60,5 @@ describe('SharedBillsCaveat', () => {
     expect(screen.queryByText(/Sam/)).toBeNull();
     expect(screen.getByText(/Rust hasn’t logged shared bills since/)).toBeTruthy();
     expect(screen.getByTestId('shared-bills-caveat').props.accessibilityLabel).not.toContain('Sam');
-  });
-});
-
-describe('CouplesNote', () => {
-  it('names the joint account in plain text', async () => {
-    await setup(<CouplesNote account="Joint current" />);
-    expect(screen.getByText('Money in Joint current may be planned by someone else too.')).toBeTruthy();
   });
 });

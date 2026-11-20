@@ -18,7 +18,7 @@ import { futureValueExact } from '../../../payoff/futureValue';
 import { ceilDivide, minorFromBigInt, ZERO_PERCENT, type Percent } from '../../../payoff/types';
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { myPart } from '../../share';
-import { addYearMonths } from '../dates';
+import { addYearMonths, yearMonthOf } from '../dates';
 import { seasonalReadyMonth } from '../../../month/model/seasonWalk';
 import { divideHalfUp } from '../../../money/rounding';
 import { isNeedPurpose } from '../judge/options';
@@ -151,6 +151,37 @@ export function buyLater(input: {
   return { months, readyBy: addYearMonths(input.month, months), monthlyAmount: input.typicalLeft };
 }
 
+type BuyLater = ReturnType<typeof buyLater>;
+
+const monthIndex = (ym: string): number => Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7));
+
+/**
+ * 08.1 D-05 (owner 2026-11-20): Buy it later reads the answer's own ready-by month, so the option and the answer never disagree.
+ * `answer` is the month the judge gave (null: no date inside a year, so none is offered either). `usual` is the usual-month figure
+ * for the same lever setting and `usualAtZero` the same with no lever; moving a lever moves the answer's month by the number of
+ * months the usual month moved, never to before the month after the check month. With no lever the answer's month is returned as is.
+ */
+export function alignBuyLater(usual: BuyLater, usualAtZero: BuyLater, month: string, answer: string | null): BuyLater {
+  if (answer === null) return { ...usual, months: null, readyBy: null };
+  const moved = usual.readyBy !== null && usualAtZero.readyBy !== null ? Math.max(0, monthIndex(usualAtZero.readyBy) - monthIndex(usual.readyBy)) : 0;
+  const readyBy = addYearMonths(answer, -Math.min(moved, Math.max(0, monthIndex(answer) - monthIndex(month) - 1)));
+  return { ...usual, months: monthIndex(readyBy) - monthIndex(month), readyBy };
+}
+
+/** The month a not-yet answer gives as its ready-by; null with no date inside a year; undefined for any other answer (not aligned). */
+export function answerReadyMonth(result: Result): string | null | undefined {
+  if (result.code !== 'not_yet') return undefined;
+  const by = result.readyBy ?? null;
+  if (by === null) return result.facts.some((f) => f.code === 'not_within_year') ? null : undefined;
+  return by.kind === 'month' ? by.month : yearMonthOf(by.date);
+}
+
+/** Buy it later on a not-yet answer follows the answer's month (D-05); every other answer keeps the usual-month figure. */
+function laterOf(usual: BuyLater, result: Result, month: string): BuyLater {
+  const answer = answerReadyMonth(result);
+  return answer === undefined ? usual : alignBuyLater(usual, usual, month, answer);
+}
+
 function streamMonths(s: Schedule): number {
   const span = s.cadence.every * s.count;
   const months = s.cadence.unit === 'month' ? span : Math.round((span * 12) / 52);
@@ -209,13 +240,17 @@ export function insteadFutures(input: {
     },
     keep: { unspentKept: unspent === null ? null : minorUnits(unspent) },
     deposit: { months, views },
-    buyLater: buyLater({
-      price: purchase.whole,
-      unspent,
-      typicalLeft: month.typicalLeft,
-      month: month.month,
-      // Stryker disable next-line ConditionalExpression: an absent picture or a picture key holding undefined reads the same in buyLater
-      ...(month.incomePicture === undefined ? {} : { picture: month.incomePicture }),
-    }),
+    buyLater: laterOf(
+      buyLater({
+        price: purchase.whole,
+        unspent,
+        typicalLeft: month.typicalLeft,
+        month: month.month,
+        // Stryker disable next-line ConditionalExpression: an absent picture or a picture key holding undefined reads the same in buyLater
+        ...(month.incomePicture === undefined ? {} : { picture: month.incomePicture }),
+      }),
+      result,
+      month.month,
+    ),
   };
 }

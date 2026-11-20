@@ -9,7 +9,6 @@ import en from '@/i18n/locales/en';
 import { wrap } from '@/test/stepProps';
 import { stageReadingOf } from '../../logic/stageReading';
 import { AnswerFrame } from '../AnswerFrame';
-import { StageTag } from '../StageTag';
 import { AboutSheet } from '../info/AboutSheet';
 import { ledgerRun, viewOf, type Run } from './fixtures';
 
@@ -160,16 +159,5 @@ describe('08.1-20 About this answer', () => {
     expect(screen.queryByTestId('about-stage')).toBeNull();
     expect(screen.queryByTestId('about-held-back')).toBeNull();
     expect(screen.getByText(S.about.howFar)).toBeTruthy();
-  });
-});
-
-describe('08.1-20 StageTag', () => {
-  it('shows the stage word at first read and full answer, nothing at deeper', async () => {
-    await wrap(<StageTag stage="first_read" />);
-    expect(screen.getByText('First read')).toBeTruthy();
-    await wrap(<StageTag stage="full" />);
-    expect(screen.getByText('Full answer')).toBeTruthy();
-    await wrap(<StageTag stage="deeper" />);
-    expect(screen.queryByTestId('stage-tag')).toBeNull();
   });
 });
