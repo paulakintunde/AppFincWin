@@ -38,7 +38,7 @@ Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple
 Phase: 00 (foundation) — 18/20. 2026-11-19: D-U-N-S issued; Apple org enrolment submitted, awaiting Apple review; Play Console org set up, Android developer verification pending. 00-07 and 00-20 stay open until Apple membership is active and Play verification clears.
 Decide: open to every tester since 2026-11-06 (quick 261106-bf2, `DECIDE_OPEN = true`); `profiles.decide_v3` no longer gates anything.
 Status: Executing (two phase branches)
-Last activity: 2026-11-19 -- whole-app review and doc tidy
+Last activity: 2026-11-19 -- quick task 261119-vjo: Phase 0 enrolment status (D-U-N-S issued, Apple submitted, Play verification pending)
 
 ## Performance Metrics
 
@@ -230,6 +230,7 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | *(none — first milestone)* | | | |
+| 261119-vjo | Phase 0 enrolment status: D-U-N-S issued, Apple submitted, Play verification pending, third-party stores declined | 2026-11-19 | 998a63f8 | [261119-vjo-phase-0-enrolment-status](./quick/261119-vjo-phase-0-enrolment-status/) |
 
 ## Session Continuity
 
