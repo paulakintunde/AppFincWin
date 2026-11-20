@@ -14,6 +14,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 const noop = () => undefined;
+const BODY = 'options';
 
 function screen(n: number, title: string) {
   return (
@@ -29,7 +30,7 @@ function screen(n: number, title: string) {
         onSkipRest={noop}
         stepKey={`q${n}`}
       >
-        <Text>options</Text>
+        <Text>{BODY}</Text>
       </QuestionScreen>
     </ThemeProvider>
   );
