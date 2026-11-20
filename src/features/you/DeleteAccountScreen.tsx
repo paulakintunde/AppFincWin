@@ -16,6 +16,10 @@ import { textRole } from '@/theme/typography';
 import { requestAccountDeletion } from '@/services/account/deleteAccount';
 import { useHouseholdScope } from '@/features/household/useHouseholdScope';
 import { useMemberLabel } from '@/features/household/useMemberLabel';
+import { WarningCard } from '@/ui/WarningCard';
+import { PlanLink } from '@/features/plans/components/NoticeCard';
+import { usePlanState } from '@/features/plans/usePlanState';
+import { manageSubscription } from '@/features/plans/manageSubscription';
 import { useAccountDeletionPreview } from './useAccountDeletionPreview';
 
 export function DeleteAccountScreen() {
@@ -25,6 +29,7 @@ export function DeleteAccountScreen() {
   const scope = useHouseholdScope();
   const label = useMemberLabel(scope.householdId);
   const preview = useAccountDeletionPreview(scope.userId);
+  const plan = usePlanState();
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -34,6 +39,10 @@ export function DeleteAccountScreen() {
   const info = preview.data;
   const shared = info?.in_shared_household === true;
   const ownerName = shared && info?.is_owner && info.next_owner_user_id ? label(info.next_owner_user_id) : null;
+  // D-23: deleting the account does not cancel a store subscription. Shown to the payer of an active store plan; never blocks.
+  const billing =
+    plan.payerIsMe && (plan.store === 'APP_STORE' || plan.store === 'PLAY_STORE') && (plan.status === 'trial' || plan.status === 'active' || plan.status === 'grace');
+  const othersCovered = billing ? Math.max(0, plan.members - 1) : 0;
   const ready = matches && scope.online && !busy && !preview.isLoading;
 
   async function onDelete() {
@@ -56,6 +65,23 @@ export function DeleteAccountScreen() {
       <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
         {t('household.account.title')}
       </Text>
+
+      {billing ? (
+        <View testID="delete-billing-warning" style={styles.billing}>
+          <WarningCard
+            tone="soft"
+            title={t('plans.deleteWarning.title')}
+            value=""
+            body={[t('plans.deleteWarning.body'), ...(othersCovered > 0 ? [t('plans.deleteWarning.payerCovers', { count: othersCovered })] : [])]}
+          />
+          <PlanLink
+            label={t('plans.deleteWarning.manage')}
+            onPress={() => {
+              void manageSubscription(plan.store);
+            }}
+          />
+        </View>
+      ) : null}
 
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('household.account.intro')}</Text>
@@ -117,6 +143,7 @@ export function DeleteAccountScreen() {
 
 const styles = StyleSheet.create({
   back: { marginBottom: space.gapMd },
+  billing: { marginTop: step.section, gap: step.tight, alignItems: 'flex-start' },
   card: { marginTop: step.section, padding: step.card, borderRadius: radii.card, gap: step.tight },
   confirm: { marginTop: step.section, gap: step.tight },
   input: { minHeight: space.touchMin, paddingHorizontal: step.card, borderRadius: radii.card },

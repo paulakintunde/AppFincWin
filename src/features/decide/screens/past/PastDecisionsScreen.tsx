@@ -11,7 +11,6 @@ import type { DecideCheckRow } from '@/db/decideChecks';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { TransactionRow } from '@/db/rows';
 import { useT } from '@/i18n';
-import { canUse } from '@/features/decide/entitlements';
 import { finalPriceOf, parseCheckInputs } from '@/features/decide/snapshot/checkInputs';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
@@ -81,8 +80,6 @@ export function PastDecisionsScreen() {
     }
     return null;
   }, [due, candidates, model.linksByCheck, ctx.home, ctx.rates]);
-
-  if (!canUse('decisionJournal')) return null;
 
   const nameOf = (d: DecideCheckRow) => d.name || t('decide.quick.unnamed');
   const dateOf = (d: DecideCheckRow) => formatDate(localDateOf(d.decided_at ?? d.updated_at, ctx.timeZone));

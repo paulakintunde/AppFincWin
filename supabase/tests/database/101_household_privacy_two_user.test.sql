@@ -42,6 +42,8 @@
 -- settlement_lines (108)
 -- household_former_members (109)
 -- member_departures (109)
+-- user_setup (111)
+-- feature_switches (111)
 -- end-export-tables
 
 begin;

@@ -1,6 +1,27 @@
 // Global test setup. Plans that need their own module mocks do so inside their own
 // test files — this file stays limited to setup every test in the suite needs.
 
+// Phase 9: the plan state, lock host and write gate reach the Supabase client from most screens, and the client reads
+// EXPO_PUBLIC_* when it loads. CI has no .env, so give every suite inert placeholder values (never a real project).
+// Suites that test env validation pass their own values to readClientEnv or set process.env themselves.
+process.env.EXPO_PUBLIC_APP_ENV ??= 'development';
+process.env.EXPO_PUBLIC_SUPABASE_URL ??= 'https://placeholder.invalid';
+process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??= 'test-placeholder-key';
+process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ??= 'test-placeholder.apps.googleusercontent.com';
+
+// The Google sign-in SDK needs its native module at import time. Screens now reach it through usePlanState ->
+// AuthProvider, so every suite gets an inert stub; google.test.ts mocks it with its own spies.
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(() => Promise.resolve(true)),
+    signIn: jest.fn(() => Promise.resolve({ type: 'cancelled', data: null })),
+    signInSilently: jest.fn(() => Promise.resolve({ type: 'noSavedCredentialFound', data: null })),
+    signOut: jest.fn(() => Promise.resolve(null)),
+    revokeAccess: jest.fn(() => Promise.resolve(null)),
+  },
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () =>
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')

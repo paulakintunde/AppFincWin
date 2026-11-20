@@ -13,6 +13,7 @@ import { currencyCode, minorUnits } from '@/engine/money';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { essentialMonthOf } from '@/features/grow/safetyNet/netPreview';
 import { useT } from '@/i18n';
+import { useReadOnly } from '@/features/plans/useReadOnlyGate';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { space, useScreenInsets } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -40,17 +41,20 @@ type Step = 'intro' | 'net' | 'done';
 
 export function FirstAnswerGate({ answer, onDone }: FirstAnswerGateProps): React.JSX.Element | null {
   const gate = useFirstAnswerGate();
+  // 09-25 (A2-W): a read-only plan (sample or locked) is never asked the net question: it only leads to a write.
+  const readOnly = useReadOnly();
+  const needsNet = gate.needsNet && !readOnly;
   const [step, setStep] = useState<Step | null>(null);
 
   // Decide what to ask once, when the reads settle (set during render, the React way to derive state once); answering a step never
   // re-derives the plan.
-  if (step === null && !gate.loading) setStep(gate.needsIntro ? 'intro' : gate.needsNet ? 'net' : 'done');
+  if (step === null && !gate.loading) setStep(gate.needsIntro ? 'intro' : needsNet ? 'net' : 'done');
 
   useEffect(() => {
     if (step === 'done') onDone();
   }, [step, onDone]);
 
-  const afterIntro = (): void => setStep(gate.needsNet ? 'net' : 'done');
+  const afterIntro = (): void => setStep(needsNet ? 'net' : 'done');
 
   // 06.1-52 (C-19): offline with nothing cached, the gate cannot settle; the offline card says so instead of a blank screen.
   if (step === null && gate.offline) return <GateOffline onRetry={gate.retry} />;

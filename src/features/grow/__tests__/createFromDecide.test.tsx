@@ -10,6 +10,8 @@ import { GrowHome, prefillFromParams } from '../home/GrowHome';
 jest.setTimeout(30000);
 
 let mockParams: Record<string, string> = {};
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
 jest.mock('@/shell/fab/FabProvider', () => ({ useRegisterFab: () => undefined }));
@@ -19,6 +21,11 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
   return { TabRootScreen: (p: { children?: React.ReactNode; overlay?: React.ReactNode }) => R.createElement(View, null, p.children, p.overlay) };
 });
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// 09-13: GrowHome asks useGrowFeatureFlags(); level 4 means every flag on.
+jest.mock('@/features/grow/useGrowFeatureFlags', () => {
+  const actual = jest.requireActual('@/features/grow/growFeatureFlags');
+  return { useGrowFeatureFlags: () => actual.growFeatureFlags({}) };
+});
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true }),
 }));

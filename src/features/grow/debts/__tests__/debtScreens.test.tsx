@@ -23,6 +23,8 @@ const mockPush = jest.fn();
 const mockWarn = jest.fn();
 const mockLight = jest.fn();
 
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/data/queries/decide', () => ({
   useDebts: () => ({ data: mockRows, isError: false, refetch: jest.fn() }),

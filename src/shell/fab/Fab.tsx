@@ -17,6 +17,9 @@ import { shadows } from '@/theme/tokens';
 import { fontSize } from '@/theme/typography';
 import { DURATION, EASING } from '@/theme/motion';
 import { radii, size, space } from '@/theme/layout';
+import { useReadOnly } from '@/features/plans/useReadOnlyGate';
+import { useT } from '@/i18n';
+import { Glyph } from '@/ui/icons/Glyph';
 import { useFab } from './FabProvider';
 import { useFabOffsets } from './useShellPositions';
 
@@ -38,6 +41,10 @@ function FabButton({
 }): React.JSX.Element {
   const { colors, fonts } = useTheme();
   const { bottom, lift } = useFabOffsets();
+  const t = useT();
+  // 09-25 (device check, locked home): the FAB keeps its place but shows the lock mark and says "needs a plan"; the tap
+  // still runs config.onPress, whose gate (09-17) opens the locked sheet.
+  const readOnly = useReadOnly();
 
   // fw-rise uses plain ease: translateY 14 -> 0 with a fade, 220ms.
   const rise = useSharedValue(1);
@@ -67,7 +74,7 @@ function FabButton({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={config.accessibilityLabel}
+        accessibilityLabel={readOnly ? `${config.accessibilityLabel}, ${t('lock.accessibleSuffix')}` : config.accessibilityLabel}
         accessibilityActions={quickActions.map((a) => ({ name: a.id, label: a.label }))}
         onAccessibilityAction={(e) =>
           quickActions.find((a) => a.id === e.nativeEvent.actionName)?.run()
@@ -127,6 +134,7 @@ function FabButton({
         >
           {config.label}
         </Text>
+        {readOnly ? <Glyph name="pinLock" size={16} color={colors.surface} testID="fab-lock" /> : null}
       </Pressable>
     </Animated.View>
   );

@@ -2,7 +2,8 @@
 // unstable-native-tabs). backBehavior 'none' because BackHistoryProvider owns cross-tab back.
 // Detail screens are OUTER-stack siblings of this group, so they cover the bar and the FAB. The
 // first-account gate lives here so neither Home nor Activity renders without an account.
-import { Profiler } from 'react';
+import { Profiler, useContext } from 'react';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { Redirect } from 'expo-router';
 import { Tabs } from 'expo-router/js-tabs';
 import { StyleSheet, View } from 'react-native';
@@ -22,6 +23,10 @@ import { isTabId } from '@/shell/tabBar/tabs';
 import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
+import { LockBanner, lockBannerShown } from '@/features/plans/LockBanner';
+import { usePlanState } from '@/features/plans/usePlanState';
+import { SampleBar } from '@/features/onboarding/SampleBar';
+import { SampleHost } from '@/features/onboarding/SampleHost';
 
 // 06.1-78 (H-15): the Tabs get Screen elements only. A null child (the old grow fallback once Grow opened) made expo-router log
 // "Layout children must be of type Screen" on every render. Built once: availability is a build switch, not state.
@@ -39,13 +44,31 @@ export default function TabsLayout() {
     isError: accounts.isError,
     accounts: accounts.data,
   });
-  if (gate) return <Redirect href="/setup/account" />;
+  // 09-24 (D-17b): the pre-trial look-around runs on sample records, so it never asks for a first account of one's own. While the
+  // plan is unknown (usePlanState reports 'sample' with loading) nothing is drawn, so neither path is taken on a guess.
+  // 09-25 (A5-3): only a plan that can write is sent to make a first account. A read-only home (locked, and 'sample',
+  // the pre-trial look-around) comes in and reads its empty tabs; the account sheet's Save would only be locked there.
+  const plan = usePlanState();
+  const insets = useContext(SafeAreaInsetsContext);
+  const bannerShown = lockBannerShown(plan);
+  if (gate && plan.loading) return null;
+  if (gate && plan.writable && plan.status !== 'sample') return <Redirect href="/setup/account" />;
   // FabProvider is mounted in app/(app)/_layout.tsx so You, an outer-stack screen, reads the same quick actions.
   return (
     <View style={styles.fill}>
+      <LockBanner />
+      {/* 09-25 (device check, locked home): the banner already sits under the status bar, so the tab screens below it get a
+          top inset of 0; with the real inset each tab header left a second status-bar-high gap under the banner. */}
+      <SafeAreaInsetsContext.Provider value={bannerShown && insets ? { ...insets, top: 0 } : insets}>
       <Tabs
         backBehavior="none"
-        tabBar={(props) => <TabBar {...props} />}
+        // 09-24 (UI-SPEC 4): the pinned Sample bar sits in the tab bar's slot, directly above it, so screens end above both.
+        tabBar={(props) => (
+          <>
+            <SampleBar />
+            <TabBar {...props} />
+          </>
+        )}
         // 06.1-73 (DB-1): an unfocused tab no longer re-renders on every cache change (27-28 hidden Home commits per Decide
         // write on the emulator). It renders again, with the latest data, when it is focused.
         screenOptions={{ headerShown: false, animation: 'none', freezeOnBlur: true }}
@@ -71,6 +94,7 @@ export default function TabsLayout() {
       >
         {TAB_SCREENS}
       </Tabs>
+      </SafeAreaInsetsContext.Provider>
       <Fab />
       <FabQuickMenu />
       <ShellEntryHost />
@@ -78,6 +102,8 @@ export default function TabsLayout() {
       {DECIDE_OPEN ? <DecideShellHost /> : null}
       {/* 05.4-36 BO-08: quiet shadow runs for consenting testers only (profiles.decide_shadow); renders nothing, also while Decide is off. */}
       <DecideShadowHost />
+      {/* 09-24: seeds the sample data and opens the sample answer once, in plan status 'sample' only; renders nothing. */}
+      <SampleHost />
     </View>
   );
 }

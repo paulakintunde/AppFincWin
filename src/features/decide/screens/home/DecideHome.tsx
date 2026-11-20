@@ -19,6 +19,7 @@ import { useIsOnline } from '@/data/sync/useIsOnline';
 import type { LocalDate, PayV2, QuickLine } from '@/engine/decide/v3';
 import { currencyCode, currencyExponent, minorUnits } from '@/engine/money';
 import { perfMark } from '@/features/decide/perf/perfMarks';
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { categoryName as categoryDisplayName } from '@/features/record/categoryName';
@@ -124,6 +125,7 @@ export function DecideHome() {
   const fmt = useMoneyFormatter(false, currency);
   const parser = useAmountParser();
   const newCheck = useNewCheck();
+  const gate = useWriteGate('newDecideCheck'); // 09-17 (D-02): a locked plan starts no new check
   // 06.1-56 (A-HOME-3): the prototype has no + Add button on Decide; it is hidden while this tab is focused.
   const isFocused = useIsFocused();
   useHideFab('decide', isFocused);
@@ -232,6 +234,10 @@ export function DecideHome() {
   };
 
   const check = (): void => {
+    if (gate.gated) {
+      gate.run(() => undefined);
+      return;
+    }
     if (!ready || inputsLoading) return;
     perfMark('decide.answer:start'); // 06.1-47: Check it -> answer timing; the end is marked in useCheckEngine
     const result = newCheck.start(fields);
@@ -497,6 +503,8 @@ export function DecideHome() {
           }
           disabled={!ready || newCheck.pending || inputsLoading}
           onCheck={check}
+          locked={gate.gated}
+          lockedSuffix={gate.a11ySuffix}
           hint={hint}
         />
         </View>

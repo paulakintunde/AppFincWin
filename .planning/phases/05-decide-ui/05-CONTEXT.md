@@ -102,6 +102,7 @@ Decision numbers are local to Phase 5. "04 D-xx" refers to `.planning/phases/04-
 ### Free/Pro, demo account and screenshots
 - **D-16:** **Each Pro-candidate feature goes through one `canUse(feature)` entitlement hook, which returns true for every feature for now** (PRICING §186). The Pro candidates are: more than one open check, setbacks, the decision journal with estimate-vs-actual, and card/loan payoff comparisons. Phase 9 switches them on without touching the screens.
 - **D-17:** **The alternatives table is free.** It is the ethical core of Decide (DCU-06) and a store promise ("Cheaper, later, or skip it"), and it appears in screenshot 3. This amends `.planning/research/PRICING.md` §2 (the alternatives table moves from Pro to Free). Phase 9 must take this as an input.
+  - Updated 2026-11-18 by Phase 9 D-04: no free tier after the trial; everything is available in the trial or a paid plan; when locked Decide does not run, so safety parts are never separated from an answer. Crisis links stay free via You > Free help (D-03).
 - **D-18:** **Phase 5 builds the scope toggle and split-override UI, shown only when the household has more than one member.** Until Phase 8 that means the toggle is always hidden. The demo scenario and screenshots run in personal scope. Household screenshots are redone after Phase 8.
 - **D-19:** **The demo scenario uses two checks, sofa then car:**
   - Screenshot 1: a sofa at $1,800 → "It fits".

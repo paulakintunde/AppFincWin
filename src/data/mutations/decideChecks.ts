@@ -528,6 +528,9 @@ export function useRetryCheckCreate(): { retry(entry: FailedWrite): boolean } {
   };
 }
 
+// 09-25 (A2-W): writes the app makes on its own while a person reads. The central plan guard blocks them without the sheet.
+const PLAN_SILENT = { planSilent: true } as const;
+
 export function useSaveCheckDraft(): {
   save(input: { id: string; name: string; inputs: Record<string, unknown>; furthestStep: number }): void;
 } {
@@ -535,6 +538,7 @@ export function useSaveCheckDraft(): {
   const mutation = useMutation<DecideCheckRow | null, unknown, SaveCheckDraftVars>({
     mutationKey: mutationKeys.saveCheckDraft,
     scope: WRITE_SCOPE,
+    meta: PLAN_SILENT, // 09-25: an autosave; blocked without the sheet while read-only
   });
   return {
     save(input) {
@@ -545,12 +549,14 @@ export function useSaveCheckDraft(): {
   };
 }
 
-function useEditCheckMutation() {
+function useEditCheckMutation(meta?: Record<string, unknown>) {
   return useMutation<EditCheckResult, unknown, EditCheckVars>({
     mutationKey: mutationKeys.editCheck,
     scope: WRITE_SCOPE,
+    ...(meta ? { meta } : {}),
   });
 }
+
 
 function cacheOf(row: DecideCheckRow): CheckCacheKey {
   return { userId: row.created_by, householdId: row.household_id };
@@ -595,7 +601,7 @@ export function useAbandonCheck(): { abandon(row: DecideCheckRow, reason?: 'clea
 
 /** D-15: remembers what the user saw, only to say "Changed since you looked" later. No undo step. */
 export function useMarkCheckSeen(): { markSeen(row: DecideCheckRow, state: SeenState, basis: SeenBasis): boolean } {
-  const mutation = useEditCheckMutation();
+  const mutation = useEditCheckMutation(PLAN_SILENT);
   return {
     markSeen(row, state, basis) {
       if (row.last_seen_state === state && row.last_seen_basis === basis) return false;
@@ -618,6 +624,7 @@ export function useSaveCheckAnswer(): { save(row: DecideCheckRow, seen: StoredSe
   const mutation = useMutation<EditCheckResult, unknown, EditCheckVars>({
     mutationKey: mutationKeys.saveCheckAnswer,
     scope: WRITE_SCOPE,
+    meta: PLAN_SILENT,
   });
   return {
     save(row, seen) {

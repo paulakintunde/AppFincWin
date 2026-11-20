@@ -78,7 +78,11 @@ export function useRecordCheckHistory(ownerId: string): {
   mutate(a: { checkId: string; result: { code: string; variant?: string | null }; now?: Date }): boolean;
 } {
   const qc = useQueryClient();
-  const mutation = useMutation<unknown, unknown, RecordHistoryVars>({ mutationKey: mutationKeys.decideHistory, scope: WRITE_SCOPE });
+  const mutation = useMutation<unknown, unknown, RecordHistoryVars>({
+    mutationKey: mutationKeys.decideHistory,
+    scope: WRITE_SCOPE,
+    meta: { planSilent: true }, // 09-25: recorded on view; blocked without the sheet while read-only
+  });
   return {
     mutate(a) {
       const saidOn = localToday(a.now ?? new Date());

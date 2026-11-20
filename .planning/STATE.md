@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Whole-app review 2026-11-19; 08.1 wave 2 next; Phase 9 waits on RevenueCat and the Kint rename
-last_updated: "2026-11-19T18:00:00.000Z"
-last_activity: 2026-11-19 -- whole-app review and doc tidy (quick 261119-rvf)
+stopped_at: "Phase 9 26/26 complete and merged (PR #170, 2026-11-20); 08.1 wave 2 next; launch waits on RevenueCat ENV-12 and the new name"
+last_updated: "2026-11-20T12:00:00.000Z"
+last_activity: 2026-11-20 -- Phase 9 merged to main (PR #170)
 progress:
   total_phases: 30
   completed_phases: 16
-  total_plans: 806
-  completed_plans: 765
-  percent: 95
+  total_plans: 807
+  completed_plans: 791
+  percent: 97
 ---
 
 # Project State
@@ -233,6 +233,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-18T21:27:51.919Z
-Stopped at: Whole-app review 2026-11-19
+Last session: 2026-11-20T12:00:00.000Z
+Stopped at: Phase 9 merged to main (PR #170); 08.1 wave 2 next
 Resume file: none (see Current Position)

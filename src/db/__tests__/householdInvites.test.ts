@@ -61,7 +61,7 @@ describe('invite RPC wrappers', () => {
       ['cancel_invite', { p_invite_id: 'i1' }],
       ['restore_invite', { p_invite_id: 'i1' }],
       ['preview_invite', { p_code: 'C' }],
-      ['redeem_invite', { p_code: 'C' }],
+      ['redeem_invite', { p_code: 'C', p_store_country: null }],
     ]);
   });
 

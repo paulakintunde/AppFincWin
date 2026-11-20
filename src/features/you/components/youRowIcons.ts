@@ -24,7 +24,11 @@ export type YouRowId =
   | 'haptics'
   | 'analytics'
   | 'connection'
-  | 'signOut';
+  | 'signOut'
+  | 'subscription'
+  | 'features'
+  | 'freeHelp'
+  | 'export';
 
 export const YOU_ROW_ICON: Record<YouRowId, IconName> = {
   expense: 'add',
@@ -47,4 +51,9 @@ export const YOU_ROW_ICON: Record<YouRowId, IconName> = {
   analytics: 'privacy',
   connection: 'connected',
   signOut: 'signOut',
+  // 09-15: Subscription, Features, Free help and Export your data (UI-SPEC Navigation and Entry Points).
+  subscription: 'acctCard',
+  features: 'categories',
+  freeHelp: 'headphones',
+  export: 'download',
 };

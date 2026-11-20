@@ -108,8 +108,15 @@ export const queryKeys = {
   // 08-15: who owes whom. One read serves both the balances and the traced lines of one pair (usePairLines selects from it). It sits under transactionsRoot, so every transaction write
   // (and every settle-up call, which invalidates the root's balances) refreshes them.
   householdBalances: (householdId: string) => ['transactions', householdId, 'household-balances'] as const,
+  // 09-22 (D-34): four yes/no probes (transfers, imported lines, weight and amount splits). Under transactionsRoot so a write refreshes them.
+  holdsFlags: (householdId: string) => ['transactions', householdId, 'holds-flags'] as const,
   splitDefaults: (householdId: string) => ['split-defaults', householdId] as const,
   settlements: (householdId: string) => ['settlements', householdId] as const,
+  // 09-10: the server plan record for the signed-in user's household.
+  planState: (userId: string) => ['plan-state', userId] as const,
+  // 09-13: the person's private level, answers and feature switches.
+  userSetup: (userId: string) => ['user-setup', userId] as const,
+  featureSwitches: (userId: string) => ['feature-switches', userId] as const,
 };
 
 export const mutationKeys = {
@@ -139,6 +146,10 @@ export const mutationKeys = {
   editTransfer: ['transfers', 'edit'] as const,
   deleteTransfer: ['transfers', 'delete'] as const,
   saveImportProfile: ['import-profiles', 'save'] as const,
+  // 09-13
+  saveUserSetup: ['user-setup', 'save'] as const,
+  setFeatureSwitch: ['feature-switches', 'set'] as const,
+  replaceFeatureSwitches: ['feature-switches', 'replace'] as const,
   // Phase 02.2 (Record polish)
   cloneMonth: ['transactions', 'clone-month'] as const,
   pasteLines: ['transactions', 'paste-lines'] as const,

@@ -43,7 +43,7 @@ export interface MemberSheetProps {
 
 const ROLE_KEYS = ['partner', 'flatmate', 'family', 'housemate', 'lodger'] as const;
 type RoleKey = (typeof ROLE_KEYS)[number] | 'other';
-const COLOUR_KEYS = ['green', 'rust', 'slate', 'ochre', 'plum', 'teal'] as const;
+const COLOUR_KEYS = ['green', 'rust', 'slate', 'ochre', 'plum', 'teal', 'navy', 'magenta', 'brown', 'orange', 'charcoal', 'brick'] as const;
 export const ROLE_MAX = 24;
 
 export function MemberSheet({ visible, householdId, userId, onClose }: MemberSheetProps) {

@@ -15,6 +15,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useEditCategory } from '@/data/mutations/categories';
 import type { CategoryRow } from '@/db/rows';
 import { useT } from '@/i18n';
+import { useSheetWriteGate } from '@/features/plans/useReadOnlyGate';
 import { PRESSED_OPACITY, space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontSize, textRole } from '@/theme/typography';
@@ -57,6 +58,7 @@ export function AddRuleSheet(props: AddRuleSheetProps) {
 
 function AddRuleForm({ doc, currency, categories, crossings, save, onOpenCategory, onDismiss }: AddRuleSheetProps) {
   const t = useT();
+  const gate = useSheetWriteGate(onDismiss); // 09-25 (A2-W): saves are writes; read-only plans open the locked sheet
   const { colors, pairing } = useTheme();
   const { edit } = useEditCategory();
   const [kind, setKind] = useState<AddRuleKind | null>(null);
@@ -177,7 +179,14 @@ function AddRuleForm({ doc, currency, categories, crossings, save, onOpenCategor
         <Text accessibilityRole={open ? undefined : 'alert'} style={{ ...small, color: open ? colors.inkMuted : colors.warn1 }}>
           {t('decide.screens.sheetsHome.addRule.cap')}
         </Text>
-        <Pill label={t('decide.screens.sheetsHome.addRule.add')} variant="primary" disabled={!ready} onPress={add} />
+        <Pill
+          label={t('decide.screens.sheetsHome.addRule.add')}
+          variant="primary"
+          disabled={!ready}
+          locked={gate.gated}
+          accessibilityLabel={gate.label(t('decide.screens.sheetsHome.addRule.add'))}
+          onPress={gate.guard(add)}
+        />
         <NeedLine testID="add-rule-need" text={need} />
       </SheetScroll>
     </Sheet>

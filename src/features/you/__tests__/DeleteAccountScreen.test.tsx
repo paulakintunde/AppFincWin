@@ -25,6 +25,11 @@ jest.mock('@/features/household/useMemberLabel', () => ({
 }));
 let mockPreview: { data?: Record<string, unknown>; isLoading: boolean } = { isLoading: false };
 jest.mock('../useAccountDeletionPreview', () => ({ useAccountDeletionPreview: () => mockPreview }));
+let mockPlan: Record<string, unknown> = {};
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
+const mockManage = jest.fn(() => Promise.resolve());
+jest.mock('@/features/plans/store/purchasesClient', () => ({ openManageSubscription: () => mockManage() }));
+jest.mock('@/services/errors', () => ({ captureError: jest.fn() }));
 const mockRequest = jest.fn();
 jest.mock('@/services/account/deleteAccount', () => ({ requestAccountDeletion: (...a: unknown[]) => mockRequest(...a) }));
 
@@ -43,6 +48,7 @@ async function renderScreen() {
 beforeEach(() => {
   jest.clearAllMocks();
   mockOnline = true;
+  mockPlan = { status: 'sample', payerIsMe: false, store: null, members: 1 };
   mockPreview = { data: alone, isLoading: false };
   mockRequest.mockResolvedValue({ ok: true });
 });
@@ -96,5 +102,46 @@ describe('DeleteAccountScreen', () => {
     expect(screen.getByTestId('delete-offline')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Delete my account' }).props.accessibilityState?.disabled).toBe(true);
     expect(mockRequest).not.toHaveBeenCalled();
+  });
+
+  describe('billing warning (09-15, D-23)', () => {
+    const BODY = 'Deleting your account doesn’t cancel billing. Cancel in your app store first.';
+
+    it('warns the payer of an active store plan with the exact sentence, and the confirm stays enabled', async () => {
+      mockPlan = { status: 'trial', payerIsMe: true, store: 'PLAY_STORE', members: 1 };
+      await renderScreen();
+      expect(screen.getByText('Billing keeps going')).toBeTruthy();
+      expect(screen.getByText(BODY)).toBeTruthy();
+      await fireEvent.changeText(screen.getByTestId('delete-confirm-input'), 'DELETE');
+      expect(screen.getByRole('button', { name: 'Delete my account' }).props.accessibilityState?.disabled).toBeFalsy();
+      await fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+      await waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+    });
+
+    it('links to Manage subscription', async () => {
+      mockPlan = { status: 'active', payerIsMe: true, store: 'APP_STORE', members: 1 };
+      await renderScreen();
+      await fireEvent.press(screen.getByText('Manage subscription'));
+      expect(mockManage).toHaveBeenCalledTimes(1);
+    });
+
+    it('adds the others-covered line for the payer of a home with other people', async () => {
+      mockPlan = { status: 'active', payerIsMe: true, store: 'APP_STORE', members: 3 };
+      await renderScreen();
+      expect(screen.getByText('2 other people are covered by this plan. They will see a notice and 7 days of full access.')).toBeTruthy();
+    });
+
+    it('shows no warning to a member, a tester or someone with no plan', async () => {
+      for (const plan of [
+        { status: 'active', payerIsMe: false, store: 'APP_STORE', members: 2 },
+        { status: 'tester', payerIsMe: true, store: 'PROMOTIONAL', members: 1 },
+        { status: 'sample', payerIsMe: false, store: null, members: 1 },
+      ]) {
+        mockPlan = plan;
+        await renderScreen();
+        expect(screen.queryByText('Billing keeps going')).toBeNull();
+        await screen.unmount();
+      }
+    });
   });
 });

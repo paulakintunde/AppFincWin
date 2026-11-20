@@ -1,0 +1,51 @@
+/**
+ * Phase 9 copy, owner-signed in .planning/phases/09-tiers-onboarding/09-WORDING.md (2026-11-19). lock.* namespace.
+ * Keys and text match that file row for row; src/i18n/__tests__/plansCopy.test.ts enforces it. Declarative, never advice.
+ */
+export const lock = {
+  banner: 'Your plan has ended. Choose a plan to add or change things.',
+  bannerHousehold: '{{home}}’s plan has ended.',
+  bannerPaidBy: '{{name}} paid',
+  bannerBadge: 'Read-only',
+  bannerLink: 'Choose a plan',
+  sheetTitle: '{{action}} needs a plan',
+  sheetBody: 'Your records stay here to read. Choose a plan to add, edit or import.',
+  sheetPrimary: 'Choose a plan',
+  sheetKeepReading: 'Keep reading',
+  accessibleSuffix: 'needs a plan',
+  decideSaved: 'Saved answer. Not recalculated while read-only.',
+  explainer: {
+    heading: 'Your plan has ended',
+    headingHousehold: '{{home}}’s plan has ended',
+    body: 'Your records are safe. Here is what you can still do.',
+    stillOpen: 'Still open',
+    readRecords: 'Read your records',
+    freeHelp: 'Free help',
+    freeHelpSub: 'Free money help and debt support links',
+    manage: 'Manage subscription',
+    restore: 'Restore purchases',
+    signOut: 'Sign out',
+    deleteAccount: 'Delete account',
+    needsPlan: 'Needs a plan',
+    needs: {
+      edit: 'Adding or editing records',
+      import: 'Importing',
+      decide: 'New Decide checks',
+    },
+    choose: 'Choose a plan',
+    continueReading: 'Continue reading',
+    paidBy: 'Paid by {{name}}',
+    takeOver: 'Take over the plan',
+    leaveSolo: 'Leave and continue on Solo',
+    afterSeven: 'Your 7 days after leaving ended',
+    noPayer: 'Your records stay here read-only. Nothing is deleted without notice.',
+  },
+  savedOffline: {
+    title: 'Saved on this phone. Choose a plan to sync',
+    body: '{{count}} items are kept here. They sync if your plan is active again, and they are included when you export.',
+    choose: 'Choose a plan',
+    export: 'Export my data',
+    see: 'See them',
+    synced: 'Your saved items synced',
+  },
+} as const;

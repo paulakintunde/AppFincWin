@@ -15,6 +15,8 @@ import { GrowGlyph } from '@/features/grow/ui/GrowGlyph';
 import { StateBadge } from '@/features/grow/ui/StateBadge';
 import { netWorthOf } from '@/features/grow/netWorth';
 import { useT } from '@/i18n';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { pushOnce } from '@/shell/navigation/pushOnce';
@@ -40,6 +42,10 @@ const KIND_KEY = { buy: 'buy', sell: 'sale', dividend: 'dividend', fee: 'fee', v
 
 export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
   const t = useT();
+  // 09-25 (A2-W): every change on this screen is a write; read-only plans open the locked sheet. Reading and what-if
+  // calculators stay open.
+  const gate = useReadOnlyGate('editRecord');
+  const lockA11y = (text: string): string => (gate.a11ySuffix ? `${text}, ${gate.a11ySuffix}` : text);
   const { colors, pairing } = useTheme();
   const f = useInvestingFormat();
   const read = useInvestingRead();
@@ -181,8 +187,10 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
   const growthMonthly = toHome(holding.monthly_amount ?? 0, holding.currency);
 
   const editAction = (
-    <Pressable testID="holding-edit" accessibilityRole="button" accessibilityLabel={t('grow.investing.detail.edit')} onPress={() => setEditingHolding(true)} style={styles.editButton}>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.investing.detail.edit')}</Text>
+    <Pressable testID="holding-edit" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.investing.detail.edit'))} onPress={() => gate.run(() => setEditingHolding(true))} style={styles.editButton}>
+      <LockedLabel gated={gate.gated} color={colors.accent}>
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.investing.detail.edit')}</Text>
+      </LockedLabel>
     </Pressable>
   );
 
@@ -221,7 +229,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
             testID="holding-stale-row"
             accessibilityRole="button"
             accessibilityLabel={`${t('grow.investing.staleRow')} ${t('grow.investing.staleSub', { date: asOfText })}`}
-            onPress={() => setUpdating(true)}
+            onPress={() => gate.run(() => setUpdating(true))}
             style={[card, styles.between]}
           >
             <Text style={{ ...body, color: colors.ink }}>{t('grow.investing.staleRow')}</Text>
@@ -229,7 +237,13 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
           </Pressable>
         ) : null}
 
-        <Pill label={t('grow.investing.detail.updateValue')} variant="primary" onPress={() => setUpdating(true)} />
+        <Pill
+          label={t('grow.investing.detail.updateValue')}
+          variant="primary"
+          locked={gate.gated}
+          accessibilityLabel={lockA11y(t('grow.investing.detail.updateValue'))}
+          onPress={() => gate.run(() => setUpdating(true))}
+        />
 
         {holding.rate !== null && holding.rate !== '' && growthStart !== null && growthMonthly !== null ? (
           <Pressable
@@ -248,8 +262,10 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
           </Pressable>
         ) : null}
 
-        <Pressable testID="holding-add-entry" accessibilityRole="button" accessibilityLabel={t('grow.investing.detail.addEntry')} onPress={() => setAdding(true)} style={styles.link}>
-          <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.detail.addEntry')}</Text>
+        <Pressable testID="holding-add-entry" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.investing.detail.addEntry'))} onPress={() => gate.run(() => setAdding(true))} style={styles.link}>
+          <LockedLabel gated={gate.gated} color={colors.accent}>
+            <Text style={{ ...body, color: colors.accent }}>{t('grow.investing.detail.addEntry')}</Text>
+          </LockedLabel>
         </Pressable>
 
         <Text accessibilityRole="header" style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.detail.entries')}</Text>
@@ -257,7 +273,13 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
           <View style={card}>
             <Text style={{ ...body, color: colors.ink }}>{t('grow.investing.detail.entriesEmptyTitle')}</Text>
             <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.detail.entriesEmptyBody')}</Text>
-            <Pill label={t('grow.investing.detail.entriesEmptyAction')} variant="secondary" onPress={() => setUpdating(true)} />
+            <Pill
+              label={t('grow.investing.detail.entriesEmptyAction')}
+              variant="secondary"
+              locked={gate.gated}
+              accessibilityLabel={lockA11y(t('grow.investing.detail.entriesEmptyAction'))}
+              onPress={() => gate.run(() => setUpdating(true))}
+            />
           </View>
         ) : (
           <View style={[card, { padding: 0 }]}>
@@ -267,7 +289,7 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
                 testID={`entry-${l.id}`}
                 accessibilityRole="button"
                 accessibilityLabel={t('grow.investing.entry.rowA11y', lotWords(l))}
-                onPress={() => setEditingLot(l)}
+                onPress={() => gate.run(() => setEditingLot(l))}
                 style={[styles.row, i > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1 } : null]}
               >
                 <Text style={{ ...body, color: colors.ink, flex: 1 }}>{t('grow.investing.entry.row', lotWords(l))}</Text>
@@ -278,8 +300,10 @@ export function HoldingDetailScreen({ id }: HoldingDetailScreenProps) {
         )}
 
         <Text style={{ ...label, color: colors.inkMuted }}>{t('grow.investing.taxNote')}</Text>
-        <Pressable testID="holding-remove" accessibilityRole="button" accessibilityLabel={t('grow.investing.detail.remove')} onPress={() => setRemoving(true)} style={styles.removeButton}>
-          <Text style={{ ...body, color: colors.danger }}>{t('grow.investing.detail.remove')}</Text>
+        <Pressable testID="holding-remove" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.investing.detail.remove'))} onPress={() => gate.run(() => setRemoving(true))} style={styles.removeButton}>
+          <LockedLabel gated={gate.gated} color={colors.danger}>
+            <Text style={{ ...body, color: colors.danger }}>{t('grow.investing.detail.remove')}</Text>
+          </LockedLabel>
         </Pressable>
       </View>
 
