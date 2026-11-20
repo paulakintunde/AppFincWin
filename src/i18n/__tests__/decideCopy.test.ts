@@ -468,13 +468,17 @@ describe('decide.screens copy (06.1, D-18, D-19)', () => {
     /\bhousehold\b|\bshared costs\b/i, // D-03: no household copy in 06.1
   ];
 
+  // 08.1-10 (D-01, D-03, APP-22): Household is on the price step and in the answer's scope line; the 06.1 ban on household words stands everywhere else.
+  const HOUSEHOLD_KEYS = /^decide\.screens\.(stepper\.whoPays\.|answer\.scope\.)/;
+  const household08x = (path: string, re: RegExp): boolean => re.source.includes('household') && HOUSEHOLD_KEYS.test(path);
+
   it('has the screen leaves', () => {
     expect(screens.length).toBeGreaterThan(500);
   });
 
   it('no screen string uses a banned word', () => {
     const bad: string[] = [];
-    for (const l of screens) for (const re of SCREENS_BANNED) if (re.test(l.value)) bad.push(`${l.path}: ${re.source}`);
+    for (const l of screens) for (const re of SCREENS_BANNED) if (re.test(l.value) && !household08x(l.path, re)) bad.push(`${l.path}: ${re.source}`);
     expect(bad).toEqual([]);
   });
 

@@ -40,6 +40,8 @@ import { goDecideHome, withFromAnswer } from '@/features/decide/screens/logic/de
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { stageReadingOf } from '@/features/decide/screens/logic/stageReading';
+import { HouseholdAnswerNote } from '@/features/household/decide/HouseholdAnswerNote';
+import { useHouseholdAnswer } from '@/features/household/decide/useHouseholdAnswer';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { hapticTap } from '@/ui/haptics';
@@ -291,6 +293,9 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     if (side === 'installments') setSheet('plan');
   }
 
+  // 08.1-10 (APP-22, D-03): the scope line, and the resolver that names a partner who has not shared (D-32).
+  const householdScope = check?.share.kind ?? 'personal';
+  const { scopeLabel, member } = useHouseholdAnswer(rc.householdId, householdScope);
   const names = useMemo<NonNullable<UseSaidOptions['names']>>(() => {
     const category = new Map(data.categories.map((c) => [c.id, c.name]));
     const series = new Map(data.billChoices.map((b) => [b.id, b.name]));
@@ -302,8 +307,9 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       debt: (x) => debts.get(x) ?? '',
       account: (x) => acct.get(x) ?? '',
       figure: (code) => String(t(`decide.screens.answer.figureName.${code}` as never)),
+      member,
     };
-  }, [data.categories, data.billChoices, data.debts, accounts.data, t]);
+  }, [data.categories, data.billChoices, data.debts, accounts.data, t, member]);
   const said = useMemo<UseSaidOptions>(
     () => ({ currency, today, showCents: rc.showCents, names, monthly: evaluation?.purchase?.monthly ?? null }),
     [currency, today, rc.showCents, names, evaluation]
@@ -348,6 +354,8 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     options,
     country: v3.inputs?.region ?? rc.region,
     outcome: outcomeOf(row, t, shortMoment),
+    scopeLabel,
+    canRecordBought: row.status === 'waiting',
   };
   // 06.1-66 (CN-11): before the gate is done the frame shows its loading state under the gate, never a blank page.
   const frameStatus = !gated ? 'loading' : engine.status === 'error' ? 'error' : engine.status === 'loading' ? 'loading' : 'ready';
@@ -708,6 +716,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         onReadinessChoice={onReadinessChoice}
         updating={engine.updating}
         answeredRows={answeredRows}
+        householdNote={householdScope === 'household' ? <HouseholdAnswerNote householdId={rc.householdId} today={today} /> : undefined}
       >
         {body}
       </AnswerFrame>

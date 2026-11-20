@@ -64,6 +64,7 @@ function useSayDeps(opts: UseSaidOptions): SayDeps {
         debt: names?.debt ?? FALLBACK_NAME,
         envelope: names?.envelope ?? FALLBACK_NAME,
         figure: names?.figure ?? FALLBACK_NAME,
+        member: names?.member ?? FALLBACK_NAME,
       },
       onMissing: onMissing ?? ((): void => undefined),
     }),

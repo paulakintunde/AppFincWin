@@ -67,6 +67,7 @@ const deps: SayDeps = {
     debt: () => 'Visa card',
     envelope: () => 'Holiday',
     figure: () => 'your everyday spending',
+    member: (k) => ({ sam: 'Sam', lee: 'Lee', kim: 'Kim' } as Record<string, string>)[k] ?? 'Sam',
   },
 };
 
@@ -210,7 +211,8 @@ describe('sayResult: every engine code reads as one filled sentence (D-18, UX-19
 
   it.each(CAVEAT_SAMPLES.map((c) => [c.code, c] as const))('caveat %s', (_c, c) => {
     const s = sayResult(result({ caveats: [c] }), deps);
-    expect(s.caveat?.key).toBe(CAVEAT_KEYS[c.code]);
+    // 08.1-10: the household caveat is said by the screen's own copy (names through the resolver, one verb per count).
+    expect(s.caveat?.key).toBe(c.code === 'household_not_shared' ? 'decide.screens.answer.caveat.notShared' : CAVEAT_KEYS[c.code]);
     expect(s.caveat?.text).not.toContain('{{');
     expect(s.caveat?.text).not.toMatch(UUID);
   });
@@ -485,6 +487,39 @@ describe('sayResult: a gap is an error, never a printed code (T-06.1-06-01)', ()
 });
 
 // ------------------------------------------------------------------ Test 4: no household words outside household codes (D-03, UX-21)
+
+describe('sayResult: household_not_shared names the partners through the resolver (08.1-10, D-03, D-32)', () => {
+  const said = (names: string, d: SayDeps = deps) => sayResult(result({ caveats: [{ code: 'household_not_shared', values: { names } }] }), d);
+  const withMember = (member?: (k: string) => string): SayDeps => ({ ...deps, names: { ...deps.names, member } });
+
+  it('one partner: a singular verb', () => {
+    expect(said('sam').caveat?.text).toBe('Only your money is counted. Sam hasn’t shared theirs.');
+  });
+
+  it('two partners: "A and B", a plural verb', () => {
+    const line = said('sam,lee').caveat;
+    expect(line?.key).toBe('decide.screens.answer.caveat.notSharedMany');
+    expect(line?.text).toBe('Only your money is counted. Sam and Lee haven’t shared theirs.');
+  });
+
+  it('three partners: a list ending in "and"', () => {
+    expect(said('sam,lee,kim').caveat?.text).toBe('Only your money is counted. Sam, Lee and Kim haven’t shared theirs.');
+  });
+
+  it('the About list says it the same way', () => {
+    expect(sayCaveats(result({ caveats: [{ code: 'household_not_shared', values: { names: 'sam,lee' } }] }), deps).map((l) => l.text)).toEqual(['Only your money is counted. Sam and Lee haven’t shared theirs.']);
+  });
+
+  it('a name the resolver cannot give, an empty list or no resolver at all drops the line (never a key)', () => {
+    const seen: string[] = [];
+    const d = { ...withMember(() => ''), onMissing: (e: { code: string }) => void seen.push(e.code) };
+    expect(said('sam', d).caveat).toBeNull();
+    expect(said('', d).caveat).toBeNull();
+    expect(sayResult(result({ caveats: [{ code: 'household_not_shared', values: {} } as never] }), d).caveat).toBeNull();
+    expect(said('sam', { ...withMember(undefined), onMissing: () => undefined }).caveat).toBeNull();
+    expect(seen).toEqual(['household_not_shared', 'household_not_shared', 'household_not_shared']);
+  });
+});
 
 describe('sayResult: no household branch (D-03 / UX-21)', () => {
   it('Test 4: no non-household line says household, partner or shared', () => {
