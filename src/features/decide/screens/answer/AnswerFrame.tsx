@@ -188,6 +188,7 @@ export function AnswerFrame({
           answered={answeredRows}
           onFinishSetup={() => onAction({ kind: 'finishSetup' })}
           onFromEstimates={() => onAction({ kind: 'fromEstimates' })}
+          onImport={onImport}
         />
         {children !== undefined ? (
           <View testID="answer-detail" style={styles.group}>

@@ -293,7 +293,7 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
     await renderHome();
     expect(sentences('home-footer')).toEqual([]);
     expect(within(screen.getByTestId('home-footer')).getByText(LEGAL)).toBeTruthy();
-    expect(screen.queryByText(/^Answers use /)).toBeNull();
+    expect(within(screen.getByTestId('home-footer')).queryByText(/^Answers use /)).toBeNull(); // 08.1-21: the stage card elsewhere on home says "Answers use your last N months..."
     await fireEvent.press(screen.getByTestId('home-footer-worked'));
     const note = await screen.findByTestId('worked-note');
     expect(note).toHaveTextContent(`${home.footerRecords} ${home.footerUpdates}`);
@@ -319,6 +319,7 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
         onChoice={jest.fn()}
         onFinishSetup={jest.fn()}
         onFromEstimates={jest.fn()}
+        onImport={jest.fn()}
       />,
     );
     await screen.findByTestId('answer-not-ready');

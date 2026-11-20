@@ -33,7 +33,7 @@ import { useDecideV3 } from '@/data/queries/decideV3';
 import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import type { SavingsGoalRow } from '@/db/savingsGoals';
 import type { AccountRow, TransactionRow } from '@/db/rows';
-import type { LocalDate, ReadinessItem, ReadinessWaiver } from '@/engine/decide/v3';
+import { STAGE_DEEPER_MIN_MONTHS, type LocalDate, type ReadinessItem, type ReadinessWaiver } from '@/engine/decide/v3';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { showToast } from '@/state/undoToast';
 import { PRESSED_OPACITY, radii, space } from '@/theme/layout';
@@ -52,6 +52,7 @@ import { readinessFixRows, type ReadinessFixRow, type WaiverChoice } from '../..
 import { EnvelopeAccountSheet, type SetEnvelopeAccount } from '../../sheets/EnvelopeAccountSheet';
 import { footerFactsOf } from '../../home/useHomeFacts';
 import { recordMonthsOf } from '../../logic/recordMonths';
+import { ImportPromptRow } from '../../ui/ImportPromptRow';
 import { MoreRow } from '../../ui/MoreRow';
 import { NeedLine } from '../../ui/NeedLine';
 import { QUICK_SAVE_MODE } from '../QuickEstimatesScreen';
@@ -365,6 +366,15 @@ export function RecordsSetup({ writes }: { writes: RecordsWrites }) {
       onLeave={leave}
       onSaveAndClose={saveAndClose}
     >
+      {/* 08.1-21 (DCU-10): below 3 months, the import prompt and the months-complete line sit above the checks. */}
+      {used.used < STAGE_DEEPER_MIN_MONTHS ? (
+        <View testID="records-import" style={styles.block}>
+          <ImportPromptRow monthsUsed={used.used} onPress={() => router.push({ pathname: IMPORT, params: { entry: 'you', from: 'decide' } } as unknown as Href)} />
+          <Text testID="records-months-complete" style={small}>
+            {t('decide.screens.home.records.complete', { monthsUsed: used.used, monthsTotal: used.total })}
+          </Text>
+        </View>
+      ) : null}
       {/* 06.1-60 (G-10, owner decision 4): the one line in view; each check's reason and the months count open under More. */}
       <Text testID="records-summary" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
         {t('decide.screens.setupOthers.records.keepLine', {

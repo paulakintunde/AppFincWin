@@ -42,6 +42,7 @@ import { ErrorCard, OfflineCard } from '../answer/StatusCards';
 import { useMonthPicture } from '../engine/useMonthPicture';
 import { isHomeWords, readKind, readsAsPlan, type ItemKind } from '../logic/kindWords';
 import { recordMonthsOf } from '../logic/recordMonths';
+import { stageReadingOf } from '../logic/stageReading';
 import { DatePickerSheet } from '../sheets/DatePickerSheet';
 import { InstallmentPlanSheet, type PlanItemKind } from '../sheets/InstallmentPlanSheet';
 import { QuickEstimateSheet } from '../sheets/QuickEstimateSheet';
@@ -64,6 +65,7 @@ import { taxNoteFor } from './taxNote';
 import { buildCheck, useNewCheck, type NewCheckFields, type WhenChoice } from './useNewCheck';
 import { useMoneyRules, useOpenCheckRows, useRuleCrossings } from './useHomeCards';
 import { rulesFactsOf, usePastCount, useSetupDoneSeen, workedSourcesOf } from './useHomeFacts';
+import { StageCard } from './StageCard';
 import { monthNameOf, YourMonthCard } from './YourMonthCard';
 
 const MAX_QUICK_LINES = 8;
@@ -311,6 +313,8 @@ export function DecideHome() {
   const rulesFacts = useMemo(() => rulesFactsOf(inputs), [inputs]);
   // 06.1-79 (DS-10, OQ-79-2 A): the months the answer uses, and the spending entries in them; the same count as the answer's basis.
   const recordMonths = useMemo(() => recordMonthsOf(inputs, v3.evaluation), [inputs, v3.evaluation]);
+  // 08.1-21 (DCU-10): the stage the answers rest on, read from the evaluation's basis (offline: the cached evaluation).
+  const stage = useMemo(() => stageReadingOf(v3.evaluation ?? null), [v3.evaluation]);
   // 06.1-59 (G-10): the footer row opens the answer's "How this was worked out" sheet; the sources sentence lives there now.
   const [workedOpen, setWorkedOpen] = useState(false);
   const workedSources = useMemo(() => workedSourcesOf(inputs), [inputs]);
@@ -526,6 +530,10 @@ export function DecideHome() {
           wholeUnit={10 ** currencyExponent(currency)}
           onRecords={() => go('/decide/setup/records')}
         />
+
+        {stage === null ? null : (
+          <StageCard reading={stage} monthsTotal={recordMonths.total} onImport={() => router.push({ pathname: '/import', params: { entry: 'you', from: 'decide' } } as Href)} />
+        )}
 
         <OpenChecksCard rows={openRows} formatMoney={money} formatMoneySpoken={moneySpoken} formatDate={short.dayMonth} today={rc.today} onOpen={setOpenId} onAddPurchase={focusWhat} />
 
