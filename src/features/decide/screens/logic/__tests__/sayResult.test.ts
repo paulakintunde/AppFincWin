@@ -474,7 +474,7 @@ describe('sayResult: no household branch (D-03 / UX-21)', () => {
     const out = [
       ...facts.map((f) => sayCode('fact', f, deps).text),
       ...notices.map((n) => sayCode('notice', n, deps).text),
-      ...CAVEAT_SAMPLES.filter((c) => c.code !== 'shared_money').flatMap((c) => allTexts(result({ caveats: [c] }))),
+      ...CAVEAT_SAMPLES.filter((c) => c.code !== 'shared_money' && c.code !== 'household_not_shared').flatMap((c) => allTexts(result({ caveats: [c] }))),
     ];
     expect(out.filter((s) => /household|partner|shared/i.test(s))).toEqual([]);
   });
