@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Phase 9 26/26 complete and merged (PR #170, 2026-11-20); 08.1 wave 2 next; launch waits on RevenueCat ENV-12 and the new name"
-last_updated: "2026-11-20T12:00:00.000Z"
-last_activity: 2026-11-20 -- Phase 9 merged to main (PR #170)
+stopped_at: "Phase 9 merged 2026-11-20 (PR #170); 08.1 at 15/18 on feat/08.1-build (13, 14, 15 left); launch waits on RevenueCat ENV-12, the app name and Apple enrolment"
+last_updated: "2026-11-20T15:00:00.000Z"
+last_activity: 2026-11-20 -- STATE and ROADMAP checked against the code and branches
 progress:
   total_phases: 30
-  completed_phases: 16
-  total_plans: 807
-  completed_plans: 791
+  completed_phases: 18
+  total_plans: 809
+  completed_plans: 789
   percent: 97
 ---
 
@@ -21,24 +21,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** two branches in parallel — Phase 08.1 (`feat/08.1-build`, wave 2 next) and Phase 9 (`phase/09-tiers-onboarding`, PR #170, built and device-passed). Kint rebrand (KINT-PIVOT-BRIEF.md) to be inserted before Phase 9 merges.
+**Current focus:** Phase 08.1 on branch `feat/08.1-build` (15/18; plans 13, 14, 15 left, all owner-gated). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
 
 ## Current Position
 
-Reviewed against code on 2026-11-19 (whole-app review: main 5e2a8324, full Jest 968 suites / 35,355 tests pass, all static gates pass).
+Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 with summaries; the 08.1 branch adds 15 more summaries).
 
-Phase: 08.1 (decide-rebuild-on-real-data) — IN PROGRESS on branch `feat/08.1-build`, 6/18 plans (01, 02, 03, 04, 05, 07), 10 waves after the 2026-11-19 trim (PR #171). Next: wave 2 plan 06 (audit gate met on main; merge main into the branch first). Owner gates: 08 (household cases), 11 (FIN-12 or v1.1), 13 (changed answers), 14 (wording sign-off), 15 (production push). Migrations 20261123000100..000300 are not in production yet.
-Phase: 09 (tiers-onboarding) — COMPLETE ON BRANCH `phase/09-tiers-onboarding`, 26/26 (PR #170, not merged). Owner device pass PASSED 2026-11-19 (09-HUMAN-UAT.md). 09-24 ships without the First read tag (waits for 08.1-20). Open before merge: RevenueCat setup (ENV-12), the owner review list, and the Kint rename (merge order: rebrand first). Its 5 migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh are live in production, ahead of main.
+Phase: 08.1 (decide-rebuild-on-real-data) — IN PROGRESS on branch `feat/08.1-build`, 15/18 (01-12, 19, 20, 21 built; wave 7 done 2026-11-20). Left: 13 (changed-answers review), 14 (wording sign-off), 15 (production push of migrations 20261123000100..000300, not in production yet). No PR open.
+Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
+Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
 Phase: 08.2, 7, 10 — not planned. 11 — not started.
-Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11).
+Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11); one orphan household with no members and no plan.
 Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026-11-14 (PR #102). 06 (grow) — COMPLETE 2026-11-11 (PR #101).
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
 Phase: 04 (decide-engine) — COMPLETE 2026-10-16; the v1 engine was deleted on purpose in 05.5 (04-VERIFICATION.md is historical).
 Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple enrolment).
-Phase: 00 (foundation) — 18/20; 00-07 and 00-20 wait on Apple enrolment.
-Decide: open to every tester since 2026-11-06 (quick 261106-bf2, `DECIDE_OPEN = true`); `profiles.decide_v3` no longer gates anything.
-Status: Executing (two phase branches)
-Last activity: 2026-11-19 -- whole-app review and doc tidy
+Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted, Play verification pending (PR #174). 00-20: first iOS build on the iPhone XR, waits on enrolment; needed before 2026-12-02.
+Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
+Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
+Status: Executing (one phase branch: 08.1)
+Last activity: 2026-11-20 -- Phase 9 merged; STATE and ROADMAP checked against the code
 
 ## Performance Metrics
 
