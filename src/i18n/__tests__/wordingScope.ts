@@ -428,7 +428,9 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   shortfall: '$150.00',
   size: '$2,400.00',
   spending: '$2,775.00', // 06.1-65: Records rough figures in use
+  stage: 'First read',
   starter: '$1,225.00',
+  sub: 'One month gives a full answer today.',
   state: 'Fits',
   status: 'Done', // 06.1 wave 6
   step: '2',
@@ -436,6 +438,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   suggested: '$1,180.00',
   times: '3',
   to: 'April',
+  title: 'Import your last 3 statements',
   total: '$1,312.00',
   twoMonths: '$2,450.00',
   until: 'October next year',

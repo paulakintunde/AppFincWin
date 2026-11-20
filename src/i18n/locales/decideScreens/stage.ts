@@ -10,7 +10,7 @@ export const stage = {
     first_read: 'Answers are a first read. They use the figures you typed, not your records.',
     full: 'Answers use your records. Three months of records add the deeper parts.',
     deeper: 'Answers use your last {{months}} months of records, with every part on.',
-    tickLabel: '1 month: full answer',
+    tickLabel: '1 month: full answer',
     endLabel: '3 months: deeper parts',
     a11y: 'What answers rest on. {{stage}}. {{monthsUsed}} of 3 months.',
     a11yDeeper: 'What answers rest on. {{monthsUsed}} months of records.',

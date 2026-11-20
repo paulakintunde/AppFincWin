@@ -39,6 +39,7 @@ import { checkInputsKey } from '@/features/decide/screens/logic/checkInputsKey';
 import { goDecideHome, withFromAnswer } from '@/features/decide/screens/logic/decideNav';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { stageReadingOf } from '@/features/decide/screens/logic/stageReading';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { hapticTap } from '@/ui/haptics';
@@ -699,6 +700,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         onAction={onAction}
         onOption={onOption}
         onCantSee={() => setSheet('about')}
+        onImport={() => pushOnce({ pathname: '/import', params: { entry: 'you', from: 'decide' } } as Href)}
         renderAfterFact={renderAfterFact}
         readinessRows={rows}
         canUseEstimates={canUseEstimates}
@@ -809,7 +811,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       <UnexplainedMoneySheet amount={unexplained === null ? null : money(unexplained.shown)} onAnswer={answerUnexplained} onDismiss={closeSheet} />
       <CoverQuestionSheet question={sheet === 'cover' ? (lines.missing.find((l) => l.code === 'volatile_cover_question')?.text ?? null) : null} onAnswer={answerCover} onDismiss={closeSheet} />
       {sheet === 'help' ? <FreeHelpSheet country={country} onClose={closeSheet} /> : null}
-      {sheet === 'about' ? <AboutSheet result={result} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
+      {sheet === 'about' ? <AboutSheet result={result} stage={stageReadingOf(evaluation)} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
       <InstallmentPlanSheet
         visible={gated && sheet === 'plan'}
         check={check}

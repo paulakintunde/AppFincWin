@@ -39,6 +39,7 @@ const IMPERATIVE_LEAD = /^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Inves
 // Controls and field labels name an action the user takes in the app (a button, a dialog choice, a field caption); they
 // are not a prescription about money. Each one is listed by key so a new descriptive string cannot slip through.
 const ACTION_LABELS = new Set([
+  'decide.v3.basis.payWindow', // the noun "Pay": "Pay is judged over your last 9 months." says how pay was read (08.1-20), not an instruction
   'decide.screens.answerActions.bought.rowPayoff', // tick row on Record as bought: names paying off the old loan the sale pays (08.1-09, UI-SPEC section 5), not advice
   'income.pay.defaultName', // the noun "Pay": the name a new pay series gets (05.2-49), not an instruction
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
@@ -92,6 +93,8 @@ const ACTION_LABELS = new Set([
 // app are listed by key; any other string that opens with an instruction verb fails.
 const INSTRUCTION_LEAD = /^(Add|Type|Choose|Pick|Enter|Switch|Move|Tap|Change (it|any|the))\b/;
 const CONTROL_LABELS = new Set([
+  'decide.screens.stage.line.addLink', // 08.1-20: text link under the StageLine (UI-SPEC section 1), names an action in the app
+  'decide.screens.stage.import.moreTitle', // 08.1-20: title of the import prompt on home (UI-SPEC section 1), names an action in the app
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
   // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
   'decide.v3.factAction.addLimit', // 05.4 FIN-03 (D-38): answer button to "Does Main have an overdraft?"
