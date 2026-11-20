@@ -21,6 +21,7 @@ let mockAccounts: { data?: { archived_at: string | null }[]; isLoading: boolean;
 // 08-23: the (app) layout opens the household live channel; wiring only here.
 jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
+jest.mock('@/features/household/decide/PartnerFigurePublisher', () => ({ AppPartnerFigurePublisher: () => null }));
 jest.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => ({ status: 'signedIn', user: { id: 'u1' } }),
 }));

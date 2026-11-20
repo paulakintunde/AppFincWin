@@ -47,6 +47,8 @@ export interface SayNames {
   envelope(id: string): string;
   /** D-79: a missing figure's code (save_vs_borrow 'ask'), named for "add {{figure}}". */
   figure(code: MissingCode): string;
+  /** 08.1-10 (D-03, D-32): a household member key as the words other members see (a hidden name reads as its colour). Absent or '' drops the caveat. */
+  member?(key: string): string;
 }
 
 export interface SayDeps {
@@ -101,7 +103,7 @@ const ALL_PLAIN = new Set(['months', 'used', 'lookedFor']);
 const ISO_DATE = /^\d{4}-\d{2}(-\d{2})?$/;
 
 /** COPY_RESOLVERS read the other way: the placeholder, the id key that fills it, and the name lookup. */
-const RESOLVE_BY_PLACEHOLDER: Readonly<Record<string, { readonly id: string; readonly name: keyof SayNames }>> = {
+const RESOLVE_BY_PLACEHOLDER: Readonly<Record<string, { readonly id: string; readonly name: Exclude<keyof SayNames, 'member'> }>> = {
   [COPY_RESOLVERS.categoryId]: { id: 'categoryId', name: 'category' },
   [COPY_RESOLVERS.seriesId]: { id: 'seriesId', name: 'series' },
   [COPY_RESOLVERS.envelopeId]: { id: 'envelopeId', name: 'envelope' },
@@ -233,9 +235,28 @@ function missingLine(code: MissingCode, r: Result, deps: SayDeps): Line {
   return fill(code, fund ? `${base as string}_fund` : base, values, deps);
 }
 
+/** 08.1-10 (D-03): the partners whose money is not counted, named through the member resolver, never by key. One name or many. */
+const NOT_SHARED_ONE = 'decide.screens.answer.caveat.notShared';
+const NOT_SHARED_MANY = 'decide.screens.answer.caveat.notSharedMany';
+const NAME_AND = 'decide.screens.answer.caveat.nameAnd';
+function notSharedLine(caveat: Caveat, deps: SayDeps): Line {
+  const keys = String(caveat.values['names'] ?? '').split(',').filter((k) => k !== '');
+  const names = keys.map((k) => deps.names.member?.(k) ?? '');
+  if (names.length === 0 || names.some((n) => n === '')) throw new MissingCopyError(caveat.code, NOT_SHARED_ONE, 'no name');
+  if (names.length === 1) return fill(caveat.code, NOT_SHARED_ONE, { name: names[0] }, deps);
+  const last = names[names.length - 1] as string;
+  const joined = deps.t(NAME_AND, { a: names.slice(0, -1).join(', '), b: last });
+  return fill(caveat.code, NOT_SHARED_MANY, { names: joined }, deps);
+}
+
+/** One caveat as its sentence. */
+function caveatLine(caveat: Caveat, deps: SayDeps): Line {
+  return caveat.code === 'household_not_shared' ? notSharedLine(caveat, deps) : fill(caveat.code, CAVEAT_KEYS[caveat.code], caveat.values, deps);
+}
+
 function caveatLines(caveat: Caveat | undefined, deps: SayDeps): { caveat: Line | null; figures: Line[] } {
   if (caveat === undefined) return { caveat: null, figures: [] };
-  const line = guard(deps, () => fill(caveat.code, CAVEAT_KEYS[caveat.code], caveat.values, deps));
+  const line = guard(deps, () => caveatLine(caveat, deps));
   if (caveat.code !== 'large_for_month' || line === null) return { caveat: line, figures: [] };
   // CO-D-118: one line per figure it carries (costs is absent when the usual month is not known), then the one line under them.
   const figures = (Object.keys(CAVEAT_FIGURE_KEYS) as (keyof typeof CAVEAT_FIGURE_KEYS)[])
@@ -246,7 +267,7 @@ function caveatLines(caveat: Caveat | undefined, deps: SayDeps): { caveat: Line 
 
 /** CO-D-64 (3): every caveat on the result as a sentence (the About sheet's "For this answer"), figures not repeated. */
 export function sayCaveats(r: Result, deps: SayDeps): Line[] {
-  return present((r.caveats ?? []).map((c) => guard(deps, () => fill(c.code, CAVEAT_KEYS[c.code], c.values, deps))));
+  return present((r.caveats ?? []).map((c) => guard(deps, () => caveatLine(c, deps))));
 }
 
 function afterBuyLead(r: Result, deps: SayDeps): Line | null {

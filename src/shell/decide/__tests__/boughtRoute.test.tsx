@@ -67,6 +67,14 @@ describe('BoughtRoute (08.1-09)', () => {
     expect(lastProps().goal).toEqual({ id: 'g1', name: 'Car fund' });
   });
 
+  it('a check saved for later (waiting) is recorded from the same screen and offers its own goal to close (08.1-10)', async () => {
+    mockData.checks = { data: [{ id: ID, name: 'Car', status: 'waiting', inputs: { v: 2, replaces: { stops: [], sale: null } }, deleted_at: null }], isLoading: false, isError: false };
+    mockData.goals = { data: [{ id: 'g1', name: 'Car fund', check_id: ID, done_at: null, deleted_at: null, created_by: 'u1' }] };
+    await wrap(<BoughtRoute id={ID} />);
+    expect(lastProps().goal).toEqual({ id: 'g1', name: 'Car fund' });
+    expect(lastProps().checkId).toBe(ID);
+  });
+
   it('adds the recorded bills to the save, so the stops can end them', async () => {
     mockData.series = { data: [{ id: 'gym', name: 'Gym', version: 4, anchor_date: '2026-01-05', end_date: null, deleted_at: null }, { id: 'old', name: 'Old', version: 1, anchor_date: '2026-01-05', end_date: null, deleted_at: '2026-10-01' }] };
     await wrap(<BoughtRoute id={ID} />);

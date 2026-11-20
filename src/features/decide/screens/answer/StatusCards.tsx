@@ -151,7 +151,7 @@ export function NotReadyExits({ onNotBuying, onDelete }: { onNotBuying: () => vo
 }
 
 /** 06.1-66 (FQ8, CC-2, DS-5): a decided check says what happened, with a link to its Past decisions entry, in place of the action bar. */
-export function OutcomeLine({ text, onOpenPast }: { text: string; onOpenPast: () => void }) {
+export function OutcomeLine({ text, onOpenPast, onRecordBought }: { text: string; onOpenPast: () => void; onRecordBought?: () => void }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
@@ -159,6 +159,12 @@ export function OutcomeLine({ text, onOpenPast }: { text: string; onOpenPast: ()
   return (
     <View testID="answer-outcome" style={[styles.outcome, { backgroundColor: colors.surface, paddingBottom: insets.bottom + space.gapSm }]}>
       <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{text}</Text>
+      {/* 08.1-10 (owner 2026-11-20): one quiet button, only for a check saved for later; it opens the Bought screen. */}
+      {onRecordBought === undefined ? null : (
+        <Pressable testID="answer-outcome-bought" accessibilityRole="button" onPress={onRecordBought} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.outcome.recordBought')}</Text>
+        </Pressable>
+      )}
       <Pressable testID="answer-outcome-past" accessibilityRole="link" onPress={onOpenPast} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.outcome.pastLink')}</Text>
       </Pressable>

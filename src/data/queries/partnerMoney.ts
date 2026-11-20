@@ -1,5 +1,5 @@
 // 08.1-07: reads and writes for the partner opt-in, the shared safety net and the shared-bills caveat.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   fetchOptins,
   fetchOwnNetShares,
@@ -42,6 +42,17 @@ export function usePartnerMoneyTotal(userId: string | undefined, partnerId: stri
     queryKey: queryKeys.partnerMoney(userId ?? '', partnerId ?? ''),
     queryFn: () => partnerMoneyTotal(supabase, partnerId as string),
     enabled: enabled && Boolean(userId) && Boolean(partnerId),
+  });
+}
+
+/** 08.1-10: the same one-figure read for every other member at once (a Household check pools them). Same keys as usePartnerMoneyTotal. */
+export function usePartnerMoneyTotals(userId: string | undefined, partnerIds: readonly string[], enabled = true) {
+  return useQueries({
+    queries: partnerIds.map((partnerId) => ({
+      queryKey: queryKeys.partnerMoney(userId ?? '', partnerId),
+      queryFn: () => partnerMoneyTotal(supabase, partnerId),
+      enabled: enabled && Boolean(userId),
+    })),
   });
 }
 

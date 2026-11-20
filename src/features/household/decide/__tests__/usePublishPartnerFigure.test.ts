@@ -7,17 +7,23 @@ jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id:
 jest.mock('@/data/queries/household', () => ({ useHouseholdId: () => ({ data: 'h' }) }));
 
 let mockOptins: { owner_id: string; enabled: boolean }[] = [];
-jest.mock('@/data/queries/partnerMoney', () => ({ usePartnerOptins: () => ({ data: mockOptins }) }));
+let mockShares: { goal_id: string; enabled: boolean }[] = [];
+jest.mock('@/data/queries/partnerMoney', () => ({ usePartnerOptins: () => ({ data: mockOptins }), useOwnNetShares: () => ({ data: mockShares }) }));
 
-jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => ({ prepared: { inputs: { currency: 'USD' } } }) }));
+jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => mockDecide }));
+let mockDecide: { prepared: { inputs: { currency: string; safetyNet?: { saved: number } } } } = { prepared: { inputs: { currency: 'USD' } } };
 let mockLeft = 123456;
 jest.mock('@/engine/month', () => ({ monthPicture: () => ({ leftAfterPlans: mockLeft }) }));
 
 const mockPublish = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean }> => ({ ok: true }));
-jest.mock('@/db/partnerOptins', () => ({ publishPartnerFigure: (...a: unknown[]) => mockPublish(...a) }));
+const mockPublishNet = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean }> => ({ ok: true }));
+jest.mock('@/db/partnerOptins', () => ({ publishPartnerFigure: (...a: unknown[]) => mockPublish(...a), publishSafetyNetSaved: (...a: unknown[]) => mockPublishNet(...a) }));
 
 beforeEach(() => {
   mockPublish.mockClear();
+  mockPublishNet.mockClear();
+  mockShares = [];
+  mockDecide = { prepared: { inputs: { currency: 'USD' } } };
   mockOptins = [];
   mockLeft = 123456;
   jest.useFakeTimers({ now: new Date('2026-11-18T10:00:00Z'), doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
@@ -77,5 +83,20 @@ describe('usePublishPartnerFigure', () => {
       handler('active');
     });
     expect(mockPublish).toHaveBeenCalledTimes(2);
+  });
+
+  it('08.1-10: publishes the shared safety net saved amount, rounded down, with no opt-in needed', async () => {
+    mockShares = [{ goal_id: 'g1', enabled: true }, { goal_id: 'g2', enabled: false }];
+    mockDecide = { prepared: { inputs: { currency: 'USD', safetyNet: { saved: 456789 } } } };
+    await renderHook(() => usePublishPartnerFigure());
+    expect(mockPublish).not.toHaveBeenCalled();
+    expect(mockPublishNet).toHaveBeenCalledTimes(1);
+    expect(mockPublishNet).toHaveBeenCalledWith({}, 'g1', 456000);
+  });
+
+  it('08.1-10: sends nothing for a shared net when no safety net is saved in the inputs', async () => {
+    mockShares = [{ goal_id: 'g1', enabled: true }];
+    await renderHook(() => usePublishPartnerFigure());
+    expect(mockPublishNet).not.toHaveBeenCalled();
   });
 });

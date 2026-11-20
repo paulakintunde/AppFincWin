@@ -19,20 +19,22 @@ export interface SegmentedControlProps {
   value: string;
   onChange: (key: string) => void;
   accessibilityLabel: string;
+  /** 08.1-10: 'radio' reads the group as a radiogroup of radios (a two-way choice such as Who pays); the default is a tablist of tabs. */
+  itemRole?: 'tab' | 'radio';
 }
 
-export function SegmentedControl({ options, value, onChange, accessibilityLabel }: SegmentedControlProps) {
+export function SegmentedControl({ options, value, onChange, accessibilityLabel, itemRole = 'tab' }: SegmentedControlProps) {
   const { colors, pairing } = useTheme();
   // 06.1-62 (CB-5 / CF-1): every segment shows a native ripple (Android) or a pressed dim (iOS)
   const feedback = usePressFeedback('row');
   return (
-    <View accessibilityRole="tablist" accessibilityLabel={accessibilityLabel} style={[styles.row, { backgroundColor: colors.fill1 }]}>
+    <View accessibilityRole={itemRole === 'radio' ? 'radiogroup' : 'tablist'} accessibilityLabel={accessibilityLabel} style={[styles.row, { backgroundColor: colors.fill1 }]}>
       {options.map((option) => {
         const selected = option.key === value;
         return (
           <Pressable
             key={option.key}
-            accessibilityRole="tab"
+            accessibilityRole={itemRole}
             accessibilityState={{ selected }}
             accessibilityLabel={option.a11yLabel ?? option.label}
             onPress={() => {

@@ -95,6 +95,9 @@ const mockState = {
   answers: [] as { kind: string; key?: string; check_id?: string | null; bool_value?: boolean | null; deleted_at?: string | null }[],
 };
 
+// 08.1-10: the household reads behind the scope line and the partner names; a Just me answer here.
+jest.mock('@/features/household/decide/useHouseholdAnswer', () => ({ useHouseholdAnswer: () => ({ scopeLabel: 'Just you', member: (k: string) => k }) }));
+jest.mock('@/features/household/decide/HouseholdAnswerNote', () => ({ HouseholdAnswerNote: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, region: 'US', today: '2026-11-05' }),
 }));

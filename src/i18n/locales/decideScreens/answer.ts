@@ -9,6 +9,8 @@ export const answer = {
   testerBuild: 'Build {{build}}',
   frame: {
     itemA11y: '{{name}}, {{price}}',
+    // 08.1-10: with the stage and scope line read after the price ("First read · Just you").
+    itemA11yScope: '{{name}}, {{price}}. {{sub}}',
     payTabs: 'How you pay',
     whenGroup: 'When you buy',
     whenToday: 'Today',
@@ -18,6 +20,18 @@ export const answer = {
     optionsA11y: 'Other ways to look at it',
     actionsA11y: 'What you did with this answer',
     helpLinkA11y: '{{name}}. Opens a website outside the app',
+  },
+  // 08.1-10 (APP-22, DCU-10): the top-bar sub-line. Below 3 full months it is "{stage} · {scope}"; from 3 months the scope alone.
+  scope: {
+    justYou: 'Just you',
+    household: 'Household · {{household}}',
+    withStage: '{{stage}} · {{scope}}',
+  },
+  // 08.1-10 (D-03): the household caveat under the answer; the names go through the member resolver (a hidden name reads as its colour).
+  caveat: {
+    notShared: 'Only your money is counted. {{name}} hasn’t shared theirs.',
+    notSharedMany: 'Only your money is counted. {{names}} haven’t shared theirs.',
+    nameAnd: '{{a}} and {{b}}',
   },
   /** 06.1-49 (A-ANS-2): shown from Check it until the answer is worked out. */
   loading: 'Working out the answer…',
@@ -193,6 +207,8 @@ export const answer = {
     waiting: 'Saving for it since {{date}}.',
     passed: 'Not buying, {{date}}.',
     pastLink: 'See it in Past decisions',
+    // 08.1-10 (owner 2026-11-20): a check saved for later can be recorded as bought; only a waiting check shows it.
+    recordBought: 'Record as bought',
   },
   // 06.1-66 (FQ5, CS-8): the safety-net question was put away unanswered; this line opens it again.
   netLine: 'Safety net: not answered yet.',

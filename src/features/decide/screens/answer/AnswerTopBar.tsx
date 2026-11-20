@@ -3,6 +3,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
+import type { DecideStage } from '@/engine/decide/v3';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
@@ -33,13 +34,17 @@ export interface AnswerTopBarProps {
   paydayText?: string | null;
   /** 06.1-66 (CS-11, CB-8): How you pay and When show only with a verdict; Not ready, loading and error leave them out. */
   showControls?: boolean;
+  /** 08.1-10 (DCU-10): the stage of this answer. 'first_read' and 'full' put the stage word before the scope; 'deeper' or null show the scope alone. */
+  stage?: DecideStage | null;
+  /** 08.1-10 (APP-22): "Just you" or "Household . Flat 4B"; null hides the sub-line (no scope known). */
+  scopeLabel?: string | null;
   onBack: () => void;
   onNewCheck: () => void;
   onPay: (mode: PayMode) => void;
   onWhen: (when: WhenChoice) => void;
 }
 
-export function AnswerTopBar({ name, priceText, pay, when, dateText = null, paydayText = null, showControls = true, onBack, onNewCheck, onPay, onWhen }: AnswerTopBarProps) {
+export function AnswerTopBar({ name, priceText, pay, when, dateText = null, paydayText = null, showControls = true, stage = null, scopeLabel = null, onBack, onNewCheck, onPay, onWhen }: AnswerTopBarProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   // 06.1-62 (CB-5 / CB-6): Back, New check and the When chips show a press at once; the two links reach 52 dp tall.
@@ -53,6 +58,12 @@ export function AnswerTopBar({ name, priceText, pay, when, dateText = null, payd
     ...(when === 'date' && dateText !== null ? [{ id: 'picked', key: 'date', label: dateText, selected: true } satisfies WhenOption] : []),
     { id: 'pick', key: 'date', label: t('decide.screens.common.pickDate'), selected: false },
   ];
+  // 08.1-10: "{stage} . {scope}" below three full months, the scope alone from three (owner answer 2). It wraps; no line limit.
+  const stageWord = stage === 'first_read' || stage === 'full' ? t(`decide.screens.stage.word.${stage}` as never) : null;
+  const subLine =
+    scopeLabel === null ? stageWord : stageWord === null ? scopeLabel : t('decide.screens.answer.scope.withStage', { stage: stageWord, scope: scopeLabel });
+  const itemLabel =
+    subLine === null ? t('decide.screens.answer.frame.itemA11y', { name, price: priceText }) : t('decide.screens.answer.frame.itemA11yScope', { name, price: priceText, sub: subLine });
   return (
     <View testID="answer-topbar" style={styles.wrap}>
       <View style={styles.row}>
@@ -63,8 +74,13 @@ export function AnswerTopBar({ name, priceText, pay, when, dateText = null, payd
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.common.newCheck')}</Text>
         </Pressable>
       </View>
-      <View accessible accessibilityLabel={t('decide.screens.answer.frame.itemA11y', { name, price: priceText })}>
+      <View accessible accessibilityLabel={itemLabel}>
         <Text style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>{name}</Text>
+        {subLine === null ? null : (
+          <Text testID="answer-subline" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {subLine}
+          </Text>
+        )}
         <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim, fontVariant: ['tabular-nums'] }}>{priceText}</Text>
       </View>
       {showControls ? (

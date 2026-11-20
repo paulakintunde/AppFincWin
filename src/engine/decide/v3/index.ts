@@ -5,6 +5,7 @@
  * Named exports only (no `export *` of modules) so the surface is reviewable and pinned by barrel.test.ts.
  */
 export type * from './types';
+export type { ShareScope, SplitRule } from '../share';
 export * from './constants';
 
 export { buildMonthModel } from '../../month/model/model';

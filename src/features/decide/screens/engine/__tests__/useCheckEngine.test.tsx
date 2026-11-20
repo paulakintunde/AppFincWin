@@ -32,6 +32,15 @@ jest.mock('@/data/queries/decide', () => ({
 jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => mockState.answers }));
 jest.mock('@/data/queries/recurringDismissals', () => ({ useRecurringDismissals: () => mockState.dismissals }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
+// 08.1-10: the household side is its own hook; here it is a switch (the reads behind it are tested with it).
+let mockHousehold: { source: unknown; pending: boolean } = { source: undefined, pending: false };
+const mockHouseholdOn = jest.fn();
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({
+  useHouseholdScopeSource: (on: boolean) => {
+    mockHouseholdOn(on);
+    return on ? mockHousehold : { source: undefined, pending: false };
+  },
+}));
 
 // stable data references across renders, as the real query hooks give
 const SOURCE = demoSource('2026-10-03');
@@ -52,8 +61,50 @@ const quickMock = engine.judgeWithQuickLines as jest.Mock;
 const timelineMock = engine.cashTimeline as jest.Mock;
 
 beforeEach(() => {
+  mockHousehold = { source: undefined, pending: false };
   ready();
   jest.clearAllMocks();
+});
+
+describe('useCheckEngine: Household scope (08.1-10, D-02, D-03)', () => {
+  const HH = {
+    scope: 'household' as const,
+    viewerId: 'u1',
+    myWeight: 50,
+    partners: [{ key: 'u2', weight: 50, sharing: true, roundedLeft: 300000, currency: 'USD' }],
+  };
+  const householdCheck = (): CheckV2 => ({ ...checkOnce(20000), share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'even' } } });
+
+  it('a Just me check never asks for the household and judges on the shared Prepared', async () => {
+    await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(mockHouseholdOn).toHaveBeenLastCalledWith(false);
+    const inputs = prepareMock.mock.calls.map((c) => (c[0] as { household?: unknown }).household);
+    expect(inputs.every((h) => h === undefined)).toBe(true);
+  });
+
+  it('a Household check passes scope household to the builder and judges on its own Prepared', async () => {
+    mockHousehold = { source: HH, pending: false };
+    const { result } = await renderHook(() => useCheckEngine(householdCheck()));
+    expect(mockHouseholdOn).toHaveBeenLastCalledWith(true);
+    const scopes = prepareMock.mock.calls.map((c) => (c[0] as { household?: { scope: string } | null }).household?.scope);
+    expect(scopes).toContain('household');
+    expect(result.current.status).toBe('ready');
+    expect(result.current.evaluation).not.toBeNull();
+  });
+
+  it('hands the builder the partner who has not shared, so the caveat can name them', async () => {
+    mockHousehold = { source: { ...HH, partners: [{ ...HH.partners[0]!, sharing: false, roundedLeft: null, currency: '' }] }, pending: false };
+    await renderHook(() => useCheckEngine(householdCheck()));
+    const households = prepareMock.mock.calls.map((c) => (c[0] as { household?: { notShared: string[] } | null }).household);
+    expect(households.some((h) => h?.notShared.join() === 'u2')).toBe(true);
+  });
+
+  it('waits (loading, no evaluation) while the household figures are on their way', async () => {
+    mockHousehold = { source: HH, pending: true };
+    const { result } = await renderHook(() => useCheckEngine(householdCheck()));
+    expect(result.current.status).toBe('loading');
+    expect(result.current.evaluation).toBeNull();
+  });
 });
 
 describe('useCheckEngine', () => {

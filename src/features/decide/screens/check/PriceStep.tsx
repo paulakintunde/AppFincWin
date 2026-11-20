@@ -37,6 +37,7 @@ import { WhyLine } from '../ui/WhyLine';
 import { WaterfallCard, type WaterfallLine } from '../ui/WaterfallCard';
 import { useCheckEngine } from '../engine/useCheckEngine';
 import { StepFrame } from './StepFrame';
+import { WhoPays } from './WhoPays';
 import { isStillSaving, StepStillSaving } from './StepStillSaving';
 import { dealerFeesOf, withDealerFees } from './oneOffPresets';
 import { useOwnAdd } from './ownAdds';
@@ -217,6 +218,9 @@ export function PriceStep({ id }: { id: string }) {
           {noPrice ? <Note tone="warn">{t('decide.v3.missing.no_price')}</Note> : null}
           {zeroPrice ? <NeedLine testID="price-need" text={t('decide.screens.common.need.priceAboveZero')} /> : null}
           {tooLarge ? <Note tone="warn">{t('decide.v3.missing.price_too_large')}</Note> : null}
+
+          {/* 08.1-10 (D-01, D-02): directly under the price; renders nothing for a household of one. */}
+          <WhoPays share={check.share} onChange={(share) => step.update((c) => ({ ...c, share }))} />
 
           {included ? null : (
             <View style={styles.group}>

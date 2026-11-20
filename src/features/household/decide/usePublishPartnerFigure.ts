@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useHouseholdId } from '@/data/queries/household';
 import { useDecideV3 } from '@/data/queries/decideV3';
-import { usePartnerOptins } from '@/data/queries/partnerMoney';
-import { publishPartnerFigure } from '@/db/partnerOptins';
+import { useOwnNetShares, usePartnerOptins } from '@/data/queries/partnerMoney';
+import { publishPartnerFigure, publishSafetyNetSaved } from '@/db/partnerOptins';
 import { monthPicture } from '@/engine/month';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { supabase } from '@/services/supabase';
@@ -34,6 +34,10 @@ export function usePublishPartnerFigure(): void {
   const householdId = useHouseholdId(userId).data ?? null;
   const optins = usePartnerOptins(userId, householdId).data;
   const { prepared } = useDecideV3();
+  // 08.1-10: the shared safety net's "saved" rides the same hourly publish, so nothing else needs a call site.
+  const shares = useOwnNetShares(userId, householdId).data;
+  const netGoals = useMemo(() => (shares ?? []).filter((s) => s.enabled).map((s) => s.goal_id), [shares]);
+  const netSaved = prepared?.inputs.safetyNet?.saved ?? null;
   const hasOptIn = useMemo(() => (optins ?? []).some((o) => o.owner_id === userId && o.enabled), [optins, userId]);
   const figure = useMemo(
     () => (prepared === null ? null : { left: roundDownToStep(Number(monthPicture(prepared).leftAfterPlans)), currency: prepared.inputs.currency as string }),
@@ -41,16 +45,20 @@ export function usePublishPartnerFigure(): void {
   );
   const last = useRef<number | null>(null);
   const inFlight = useRef(false);
-  const latest = useRef({ hasOptIn, figure });
+  const latest = useRef({ hasOptIn, figure, netGoals, netSaved });
 
   const tryPublish = useCallback(() => {
-    const { hasOptIn: on, figure: f } = latest.current;
+    const { hasOptIn: on, figure: f, netGoals: goals, netSaved: saved } = latest.current;
     const now = Date.now();
-    if (f === null || inFlight.current || !mayPublish(on, now, last.current)) return;
+    if (f === null || inFlight.current || !mayPublish(on || goals.length > 0, now, last.current)) return;
     inFlight.current = true;
-    publishPartnerFigure(supabase, f.left, f.currency)
-      .then((res) => {
-        if (res.ok) last.current = now;
+    const calls = [
+      ...(on ? [publishPartnerFigure(supabase, f.left, f.currency)] : []),
+      ...(saved === null ? [] : goals.map((g) => publishSafetyNetSaved(supabase, g, Math.max(0, roundDownToStep(Number(saved)))))),
+    ];
+    Promise.all(calls)
+      .then((results) => {
+        if (results.some((res) => res.ok)) last.current = now;
       })
       .catch(() => undefined)
       .finally(() => {
@@ -64,9 +72,9 @@ export function usePublishPartnerFigure(): void {
   }, [hasOptIn]);
 
   useEffect(() => {
-    latest.current = { hasOptIn, figure };
+    latest.current = { hasOptIn, figure, netGoals, netSaved };
     tryPublish();
-  }, [hasOptIn, figure, tryPublish]);
+  }, [hasOptIn, figure, netGoals, netSaved, tryPublish]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {

@@ -40,6 +40,8 @@ jest.mock('@/data/mutations/decideChecks', () => ({
   useCreateCheck: () => ({ create: jest.fn(), pendingIds: [], pendingRows: [] }),
 }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+// 08.1-10: Who pays reads the household; a household of one renders nothing here.
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }), useHouseholdScopeSource: () => ({ source: undefined, pending: false }) }));
 jest.mock('@/features/decide/perf/perfMarks', () => ({ perfMark: jest.fn(), usePerfMount: jest.fn() }));
 
 const RC01 = loadCases().find((c) => c.id === 'RC-01');

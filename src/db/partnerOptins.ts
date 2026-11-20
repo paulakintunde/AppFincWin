@@ -50,6 +50,11 @@ export function publishPartnerFigure(client: DbClient, roundedLeft: number, curr
   return callRpc(client, 'publish_partner_figure', { p_rounded_left: roundedLeft, p_currency: currency });
 }
 
+/** 08.1-10: the owner's device sends what the shared safety net has saved, rounded down to a multiple of 1000. Refusals: not_signed_in, not_rounded, not_shared. */
+export function publishSafetyNetSaved(client: DbClient, goalId: string, roundedSaved: number) {
+  return callRpc(client, 'publish_safety_net_saved', { p_goal_id: goalId, p_rounded_saved: roundedSaved });
+}
+
 export type PartnerMoneyTotal = RpcResult<{ rounded_left: number; currency: string; as_of: string }>;
 
 /** One rounded total, or a refusal: not_both_on, no_figure. */

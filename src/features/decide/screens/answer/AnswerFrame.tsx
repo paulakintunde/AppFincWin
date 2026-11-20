@@ -67,6 +67,10 @@ export interface AnswerCheckView {
   paydayText?: string | null;
   /** 06.1-66 (FQ8): set once the check is decided ("Bought on Nov 12."); the action bar and the Not ready exits give way to it. */
   outcome?: string | null;
+  /** 08.1-10 (APP-22): the top bar's scope line (Just you, or the household's name). Absent = no scope line. */
+  scopeLabel?: string | null;
+  /** 08.1-10 (owner 2026-11-20): true only for a check saved for later (status waiting); the outcome line then offers Record as bought. */
+  canRecordBought?: boolean;
 }
 
 /** 06.1-66 (OQ-66-2, DS-2): readiness not met and the engine's "More needed" ask are the same not-ready state, never a verdict (D-52). */
@@ -90,6 +94,8 @@ export interface AnswerFrameProps {
   renderAfterFact?: (line: Line, index: number) => React.ReactNode;
   /** The "More detail" rows (plan 23). */
   children?: React.ReactNode;
+  /** 08.1-10 (UX-21): household notes between the answer and the legal block (the shared-bills caveat); absent = none. */
+  householdNote?: React.ReactNode;
   /** 06.1-44 (G-1, C-2): the named readiness items for the not-ready card (readinessFixRows). Absent = none named. */
   readinessRows?: readonly ReadinessFixRow[];
   /** D-57 (C-1): true only while quick estimates can count (estimatesCanAnswer). Absent = false: no quick-estimates control. */
@@ -129,6 +135,7 @@ export function AnswerFrame({
   onReadinessChoice,
   updating = false,
   answeredRows,
+  householdNote,
 }: AnswerFrameProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -147,6 +154,8 @@ export function AnswerFrame({
     when: check.when,
     dateText: check.dateText ?? null,
     paydayText: check.paydayText ?? null,
+    stage: reading?.stage ?? null,
+    scopeLabel: check.scopeLabel ?? null,
     onBack: () => onAction({ kind: 'back' }),
     onNewCheck: () => onAction({ kind: 'newCheck' }),
     onPay: (mode) => onAction({ kind: 'pay', mode }),
@@ -236,6 +245,7 @@ export function AnswerFrame({
             {children}
           </View>
         ) : null}
+        {householdNote}
         <LegalBlock
           basis={lines.basis}
           payWindow={lines.payWindow}
@@ -261,7 +271,7 @@ export function AnswerFrame({
         {body}
       </ScrollView>
       {showOutcome ? (
-        <OutcomeLine text={outcome} onOpenPast={() => onAction({ kind: 'openPast' })} />
+        <OutcomeLine text={outcome} onOpenPast={() => onAction({ kind: 'openPast' })} onRecordBought={check.canRecordBought === true ? () => onAction({ kind: 'bought' }) : undefined} />
       ) : showActions ? (
         <ActionBar onBought={() => onAction({ kind: 'bought' })} onSaveFor={() => onAction({ kind: 'saveFor' })} onNotBuying={() => onAction({ kind: 'notBuying' })} />
       ) : null}
