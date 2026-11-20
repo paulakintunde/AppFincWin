@@ -82,7 +82,8 @@ describe('I13 late-month pay date (debug note residual)', () => {
 
   it('the dearer not_covered answer is dated at the pay date, never before the cheaper payday', () => {
     expect(lo.result.readyBy).toEqual({ kind: 'date', date: '2026-11-28' });
-    expect(hi.result.readyBy).toEqual({ kind: 'date', date: '2026-11-28' });
+    // 08.1 D-05: a fresh check on the 28 Nov pay date does not stay at or above 0 for its own 90 days; the first day that does is in December
+    expect(hi.result.readyBy).toEqual({ kind: 'month', month: '2026-12' });
     expect(key(hi.result.readyBy) >= key(lo.result.readyBy)).toBe(true);
   });
 });

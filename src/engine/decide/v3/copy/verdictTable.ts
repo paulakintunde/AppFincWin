@@ -191,6 +191,8 @@ export const FACT_KEYS = Object.freeze({
   overdraft_not_cleared: 'decide.v3.fact.overdraft_not_cleared',
   overdraft_cost_90d: 'decide.v3.fact.overdraft_cost_90d',
   wait_clears: 'decide.v3.fact.wait_clears',
+  not_within_year: 'decide.v3.fact.not_within_year', // 08.1 D-06
+  below_zero_without: 'decide.v3.fact.below_zero_without', // 08.1 D-07
   overdraft_repeat: 'decide.v3.fact.overdraft_repeat',
   other_account_overdrawn: 'decide.v3.fact.other_account_overdrawn',
   no_overdraft_limit: 'decide.v3.fact.no_overdraft_limit',
@@ -382,6 +384,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   overdraft_not_cleared: ['accountId', 'date', 'below', 'zero'],
   overdraft_cost_90d: ['rate', 'cost', 'zero'],
   wait_clears: ['month', 'zero'],
+  not_within_year: [], // 08.1 D-06
+  below_zero_without: ['date', 'zero'], // 08.1 D-07: the first day inside the 90 days the account is below 0 without the purchase; zero is the currency's zero
   overdraft_repeat: ['accountId', 'count', 'of', 'rate', 'cost', 'zero'],
   other_account_overdrawn: ['accountId', 'below', 'rate', 'monthlyCost', 'zero'],
   no_overdraft_limit: ['accountId', 'below', 'zero'],

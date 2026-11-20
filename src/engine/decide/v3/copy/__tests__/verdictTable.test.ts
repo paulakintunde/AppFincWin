@@ -164,7 +164,7 @@ describe('verdict table (I22 one code one text)', () => {
         'line_crossed', 'quoted_differs', 'implied_rate', 'deferred_interest_term', 'at_todays_rate', 'low_month',
         'lean_bridge', 'unspent_held_back', 'lean_months_judged', 'low_month_judged', 'rests_on_your_answer',
         'no_full_month', 'overdraft_use', 'overdraft_without_purchase', 'overdraft_purchase_adds', 'overdraft_not_cleared',
-        'overdraft_cost_90d', 'wait_clears', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
+        'overdraft_cost_90d', 'wait_clears', 'not_within_year', 'below_zero_without', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
         'ready_without_interest', 'clearing_first', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off',
         'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line',
         'bills_held_back', 'yearly_bill_ahead', 'net_locked', 'extra_savings_used', 'net_two_months', 'move_money_by',

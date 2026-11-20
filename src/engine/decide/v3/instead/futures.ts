@@ -40,10 +40,14 @@ export const OPTION_ORDER: Readonly<Record<'need' | 'want' | 'none', readonly Fu
 });
 
 /** D-110: the options present, in the purpose's order. No option is added or removed. */
-export function orderOptions(present: readonly FutureKind[], purpose: Purpose | null): readonly FutureKind[] {
+export function orderOptions(present: readonly FutureKind[], purpose: Purpose | null, notWithinYear = false): readonly FutureKind[] {
   const reading = purpose === null ? 'none' : isNeedPurpose(purpose) ? 'need' : 'want';
-  return OPTION_ORDER[reading].filter((k) => present.includes(k));
+  const ordered = OPTION_ORDER[reading].filter((k) => present.includes(k));
+  // 08.1 D-06: with no ready-by date inside a year, the cheaper one and keeping the money (Save for it) lead; the rest keep their order
+  return notWithinYear ? [...LEAD_BEYOND_YEAR.filter((k) => ordered.includes(k)), ...ordered.filter((k) => !LEAD_BEYOND_YEAR.includes(k))] : ordered;
 }
+
+const LEAD_BEYOND_YEAR: readonly FutureKind[] = ['cheaper', 'keep'];
 
 /** 05.4 UX-28 (D-111, D-112): "The cheaper one", figures only (no answer of its own). Per-year figures are null with no years of use. */
 export interface CheaperOption {
@@ -191,7 +195,7 @@ export function insteadFutures(input: {
   }
   return {
     // D-110: the purpose orders the options; the set and the figures never change (I-D41)
-    order: orderOptions(cheaper === null ? FUTURE_ORDER : [...FUTURE_ORDER, 'cheaper'], purchase.purpose),
+    order: orderOptions(cheaper === null ? FUTURE_ORDER : [...FUTURE_ORDER, 'cheaper'], purchase.purpose, result.facts.some((f) => f.code === 'not_within_year')),
     ...(cheaper === null ? {} : { cheaper }),
     buyNow: {
       unspentAfter:

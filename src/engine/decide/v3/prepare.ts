@@ -31,7 +31,7 @@ import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtFlo
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, spareSavings, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
-import { addDays, addYearMonths, yearMonthOf } from './dates';
+import { addDays, addMonthsClamped, addYearMonths, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
@@ -39,7 +39,9 @@ import { judge, type BorrowingCtx } from './judge/judge';
 import { uncoveredIncomeMonths } from './judge/needsInput';
 import { withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
-import { buildPurchase, purchaseCashFlowsLabelled } from './judge/purchase';
+import { buildPurchase, purchaseCashFlows, purchaseCashFlowsLabelled } from './judge/purchase';
+import { firstSafeStart, type SafeStart } from './judge/readyBy';
+import { buildHorizon, horizonDays } from './cash/horizon';
 import { purchaseDateOf } from './fullCost/purchaseDate';
 import { replacesEffect, replacesFlowsLabelled, type ReplacesEffect } from './fullCost/replaces';
 import { withRedatedRefunds } from '../../month/model/refunds';
@@ -352,6 +354,41 @@ function purchaseSideOf(r: Reading, check: CheckV2, opts: JudgeOpts) {
   return { inputs, pb, rep, funds, savedFor, opening, purchaseDate, labelled };
 }
 
+/** D-06: no ready-by date is given more than this many calendar months after the check day. */
+const READY_BY_MONTHS = 12;
+
+/**
+ * 08.1 D-05 / D-06 (08.1-06): the search for the first day a fresh check would keep the account at or above 0 for 90 days, as a
+ * closure the judge calls on a Not yet answer (judge/readyBy.ts firstSafeStart). It reads the no-purchase path stretched to 12
+ * months plus a window (cash/horizon.ts). Left out (the judge keeps the date it has, never looser) when the stretched path cannot
+ * be built from the records alone: pay from history or a pay cap (variable or seasonal pay is only known 90 days out), or a purchase
+ * that replaces something (its sale and stopped costs are dated from the purchase day). Lazy: nothing is built until a Not yet asks.
+ */
+function safeStartOf(r: Reading, purchase: Purchase | null, opening: MinorUnits, replaced: boolean): ((notBefore: string) => SafeStart) | undefined {
+  if (purchase === null || replaced || r.hp !== null) return undefined;
+  const { inputs } = r;
+  return (notBefore) => {
+    const { input } = openInputOf(inputs, r.month);
+    if (input.payCaps != null) return null;
+    const limit = addMonthsClamped(inputs.asOf, READY_BY_MONTHS);
+    const total = horizonDays(inputs.asOf, limit);
+    const ym = yearMonthOf(inputs.asOf);
+    const outflows = [
+      ...savingTransferFlows(inputs.series, savedOccurrences(inputs), inputs.asOf, total),
+      ...debtOutflows(inputs, inputs.months.find((m) => m.month === ym)?.lines ?? [], total).flows,
+    ];
+    const h = buildHorizon({ ...input, opening, outflows, totalDays: total });
+    return firstSafeStart({
+      asOf: inputs.asOf,
+      paydays: payDatesIn(inputs.series, inputs.asOf, total),
+      notBefore,
+      maxMonths: READY_BY_MONTHS,
+      floor: 0,
+      lowestFrom: (start) => Number(h.lowestFrom(start, purchaseCashFlows(purchase, start, CASH_PATH_DAYS_V3, start))),
+    });
+  };
+}
+
 function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
   const { month, net } = r;
   const { inputs, pb, rep, funds, savedFor, opening, purchaseDate, labelled } = purchaseSideOf(r, check, opts);
@@ -364,6 +401,9 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };
   const borrowing = borrowingOf(r, check, pb.purchase, pb.quoted, opts);
+  // 08.1 D-07: the first day inside the 90 days the account is below 0 with no purchase at all.
+  const without = applyPurchaseFlows(r.open, opening, []).points.find((p) => p.balance < 0);
+  const safeStart = safeStartOf(r, pb.purchase, opening, rep !== null);
   const judged = judge({
     inputs,
     month,
@@ -379,6 +419,8 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
     account,
     borrowing,
     purchaseDate,
+    belowZeroWithout: without === undefined ? null : without.date,
+    ...(safeStart === undefined ? {} : { safeStart }),
     ...(rep === null ? {} : { replaces: { freed: rep.freed, showsUsual: rep.showsUsual, saleLater: rep.saleLater } }),
     ...(savedFor > 0 ? { savedFor } : {}),
   });

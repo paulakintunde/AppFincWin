@@ -68,6 +68,14 @@ export function monthAlreadyShort(typicalLeft: MinorUnits | null): boolean {
   return typicalLeft !== null && typicalLeft < 0;
 }
 
+/**
+ * 08.1 D-07: the account goes below 0 inside the 90 days even with no purchase. One fact, leading the depletion lines; it names the first
+ * day below 0 and never changes a code, a variant or a ready-by date. zero is always 0 (the screen formats the currency's zero).
+ */
+export function belowZeroWithoutFacts(date: string | null): Fact[] {
+  return date === null ? [] : [{ code: 'below_zero_without', values: { date, zero: 0 } }];
+}
+
 export function depletionFacts(d: DepletionInput): Fact[] {
   const TL = d.typicalLeft;
   if (TL === null || d.code === 'needs_input') return [];
