@@ -3,8 +3,8 @@
 Prerequisites for enrolling FincWin in the Apple Developer Program **as an organisation** (D-03: no individual-account fallback). Check each item before submitting enrolment.
 
 - [x] Legal entity status: the company is already registered as a legal entity (D-01) — Lead Strategy Canada Inc
-- [ ] D-U-N-S number assigned to the legal entity (D-01) — look up via `https://developer.apple.com/enroll/duns-lookup/`; request one if missing (~28 days). Requested 2026-09-15, still pending on day 7 as of 2026-09-22, ETA 2026-10-13 (+28 days). Not yet issued
-- [ ] D&B record's legal name and address match the government registration exactly (D-02) — verify and record the date checked. Checked 2026-09-22: not yet verifiable, D-U-N-S has not been issued
+- [x] D-U-N-S number assigned to the legal entity (D-01) — look up via `https://developer.apple.com/enroll/duns-lookup/`; request one if missing (~28 days). Requested 2026-09-15; issued by 2026-11-19 (number not stored here).
+- [ ] D&B record's legal name and address match the government registration exactly (D-02) — verify and record the date checked. Now checkable (D-U-N-S issued by 2026-11-19); match not yet recorded.
 - [ ] Registered legal name matches the desired App Store seller name; no DBA/trading name needed (D-02) — not yet confirmed
 - [ ] The enrolling person is owner/director with authority to accept the Apple Developer Program License Agreement (D-02) — not yet confirmed
 - [ ] Public website on the company domain with real company content and a contact route (ENV-20, D-06) — audit in plan 00-07; entity domain (leadstrategy.ca) is what Apple checks
@@ -20,16 +20,7 @@ This plan was originally written assuming a single company domain. There are two
 
 ## Status: Apple Developer Program enrolment
 
-Status as of 2026-09-25: **blocked: awaiting D-U-N-S**. Enrolment has been
-started but cannot be submitted or completed until the D-U-N-S number is
-issued. No submission date is confirmed. Requested 2026-09-15, still pending
-on day 10, ETA 2026-10-13 (+28 days from request). Website audit
-(`docs/enrolment/website-audit.md`) returned `Verdict: REMEDIATE (9 items)`
-on 2026-09-23, re-confirmed unchanged on 2026-09-25 — the site also needs
-remediation before submission, independent of the D-U-N-S wait, since Apple
-rejects parked/placeholder-content organisation sites on sight (the entity
-site's three visible "placeholder" admissions are the strongest of the nine
-findings).
+Status as of 2026-11-19: **submitted, awaiting Apple's review** (reported by the owner 2026-11-19). Not yet enrolled. 00-20 (Sign in with Apple, first iOS build on the iPhone XR) stays blocked until membership is active. D-U-N-S issued by 2026-11-19. Website audit history: REMEDIATE (9 items) 2026-09-23, READY pending two items after the 2026-09-26 re-audit (see `docs/enrolment/website-audit.md`).
 
 ## Apple enrolment form — exact fields to have ready
 
@@ -51,6 +42,8 @@ changed it since this was last checked (2026-09-25).
 | Payment | $99/year — do not submit payment details anywhere in this repo or its docs |
 
 ## Google Play Console organisation registration — steps
+
+Status as of 2026-11-19: organisation account (Lead Strategy Canada Inc) set up; Android developer verification pending, so package names cannot be registered yet. The D-U-N-S caveat below is moot now that the number is issued and the account exists. Third-party app stores: owner chose to manage them individually and declined all four for now (see the register row).
 
 Registration at `https://play.google.com/console/signup`, prepared per D-04
 (pulled forward to Phase 0) and `docs/ops/accounts.md`. **Re-verify D-U-N-S
