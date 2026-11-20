@@ -56,6 +56,14 @@ export const answerActions = {
     planRow: 'Payments',
     // 08.1-09 (UI-SPEC 5): the date line and the tick rows. Draft copy, signed under D-08.
     boughtOn: 'Bought on {{date}}.',
+    // 08.1-12 (D-12, UI-SPEC 5): Household purchases only. Draft copy for the plan 14 sign-off; {{rule}} is one of the four words below.
+    sharedSub: 'Saved as a shared line, split {{rule}}.',
+    shareRule: {
+      even: 'evenly',
+      weight: 'by agreed share',
+      amount: 'by set amounts',
+      mine: 'to me alone',
+    },
     // 06.1-83: one / many forms, so a single payment never reads as 1 payments.
     planSummary_one: '{{up}} up front, then one payment',
     planSummary_other: '{{up}} up front, then {{count}} payments',
