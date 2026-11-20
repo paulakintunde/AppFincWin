@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Whole-app review 2026-11-19; 08.1 wave 2 and Phase 9 device pass next
+stopped_at: Whole-app review 2026-11-19; 08.1 wave 2 next; Phase 9 waits on RevenueCat and the Kint rename
 last_updated: "2026-11-19T18:00:00.000Z"
 last_activity: 2026-11-19 -- whole-app review and doc tidy (quick 261119-rvf)
 progress:
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** two branches in parallel — Phase 08.1 (`feat/08.1-build`, wave 2 next) and Phase 9 (`phase/09-tiers-onboarding`, PR #170, owner device pass). Kint rebrand (KINT-PIVOT-BRIEF.md) to be inserted before Phase 9 merges.
+**Current focus:** two branches in parallel — Phase 08.1 (`feat/08.1-build`, wave 2 next) and Phase 9 (`phase/09-tiers-onboarding`, PR #170, built and device-passed). Kint rebrand (KINT-PIVOT-BRIEF.md) to be inserted before Phase 9 merges.
 
 ## Current Position
 
 Reviewed against code on 2026-11-19 (whole-app review: main 5e2a8324, full Jest 968 suites / 35,355 tests pass, all static gates pass).
 
 Phase: 08.1 (decide-rebuild-on-real-data) — IN PROGRESS on branch `feat/08.1-build`, 6/18 plans (01, 02, 03, 04, 05, 07), 10 waves after the 2026-11-19 trim (PR #171). Next: wave 2 plan 06 (audit gate met on main; merge main into the branch first). Owner gates: 08 (household cases), 11 (FIN-12 or v1.1), 13 (changed answers), 14 (wording sign-off), 15 (production push). Migrations 20261123000100..000300 are not in production yet.
-Phase: 09 (tiers-onboarding) — IN PROGRESS on branch `phase/09-tiers-onboarding` (PR #170, draft, CI green), 24/26 plans. 09-24 partial (First read tag waits for 08.1-20); 09-25 automated gate green, preview APK a577d4c4, owner device pass A1-A9 under way. Waits on RevenueCat setup (ENV-12), owner items C1 in 09-HUMAN-UAT.md, and the Kint rename. Its 5 migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh are already live in production, ahead of main.
+Phase: 09 (tiers-onboarding) — COMPLETE ON BRANCH `phase/09-tiers-onboarding`, 26/26 (PR #170, not merged). Owner device pass PASSED 2026-11-19 (09-HUMAN-UAT.md). 09-24 ships without the First read tag (waits for 08.1-20). Open before merge: RevenueCat setup (ENV-12), the owner review list, and the Kint rename (merge order: rebrand first). Its 5 migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh are live in production, ahead of main.
 Phase: 08.2, 7, 10 — not planned. 11 — not started.
 Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11).
 Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026-11-14 (PR #102). 06 (grow) — COMPLETE 2026-11-11 (PR #101).
@@ -221,7 +221,7 @@ Recent decisions affecting current work:
 | 261117-sn1 | SN-18 wording (text only) and SN-27 proposal; owner chose option (a), built in PR #149: no ready-by date when a plan's own payment makes the usual month short (engine revision 06.9, SN-27 approved, 49/2000 I44 cases lose a date only) | 2026-11-17 | bf173562 | [261117-sn1-sn-18-wording-and-sn-27-proposal](./quick/261117-sn1-sn-18-wording-and-sn-27-proposal/) |
 | 261118-u83 | ASO re-check: 4 new "can I afford it" apps (incl. Verdict Money), hard-paywall copy fixes, features to compete on; LAUNCH-POSITIONING §4/§5 updated | 2026-11-18 | (this PR) | [261118-u83-aso-re-check-2026-11-18](./quick/261118-u83-aso-re-check-2026-11-18/) |
 | 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
-| 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18, Phase 9 24/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
+| 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18 and Phase 9 26/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
 
 ## Deferred Items
 

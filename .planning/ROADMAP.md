@@ -1704,6 +1704,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 6/18 | In progress on branch `feat/08.1-build` (wave 1 built: 01-05, 07; wave 2 plan 06 next) | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 24/26 | In progress on branch `phase/09-tiers-onboarding` (PR #170, draft): 09-24 partial (needs 08.1-20), 09-25 owner device pass open; plans and DB live in production ahead of main | - |
+| 9. Tiers & Onboarding | 26/26 | Complete on branch `phase/09-tiers-onboarding`, not merged (PR #170): device pass passed 2026-11-19; open: RevenueCat setup (ENV-12), owner review list, Kint rename, First read tag (08.1-20); its migrations and Edge Functions are live in production ahead of main | 2026-11-19 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
