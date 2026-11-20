@@ -1529,7 +1529,7 @@ Plans:
 - [x] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
 - [x] 08.1-09-PLAN.md — Record as bought client: one writer, fixed vs varying costs, tick rows, stops wiring, contract todos (ARC-24, D-09..D-11)
 - [x] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
-- [ ] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
+- [x] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
 - [x] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
 - [ ] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
 - [ ] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
@@ -1701,7 +1701,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 14/18 | In progress | - |
+| 08.1 Decide rebuild on real data | 15/18 | In progress | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
