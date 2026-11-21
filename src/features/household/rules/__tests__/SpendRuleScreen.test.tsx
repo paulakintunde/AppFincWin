@@ -1,7 +1,7 @@
 // 08.1-23 (CMP-F19, owner 2026-11-21 Q1-Q6): "How spending is shared". Every Supabase-loading hook is mocked; the screen, the choice
 // lists, the shares editor and the pure view (spendViewOf) are real.
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { HouseholdSpendRuleRow } from '@/db/householdSpendRules';
@@ -169,9 +169,7 @@ describe('SpendRuleScreen', () => {
     await fireEvent.press(screen.getByTestId('spend-setup-joint'));
     expect(checked('spend-rule-bill')).toBe(true);
     expect(screen.getByTestId('spend-rule-bill-tag')).toBeTruthy();
-    await act(async () => {
-      await fireEvent.press(saveButton());
-    });
+    await fireEvent.press(saveButton());
     expect(mockSave).toHaveBeenCalledWith({}, { rule: null, setup: 'joint', shares: null, expectedVersion: null });
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({ text: { key: 'household.rules.spending.saved' }, onUndo: expect.any(Function) }));
   });
@@ -194,9 +192,7 @@ describe('SpendRuleScreen', () => {
     expect(screen.getByTestId('spend-share-money-sam').props.children).toBe('40% · about $1,200 of $3,000 shared');
     await fireEvent.press(screen.getByTestId('weight-up-sam'));
     expect(screen.getByTestId('spend-share-money-sam').props.children).toBe('45% · about $1,350 of $3,000 shared');
-    await act(async () => {
-      await fireEvent.press(saveButton());
-    });
+    await fireEvent.press(saveButton());
     expect(mockSave).toHaveBeenCalledWith({}, { rule: 'custom', setup: null, shares: { me: 55, sam: 45 }, expectedVersion: null });
     const undo = (mockToast.mock.calls[0]![0] as { onUndo: () => void }).onUndo;
     undo();
@@ -235,9 +231,7 @@ describe('SpendRuleScreen', () => {
     mockSave.mockImplementation(async () => ({ ok: false, reason: 'version_conflict', updated_by: 'sam' }));
     await setup();
     await fireEvent.press(screen.getByTestId('spend-rule-bill'));
-    await act(async () => {
-      await fireEvent.press(saveButton());
-    });
+    await fireEvent.press(saveButton());
     await waitFor(() => expect(screen.getByTestId('spend-conflict')).toBeTruthy());
     expect(screen.getByText('Sam changed this a moment ago. The latest is shown.')).toBeTruthy();
     expect(checked('spend-rule-bring')).toBe(true);
