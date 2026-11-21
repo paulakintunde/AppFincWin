@@ -2893,6 +2893,296 @@
       "ownerReason": "Owner (2026-11-18, plan 08.1-01 checkpoint): approved as drafted in 08.1-CASES-D05-D07.md.",
       "expertNote": null,
       "plannerNote": "Engine today answers not_yet, month_already_short, afterBuy.month -$350 (right) but has no below_zero_without fact. Goes into knownRed on approval. The fact's date (2027-01-26) is asserted in the plan 06 unit test, because the table checks fact codes only. SN-27 gains a mustNotHaveFacts below_zero_without after approval (its no-purchase path never goes below $0)."
+    },
+    {
+      "id": "SN-32",
+      "topic": "safety-net",
+      "persona": "Quebec-style quarterly shortfall, simplified (invented, 12-month path)",
+      "situation": "Pay is $10,000 on the 1st of each month. A usual month is bills $2,000 (paid the day before pay) and everyday spending $4,000 ($2,000 of it on essentials), so $4,000 is left. A bill of $15,000 comes every three months (3 November, 3 February, 3 May, 3 August). Today is 15 October 2026; $2,000 of everyday spending is still to come this month and the $2,000 of bills are still due. The check is a $2,000 item on a 0% plan: $200 now, then ten payments of $180 from 15 November. No safety net is set and there is no overdraft. The everyday account holds $20,000 today. Even with no purchase the account is short each quarter: the $12,000 a quarter left over does not cover the $15,000 bill.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 1000000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 200000,
+          "everyday": 400000,
+          "essentialEveryday": 200000
+        },
+        "thisMonth": {
+          "received": 1000000,
+          "billsPaid": 0,
+          "billsDue": 200000,
+          "everydaySoFar": 200000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 2000000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "long",
+            "amount": 1500000,
+            "everyMonths": 3,
+            "nextDue": "2026-11-03",
+            "lastPaid": "2026-08-03",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 10,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 20000,
+            "firstPaymentDate": "2026-11-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuy": {
+          "month": 373548,
+          "usualMonth": 382000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "below_zero_later_without"
+        ],
+        "mustNotHaveFacts": [
+          "below_zero_later_with",
+          "below_zero_without"
+        ]
+      },
+      "why": "Month-end balances before the next pay, no purchase: Oct $16,000; Nov $5,000 (after the $15,000 bill on 3 Nov); Dec $9,000; Jan $13,000; Feb $2,000 (bill on 3 Feb); Mar $6,000; Apr $10,000; May -$1,000 (bill on 3 May); Jun $3,000; Jul $7,000; Aug -$4,000 (bill on 3 Aug). The engine spreads everyday spending by day and reads about $65 less each month, so it shows $4,935 on 30 November and first goes below $0 on 31 May 2027 (lowest -$4,065 on 31 August). With the plan ($200 now, $180 a month from 15 November) each month-end is lower by $200 plus $180 for each payment so far: 31 May is -$1,000 - $200 - 7 x $180 = -$2,460. The first 90 days (to 12 January) never go below $0 (lowest $5,000 less $380 = $4,620 on 30 November), so the answer stays Fits. The new line says the account goes below $0 on 31 May 2027 even without the item.",
+      "fixIds": [
+        "D-07-12M"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft for owner decision (08.1-CASES-12MONTH.md). Expected code and variant are what the engine says today; the fact name is the proposal."
+    },
+    {
+      "id": "SN-33",
+      "topic": "safety-net",
+      "persona": "The plan alone causes the later dip (invented, 12-month path)",
+      "situation": "Pay is $10,000 on the 1st of each month. A usual month is bills $2,000 (paid the day before pay) and everyday spending $4,000 ($2,000 of it on essentials), so $4,000 is left. A bill of $15,000 comes every three months (3 November, 3 February, 3 May, 3 August). Today is 15 October 2026; $2,000 of everyday spending is still to come this month and the $2,000 of bills are still due. The check is a $2,000 item on a 0% plan: $200 now, then ten payments of $180 from 15 November. No safety net is set and there is no overdraft. The everyday account holds $25,000 today. With no purchase the account stays above $0 for the whole year (lowest about $935 at the end of August 2027).",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 1000000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 200000,
+          "everyday": 400000,
+          "essentialEveryday": 200000
+        },
+        "thisMonth": {
+          "received": 1000000,
+          "billsPaid": 0,
+          "billsDue": 200000,
+          "everydaySoFar": 200000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 2500000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "long",
+            "amount": 1500000,
+            "everyMonths": 3,
+            "nextDue": "2026-11-03",
+            "lastPaid": "2026-08-03",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 10,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 20000,
+            "firstPaymentDate": "2026-11-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuy": {
+          "month": 373548,
+          "usualMonth": 382000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "below_zero_later_with"
+        ],
+        "mustNotHaveFacts": [
+          "below_zero_later_without",
+          "below_zero_without"
+        ]
+      },
+      "why": "Month-end balances before the next pay, no purchase: Oct $21,000; Nov $10,000; Dec $14,000; Jan $18,000; Feb $7,000; Mar $11,000; Apr $15,000; May $4,000; Jun $8,000; Jul $12,000; Aug $1,000 (bill on 3 Aug); Sep $5,000. Never below $0 (the engine reads about $65 less, so its lowest is $935). The plan takes $200 now and $180 a month, so by the end of August it has taken $200 + 10 x $180 = $2,000: August ends at -$1,000 (-$1,065 in the engine). The first 90 days are fine, so the answer is Fits; the new line says the account goes below $0 on 31 August 2027 because of the plan.",
+      "fixIds": [
+        "D-07-12M"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft for owner decision. Under option 2 in 08.1-CASES-12MONTH.md the verdict would instead be Not yet."
+    },
+    {
+      "id": "SN-34",
+      "topic": "safety-net",
+      "persona": "Control: the 12-month path stays above $0 (invented)",
+      "situation": "Pay is $10,000 on the 1st of each month. A usual month is bills $2,000 (paid the day before pay) and everyday spending $4,000 ($2,000 of it on essentials), so $4,000 is left. A bill of $15,000 comes every three months (3 November, 3 February, 3 May, 3 August). Today is 15 October 2026; $2,000 of everyday spending is still to come this month and the $2,000 of bills are still due. The check is a $2,000 item on a 0% plan: $200 now, then ten payments of $180 from 15 November. No safety net is set and there is no overdraft. The everyday account holds $40,000 today.",
+      "fixture": {
+        "asOf": "2026-10-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 1000000,
+          "cadence": "monthly",
+          "nextDate": "2026-11-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 200000,
+          "everyday": 400000,
+          "essentialEveryday": 200000
+        },
+        "thisMonth": {
+          "received": 1000000,
+          "billsPaid": 0,
+          "billsDue": 200000,
+          "everydaySoFar": 200000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 4000000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [
+          {
+            "id": "long",
+            "amount": 1500000,
+            "everyMonths": 3,
+            "nextDue": "2026-11-03",
+            "lastPaid": "2026-08-03",
+            "paidBy": "me"
+          }
+        ],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "plan",
+            "months": 10,
+            "apr": "0",
+            "fees": 0,
+            "deposit": 20000,
+            "firstPaymentDate": "2026-11-15"
+          }
+        }
+      },
+      "expected": {
+        "code": "fits_month",
+        "variant": "no_net",
+        "afterBuy": {
+          "month": 373548,
+          "usualMonth": 382000
+        },
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "below_zero_later_without",
+          "below_zero_later_with",
+          "below_zero_without"
+        ]
+      },
+      "why": "Month-end balances before the next pay, no purchase: Oct $36,000; Nov $25,000; Dec $29,000; Jan $33,000; Feb $22,000; Mar $26,000; Apr $30,000; May $19,000; Jun $23,000; Jul $27,000; Aug $16,000; Sep $20,000. The plan takes at most $2,000, so the lowest is August at $14,000. Never below $0, so neither new line shows.",
+      "fixIds": [
+        "D-07-12M"
+      ],
+      "status": "draft",
+      "approvedAt": null,
+      "ownerReason": null,
+      "expertNote": null,
+      "plannerNote": "Draft control."
     }
   ]
 }
