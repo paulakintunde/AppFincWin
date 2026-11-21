@@ -3,7 +3,7 @@
  * corpus, golden/gen126-depletion.json) and the Riley and Leo plans, locked and unlocked, plus every branch of depletion.ts.
  */
 import { minorUnits } from '../../../money/types';
-import { belowZeroWithoutFacts, depletionFacts, monthAlreadyShort, placeBelowZeroWithout, type DepletionInput } from '../depletion';
+import { belowZeroLaterFacts, belowZeroWithoutFacts, depletionFacts, monthAlreadyShort, placeBelowZeroWithout, type DepletionInput } from '../depletion';
 import { evaluate } from '../evaluate';
 import { NO_NET, type ResolvedNet } from '../safetyNet';
 import type { CheckV2, Fact, Result, Schedule, V3Inputs } from '../types';
@@ -204,6 +204,14 @@ describe('belowZeroWithoutFacts (D-07)', () => {
   it('is one fact naming the first day below 0, and nothing when the account never goes below 0', () => {
     expect(belowZeroWithoutFacts('2027-01-26')).toEqual([{ code: 'below_zero_without', values: { date: '2027-01-26', zero: 0 } }]);
     expect(belowZeroWithoutFacts(null)).toEqual([]);
+  });
+});
+
+describe('belowZeroLaterFacts (08.1-13)', () => {
+  it('is one fact per kind with the date and the currency zero, and nothing for null', () => {
+    expect(belowZeroLaterFacts({ kind: 'without', date: '2027-02-28' })).toEqual([{ code: 'below_zero_later_without', values: { date: '2027-02-28', zero: 0 } }]);
+    expect(belowZeroLaterFacts({ kind: 'with', date: '2027-08-31' })).toEqual([{ code: 'below_zero_later_with', values: { date: '2027-08-31', zero: 0 } }]);
+    expect(belowZeroLaterFacts(null)).toEqual([]);
   });
 });
 

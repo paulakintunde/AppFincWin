@@ -31,7 +31,7 @@ import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtFlo
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, spareSavings, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
-import { addDays, addMonthsClamped, addYearMonths, yearMonthOf } from './dates';
+import { addDays, addMonthsClamped, addYearMonths, daysBetween, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
@@ -366,28 +366,60 @@ const READY_BY_MONTHS = 12;
  * be built from the records alone: pay from history or a pay cap (variable or seasonal pay is only known 90 days out), or a purchase
  * that replaces something (its sale and stopped costs are dated from the purchase day). Lazy: nothing is built until a Not yet asks.
  */
+function stretchOf(r: Reading, opening: MinorUnits): { readonly h: ReturnType<typeof buildHorizon>; readonly total: number; readonly limit: string } | null {
+  const { inputs } = r;
+  const { input } = openInputOf(inputs, r.month);
+  if (input.payCaps != null) return null;
+  const limit = addMonthsClamped(inputs.asOf, READY_BY_MONTHS);
+  const total = horizonDays(inputs.asOf, limit);
+  const ym = yearMonthOf(inputs.asOf);
+  const outflows = [
+    ...savingTransferFlows(inputs.series, savedOccurrences(inputs), inputs.asOf, total),
+    ...debtOutflows(inputs, inputs.months.find((m) => m.month === ym)?.lines ?? [], total).flows,
+  ];
+  return { h: buildHorizon({ ...input, opening, outflows, totalDays: total }), total, limit };
+}
+
 function safeStartOf(r: Reading, purchase: Purchase | null, opening: MinorUnits, replaced: boolean): ((notBefore: string) => SafeStart) | undefined {
   if (purchase === null || replaced || r.hp !== null) return undefined;
   const { inputs } = r;
   return (notBefore) => {
-    const { input } = openInputOf(inputs, r.month);
-    if (input.payCaps != null) return null;
-    const limit = addMonthsClamped(inputs.asOf, READY_BY_MONTHS);
-    const total = horizonDays(inputs.asOf, limit);
-    const ym = yearMonthOf(inputs.asOf);
-    const outflows = [
-      ...savingTransferFlows(inputs.series, savedOccurrences(inputs), inputs.asOf, total),
-      ...debtOutflows(inputs, inputs.months.find((m) => m.month === ym)?.lines ?? [], total).flows,
-    ];
-    const h = buildHorizon({ ...input, opening, outflows, totalDays: total });
+    const s = stretchOf(r, opening);
+    if (s === null) return null;
     return firstSafeStart({
       asOf: inputs.asOf,
-      paydays: payDatesIn(inputs.series, inputs.asOf, total),
+      paydays: payDatesIn(inputs.series, inputs.asOf, s.total),
       notBefore,
       maxMonths: READY_BY_MONTHS,
       floor: 0,
-      lowestFrom: (start) => Number(h.lowestFrom(start, purchaseCashFlows(purchase, start, CASH_PATH_DAYS_V3, start))),
+      lowestFrom: (start) => Number(s.h.lowestFrom(start, purchaseCashFlows(purchase, start, CASH_PATH_DAYS_V3, start))),
     });
+  };
+}
+
+/**
+ * 08.1-13 (owner 2026-11-20, option 1): a Fits answer reads the same stretched path for a later dip. The first day below 0 counts only
+ * when it falls after the first CASH_PATH_DAYS_V3 days (the cash path and D-07 cover those). Even with no purchase = 'without'; when the
+ * no-purchase path stays at or above 0 for the 12 months, the purchase's own flows (a plan's payments every month, from the purchase
+ * date) are applied and the first day below 0 is 'with'. Lazy; null when the path cannot be built (same limits as safeStartOf).
+ */
+function laterDipOf(
+  r: Reading,
+  purchase: Purchase | null,
+  opening: MinorUnits,
+  replaced: boolean,
+  purchaseDate: string
+): (() => { readonly kind: 'without' | 'with'; readonly date: string } | null) | undefined {
+  if (purchase === null || replaced || r.hp !== null) return undefined;
+  const { inputs } = r;
+  return () => {
+    const s = stretchOf(r, opening);
+    if (s === null) return null;
+    const days = daysBetween(inputs.asOf, s.limit);
+    const none = s.h.firstBelowZero([], days);
+    if (none !== null) return none >= CASH_PATH_DAYS_V3 ? { kind: 'without', date: addDays(inputs.asOf, none) } : null;
+    const withP = s.h.firstBelowZero(purchaseCashFlows(purchase, inputs.asOf, s.total, purchaseDate), days);
+    return withP !== null && withP >= CASH_PATH_DAYS_V3 ? { kind: 'with', date: addDays(inputs.asOf, withP) } : null;
   };
 }
 
@@ -406,6 +438,7 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
   // 08.1 D-07: the first day inside the 90 days the account is below 0 with no purchase at all.
   const without = applyPurchaseFlows(r.open, opening, []).points.find((p) => p.balance < 0);
   const safeStart = safeStartOf(r, pb.purchase, opening, rep !== null);
+  const belowZeroLater = laterDipOf(r, pb.purchase, opening, rep !== null, purchaseDate);
   const judged = judge({
     inputs,
     month,
@@ -423,6 +456,7 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
     purchaseDate,
     belowZeroWithout: without === undefined ? null : without.date,
     ...(safeStart === undefined ? {} : { safeStart }),
+    ...(belowZeroLater === undefined ? {} : { belowZeroLater }),
     ...(rep === null ? {} : { replaces: { freed: rep.freed, showsUsual: rep.showsUsual, saleLater: rep.saleLater } }),
     ...(savedFor > 0 ? { savedFor } : {}),
   });

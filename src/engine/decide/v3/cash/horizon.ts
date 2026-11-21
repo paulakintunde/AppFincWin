@@ -30,6 +30,12 @@ export interface Horizon {
    * so each day is the no-purchase balance less what the purchase has taken by then.
    */
   lowestFrom(start: string, flows: readonly DatedFlow[]): bigint;
+  /**
+   * 08.1 (plan 13, owner 2026-11-20): the first day, as a count of days from asOf and before `days`, on which the path from asOf is below 0
+   * with the purchase's dated money-out flows taken as they fall (a plan's payments every month, not one window's worth); null when no
+   * day is. With no flows it is the no-purchase path.
+   */
+  firstBelowZero(flows: readonly DatedFlow[], days: number): number | null;
 }
 
 export function buildHorizon(input: HorizonInput): Horizon {
@@ -60,6 +66,20 @@ export function buildHorizon(input: HorizonInput): Horizon {
     balance.push(running - spreadThrough(i, { erest: input.erest, e: input.e, asOf }));
   }
   return {
+    firstBelowZero(flows, days) {
+      const out = new Array<bigint>(totalDays).fill(0n);
+      for (const f of flows) {
+        if (f.date < asOf) continue;
+        const j = daysBetween(asOf, f.date);
+        if (j < totalDays) out[j] = (out[j] as bigint) + BigInt(f.amount);
+      }
+      let bought = 0n;
+      for (let i = 0; i < Math.min(days, totalDays); i++) {
+        bought += out[i] as bigint;
+        if ((balance[i] as bigint) - bought < 0n) return i;
+      }
+      return null;
+    },
     lowestFrom(start, flows) {
       const s = daysBetween(asOf, start);
       const out = new Array<bigint>(CASH_PATH_DAYS_V3).fill(0n);

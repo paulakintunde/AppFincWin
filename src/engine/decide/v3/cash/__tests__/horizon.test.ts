@@ -61,6 +61,32 @@ describe('buildHorizon', () => {
     expect(h.lowestFrom('2026-12-01', [])).toBe(clean.lowestFrom('2026-12-01', []));
   });
 
+  it('firstBelowZero is the first day the ordinary path is below 0, with the purchase flows taken as they fall', () => {
+    const h = buildHorizon({ ...base, outflows, totalDays: 460 });
+    fc.assert(
+      fc.property(fc.array(fc.record({ day: fc.integer({ min: 0, max: 89 }), amount: fc.integer({ min: 1, max: 600000 }) }), { maxLength: 4 }), (buys) => {
+        const flows = buys.map((b) => ({ date: addDays(ASOF, b.day), amount: mu(b.amount) }));
+        const ref = buildCashPathV3({ ...base, days: 90, savings: outflows, extraOut: flows });
+        const i = ref.points.findIndex((p) => p.balance < 0);
+        return h.firstBelowZero(flows, 90) === (i < 0 ? null : i);
+      })
+    );
+  });
+
+  it('firstBelowZero stops at the days asked for, ignores flows before the check day and past the span, and reads a plan every month', () => {
+    const h = buildHorizon({ ...base, outflows, totalDays: 460 });
+    expect(h.firstBelowZero([{ date: '2026-11-01', amount: mu(9_000_000) }, { date: '2030-01-01', amount: mu(9_000_000) }], 460)).toBeNull();
+    const huge = [{ date: ASOF, amount: mu(9_000_000) }];
+    expect(h.firstBelowZero(huge, 0)).toBeNull();
+    expect(h.firstBelowZero(huge, 1)).toBe(0);
+    expect(h.firstBelowZero(huge, 9999)).toBe(0);
+    // $1,000 a month from the check day: the path that is above 0 for 12 months with no payments dips only because of them
+    const monthly = Array.from({ length: 12 }, (_, n) => ({ date: addDays(ASOF, 30 * n), amount: mu(100000) }));
+    const none = h.firstBelowZero([], 365);
+    const withPlan = h.firstBelowZero(monthly, 365);
+    expect(withPlan === null ? Infinity : withPlan).toBeLessThanOrEqual(none === null ? Infinity : none);
+  });
+
   it('horizonDays covers every start day to the limit plus a whole window', () => {
     expect(horizonDays('2026-11-15', '2027-11-15')).toBe(365 + 90 + 1);
   });
