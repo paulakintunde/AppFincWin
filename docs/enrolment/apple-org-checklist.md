@@ -43,7 +43,7 @@ changed it since this was last checked (2026-09-25).
 
 ## Google Play Console organisation registration — steps
 
-Status as of 2026-11-19: organisation account (Lead Strategy Canada Inc) set up; Android developer verification pending, so package names cannot be registered yet. The D-U-N-S caveat below is moot now that the number is issued and the account exists. Third-party app stores: owner chose to manage them individually and declined all four for now (see the register row).
+Status as of 2026-11-21: organisation account (Lead Strategy Canada Inc) set up (2026-11-19); Android developer verification approved (2026-11-21). Next: register the package name com.fincwin.app. The D-U-N-S caveat below is moot now that the number is issued and the account exists. Third-party app stores: owner chose to manage them individually and declined all four for now (see the register row).
 
 Registration at `https://play.google.com/console/signup`, prepared per D-04
 (pulled forward to Phase 0) and `docs/ops/accounts.md`. **Re-verify D-U-N-S

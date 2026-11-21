@@ -35,10 +35,10 @@ Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
 Phase: 04 (decide-engine) — COMPLETE 2026-10-16; the v1 engine was deleted on purpose in 05.5 (04-VERIFICATION.md is historical).
 Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple enrolment).
-Phase: 00 (foundation) — 18/20. 2026-11-19: D-U-N-S issued; Apple org enrolment submitted, awaiting Apple review; Play Console org set up, Android developer verification pending. 00-07 and 00-20 stay open until Apple membership is active and Play verification clears.
+Phase: 00 (foundation) — 18/20. 2026-11-19: D-U-N-S issued; Apple org enrolment submitted, awaiting Apple review; Play Console org set up; 2026-11-21: Android developer verification approved (package name com.fincwin.app still to register). 00-07 and 00-20 stay open until Apple membership is active.
 Decide: open to every tester since 2026-11-06 (quick 261106-bf2, `DECIDE_OPEN = true`); `profiles.decide_v3` no longer gates anything.
 Status: Executing (two phase branches)
-Last activity: 2026-11-19 -- quick task 261119-vjo: Phase 0 enrolment status (D-U-N-S issued, Apple submitted, Play verification pending)
+Last activity: 2026-11-21 -- quick task 261119-vjo: Phase 0 enrolment status (D-U-N-S issued, Apple submitted, Play verification approved)
 
 ## Performance Metrics
 
@@ -153,7 +153,7 @@ Recent decisions affecting current work:
 
 - **Decide test flag in production** — count the accounts with `profiles.decide_v3` on (not yet checked; the auto-mode classifier blocked a read-only production query on 2026-11-02). First step of BO-06 in 05.4.
 - **Decide owner decisions** — fix plan section 11, question 10 is open (3, 4 and 5 were answered in 05.4-CONTEXT); question 12 (legal launch countries) is open; the Free vs Pro list is needed by APP-18 (05.5) as well as Phase 9; decide whether to insert the home-buying phase (FIN-30) and 06.1 into ROADMAP.
-- **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files. As of 2026-11-19 the D-U-N-S is issued; waits now on Apple review of the submitted enrolment and Play developer verification (see `docs/dependency-register.md`).
+- **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files. As of 2026-11-19 the D-U-N-S is issued; Play developer verification approved 2026-11-21; waits now on Apple review of the submitted enrolment (see `docs/dependency-register.md`).
 - **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
 - **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
 - **Public repo privacy** — a personal test Gmail address is committed in `docs/acceptance/phase-00-android.md` and `docs/acceptance/phase-01-money-core.md`; the repo is public.
@@ -222,7 +222,7 @@ Recent decisions affecting current work:
 | 261118-u83 | ASO re-check: 4 new "can I afford it" apps (incl. Verdict Money), hard-paywall copy fixes, features to compete on; LAUNCH-POSITIONING §4/§5 updated | 2026-11-18 | (this PR) | [261118-u83-aso-re-check-2026-11-18](./quick/261118-u83-aso-re-check-2026-11-18/) |
 | 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
 | 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18 and Phase 9 26/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
-| 261119-vjo | Phase 0 enrolment status: D-U-N-S issued, Apple submitted, Play verification pending, third-party stores declined | 2026-11-19 | 998a63f8 | [261119-vjo-phase-0-enrolment-status](./quick/261119-vjo-phase-0-enrolment-status/) |
+| 261119-vjo | Phase 0 enrolment status: D-U-N-S issued, Apple submitted, Play verification approved (2026-11-21), third-party stores declined | 2026-11-19 | 998a63f8 | [261119-vjo-phase-0-enrolment-status](./quick/261119-vjo-phase-0-enrolment-status/) |
 
 ## Deferred Items
 

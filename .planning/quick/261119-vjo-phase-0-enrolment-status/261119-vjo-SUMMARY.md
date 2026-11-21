@@ -9,3 +9,7 @@ Recorded the owner-reported store enrolment facts (D-U-N-S issued by 2026-11-19,
 
 Commits: cda0037a (register), 95e39ff8 (checklist), plus the STATE/ROADMAP commit.
 Deviations: none.
+
+## Amendment 2026-11-21
+
+Owner reported Google Play Android developer verification approved. Register row, checklist, STATE and ROADMAP updated. Next owner step: register package name com.fincwin.app in Play Console.
