@@ -118,6 +118,16 @@ export const rules = {
     conflict: '{{name}} changed this a moment ago. The latest is shown.',
     conflictNoName: 'Someone changed this a moment ago. The latest is shown.',
   },
+  // 08.1-25 (owner one-earner fix 2026-11-21, Q2 A, Q3 A, Q4 A): a member's share of the joint money is {{zero}} because of the rule.
+  // The app suggests equal shares; the group picks. Draft copy, wording sign-off in plan 14.
+  zeroShare: {
+    line: 'Under {{rule}}, your share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.',
+    settings: 'Under this rule, {{name}}’s share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.',
+    settingsMany: 'Under this rule, {{names}} have a {{zero}} share of the joint money this month. With equal shares, each person counts the same part.',
+    settingsYou: 'Under this rule, your share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.',
+    action: 'See equal shares',
+    notNow: 'Not now',
+  },
   // 08.1-23 (owner 2026-11-21): the tap-to-explain line under a setting. Draft copy, wording sign-off in plan 14.
   explain: {
     button: 'What this means',

@@ -249,10 +249,28 @@ function notSharedLine(caveat: Caveat, deps: SayDeps): Line {
   return fill(caveat.code, NOT_SHARED_MANY, { names: joined }, deps);
 }
 
+/**
+ * 08.1-25 (owner one-earner fix 2026-11-21): share_zero_by_rule carries the rule's code ('bring' | 'bill'); the line names the rule as
+ * "How spending is shared" does. An unknown rule has no name, so the line is missing rather than showing a code.
+ */
+const ZERO_SHARE_RULE_KEYS: Readonly<Record<string, string>> = {
+  bring: 'household.rules.spending.bring.label',
+  bill: 'household.rules.spending.bill.label',
+};
+function zeroShareLine(caveat: Caveat, deps: SayDeps): Line {
+  const key = ZERO_SHARE_RULE_KEYS[String(caveat.values['rule'])];
+  if (key === undefined || !deps.exists(key)) throw new MissingCopyError(caveat.code, CAVEAT_KEYS.share_zero_by_rule, 'no rule name');
+  return fill(caveat.code, CAVEAT_KEYS.share_zero_by_rule, { ...caveat.values, rule: deps.t(key) }, deps);
+}
+
 /** One caveat as its sentence. */
 function caveatLine(caveat: Caveat, deps: SayDeps): Line {
+  if (caveat.code === 'share_zero_by_rule') return zeroShareLine(caveat, deps);
   return caveat.code === 'household_not_shared' ? notSharedLine(caveat, deps) : fill(caveat.code, CAVEAT_KEYS[caveat.code], caveat.values, deps);
 }
+
+/** 08.1-25: the slot under the answer skips share_zero_by_rule (ZeroShareLine says it, with its button); the About sheet lists it. */
+const OWN_LINE_CAVEATS: ReadonlySet<string> = new Set(['share_zero_by_rule']);
 
 function caveatLines(caveat: Caveat | undefined, deps: SayDeps): { caveat: Line | null; figures: Line[] } {
   if (caveat === undefined) return { caveat: null, figures: [] };
@@ -292,7 +310,7 @@ export function sayResult(r: Result, deps: SayDeps, opts?: { readonly stage?: De
   const basis = g(() => basisLine(r, deps));
   // CO-D-119: only the first caveat shows under the answer; the About sheet lists them all.
   // 08.1-20: below the deeper stage the StageLine already says quick_estimates / few_months, so the next caveat is the one shown.
-  const { caveat, figures } = caveatLines(firstShownCaveat(r.caveats ?? [], opts?.stage ?? 'deeper'), deps);
+  const { caveat, figures } = caveatLines(firstShownCaveat((r.caveats ?? []).filter((c) => !OWN_LINE_CAVEATS.has(c.code)), opts?.stage ?? 'deeper'), deps);
   const payMonths = opts?.payMonths ?? null;
   const payWindow = payMonths === null ? null : g(() => fill('pay_window', BASIS_KEYS.payWindow, { months: payMonths }, deps, ALL_PLAIN));
   const step = r.confidence.nextStep;
