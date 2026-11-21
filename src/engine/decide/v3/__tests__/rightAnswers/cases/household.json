@@ -681,12 +681,12 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null,
       "plannerNote": "Was: Fits, $500 left (approved 2026-11-20 under the bill split). Under What each person brings Ali spends only the $1,000 he brings.",
-      "changeApproved": null
+      "changeApproved": "2026-11-20"
     },
     {
       "id": "HH-09",
@@ -781,7 +781,7 @@
       ],
       "status": "approved",
       "approvedAt": "2026-11-20",
-      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -877,12 +877,12 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null,
       "plannerNote": "Was: Fits, $500 left (approved 2026-11-20 under the bill split). Under What each person brings Noa spends the $4,000 she brings.",
-      "changeApproved": null
+      "changeApproved": "2026-11-20"
     },
     {
       "id": "HH-11",
@@ -988,11 +988,11 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null,
-      "plannerNote": "Unchanged (Fits, $500 left) if Q3 = B (paid in this month); moves to Fits, $0 left, tight if Q3 = A (equal split). Was approved 2026-11-20 with the whole joint balance counted."
+      "plannerNote": "Unchanged (Fits, $500 left): joint money under What each person brings splits by what each paid in this month, and Ali paid in all of it. Approved 2026-11-20."
     },
     {
       "id": "HH-12",
@@ -1277,9 +1277,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -1377,9 +1377,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -1473,9 +1473,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -1569,9 +1569,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -1673,9 +1673,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -1782,9 +1782,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -1886,9 +1886,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -1997,9 +1997,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -2093,9 +2093,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -2193,9 +2193,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -2289,9 +2289,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -2400,9 +2400,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null,
       "plannerNote": "Regression for the double count. Noa (mirror) gets the same answer."
     },
@@ -2513,9 +2513,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -2625,9 +2625,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null,
       "plannerNote": "Today (findings a, c) Ali sees opening + his own $3,000 pay-in less all shared spending, not the true $3,500."
     },
@@ -2635,7 +2635,7 @@
       "id": "HH-28",
       "topic": "household",
       "persona": "JA-02b: Noa, what each person brings (invented)",
-      "situation": "Same account, rule What each person brings. Noa, Just me, $800. Only if Q3 = B (split joint money by what each paid in).",
+      "situation": "Same account, rule What each person brings. Noa, Just me, $800.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
@@ -2738,9 +2738,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -2859,9 +2859,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -2980,9 +2980,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -3101,9 +3101,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -3193,9 +3193,9 @@
         "CMP-F19",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -3331,9 +3331,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null,
       "plannerNote": "Today (finding a) the joint savings may reach the cash path: executor to record."
     },
@@ -3473,9 +3473,9 @@
         "UX-21",
         "FIN-19"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     }
   ]

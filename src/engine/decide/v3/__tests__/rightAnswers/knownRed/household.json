@@ -1,4 +1,19 @@
 {
   "topic": "household",
-  "red": []
+  "red": [
+    { "id": "HH-08", "fixId": "CMP-F19" },
+    { "id": "HH-10", "fixId": "CMP-F19" },
+    { "id": "HH-19", "fixId": "CMP-F19" },
+    { "id": "HH-20", "fixId": "CMP-F19" },
+    { "id": "HH-21", "fixId": "CMP-F19" },
+    { "id": "HH-22", "fixId": "CMP-F19" },
+    { "id": "HH-23", "fixId": "CMP-F19" },
+    { "id": "HH-25", "fixId": "UX-21" },
+    { "id": "HH-26", "fixId": "UX-21" },
+    { "id": "HH-27", "fixId": "UX-21" },
+    { "id": "HH-28", "fixId": "UX-21" },
+    { "id": "HH-29", "fixId": "UX-21" },
+    { "id": "HH-30", "fixId": "UX-21" },
+    { "id": "HH-31", "fixId": "UX-21" }
+  ]
 }
