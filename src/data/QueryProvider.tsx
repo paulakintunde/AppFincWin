@@ -22,6 +22,7 @@ import { afterCacheRestore, startOnlineManager } from './onlineManager';
 import { registerMutationDefaults } from './mutations';
 import { captureFailedWrite } from '@/services/errors';
 import { hydrateFailedWrites, setFailureReporter } from './sync/failedWrites';
+import { hydrateLockedWrites } from './sync/lockedWrites';
 import { hydrateLastSynced, trackSyncActivity } from './sync/lastSynced';
 import { startRatePendingSweep } from './sync/ratePendingSweep';
 import { startCacheProbe } from './perf/cacheProbe';
@@ -34,6 +35,7 @@ trackSyncActivity(queryClient);
 trackServerFetches(queryClient); // IN-A05
 setFailureReporter(captureFailedWrite); // entity, kind and code only; never the payload
 void hydrateFailedWrites();
+void hydrateLockedWrites(); // 09 D-40: kept locked writes, replayed by LockHost (09-16)
 void hydrateLastSynced();
 startCacheProbe(queryClient); // 06.1-73: a no-op unless EXPO_PUBLIC_PERF=1
 

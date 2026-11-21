@@ -62,6 +62,8 @@ export interface PayoffPlanCardProps {
   onUseExtra: () => void;
   onStopExtra: () => void;
   onUseOnce: () => void;
+  /** 09-25 (A2-W): the plan is read-only; the save pills keep their place with the lock mark (the caller's handlers open the locked sheet). */
+  writeLocked?: boolean;
   /** What is left each month, minor units; null hides the note. */
   left: number | null;
   fmt: DebtFormat;
@@ -81,7 +83,7 @@ export function soonerText(t: T, months: number | null): string | null {
 
 export function PayoffPlanCard(props: PayoffPlanCardProps) {
   const { scenarios, oneDebt, firstCleared, order, onOrder, open, onOpen, extra, onExtra, lump, onLump, savedExtra, lumpDebt } = props;
-  const { startDates, onUseExtra, onStopExtra, onUseOnce, left, fmt, currency, extraIsPlan = false, onceRecorded = false } = props;
+  const { startDates, onUseExtra, onStopExtra, onUseOnce, left, fmt, currency, extraIsPlan = false, onceRecorded = false, writeLocked = false } = props;
   const t = useT() as unknown as T;
   const { colors, pairing } = useTheme();
   const [typing, setTyping] = useState(false);
@@ -200,14 +202,14 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
   if (open === 'minimum') {
     action =
       savedExtra > 0 ? (
-        <Pill label={t('grow.debts.stopExtraFrom', { date: extraDate })} variant="secondary" disabled={gated} onPress={onStopExtra} />
+        <Pill label={t('grow.debts.stopExtraFrom', { date: extraDate })} variant="secondary" disabled={gated} locked={writeLocked} onPress={onStopExtra} />
       ) : (
         <Text style={label}>{t('grow.debts.minimumIsPlan')}</Text>
       );
   } else if (open === 'extra') {
     action =
       extra <= 0 && savedExtra > 0 ? (
-        <Pill label={t('grow.debts.stopExtraFrom', { date: extraDate })} variant="secondary" disabled={gated} onPress={onStopExtra} />
+        <Pill label={t('grow.debts.stopExtraFrom', { date: extraDate })} variant="secondary" disabled={gated} locked={writeLocked} onPress={onStopExtra} />
       ) : extraIsPlan && extra > 0 ? (
         <Text testID="payoff-extra-is-plan" style={label}>
           {t('grow.debts.extraIsPlan', { amount: fmt.money(extra, currency) })}
@@ -217,6 +219,7 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
           label={t('grow.debts.useExtraFrom', { amount: fmt.money(extra, currency), date: extraDate })}
           variant="primary"
           disabled={gated || extra <= 0}
+          locked={writeLocked}
           onPress={onUseExtra}
         />
       );
@@ -232,6 +235,7 @@ export function PayoffPlanCard(props: PayoffPlanCardProps) {
           label={t('grow.debts.useOnceOn', { amount: fmt.money(lump, currency), date: onceDate })}
           variant="primary"
           disabled={gated || lump <= 0 || lumpDebt === null || overOwed || onceRecorded}
+          locked={writeLocked}
           onPress={onUseOnce}
         />
       </>

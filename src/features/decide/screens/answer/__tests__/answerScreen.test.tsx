@@ -11,6 +11,8 @@ import { ledgerRun, notReadyRun, type Run } from './fixtures';
 
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));
 jest.mock('expo-crypto', () => ({ randomUUID: () => '00000000-0000-4000-8000-000000000000' }));
+// 09-24: the sample look-around intro reads the plan and auth; this suite covers the answer itself.
+jest.mock('../SampleAnswerIntro', () => ({ SampleAnswerIntro: () => null }));
 
 const mockTrack = jest.fn();
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));

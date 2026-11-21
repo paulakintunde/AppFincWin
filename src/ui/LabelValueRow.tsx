@@ -11,7 +11,7 @@ export interface LabelValueRowProps {
   label: string;
   sub?: string;
   value: string;
-  valueTone?: 'ink' | 'danger' | 'accent';
+  valueTone?: 'ink' | 'danger' | 'accent' | 'muted';
   leading?: React.ReactNode;
   a11yLabel?: string;
   /** Rule T: the value is user text; wrap to this many lines, then a tail ellipsis (the row's label carries the full text). */
@@ -21,7 +21,7 @@ export interface LabelValueRowProps {
 export function LabelValueRow({ label, sub, value, valueTone = 'ink', leading, a11yLabel, valueLines }: LabelValueRowProps) {
   const { colors, pairing } = useTheme();
   const stacked = useShouldStack(value.length);
-  const valueColor = valueTone === 'danger' ? colors.danger : valueTone === 'accent' ? colors.accent : colors.ink;
+  const valueColor = valueTone === 'danger' ? colors.danger : valueTone === 'accent' ? colors.accent : valueTone === 'muted' ? colors.inkMuted : colors.ink;
   const labelBlock = (
     <View style={styles.text}>
       <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.s13_5, color: colors.ink }}>{label}</Text>

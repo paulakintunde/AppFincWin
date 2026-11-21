@@ -38,6 +38,8 @@ let mockInputs: unknown = null;
 const mockPush = jest.fn();
 
 jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }), useHouseholdScopeSource: () => ({ source: undefined, pending: false }) })); // 08.1-10: WhoPays reads the household; keep the Supabase client out
+// 09-17: DecideHome's write gate reads the plan state; a writable home here.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ locale: 'en-US', timeZone: 'UTC' }) }));

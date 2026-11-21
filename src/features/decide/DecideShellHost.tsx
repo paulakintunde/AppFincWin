@@ -4,9 +4,12 @@
 import React, { useCallback } from 'react';
 import { useProvideQuickAction } from '@/shell/fab/FabProvider';
 import type { Href } from 'expo-router';
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 
 export function DecideShellHost(): React.JSX.Element | null {
-  useProvideQuickAction('newCheck', useCallback(() => pushOnce('/decide?focus=check' as Href), []));
+  // 09-17 (D-02): locked Decide starts no new check for anyone; the sheet names the action instead.
+  const { run } = useWriteGate('newDecideCheck');
+  useProvideQuickAction('newCheck', useCallback(() => run(() => pushOnce('/decide?focus=check' as Href)), [run]));
   return null;
 }

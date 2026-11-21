@@ -21,6 +21,7 @@ import { useCurrencyOptions } from '@/data/queries/currencyOptions';
 import { CurrencyPicker } from '@/features/record/entry/pickers/CurrencyPicker';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { useSheetWriteGate } from '@/features/plans/useReadOnlyGate';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { getAnalytics } from '@/services/analytics';
 import { showToast } from '@/state/undoToast';
@@ -138,6 +139,7 @@ type PickerKey = 'kind' | 'currency' | null;
 
 function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'>) {
   const t = useT();
+  const gate = useSheetWriteGate(onClose); // 09-25 (A2-W): saves are writes; read-only plans open the locked sheet
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
   const { options } = useCurrencyOptions(rc.userId ?? undefined);
@@ -445,7 +447,8 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
         <Pill
           label={t(account ? 'accounts.sheet.saveChanges' : 'accounts.sheet.save')}
           variant="primary"
-          onPress={save}
+          locked={gate.gated}
+          onPress={gate.guard(save)}
           disabled={!canSubmit || rateFailure}
           accessibilityHint={canSubmit ? undefined : t('accounts.sheet.notReady')}
         />
@@ -453,7 +456,8 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           <Pill
             label={t(account.archived_at === null ? 'accounts.sheet.archive' : 'accounts.sheet.restore')}
             variant="secondary"
-            onPress={toggleArchive}
+            locked={gate.gated}
+            onPress={gate.guard(toggleArchive)}
           />
         ) : null}
       </SheetScroll>

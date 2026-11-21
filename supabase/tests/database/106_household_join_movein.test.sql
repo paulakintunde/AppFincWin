@@ -83,7 +83,9 @@ insert into codes select 'k3', public.create_invite() ->> 'code';
 -- 1-3. Preview: nothing is inserted, the name shows until the inviter hides it.
 select public.t106_as('33333333-3333-3333-3333-333333333333');
 select extensions.is((select public.preview_invite(code) from codes where label = 'k1') - 'household_name' - 'inviter_colour_key',
-  '{"ok": true, "full": false, "member_count": 2, "already_member": false, "in_other_household": false, "inviter_display_name": "Alice"}'::jsonb,
+  -- 09-04 adds seats, plan_key and needs_approval (no plan row here: 6 seats, no plan, no approval needed).
+  '{"ok": true, "full": false, "seats": 6, "plan_key": null, "member_count": 2, "already_member": false, "needs_approval": false,
+    "in_other_household": false, "inviter_display_name": "Alice"}'::jsonb,
   'preview shows the inviter, the count, and that C is not in another household');
 reset role;
 update public.household_members set name_hidden = true where user_id = '11111111-1111-1111-1111-111111111111';
@@ -182,6 +184,10 @@ select extensions.is(
       and c.table_name not in ('households', 'household_members', 'household_events', 'household_invites', 'statement_periods', 'category_rules',
         'transaction_splits', 'transaction_member_categories', 'household_split_defaults', 'settlements', 'settlement_lines', 'settlement_nudges',
         'household_former_members', 'member_departures', 'decide_partner_optins', 'partner_figures', 'safety_net_shares',
+        -- Phase 9 plan records stay with the household: its plan, the one-trial-per-household ledger, the join requests
+        -- waiting on it, and the leave history the switch rule reads (the household that was left).
+        'household_plans', 'trial_ledger', 'plan_join_requests', 'household_leave_log',
+        -- 08.1-22: the household's spending rule.
         'household_spend_rules')),
   null, 'every household_id table either moves with a person (hh_move_tables) or is a listed household table');
 select extensions.is((select count(*)::int from pg_constraint

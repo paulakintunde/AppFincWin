@@ -6,6 +6,7 @@
 // A settle-up is a record of a payment between two people. It is not spending or income, and FincWin moves no money.
 // Online-only: offline the button is disabled with a plain message and nothing is queued.
 import React, { useMemo, useState } from 'react';
+import { isPlanWriteBlocked } from '@/data/sync/planWriteGuard';
 import { StyleSheet, View } from 'react-native';
 import { Dropdown } from '@/ui/Dropdown';
 import { CheckRow } from '@/ui/CheckRow';
@@ -25,6 +26,7 @@ import { settleUpTotal } from '@/engine/household/settlement';
 import { useHouseholdMembers } from '@/data/queries/household';
 import { useHouseholdBalances, usePairLines } from '@/data/queries/householdBalances';
 import { useProposeSettlement, useRecordPaid, useRecordReceived, useUndoSettlement } from '@/data/mutations/settlements';
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import { useMemberLabel } from '../useMemberLabel';
 import { pairLineToBalanceLine, useRefusalText, useSettleMoney } from './settleHelpers';
 
@@ -45,6 +47,7 @@ export function SettleUpSheet(props: SettleUpSheetProps) {
 
 function SettleBody({ householdId, otherKey, onClose }: { householdId: string; otherKey: string; onClose: () => void }) {
   const t = useT();
+  const gate = useWriteGate('settleUp'); // 09-17 (TIER-09)
   const { colors, pairing } = useTheme();
   const { fmt, formatDate, myAccounts, currency, online, userId } = useSettleMoney();
   const label = useMemberLabel(householdId);
@@ -152,7 +155,8 @@ function SettleBody({ householdId, otherKey, onClose }: { householdId: string; o
         showToast({ kind: 'ordinary', text: { key: 'household.settle.toasts.waiting', params: { name } } });
       }
       onClose();
-    } catch {
+    } catch (err) {
+      if (isPlanWriteBlocked(err)) return; // 09-25: the guard opened the plan sheet; not a failure
       hapticFailed();
       setFailure(t('household.settle.failed'));
     } finally {
@@ -238,7 +242,15 @@ function SettleBody({ householdId, otherKey, onClose }: { householdId: string; o
           </Text>
         ) : null}
         {!online ? <Text style={meta}>{t('household.settle.offlineHelper')}</Text> : null}
-        <Pill label={ctaLabel} variant="primary" disabled={disabled} pending={saving} onPress={() => void submit()} />
+        <Pill
+          label={ctaLabel}
+          variant="primary"
+          locked={gate.gated}
+          accessibilityLabel={gate.a11ySuffix ? `${ctaLabel}, ${gate.a11ySuffix}` : undefined}
+          disabled={disabled && !gate.gated}
+          pending={saving}
+          onPress={() => gate.run(() => void submit())}
+        />
       </SheetScroll>
     </Sheet>
   );

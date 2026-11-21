@@ -45,6 +45,8 @@
 -- decide_partner_optins (111)
 -- safety_net_shares (111)
 -- household_spend_rules (114)
+-- user_setup (111)
+-- feature_switches (111)
 -- end-export-tables
 
 begin;

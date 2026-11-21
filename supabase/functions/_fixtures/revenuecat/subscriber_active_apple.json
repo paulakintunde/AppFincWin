@@ -1,0 +1,33 @@
+{
+  "request_date_ms": 1795000000000,
+  "subscriber": {
+    "original_app_user_id": "11111111-1111-4111-8111-111111111111",
+    "first_seen": "2026-10-01T00:00:00Z",
+    "entitlements": {
+      "access": {
+        "expires_date": "2027-11-10T00:00:00Z",
+        "product_identifier": "fincwin_duo:yearly",
+        "grace_period_expires_date": null,
+        "purchase_date": "2026-11-10T00:00:00Z"
+      }
+    },
+    "subscriptions": {
+      "fincwin_duo:yearly": {
+        "billing_issues_detected_at": null,
+        "unsubscribe_detected_at": null,
+        "grace_period_expires_date": null,
+        "is_sandbox": false,
+        "original_purchase_date": "2026-11-10T00:00:00Z",
+        "period_type": "normal",
+        "store": "app_store",
+        "store_transaction_id": "1000000000000001",
+        "expires_date": "2027-11-10T00:00:00Z"
+      }
+    },
+    "subscriber_attributes": {
+      "$email": {
+        "value": "redacted@example.invalid"
+      }
+    }
+  }
+}

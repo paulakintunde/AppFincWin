@@ -61,6 +61,9 @@ export interface CheckCardProps {
   moreDetails: React.ReactNode;
   disabled: boolean;
   onCheck: () => void;
+  /** 09-17 (D-02): the plan is read-only; the pill keeps its place with the lock mark and the tap names the action. */
+  locked?: boolean;
+  lockedSuffix?: string | null;
   /** 06.1-52 (C-18): what is still needed, under Check it (NeedLine); null draws nothing. */
   hint: string | null;
   /** 06.1-52 (C-18): the price field's raw text, so the hint can tell an empty price from one that did not read. */
@@ -188,7 +191,9 @@ export function CheckCard({ onWhatRef, ...props }: CheckCardProps) {
       <Pill
         label={t('decide.screens.home.check.checkIt')}
         variant="primary"
-        disabled={props.disabled}
+        locked={props.locked === true}
+        accessibilityLabel={props.locked === true && props.lockedSuffix ? `${t('decide.screens.home.check.checkIt')}, ${props.lockedSuffix}` : undefined}
+        disabled={props.disabled && props.locked !== true}
         onPress={props.onCheck}
         accessibilityHint={props.disabled && props.hint !== null ? props.hint : undefined}
       />

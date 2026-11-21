@@ -10,6 +10,8 @@ import { useAccounts } from '@/data/queries/accounts';
 import { useGoalLines, useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useT } from '@/i18n';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { checkHref } from '@/features/decide/screens/logic/checkHref';
 import { useCalcFormat } from '@/features/grow/calculators/typed/CalcFields';
@@ -54,6 +56,10 @@ function ordinal(n: number): string {
 
 export function GoalDetailScreen({ id }: { id: string }) {
   const t = useT() as unknown as (key: string, params?: Record<string, string | number>) => string;
+  // 09-25 (A2-W): every change on this screen is a write; read-only plans open the locked sheet. Reading and what-if
+  // calculators stay open.
+  const gate = useReadOnlyGate('editRecord');
+  const lockA11y = (text: string): string => (gate.a11ySuffix ? `${text}, ${gate.a11ySuffix}` : text);
   const { colors, pairing } = useTheme();
   const { userId, householdId, today, formatDate, ctx } = usePastContext();
   const calc = useCalcFormat();
@@ -191,8 +197,10 @@ export function GoalDetailScreen({ id }: { id: string }) {
   const planMoney = money.plan;
 
   const editAction = isWait ? undefined : (
-    <Pressable testID="goal-edit" accessibilityRole="button" accessibilityLabel={t('grow.goals.detail.edit')} onPress={() => setEditing(true)} style={styles.editButton}>
-      <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.goals.detail.edit')}</Text>
+    <Pressable testID="goal-edit" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.goals.detail.edit'))} onPress={() => gate.run(() => setEditing(true))} style={styles.editButton}>
+      <LockedLabel gated={gate.gated} color={colors.accent}>
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('grow.goals.detail.edit')}</Text>
+      </LockedLabel>
     </Pressable>
   );
 
@@ -242,7 +250,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
             value={eachMonth > 0 ? planMoney(eachMonth) : '—'}
             dense
             chevron={!isWait}
-            onPress={isWait ? undefined : () => setPlanMode('monthly')}
+            onPress={isWait ? undefined : () => gate.run(() => setPlanMode('monthly'))}
           />
           {target !== null ? (
             <Row
@@ -250,7 +258,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
               value={reachesOn === null ? '—' : money.monthYear(reachesOn)}
               dense
               chevron={!isWait}
-              onPress={isWait ? undefined : () => setPlanMode('by')}
+              onPress={isWait ? undefined : () => gate.run(() => setPlanMode('by'))}
             />
           ) : null}
           <Text testID={isWait ? 'goal-wait-note' : undefined} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
@@ -275,7 +283,7 @@ export function GoalDetailScreen({ id }: { id: string }) {
             value={accountName}
             dense
             chevron
-            onPress={() => setAccountOpen(true)}
+            onPress={() => gate.run(() => setAccountOpen(true))}
             accessibilityLabel={t('grow.goals.detail.keptInA11y', { account: accountName })}
           />
           {account !== null && account.interest_rate != null && account.interest_rate !== '' ? (
@@ -314,10 +322,10 @@ export function GoalDetailScreen({ id }: { id: string }) {
 
         <View style={styles.buttons}>
           <View style={styles.buttonCell}>
-            <Pill label={t('grow.goals.detail.addMoney')} variant="secondary" onPress={() => setMove('add')} />
+            <Pill label={t('grow.goals.detail.addMoney')} variant="secondary" locked={gate.gated} accessibilityLabel={lockA11y(t('grow.goals.detail.addMoney'))} onPress={() => gate.run(() => setMove('add'))} />
           </View>
           <View style={styles.buttonCell}>
-            <Pill label={t('grow.goals.detail.takeOut')} variant="secondary" onPress={() => setMove('take')} />
+            <Pill label={t('grow.goals.detail.takeOut')} variant="secondary" locked={gate.gated} accessibilityLabel={lockA11y(t('grow.goals.detail.takeOut'))} onPress={() => gate.run(() => setMove('take'))} />
           </View>
         </View>
 
@@ -342,13 +350,15 @@ export function GoalDetailScreen({ id }: { id: string }) {
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
               {row.locked === true ? t('grow.goals.create.lockHelper') : t('grow.goals.detail.unlockedNote', { amount: money.amount(saved) })}
             </Text>
-            <Row label={t('grow.goals.useAsSafetyNet.row')} dense chevron onPress={() => setNetAsk(true)} accessibilityLabel={t('grow.goals.useAsSafetyNet.row')} />
+            <Row label={t('grow.goals.useAsSafetyNet.row')} dense chevron onPress={() => gate.run(() => setNetAsk(true))} accessibilityLabel={lockA11y(t('grow.goals.useAsSafetyNet.row'))} />
           </View>
         ) : null}
 
         {isNet ? null : (
-          <Pressable testID="goal-remove" accessibilityRole="button" accessibilityLabel={t('grow.goals.detail.remove')} onPress={() => setRemoving(true)} style={styles.removeButton}>
-            <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.goals.detail.remove')}</Text>
+          <Pressable testID="goal-remove" accessibilityRole="button" accessibilityLabel={lockA11y(t('grow.goals.detail.remove'))} onPress={() => gate.run(() => setRemoving(true))} style={styles.removeButton}>
+            <LockedLabel gated={gate.gated} color={colors.danger}>
+              <Text style={{ ...textRole(pairing, 'body'), color: colors.danger }}>{t('grow.goals.detail.remove')}</Text>
+            </LockedLabel>
           </Pressable>
         )}
       </View>

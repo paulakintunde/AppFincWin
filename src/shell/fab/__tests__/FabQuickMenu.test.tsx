@@ -5,6 +5,8 @@ import { FabProvider, useFab, useProvideQuickAction, type FabContextValue } from
 import { FabQuickMenu } from '../FabQuickMenu';
 import { layOutSheets } from '@/test/sheetLayout';
 
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => ({ status: 'signedIn' }),
 }));

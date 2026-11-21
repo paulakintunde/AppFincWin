@@ -66,6 +66,7 @@ import type { PayMode, WhenChoice } from './AnswerTopBar';
 import { FactActions, type FactActionChoice } from './FactActions';
 import { MoreDetailRows, type DetailRow } from './MoreDetailRows';
 import { SpareMoneySheet } from './SpareMoneySheet';
+import { SampleAnswerIntro } from './SampleAnswerIntro';
 import { UnexplainedMoneySheet, type UnexplainedUse } from './UnexplainedMoneySheet';
 import { CoverQuestionSheet } from './CoverQuestionSheet';
 import { coverAnswerOf } from '../logic/coverAnswer';
@@ -729,6 +730,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         updating={engine.updating}
         answeredRows={answeredRows}
         householdNote={householdNote}
+        intro={<SampleAnswerIntro />}
       >
         {body}
       </AnswerFrame>

@@ -15,6 +15,7 @@ import { useDecideServerSwitch } from '@/features/decide/useDecideServerSwitch';
 import { harnessEnabled } from '@/features/devHarness/harnessEnabled';
 import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
 import { useConsent } from '@/features/consent/useConsent';
+import { useFirstRunPending } from '@/features/onboarding/useFirstRunPending';
 import { consentAnswered } from '@/features/consent/consentAnswered';
 import { DeviceHomeCurrencyDefault } from '@/features/record/useDeviceHomeCurrencyDefault';
 import { SheetToastOverlay, UndoToastHost } from '@/features/record/history/UndoToastHost';
@@ -33,6 +34,9 @@ import { DecideV3Scope } from '@/data/queries/decideV3';
 import { HouseholdRealtimeHost } from '@/data/realtime/HouseholdRealtimeHost';
 import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost';
 import { AppPartnerFigurePublisher } from '@/features/household/decide/PartnerFigurePublisher';
+import { PlanHost } from '@/features/plans/PlanHost';
+import { LockHost } from '@/features/plans/LockHost';
+import { LockedSheetProvider } from '@/features/plans/useWriteGate';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
@@ -46,6 +50,7 @@ export { RouteErrorBoundary as ErrorBoundary };
 export default function AppLayout() {
   const { loading, needsPrompt, consent } = useConsent();
   const pathname = usePathname();
+  const firstRunPending = useFirstRunPending();
   const reduceMotion = useReduceMotion();
   // 08.1-05 (APP-21): Decide switched off for everyone from the server; the routes close and the notification tap does not route.
   const { off: decideOff } = useDecideServerSwitch();
@@ -58,7 +63,10 @@ export default function AppLayout() {
     return <Screen>{null}</Screen>;
   }
 
-  if (needsPrompt && pathname !== '/consent') {
+  // 09-23 (ANL-07): onboarding asks consent as its last step, so the redirect does not interrupt the questions. Only the
+  // screen is skipped: track() stays consent-gated (T-09-77).
+  const inOnboarding = pathname.startsWith('/onboarding') || firstRunPending;
+  if (needsPrompt && pathname !== '/consent' && !inOnboarding) {
     return <Redirect href="/consent" />;
   }
 
@@ -72,6 +80,7 @@ export default function AppLayout() {
           {/* One FAB registry for the tabs and the outer stack: You > Add runs the quick actions the tabs register (05-98). */}
           <FabProvider>
             <TesterBuildProvider>
+            <LockedSheetProvider>
             <View style={{ flex: 1 }}>
               <Stack
                 // 06.1-73 (DB-1): screens two or more below the top stop re-rendering until they are near the top again.
@@ -162,7 +171,12 @@ export default function AppLayout() {
                   <Stack.Screen name="decide/dev-harness" />
                 </Stack.Protected>
                 <Stack.Screen name="you" />
+                <Stack.Screen name="plan-ended" />
+                <Stack.Screen name="export" />
+                <Stack.Screen name="features" />
                 <Stack.Screen name="consent" options={{ gestureEnabled: false }} />
+                {/* 09-23: the first-run, partner and re-run questions; no edge swipe (the flow owns Back, UI-SPEC 3). */}
+                <Stack.Screen name="onboarding" options={{ gestureEnabled: false, headerShown: false }} />
               </Stack>
               <SampleBanner />
               <UndoToastHost />
@@ -171,12 +185,16 @@ export default function AppLayout() {
               <DecideNotificationObserver enabled={DECIDE_OPEN && !decideOff && consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
               <HouseholdRealtimeHost />
+              {/* 09-10: store identity, plan Realtime and foreground refresh. */}
+              <PlanHost />
+              <LockHost />
               {/* 08-24 (D-28): "You're no longer in ..." once, for a person the owner removed. */}
               <RemovedNoticeHost />
               {/* 08.1-10: a partner's figure and the shared net's saved amount refresh from anywhere in the app, not only Household home. */}
               <AppPartnerFigurePublisher />
               <DeviceHomeCurrencyDefault />
             </View>
+            </LockedSheetProvider>
             </TesterBuildProvider>
           </FabProvider>
         </SheetOverlayProvider>

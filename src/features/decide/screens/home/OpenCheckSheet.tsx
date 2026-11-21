@@ -25,6 +25,8 @@ import { useRemoveDecision, useSaveCheckDraft } from '@/data/mutations/decideChe
 import type { DecideCheckRow } from '@/db/decideChecks';
 import { readStoredCheck, toStoredV2, type CheckV2, type LocalDate, type PayV2 } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { radii, space } from '@/theme/layout';
@@ -87,6 +89,9 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
   const { pass } = useNotBuying();
   const { remove } = useRemoveDecision();
   const draftSave = useSaveCheckDraft();
+  // 09-25 (A2-W): read-only plan: the write rows keep their place with the lock mark; a tap closes this sheet and opens the
+  // locked sheet. "See today's answer" stays open.
+  const gate = useReadOnlyGate('editRecord');
   const [planOpen, setPlanOpen] = useState(false);
   const [datePick, setDatePick] = useState<{ current: LocalDate | null; set: (d: LocalDate) => void } | null>(null);
 
@@ -150,25 +155,42 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
     showToast({ kind: 'ordinary', text: { key: 'decide.screens.sheetsHome.openCheck.payChosen.plan', params: { name: row.name } }, stepId: null });
   };
 
-  const actionRow = (key: string, label: string, onPress: () => void, opts?: { danger?: boolean; disabled?: boolean; first?: boolean }) => (
+  const actionRow = (
+    key: string,
+    label: string,
+    onPress: () => void,
+    opts?: { danger?: boolean; disabled?: boolean; first?: boolean; write?: boolean },
+  ) => {
+    const locked = opts?.write === true && gate.gated;
+    return (
     <Pressable
       key={key}
       testID={`open-check-action-${key}`}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={locked && gate.a11ySuffix ? `${label}, ${gate.a11ySuffix}` : label}
       accessibilityState={{ disabled: opts?.disabled === true }}
       disabled={opts?.disabled === true}
-      onPress={onPress}
+      onPress={
+        locked
+          ? () => {
+              onDismiss();
+              gate.run(() => undefined);
+            }
+          : onPress
+      }
       style={({ pressed }) => [
         styles.action,
         opts?.first === true ? null : { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line2 },
         { backgroundColor: pressed ? colors.fill6 : colors.surface, opacity: opts?.disabled === true ? 0.4 : 1 },
       ]}
     >
-      <Text style={[styles.actionText, { ...textRole(pairing, 'body'), fontWeight: '500', color: opts?.danger === true ? colors.danger : colors.ink }]}>{label}</Text>
+      <LockedLabel gated={locked} color={opts?.danger === true ? colors.danger : colors.ink}>
+        <Text style={[styles.actionText, { ...textRole(pairing, 'body'), fontWeight: '500', color: opts?.danger === true ? colors.danger : colors.ink }]}>{label}</Text>
+      </LockedLabel>
       {opts?.danger === true ? null : <StateGlyph name="chev" color={colors.inkFaint} size={CHEV} />}
     </Pressable>
-  );
+    );
+  };
   const need = (testID: string, text: string | null) =>
     text === null ? null : (
       <View style={styles.need}>
@@ -203,14 +225,14 @@ function OpenCheckBody({ check: row, model, currency, today, locale, formatMoney
           </View>
         ) : null}
         <View testID="open-check-actions" style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.line2 }]}>
-          {model.draft ? actionRow('pay', t('decide.screens.sheetsHome.openCheck.choosePay'), () => setPlanOpen(true), { first: true }) : null}
+          {model.draft ? actionRow('pay', t('decide.screens.sheetsHome.openCheck.choosePay'), () => setPlanOpen(true), { first: true, write: true }) : null}
           {actionRow('see', t('decide.screens.sheetsHome.openCheck.seeToday'), () => open('/decide/answer/[id]'), { disabled: noPrice, first: !model.draft })}
           {need('need-line-see', noPrice ? t('decide.screens.sheetsHome.openCheck.need.price') : null)}
-          {actionRow('edit', t('decide.screens.sheetsHome.openCheck.edit'), () => go(stepHref(editTarget(row, stored, model.draft), row.id)))}
-          {actionRow('save', t('decide.screens.sheetsHome.openCheck.saveForIt'), doSave, { disabled: !answered })}
-          {actionRow('pass', t('decide.screens.sheetsHome.openCheck.notBuying'), doNotBuying, { disabled: !answered || evaluation === null })}
+          {actionRow('edit', t('decide.screens.sheetsHome.openCheck.edit'), () => go(stepHref(editTarget(row, stored, model.draft), row.id)), { write: true })}
+          {actionRow('save', t('decide.screens.sheetsHome.openCheck.saveForIt'), doSave, { disabled: !answered, write: true })}
+          {actionRow('pass', t('decide.screens.sheetsHome.openCheck.notBuying'), doNotBuying, { disabled: !answered || evaluation === null, write: true })}
           {need('need-line-answer', answered ? null : t('decide.screens.sheetsHome.openCheck.need.answerFirst'))}
-          {actionRow('delete', t('decide.screens.common.delete'), doDelete, { danger: true })}
+          {actionRow('delete', t('decide.screens.common.delete'), doDelete, { danger: true, write: true })}
         </View>
       </SheetScroll>
       <InstallmentPlanSheet

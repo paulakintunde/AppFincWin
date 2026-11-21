@@ -49,7 +49,11 @@ describe('appLife copy guard', () => {
   });
 
   it('uses no banned word (advice, adviser, recommend, you should, free, Skip, lend, unspent)', () => {
-    const offenders = strings.filter((l) => bannedHit(l.value)).map((l) => `${l.path}: ${l.value}`);
+    // 09-12: the owner signed "Free trial" and "Free access" as plan badge words (09-WORDING.md); only those two are exempt.
+    const SIGNED_FREE = new Set(['appLife.status.trial', 'appLife.status.freeAccess']);
+    const offenders = strings
+      .filter((l) => !SIGNED_FREE.has(l.path) && bannedHit(l.value))
+      .map((l) => `${l.path}: ${l.value}`);
     expect(offenders).toEqual([]);
   });
 

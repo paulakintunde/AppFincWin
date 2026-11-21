@@ -23,7 +23,7 @@ It is a **money-management tool, not a financial institution and not a lender.**
 - **Submission hygiene outranks content framing**: the one detailed 2026 rejection account found in this category failed on mechanical IAP issues — subscription not attached to the version (2.1(b)), missing disclosure copy (3.1.2(c)), a bad support URL (1.5) — and then again because the demo video showed Restore Purchases rather than a fresh purchase. Directional rather than proven, but it should shape where the Compliance phase spends its effort.
 - **EAS Simulator is still waitlist-only** as of September 2026, with no GA announcement. Plan the iOS loop around the iPhone XR plus the Android emulator as the *certain* path; treat the simulator as a bonus if access arrives.
 - **Data residency and privacy**: global from day one, built to GDPR as the standard everywhere — right to erasure, data portability, DPA.
-- **Design fidelity**: the §2 token set plus the seven Decide state colours (fits green #1B4D3E / #E4F0E8, tight amber #8A5A1B / #FBEFD6, safety net navy #1F3A5F / #E4ECF6, extra teal #1E6B5E / #DFF1EE, short red #B4472A, text #933720 / #F8E2DA, conditional plum #5B3A75 / #EEE6F4, not yet slate #3E5C6B / #E6ECEF, and muted text on tints #5A564B) is the palette, with one owner-approved family added in Phase 06.2: four pale page tints, one per theme colour (`pageTint` in `src/theme/tokens.ts`), contrast-tested. The state colours appear only in badges, verdict cards and amounts, always with a symbol and a word, and each pair must pass the tests in `src/theme/contrast.ts`. The §2 type scale is complete; card item names and row amounts use the `bodyStrong` role (body size at weight 600). Depth comes only from the page tone (the theme colour's page tint; `canvas` #F6F4EE is the fallback), white `surface` cards, and the three shadow tokens in `tokens.ts` (`card`, `edge`, `fab`); `inkFaint` text never sits on the page tone. No gradients, no other shadows, no other added colours. Icons come only from FincWin's own set (`src/ui/icons`, generated from the 06.2 boards; `npm run check:icons`); no third-party icon set and no emoji. Sizes use six spacing steps (4/8/12/16/22/28), two row heights (52/64) and two icon tiles (36/48). The prototype's restraint is deliberate.
+- **Design fidelity**: the §2 token set plus the seven Decide state colours (fits green #1B4D3E / #E4F0E8, tight amber #8A5A1B / #FBEFD6, safety net navy #1F3A5F / #E4ECF6, extra teal #1E6B5E / #DFF1EE, short red #B4472A, text #933720 / #F8E2DA, conditional plum #5B3A75 / #EEE6F4, not yet slate #3E5C6B / #E6ECEF, and muted text on tints #5A564B) is the palette, with one owner-approved family added in Phase 06.2: four pale page tints, one per theme colour (`pageTint` in `src/theme/tokens.ts`), contrast-tested. A second owner-approved exception (2026-11-19, Phase 9): there are 12 member colours (`memberColors`) for the Extended plan; of the 6 added, four reuse existing token hexes (navy #1F3A5F, brown #7A4B2A, ink #14150F, brick #933720) and Magenta #A62D8C and Orange #A65600 are new owner-approved hexes, `src/theme/tokens.ts` is the only place they live, and a member colour always shows with the member's name or colour word. The state colours appear only in badges, verdict cards and amounts, always with a symbol and a word, and each pair must pass the tests in `src/theme/contrast.ts`. The §2 type scale is complete; card item names and row amounts use the `bodyStrong` role (body size at weight 600). Depth comes only from the page tone (the theme colour's page tint; `canvas` #F6F4EE is the fallback), white `surface` cards, and the three shadow tokens in `tokens.ts` (`card`, `edge`, `fab`); `inkFaint` text never sits on the page tone. No gradients, no other shadows, no other added colours. Icons come only from FincWin's own set (`src/ui/icons`, generated from the 06.2 boards; `npm run check:icons`); no third-party icon set and no emoji. Sizes use six spacing steps (4/8/12/16/22/28), two row heights (52/64) and two icon tiles (36/48). The prototype's restraint is deliberate.
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:research/STACK.md -->
@@ -81,7 +81,7 @@ It is a **money-management tool, not a financial institution and not a lender.**
 ### Services
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| `react-native-purchases` (RevenueCat) | **10.9.1** | Pro tier entitlements | Confirmed current; wraps StoreKit 2 / Play Billing with server-side validation, unchanged rationale from the brief |
+| `react-native-purchases` (RevenueCat) | **10.16.0** (installed in Phase 9; was 10.9.1) | Pro tier entitlements | Confirmed current; wraps StoreKit 2 / Play Billing with server-side validation, unchanged rationale from the brief |
 | `expo-notifications` | current, SDK-locked (~57.x) | Push: bills due, over cap, goal reached, etc. | Unchanged; confirm FCM v1 / APNs config at implementation time, no architectural change found |
 | `expo-local-authentication` | **57.0.2** | Face ID / Touch ID / Android biometric + PIN lock | Confirmed current, SDK-locked versioning |
 | `expo-secure-store` | **57.0.3** | Token storage (not the query cache, not bulk financial data) | Confirmed current. Scope: session tokens and small secrets only — the persisted query cache goes through AsyncStorage per the TanStack Query persister pattern, not SecureStore, because SecureStore has small per-key size limits and is not designed as a bulk cache store |
@@ -166,13 +166,30 @@ It is a **money-management tool, not a financial institution and not a lender.**
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+- **Money:** integer minor units everywhere; never floats. Rounding lives in `src/engine/money`, and the SQL side must match it (`npm run check:money-mirror` checks the generated pgTAP mirror).
+- **Engine purity:** `src/engine/**` imports no React, React Native, I/O, `db`, `data`, `state`, `services`, `ui` or `features`. `dependency-cruiser` enforces this in CI, and so does `eslint-plugin-boundaries`. Pure decision modules elsewhere (for example `src/shell/backHistory`, `src/features/system/routeDecision.ts`) follow the same rule.
+- **Comments cite the plan and decision:** `// 08-19 (D-13): ...`. Keep the ID when you edit nearby code.
+- **Tests:** next to the code in `__tests__/`. Jest for the app, `jest.engine.config.js` for the engine (100% coverage folders; any ignore needs a written reason, `check:ignores`). Database: pgTAP in `supabase/tests/database/NNN_name.test.sql`. Edge Functions: Deno.
+- **Decide right answers:** cases in `src/engine/decide/v3/__tests__/rightAnswers/cases/*.json`. Changing an approved case's expected block needs the owner's approval and a `changeApproved` date (`check:right-answers`).
+- **Copy:** every user-facing string goes in `src/i18n/locales/**`. Decide copy is declarative: never "advice", "recommend" or "you should". Plain words, short first.
+- **Design:** colours, type, spacing, shadows only from `src/theme/tokens.ts`. Icons only through `Glyph` from `src/ui/icons` (`check:icons`). No third-party icon sets and no emoji.
+- **Migrations:** `supabase/migrations/YYYYMMDDHHMMSS_name.sql`, append-only. A new file must sort after everything already in production, or `db push` needs `--include-all`. Destructive statements need `-- contract-ok: min_version >= X.Y.Z` directly above them (`lint:migrations`). Production pushes are owner-approved and go through `npm run supabase:db:push`.
+- **Cache shapes:** changing a cached row's shape needs a `CACHE_SCHEMA_VERSION` bump (`check:cache-version`).
+- **Flow:** `main` is protected; work lands through branch and PR. Phase work runs through GSD (`/gsd-execute-phase`, `/gsd-quick`).
+
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
-Architecture not yet mapped. Follow existing patterns found in the codebase.
+- **Expo Router app** in `app/`: `(auth)` sign-in, `(app)` signed-in routes with `(tabs)` (Home, Activity, Decide, Grow) plus stack screens (you, accounts, import, household, setup, delete-account, ...).
+- **`src/engine/`**: pure logic: money, Decide v3, payoff, split, grow, month, recurring, and the import parsers (csv, ofx, paste, statement). The Decide answer comes from `src/engine/decide/v3`, fed by a snapshot that `src/features/decide/snapshot` builds from the user's real records.
+- **`src/db/`**: the Supabase client, row types and query/RPC builders. **`src/data/`**: TanStack Query hooks, the persisted cache (AsyncStorage) and paused mutations as the offline write queue.
+- **`src/features/<area>/`**: screens and feature logic (record, decide, grow, household, home, income, you, consent, auth, system). **`src/shell/`**: tab bar, back history, FAB, headers. **`src/ui/`** primitives (including `Sheet`), **`src/theme/`** tokens, **`src/i18n/`** copy.
+- **`src/services/`**: third-party SDKs and platform APIs behind interfaces (analytics, auth, storage, files, locale, statement PDF; RevenueCat arrives with Phase 9).
+- **Backend:** one Supabase project (production). Postgres with RLS on every table, server rules as SQL functions and RPCs, Realtime for household tables, and Edge Functions in `supabase/functions` (resolve-rate, read-pdf-statement, purge-statement-uploads, delete-account; plan-* on the Phase 9 branch).
+- **Switches:** `DECIDE_OPEN` in `src/features/decide/availability.ts` (build switch, on for testers). On the 08.1 branch, `app_config.decide_off` is the server kill switch.
+
 <!-- GSD:architecture-end -->
 
 <!-- GSD:skills-start source:skills/ -->

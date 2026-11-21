@@ -13,6 +13,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { usePressFeedback } from '@/ui/pressFeedback';
+import { Glyph } from '@/ui/icons/Glyph';
 
 export type PillVariant = 'primary' | 'secondary' | 'danger';
 
@@ -33,9 +34,11 @@ export interface PillProps {
    * Same label, no spinner and no new copy.
    */
   pending?: boolean;
+  /** 09-17 (TIER-09): the plan does not cover this action. The pill stays in place and shows the lock mark; the caller opens the locked sheet. */
+  locked?: boolean;
 }
 
-export function Pill({ label, variant, selected = false, disabled = false, pending = false, onPress, accessibilityLabel, accessibilityHint, accessibilityRole = 'button', tall = false }: PillProps) {
+export function Pill({ label, variant, selected = false, disabled = false, pending = false, locked = false, onPress, accessibilityLabel, accessibilityHint, accessibilityRole = 'button', tall = false }: PillProps) {
   const { colors, pairing } = useTheme();
   // a pill inside a read-only region is announced disabled and inert; the region already dims it
   const scoped = useReadOnlyScope();
@@ -64,7 +67,8 @@ export function Pill({ label, variant, selected = false, disabled = false, pendi
         live ? feedback.pressedStyle(pressed) : null,
       ]}
     >
-      <Text style={{ ...textRole(pairing, 'label'), color: textColor }}>{label}</Text>
+      {locked ? <Glyph name="pinLock" size={16} color={textColor} testID="pill-lock" /> : null}
+      <Text style={{ ...textRole(pairing, 'label'), color: textColor, marginLeft: locked ? space.gapSm : 0 }}>{label}</Text>
     </Pressable>
   );
 }

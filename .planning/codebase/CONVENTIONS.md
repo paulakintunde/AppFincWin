@@ -1,0 +1,10 @@
+- **Money:** integer minor units everywhere; never floats. Rounding lives in `src/engine/money`, and the SQL side must match it (`npm run check:money-mirror` checks the generated pgTAP mirror).
+- **Engine purity:** `src/engine/**` imports no React, React Native, I/O, `db`, `data`, `state`, `services`, `ui` or `features`. `dependency-cruiser` enforces this in CI, and so does `eslint-plugin-boundaries`. Pure decision modules elsewhere (for example `src/shell/navigation`, `src/features/system/routeDecision.ts`) follow the same rule.
+- **Comments cite the plan and decision:** `// 08-19 (D-13): ...`. Keep the ID when you edit nearby code.
+- **Tests:** next to the code in `__tests__/`. Jest for the app, `jest.engine.config.js` for the engine (100% coverage folders; any ignore needs a written reason, `check:ignores`). Database: pgTAP in `supabase/tests/database/NNN_name.test.sql`. Edge Functions: Deno.
+- **Decide right answers:** cases in `src/engine/decide/v3/__tests__/rightAnswers/cases/*.json`. Changing an approved case's expected block needs the owner's approval and a `changeApproved` date (`check:right-answers`).
+- **Copy:** every user-facing string goes in `src/i18n/locales/**`. Decide copy is declarative: never "advice", "recommend" or "you should". Plain words, short first.
+- **Design:** colours, type, spacing, shadows only from `src/theme/tokens.ts`. Icons only through `Glyph` from `src/ui/icons` (`check:icons`). No third-party icon sets and no emoji.
+- **Migrations:** `supabase/migrations/YYYYMMDDHHMMSS_name.sql`, append-only. A new file must sort after everything already in production, or `db push` needs `--include-all`. Destructive statements need `-- contract-ok: min_version >= X.Y.Z` directly above them (`lint:migrations`). Production pushes are owner-approved and go through `npm run supabase:db:push`.
+- **Cache shapes:** changing a cached row's shape needs a `CACHE_SCHEMA_VERSION` bump (`check:cache-version`).
+- **Flow:** `main` is protected; work lands through branch and PR. Phase work runs through GSD (`/gsd-execute-phase`, `/gsd-quick`).

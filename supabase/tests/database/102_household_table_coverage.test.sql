@@ -38,7 +38,10 @@ insert into classified (table_name, class, parent) values
   ('category_rules', 'household', null), ('household_split_defaults', 'household', null),
   ('household_former_members', 'household', null), ('member_departures', 'household', null), ('household_spend_rules', 'household', null),
   -- settlement_nudges: no client policy at all (08-11); 'household' only to classify it
-  ('settlement_nudges', 'household', null);
+  ('settlement_nudges', 'household', null),
+  -- 09-02 plan tables
+  ('household_plans', 'household', null), ('trial_ledger', 'household', null), ('household_leave_log', 'household', null),
+  ('plan_join_requests', 'owner', null);
 delete from classified where to_regclass('public.' || table_name) is null;
 
 -- Policies as the planner sees them: the using expression, or the check expression for insert-only policies.

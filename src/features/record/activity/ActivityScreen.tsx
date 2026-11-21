@@ -73,6 +73,7 @@ import { clearAllExceptUnpaid, clearOne, countActiveFilters, filterChipModels } 
 import { compactMonthLabel } from './header/monthLayout';
 import { useActivityViewModel, useRowFlow, type ActivityView } from './useActivityViewModel';
 import { isGoalLine, useRowActions } from './useRowActions';
+import { useReadOnly } from '@/features/plans/useReadOnlyGate';
 
 const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as unknown as typeof FlashList<ActivityItem>;
 
@@ -112,6 +113,9 @@ export function ActivityScreen({
 }: ActivityScreenProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
+  // 09-25 (device check, Pixel 6, locked home): the empty month offered "Add a transaction" and "Paste a list", which opened
+  // their flows only to stop at the account step. Read-only, the empty month keeps its words and drops both actions.
+  const readOnly = useReadOnly();
   const vm = useActivityViewModel({ initialMonth, supportedViews: SUPPORTED_VIEWS, debtId });
   const { rc, formatter, month, items, positions, itemRows, selection, filter, filtering, searching, flat, search } = vm;
   const accountsData = vm.accounts;
@@ -572,13 +576,18 @@ export function ActivityScreen({
                   }
                   heading={t('activity.emptyHeading', { month: formatMonthLabel(month, formatter.locale) })}
                   body={t('appLife.empty.activity.body')}
-                  actionLabel={
-                    vm.monthTools.hasEarlier
-                      ? t('activity.empty.cloneAction', { month: vm.monthTools.prevMonthName })
-                      : t('appLife.empty.activity.action')
-                  }
-                  onAction={vm.monthTools.hasEarlier ? vm.monthTools.openClone : () => openEntry({ kind: 'new', direction: 'out' })}
+                  {...(readOnly
+                    ? {}
+                    : {
+                        actionLabel: vm.monthTools.hasEarlier
+                          ? t('activity.empty.cloneAction', { month: vm.monthTools.prevMonthName })
+                          : t('appLife.empty.activity.action'),
+                        onAction: vm.monthTools.hasEarlier
+                          ? vm.monthTools.openClone
+                          : () => openEntry({ kind: 'new', direction: 'out' }),
+                      })}
                 />
+                {readOnly ? null : (
                 <Pressable
                   testID="activity-empty-paste"
                   accessibilityRole="link"
@@ -589,6 +598,7 @@ export function ActivityScreen({
                     {t('activity.empty.pasteAction')}
                   </Text>
                 </Pressable>
+                )}
               </Animated.View>
             )}</View>
           }

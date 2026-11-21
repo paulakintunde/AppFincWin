@@ -13,7 +13,7 @@ export interface FailedWrite {
   id: string;
   entity: WriteEntity;
   entityId: string;
-  kind: 'conflict' | 'rejected' | 'not-found';
+  kind: 'conflict' | 'rejected' | 'not-found' | 'locked';
   code: string;
   attempted: Record<string, unknown>;
   at: string;
@@ -93,6 +93,8 @@ export function hydrateFailedWrites(): Promise<void> {
  * event can reach error tracking (Phase 0 D-18) without this module importing it.
  */
 export async function recordFailedWrite(entry: Omit<FailedWrite, 'id' | 'at'>): Promise<void> {
+  // Held by lockedWrites (D-40); never recorded twice.
+  if (entry.kind === 'locked') return;
   const full: FailedWrite = {
     ...entry,
     id: Crypto.randomUUID(),

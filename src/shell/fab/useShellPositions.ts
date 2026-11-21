@@ -8,18 +8,19 @@ import { useShellLayout } from '@/shell/layout/ShellLayoutProvider';
 export const FAB_CLEARANCE = size.fab + 2 * space.fabInset;
 
 export function useFabOffsets(): { bottom: number; lift: number } {
-  const { tabBarHeight, toastHeight } = useShellLayout();
+  const { tabBarHeight, sampleBarHeight, toastHeight } = useShellLayout();
   return {
-    bottom: tabBarHeight + space.fabInset,
+    // 09-24: the pinned Sample bar sits on the tab bar, so the FAB clears both.
+    bottom: tabBarHeight + sampleBarHeight + space.fabInset,
     lift: toastHeight > 0 ? toastHeight + space.gapSm : 0,
   };
 }
 
 export function useToastSlot(): { bottom: number; reportHeight(h: number | null): void } {
-  const { tabBarHeight, reportToastHeight } = useShellLayout();
+  const { tabBarHeight, sampleBarHeight, reportToastHeight } = useShellLayout();
   const { current } = useBackHistory();
   const insets = useScreenInsets();
   const bottom =
-    current?.area === 'tab' ? tabBarHeight + space.gapMd : insets.bottom + space.sheetPadBottom;
+    current?.area === 'tab' ? tabBarHeight + sampleBarHeight + space.gapMd : insets.bottom + space.sheetPadBottom;
   return { bottom, reportHeight: reportToastHeight };
 }

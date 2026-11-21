@@ -4,6 +4,8 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { TransactionDetailSheet } from '../TransactionDetailSheet';
 
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),
   useSafeAreaInsets: () => ({ top: 47, bottom: 12, left: 0, right: 0 }),

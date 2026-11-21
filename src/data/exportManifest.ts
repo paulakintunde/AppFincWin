@@ -121,6 +121,12 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // 06.1
     'decide_may_use',
   ],
+  // 09 (09-13, D-30): the person's own level, answers and feature switches; private to them (111 proves it)
+  user_setup: [
+    'user_id', 'level', 'level_source', 'answers', 'resume_step', 'completed_at', 'partner_version', 'existing_card',
+    'records_applied_at', 'updated_at',
+  ],
+  feature_switches: ['user_id', 'feature_id', 'is_on', 'updated_at'],
   decide_settings: [
     'id', 'user_id', 'currency', 'rough_income', 'rough_spending', 'reserve', 'dsr_line', 'housing_line', 'unsecured_multiple',
     'investing_floor', 'saving_floor', 'basis_override', 'updated_at',
@@ -164,4 +170,13 @@ export const NOT_USER_DATA: readonly string[] = [
   'household_event_reads', // 08-13: one last-opened time per user for the notices badge; no content, erased by FK cascade
   'partner_figures', // 08.1-03: a derived, rounded "left so far" the owner's device publishes; no client read grant (RPC only); erased with the opt-in and by FK cascade
   'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
+  // 09: plan and billing bookkeeping. Server-held, written by edge functions, no client read in src/db; the person's plan
+  // facts reach the server export in Phase 10 (09-18 builds the CSV from this manifest).
+  'plan_products', // the store product catalogue; no user data
+  'household_plans', // the household's plan state and trial dates; billing bookkeeping, erased by FK cascade
+  'plan_events', // append-only plan change log for support and audit; server-written
+  'trial_ledger', // one row per trial ever used, kept to stop repeat trials; server-only, hashed identifiers
+  'household_leave_log', // rate-limit record of recent leaves for the switch rule; server-only
+  'plan_join_requests', // a transient ask to join a plan; erased on resolve or FK cascade
+  'plan_settings', // the plan owner's seat and invite settings; plan bookkeeping, not personal records
 ];

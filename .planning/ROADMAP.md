@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
-- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged with Decide hidden behind "Coming soon" until the Variant C rebuild: named testers in 08.1, the public after 08.2)
+- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged; the screens were rebuilt in 06.1. Decide has been open to every tester since 2026-11-06, quick 261106-bf2, `DECIDE_OPEN = true`; the public store switch-on follows 08.2)
 - [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [x] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations (completed 2026-10-29)
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - REPLACED by 05.4, not to be resumed. STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21)
 - [ ] **Phase 08.13: Private rooms in a household** (INSERTED) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
-- [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
+- [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
 
@@ -1602,45 +1602,46 @@ Plans:
   3. A user is offered a specific hidden feature in context, at the moment it would have helped, and is told which specific feature a paywall is gating and why.
   4. Household features are governed by whether the user shares money, independently of level.
   5. A user can purchase a subscription recognised across their devices, restore a previous purchase, and cancel through a path no harder to find than account deletion.
-**Plans**: 25 plans in 6 waves (planned 2026-11-18 against 09-CONTEXT revision 3 D-01..D-45 and the owner answers in 09-RESEARCH). Owner gates: 09-01 (signed level map, wording file, planner defaults P1-P8) before 09-11/09-12; 09-08 production push. Open human items that do not block close: real Google purchase tests (Play account), iOS products/purchase/DeviceCheck (Apple enrolment, D-24).
+**Plans**: 26 plans in 6 waves (09-26 added 2026-11-19 as a gap fix; planned 2026-11-18 against 09-CONTEXT revision 3 D-01..D-45 and the owner answers in 09-RESEARCH). Owner gates: 09-01 (signed level map, wording file, planner defaults P1-P8) before 09-11/09-12; 09-08 production push. Open human items that do not block close: real Google purchase tests (Play account), iOS products/purchase/DeviceCheck (Apple enrolment, D-24).
 
 Plans:
 **Wave 1**
-- [ ] 09-01-PLAN.md — Owner documents: level-to-feature map, wording file, planner questions (sign-off gate)
-- [ ] 09-02-PLAN.md — Plan data model: household_plans, trial ledger, seats/state/writable functions, plan_state(), launch switch
-- [ ] 09-09-PLAN.md — Client 'locked' write class, kept-on-phone writes and replay (D-40)
-- [ ] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
+- [x] 09-01-PLAN.md — Owner documents: level-to-feature map, wording file, planner questions (sign-off gate)
+- [x] 09-02-PLAN.md — Plan data model: household_plans, trial ledger, seats/state/writable functions, plan_state(), launch switch
+- [x] 09-09-PLAN.md — Client 'locked' write class, kept-on-phone writes and replay (D-40)
+- [x] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
-- [ ] 09-04-PLAN.md — Seat caps from the plan, payer approval requests, D-39 switch rule, departure plan moves
-- [ ] 09-06-PLAN.md — RevenueCat webhook Edge Function (HMAC, dedupe, re-fetch) and shared snapshot module
-- [ ] 09-11-PLAN.md — Feature registry from the signed map, levelFor, applyOnb (TDD)
-- [ ] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
+- [x] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
+- [x] 09-04-PLAN.md — Seat caps from the plan, payer approval requests, D-39 switch rule, departure plan moves
+- [x] 09-06-PLAN.md — RevenueCat webhook Edge Function (HMAC, dedupe, re-fetch) and shared snapshot module
+- [x] 09-11-PLAN.md — Feature registry from the signed map, levelFor, applyOnb (TDD)
+- [x] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
-- [ ] 09-07-PLAN.md — plan-refresh (caller + sweep) and plan-grant (tester/owner promotional grants)
-- [ ] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
-- [ ] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
-- [ ] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
+- [x] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
+- [x] 09-07-PLAN.md — plan-refresh (caller + sweep) and plan-grant (tester/owner promotional grants)
+- [x] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
+- [x] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
+- [x] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
+- [x] 09-26-PLAN.md — Extended (12): 12 member colours (owner exception, reused token hexes), leave/remove while locked
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
-- [ ] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
-- [ ] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
-- [ ] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
-- [ ] 09-20-PLAN.md — Household flows: Solo invite confirm, approvals, waiting, switch-rule refusal, leave/Solo moves
-- [ ] 09-21-PLAN.md — Onboarding questions, analytics step, summary, partner and re-run modes
-- [ ] 09-22-PLAN.md — You > Features and in-context feature offers
+- [x] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
+- [x] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
+- [x] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
+- [x] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
+- [x] 09-20-PLAN.md — Household flows: Solo invite confirm, approvals, waiting, switch-rule refusal, leave/Solo moves
+- [x] 09-21-PLAN.md — Onboarding questions, analytics step, summary, partner and re-run modes
+- [x] 09-22-PLAN.md — You > Features and in-context feature offers
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
-- [ ] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
-- [ ] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read)
+- [x] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
+- [x] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
+- [x] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read) — *the First read tag itself waits for 08.1-20 (`TODO(08.1-20)` in SampleAnswerIntro.tsx)*
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
+- [x] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
 **UI hint**: yes
 **Research flag**: Two blocking decisions, both currently open in PROJECT.md, must be resolved before gating is implemented — not during: (1) which of the ~50 features are Free versus Pro, since the paywall's original five-item pitch lost cloud sync and tax export to the architecture decision; (2) whether the Coach ships as a real LLM and on what terms, including a server-side post-filter against prescriptive language before implementation. Everything built before these decisions stays tier-agnostic behind a single entitlement check.
 
@@ -1709,26 +1710,28 @@ Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. 
 
 **Execution Order:**
 Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 08.2 → 7 → 9 → 10 → 11
-The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. Two agreed phases are not inserted yet: home buying (FIN-30), after 08.2, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08).
+The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. Two agreed phases are not inserted yet: home buying (FIN-30), after 08.2, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). *Superseded 2026-11-06 (owner, quick 261106-bf2): Decide is open to every tester; the store switch-on follows 08.2.*
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
 2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 18/20 | In Progress | - |
+| 0. Foundation | 18/20 | In Progress: 00-07 Apple enrolment submitted and D-U-N-S issued, Play verification pending (PR #174); 00-20 iOS build on the iPhone XR waits on enrolment (due before 2026-12-02) | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 50/50 | Complete | 2026-10-09 |
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 38/38 | Complete    | 2026-10-14 |
+| 3. Shell | 38/38 | Complete | 2026-10-14 |
+| 03.1 Activity header redesign | 15/15 | Complete (PR #76) | 2026-10-15 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
-| 5. Decide UI | 145/145 | Complete (Decide hidden behind "Coming soon" until 08.1 for named testers and after 08.2 for the public) | 2026-10-25 |
+| 5. Decide UI | 145/145 | Complete (screens rebuilt in 06.1; Decide open to every tester since 2026-11-06) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
 | 05.2 Decide data and setup | 75/75 | Complete | 2026-10-29 |
 | 05.3 Decide screens v3 | - | Stopped 2026-11-01 (branch parked) | - |
-| 05.4 Decide safety patch | 55/55 | Ready to merge (43 and 45 follow up on main, D-182) |  |
+| 05.4 Decide safety patch | 62/62 | Complete (merged; QA-04 full mutation score 83.6% vs 90% deferred to pre-launch) | 2026-11-19 |
 | 05.5 One shared money model | 29/29 | Complete | 2026-11-16 |
+| 06.1 Decide screens from the prototype | 82/82 | Complete (PR #102) | 2026-11-14 |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
@@ -1737,6 +1740,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 0/TBD | Not started | - |
+| 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |

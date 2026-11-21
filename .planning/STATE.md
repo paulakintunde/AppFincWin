@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: 08.1 wave 1 and plan 07 done (01-05, 07); main merged in 2026-11-19; wave 2 plan 06 next
-last_updated: "2026-11-18T23:13:01.887Z"
-last_activity: 2026-11-19 -- main merged into feat/08.1-build
+stopped_at: "08.1 at 21/22 on feat/08.1-build: plan 14 wording signed 2026-11-21; plan 15 (production push + tester build) in progress; main merged in 2026-11-21"
+last_updated: "2026-11-20T15:00:00.000Z"
+last_activity: 2026-11-21 -- main (Phase 9) merged into feat/08.1-build for plan 15
 progress:
   total_phases: 30
-  completed_phases: 16
-  total_plans: 781
-  completed_plans: 770
-  percent: 99
+  completed_phases: 18
+  total_plans: 809
+  completed_plans: 789
+  percent: 97
 ---
 
 # Project State
@@ -21,33 +21,32 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 08.1 — decide-rebuild-on-real-data
+**Current focus:** Phase 08.1 on branch `feat/08.1-build` (21/22; plan 15 left: production push and tester build). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
 
 ## Current Position
 
-Phase: 08.1 (decide-rebuild-on-real-data) — EXECUTING on feat/08.1-build, 6/18 plans (01-05, 07), 10 waves after the 2026-11-19 trim. Next: wave 2 plan 06. main merged in 2026-11-19.
-Phase: 08 (household) — COMPLETE 2026-11-17, 28/28 plans. Migrations 20261122000100..000900 in production (08-PUSH-LOG.md); delete-account Edge Function v1 deployed. Owner device sign-off on preview APK 167f43e3 (adds expo-clipboard). 08-25 ran before 08-27 by owner choice. Merged to main as PR #134 (69e42491). Open: iPhone XR check with the next iOS build; DPIA retention left to Phase 11.
-Phase: 05.5 (one-shared-money-model) — COMPLETE 2026-11-16, 29/29 plans (0.2.0 released; Band B in production; G-PD-2 root fix in 05.5-28, engine revision 06.8)
-Phase: 06.1 (Decide screens from the prototype) — MERGED 2026-11-14 (PR #102, main 9472c6f3); shipped as preview Android build 051b0232 (owner confirmed 2026-11-14).
-Phase: 06 (grow) — COMPLETE 2026-11-11, 37/37 plans. Code review: 73 findings fixed (06-REVIEW-FIX.md). VERIFICATION passed 10/10 (Create from Decide deferred by owner override). Owner device check approved; the goal/debt 'removed' flash fixed and owner-confirmed. Migrations through 20261110000200 in production. Full jest 991 suites / 40,030 tests pass. PR #101 on feat/06-grow (C:/dev/fincwin-g6). Follow-ups: GL-04 lock-or-leave prompt, Create from Decide button, 06-REVIEW-FIX.md items 2-5, owner observations after merge.
-Phase: 05.3 (decide-screens-v3) — STOPPED 2026-11-01 (fix plan Theme N, BO-01). Branch phase/05.3-decide-screens-v3 is pushed and parked (518 commits ahead of main), never merged. Its engine and plumbing changes are harvested in 05.4 (BO-02, BO-03); the screens are not reused (BO-09).
-Phase: 05.2 (decide-data-and-setup) — COMPLETE 2026-10-29, 75/75 plans. VERIFICATION passed; code review CR/WR fixed in 69-75. Owner signed off after the round-3 Pixel re-check and TalkBack pass (05.2-WALKTHROUGH-FINDINGS.md). Migrations through 20261028001400 in production. N-05 moved to 05.3 D-15. DECIDE_V3 and DECIDE_OPEN stay false. Merged to main as PR #86 (2026-10-29). in C:/dev/fincwin-p5.
-Phase: 05.1 (decide-engine-v3) — COMPLETE 2026-10-27
-Plan: 7 of 18 (06 next)
-Phase 00 (foundation): 18/20 plans. 00-07 (Apple/Play org enrolment) waits on the D-U-N-S number (ETA 2026-10-13); 00-20 (Sign in with Apple, first iOS build) waits on Apple enrolment. Code review and security audit done; phase verification runs once 00-07 and 00-20 land.
-Phase 01 (money-core): COMPLETE 2026-09-26 — 16/16 plans, 01-VERIFICATION.md 20/20 requirements, status human_needed (3 items in 01-HUMAN-UAT.md).
-Phase 02 (record): COMPLETE 2026-10-09 — 50/50 plans (40 original + gap closure 02-41..02-50, on-demand FX live in production), 02-VERIFICATION.md status human_needed (2 items in 02-HUMAN-UAT.md: iOS file picker, home-currency switch).
-Phase 02.1 (PDF statement import): COMPLETE 2026-10-11 — 17/17 plans (PR #60 main 22f8f57, walkthrough fixes PR #62 main ef8bbfa), production at 20261011000300 with read-pdf-statement and purge-statement-uploads deployed, preview APK d7f35c19; 02.1-VERIFICATION.md 5/5 criteria, IMP-01..IMP-05 satisfied, status human_needed (1 item in 02.1-HUMAN-UAT.md: iOS walkthrough; privacy paragraph published 2026-10-11). Phase 02.2 (record-polish): COMPLETE 2026-10-10 — 35/35 plans, 02.2-VERIFICATION.md 8/8 criteria and 20/20 requirements (ACT-06..ACT-18, REC-19..REC-25), status human_needed (1 item in 02.2-HUMAN-UAT.md: iOS walkthrough, blocked on Apple enrolment). Phase 02.3 (record follow-ups): planned 2026-10-12 — 20 plans in 5 waves, checker passed (1 revision); next /gsd-execute-phase 02.3. Phase 03 (shell): planned (16 plans); check against 02.2 before executing (see Blockers). Phase 04 (decide-engine): replanned 2026-10-15 against D-23..D-58 (engine depth expansion D-41..D-58 plus the user's consistency amendments to D-41/D-42/D-24-D-44) — 22 plans in 8 waves (04-01..04-04 unchanged, 04-05..04-13 amended, new 04-14..04-22), research addendum for D-58 thresholds and D-57 reference tables appended to 04-RESEARCH.md, plan checker passed (3 iterations, 0 blockers), decision coverage 35/35 plus D-41..D-58 verified by script; judgment calls in 04-REPLAN-NOTES.md ; user decisions D-59 (cash_dip only when the purchase lowers the 90-day low; cash_tight_before_payday fact) and D-60 (confirmed weekly/fortnightly pay smoothed for CV and income averages) folded in, re-check passed (3 iterations, 0 blockers); open for user review: D-60 partial-month reading and cash_path margin definition (04-REPLAN-NOTES); EXECUTED 2026-10-16 — 22/22 plans on branch phase/04-decide-engine; 04-VERIFICATION.md 6/6 success criteria, DEC-01..DEC-37 complete; code review 14 findings (4 high, 5 medium, 5 low) all fixed with regression tests (D-64 level payment rounds up); engine/decide and engine/payoff at 100% coverage; golden parity holds.
-Phase 05 (decide-ui): planned 2026-10-15, revised 2026-10-16 for the planning-review decisions D-38..D-44, DCU-12..DCU-24 and the final Phase 4 API (D-61..D-63) — 53 plans in 10 waves, plan checker passed (3 iterations, final 0 blockers, 0 warnings); originally against 05-CONTEXT D-01..D-37 (incl. the depth expansion D-24..D-37 and the amended D-24) and the 22-plan Phase 4 `decide()` API; research with a depth addendum, pattern map, VALIDATION.md (nyquist_compliant); plan checker passed after the scope expansion (3 iterations, final 0 blockers; earlier 29-plan set had 2 iterations), decision coverage D-01..D-37 and DCU-01..DCU-11, ANL-06 verified; defaults and items for user review in 05-PLANNING-NOTES.md (OQ1/OQ3 debts table and full-month rule, OQ-A1 FX stamps, OQ-A2/A3/A9 UI-SPEC touch-ups, card minimum gap R4-W2, A19/A21). Execution unblocked once the Phase 4 PR merges; migrations ship via the human-gated `npm run supabase:db:push` in 05-25.
-Walkthrough (2026-10-10): Phase 02.2 Android device walkthrough Parts A–D approved, with exceptions fixed by quick task 261010-i7u (calendar wrap/highlight/scroll, swipe labels, Android sheet keyboard, amber cap toast, archive confirm button, EUR home-currency rate check). Part E (sign-out/sign-in) is pending and needs an Expo restart. The sign-in account chooser was requested (ACC-14, Phase 02.3 with REC-26 and REC-27).
-Status: Executing Phase 08.1
-Last activity: 2026-11-19 -- main merged into feat/08.1-build
+Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 with summaries; the 08.1 branch adds 15 more summaries).
+
+Phase: 08.1 (decide-rebuild-on-real-data) — IN PROGRESS on branch `feat/08.1-build`, 21/22 (plans 01-14 and 19-25 built; 16-18 moved to 08.2). Plan 14 wording signed 2026-11-21. Left: 15 (production push of 20261125000100..000800, tester build). main merged in 2026-11-21.
+Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
+Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
+Phase: 08.2, 7, 10 — not planned. 11 — not started.
+Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11); one orphan household with no members and no plan.
+Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026-11-14 (PR #102). 06 (grow) — COMPLETE 2026-11-11 (PR #101).
+Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
+Phase: 04 (decide-engine) — COMPLETE 2026-10-16; the v1 engine was deleted on purpose in 05.5 (04-VERIFICATION.md is historical).
+Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple enrolment).
+Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted, Play verification pending (PR #174). 00-20: first iOS build on the iPhone XR, waits on enrolment; needed before 2026-12-02.
+Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
+Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
+Status: Executing (one phase branch: 08.1)
+Last activity: 2026-11-20 -- Phase 9 merged; STATE and ROADMAP checked against the code
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 95
+- Total plans completed: see the ROADMAP progress table (this velocity table stopped being kept after Phase 05)
 - Average duration: - min
 - Total execution time: 0 hours
 
@@ -169,7 +168,7 @@ Recent decisions affecting current work:
 
 - [Phase 02.1] *(Resolved 2026-10-11: phase complete.)* **Plans revised 2026-10-10 (resolved the post-02.2 staleness).** Migrations re-dated to 20261011000100/200/300, pgTAP 49/50, plans 04/05/09–12 rebased on post-02.2 code, fx-monitor references removed, IMP-05 planned (13–17; conversion_source is a stored generated column, no backfill; D-36 user-accepted limitation for kept mark-paid lines). Rollout plan 12 pushes from merged main with a before/after checksum and ends with the second-phone preview APK.
 
-- [Phase 03] **Shell re-discussed 2026-10-13; re-plan before executing.** 03-CONTEXT.md is updated. Plans 03-01…03-16 predate it. Main changes:
+- [Phase 03] *(Resolved: re-planned and executed; phase complete 2026-10-14.)* **Shell re-discussed 2026-10-13; re-plan before executing.** 03-CONTEXT.md is updated. Plans 03-01…03-16 predate it. Main changes:
   - **Sheet:** the app keeps its own `Sheet` and adds drag-to-dismiss, with no `@gorhom/bottom-sheet` migration (D-12). It goes through one shared interface, so a single sheet can adopt `@gorhom` later.
   - **Backdrop:** ink at 38% with a 0.18s fade, replacing the black `colors.scrim` (D-23/24).
   - **Dismissal:** the entry sheet keeps a draft on accidental dismissal, and other edited sheets ask "Discard changes?" (D-25…27).
@@ -224,6 +223,8 @@ Recent decisions affecting current work:
 | 261117-sn1 | SN-18 wording (text only) and SN-27 proposal; owner chose option (a), built in PR #149: no ready-by date when a plan's own payment makes the usual month short (engine revision 06.9, SN-27 approved, 49/2000 I44 cases lose a date only) | 2026-11-17 | bf173562 | [261117-sn1-sn-18-wording-and-sn-27-proposal](./quick/261117-sn1-sn-18-wording-and-sn-27-proposal/) |
 | 261118-u83 | ASO re-check: 4 new "can I afford it" apps (incl. Verdict Money), hard-paywall copy fixes, features to compete on; LAUNCH-POSITIONING §4/§5 updated | 2026-11-18 | (this PR) | [261118-u83-aso-re-check-2026-11-18](./quick/261118-u83-aso-re-check-2026-11-18/) |
 | 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
+| 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18 and Phase 9 26/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
+| 261120-nmr | Naming round 2 research saved: Kint dropped, 90 names screened, deep check of Domla/Plenny/Tavva/Hommi | 2026-11-20 | — | [261120-nmr-naming-research](./quick/261120-nmr-naming-research/) |
 
 ## Deferred Items
 
@@ -235,6 +236,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-18T23:13:01.825Z
-Stopped at: 08.1 wave 1 and plan 07 done (01-05, 07); main merged in 2026-11-19; wave 2 plan 06 next
-Resume file: None
+Last session: 2026-11-20T12:00:00.000Z
+Stopped at: 08.1 plan 15 in progress (main merged in; push waits on owner approval)
+Resume file: none (see Current Position)

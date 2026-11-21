@@ -193,7 +193,15 @@ export type EditGoalPlanFields = Partial<
 const EDIT_PLAN_KEYS = ['name', 'target', 'ready_by', 'monthly_amount', 'opening_saved', 'account_id', 'icon', 'color_key', 'up_front_only', 'protect', 'locked'] as const;
 
 export type SaveGoalPlanInput =
-  | { ownerId: string; householdId: string; existing?: undefined; fields: NewGoalFields; series: GoalPlanSeries | null }
+  | {
+      ownerId: string;
+      householdId: string;
+      existing?: undefined;
+      /** 09-23: a stable id for a goal made from setup answers, so a replay never makes it twice. Random when absent. */
+      id?: string;
+      fields: NewGoalFields;
+      series: GoalPlanSeries | null;
+    }
   | { ownerId: string; householdId?: undefined; existing: SavingsGoalRow; fields: EditGoalPlanFields; series: GoalPlanSeries | null };
 
 function assertSeries(series: GoalPlanSeries | null): void {
@@ -310,7 +318,7 @@ export function useSaveGoalPlan(): { save(input: SaveGoalPlanInput): { id: strin
         assertGoalFields(f, 'make goal');
         if (!/^[A-Z0-9]{2,4}$/.test(f.currency)) throw new RangeError('make goal: currency must be a code');
         if (f.is_safety_net === true && f.locked !== true) throw new RangeError('safety-net-must-be-locked');
-        const id = Crypto.randomUUID();
+        const id = input.id ?? Crypto.randomUUID();
         const flag = f.is_safety_net === true;
         const goal: GoalPlanGoal = {
           id,

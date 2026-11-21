@@ -143,7 +143,7 @@ select extensions.is(public.redeem_invite((select code from codes where label = 
 reset role;
 select extensions.ok(public.hh_redeem_failure_rate() >= 200, 'the global failure rate is measured for alerting');
 select extensions.is(has_function_privilege('authenticated', 'public.hh_redeem_failure_rate()', 'execute'), false, 'a client cannot read the global failure rate');
-select extensions.is(has_function_privilege('anon', 'public.redeem_invite(text)', 'execute'), false, 'anon cannot redeem an invite');
+select extensions.is(has_function_privilege('anon', 'public.redeem_invite(text, text)', 'execute'), false, 'anon cannot redeem an invite');
 
 -- 35-37. Rate limiting is fed by one table nobody can read.
 select extensions.is(has_table_privilege('authenticated', 'public.redeem_attempts', 'select'), false, 'redeem_attempts is not readable by clients');

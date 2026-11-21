@@ -29,4 +29,13 @@ export const status = {
   fits: 'Fits',
   tight: 'Tight',
   short: 'Short',
+  // Phase 9 plan status words, owner-signed in 09-WORDING.md (appLife.status section).
+  trial: 'Free trial',
+  planActive: 'Active',
+  trialEnding: 'Trial ends soon',
+  paymentFailed: 'Payment failed',
+  readOnly: 'Read-only',
+  waitingApproval: 'Waiting',
+  coveredBy: 'Covered',
+  freeAccess: 'Free access',
 } as const;

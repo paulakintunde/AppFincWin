@@ -26,6 +26,14 @@ jest.mock('expo-router', () => ({
   },
 }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// 09-20: the plan view. Default is a tester household (no plan row), which keeps the Phase 8 behaviour.
+const TESTER_PLAN = {
+  status: 'tester', kind: 'prelaunch', writable: true, householdId: 'h', planKey: null, planSize: 0, period: null, seats: 6, members: 1,
+  payerId: null, payerIsMe: false, payerName: null, store: null, productId: null, willRenew: false, coveredUntil: null, trialEndsAt: null,
+  graceUntil: null, promoKind: 'tester', prelaunch: true, leftGrace: false, trialAvailable: true, billingIssueAt: null, loading: false, isError: false,
+};
+let mockPlanView: Record<string, unknown> = TESTER_PLAN;
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlanView }));
 jest.mock('expo-clipboard', () => ({ setStringAsync: jest.fn(async () => true) }));
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ useBackHistory: () => ({ goBack: jest.fn(), history: [] }) }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
@@ -114,6 +122,7 @@ async function setup(ui: React.ReactElement = <HouseholdHomeScreen />) {
 }
 
 beforeEach(() => {
+  mockPlanView = TESTER_PLAN;
   resetPushOnceForTests();
   mockPush.mockClear();
   mockMarkRead.mockClear();
@@ -339,5 +348,34 @@ describe('NoticesScreen', () => {
   it('says there are no notices', async () => {
     await setup(<NoticesScreen />);
     expect(screen.getByTestId('notices-empty')).toBeTruthy();
+  });
+
+  describe('plan line (09-20, UI-SPEC 13)', () => {
+    const duo = { ...TESTER_PLAN, status: 'active', kind: 'active', planKey: 'duo', planSize: 2, seats: 2, members: 2, payerId: 'me', payerIsMe: true, payerName: 'Paul' };
+    const twoPeople = () => [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+
+    it('shows who pays and how many people the plan holds, with See plans for the payer', async () => {
+      mockPlanView = duo;
+      mockMembers = twoPeople();
+      await setup();
+      expect(screen.getByText('Plan: Duo · Paul pays')).toBeTruthy();
+      expect(screen.queryByTestId('status-badge-coveredBy')).toBeNull();
+      expect(screen.getByText('Duo holds 2 people.')).toBeTruthy();
+      await fireEvent.press(screen.getByText('See plans'));
+      expect(mockPush).toHaveBeenCalled();
+      // an invite past the size goes to approval, so the link stays
+      expect(screen.getByText('+ Invite someone')).toBeTruthy();
+    });
+
+    it('says who covers the home and that only the payer can change it, to an owner who does not pay', async () => {
+      mockPlanView = { ...duo, payerId: 'u2', payerIsMe: false, payerName: 'Sam' };
+      mockMembers = twoPeople();
+      await setup();
+      expect(screen.getByText('Plan: Duo · Sam pays')).toBeTruthy();
+      expect(screen.getByTestId('status-badge-coveredBy')).toBeTruthy();
+      expect(screen.getByText('Sam pays. Only they can change the plan.')).toBeTruthy();
+      expect(screen.getByText('Ask Sam to change the plan.')).toBeTruthy();
+      expect(screen.queryByText('See plans')).toBeNull();
+    });
   });
 });
