@@ -4,6 +4,8 @@
 import { createContext, createElement, useCallback, useContext, useMemo, type ReactNode } from 'react';
 import type { DecideLinkRow } from '@/db/decideLinks';
 import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
+import type { HouseholdScopeSource } from '@/features/decide/snapshot/v3/householdScope';
+import { useHouseholdScopeSource } from '@/features/household/decide/useHouseholdScopeSource';
 import { classifyReadError, type DbErrorKind } from '@/db/errors';
 import { emptyCheckEvaluation, preparedV3, withUnsaved } from '@/features/decide/snapshot/v3/computeV3';
 import { liveBridgeCheckIds, settingsSourceOf, type SettingsSourceInput } from '@/features/decide/snapshot/v3/settingsSource';
@@ -90,6 +92,29 @@ export function sharedSettingsSource(deps: SharedSettingsDeps): V3SettingsSource
   return v3;
 }
 
+/**
+ * 08.1-23 (owner 2026-11-21 Q11, CMP-F19): the shared build (home, overview, Decide home) counts a joint account the way a Just me
+ * check does: only the viewer's slice of it, laid in by the household builder (withHouseholdScope inside buildInputs). Data layer only.
+ * One source per (snapshot, household facts), shared by every hook mounted at once, so preparedV3 (keyed on the source identity) still
+ * builds once per data version. No household source (no joint account, or not read yet) keeps the snapshot as it is.
+ */
+const withHouseholdBySource = new WeakMap<SnapshotSource, Map<string, SnapshotSource>>();
+const HOUSEHOLD_PER_SOURCE = 4;
+
+export function withHouseholdSource(source: SnapshotSource, household: HouseholdScopeSource | undefined): SnapshotSource {
+  if (household === undefined) return source;
+  const key = JSON.stringify(household);
+  const byKey = withHouseholdBySource.get(source) ?? new Map<string, SnapshotSource>();
+  const hit = byKey.get(key);
+  if (hit !== undefined) return hit;
+  // buildInputs reads the optional household field (InputsSource); a SnapshotSource carries it through preparedV3 untouched.
+  const out: SnapshotSource & { readonly household: HouseholdScopeSource } = { ...source, household };
+  if (byKey.size >= HOUSEHOLD_PER_SOURCE) byKey.clear();
+  byKey.set(key, out);
+  withHouseholdBySource.set(source, byKey);
+  return out;
+}
+
 const NO_CHECKS: readonly { id: string }[] = [];
 const READ_NAMES = ['settings', 'answers', 'dismissals', 'checks', 'links'] as const;
 
@@ -144,7 +169,9 @@ function useDecideV3Live(): DecideV3State {
       ? (snapshot.errorKind ?? 'server')
       : classifyReadError(ownFailure?.error);
 
-  const source = snapshot.source;
+  // 08.1-23 (Q11): Just me with a joint account gets a household source (only my slice of joint money); anyone else gets none.
+  const householdSource = useHouseholdScopeSource(false).source;
+  const source = snapshot.source === null ? null : withHouseholdSource(snapshot.source, householdSource);
   const settingsRow = settings.data;
   const answerRows = answers.data;
   const dismissalRows = dismissals.data;
