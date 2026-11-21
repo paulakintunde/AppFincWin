@@ -170,6 +170,7 @@ export function withHouseholdScope(inputs: V3Inputs, hh: HouseholdScopeSource | 
     notShared,
     settleUp,
     ...(plan.joint === null ? {} : { jointBack: jointBackOf(plan.joint.applied, plan.joint.without) }),
+    ...(plan.zeroShare === null ? {} : { zeroShare: plan.zeroShare }),
   };
   return { ...out, household };
 }

@@ -8,6 +8,7 @@ import { jointSlices, withoutJointSlices } from './jointMoney';
 import type { JointAccountFacts, JointSlices } from './jointMoney';
 import { spendDelta } from './pool';
 import { resolveSpendRule } from './spendRule';
+import { zeroShareMembers } from './zeroShare';
 import type { HouseholdSetup, ResolvedSpendRule, SpendRuleSetting } from './spendRule';
 
 /** A joint slice laid over the viewer's records (the same shape as engine/decide/v3 JointLay). */
@@ -35,6 +36,8 @@ export interface HouseholdPlan {
   readonly joint: { readonly applied: JointLayShape; readonly without: JointLayShape } | null;
   readonly personalDelta: ((ownPersonalLeft: MinorUnits) => MinorUnits) | null;
   readonly resolved: ResolvedSpendRule;
+  /** 08.1-25: the viewer's share of the joint money is $0 because of the rule (bring or the bill split), else null */
+  readonly zeroShare: { readonly rule: 'bring' | 'bill' } | null;
 }
 
 /** One joint account's true figures in the household's currency, before the viewer's own records are laid beside them. */
@@ -91,9 +94,12 @@ export function householdPlan(a: HouseholdPlanArgs): HouseholdPlan {
       : { applied: layOf(jointSlices(a.joint, resolved.joint, billWeights, a.myIndex, n)), without: layOf(withoutJointSlices(a.joint)) };
   const pooled = a.scope === 'household' && resolved.personal.kind === 'shares' && a.others.some((o, i) => i !== a.myIndex && o !== null);
   const spend = resolved.personal;
+  const rule = resolved.rule;
+  const zeroed = zeroShareMembers({ resolved, joint: a.joint, billWeights, memberCount: n }).includes(a.myIndex);
   return {
     joint,
     personalDelta: pooled ? (own) => spendDelta(own, a.others, spend, a.myIndex) : null,
     resolved,
+    zeroShare: rule !== 'custom' && zeroed ? { rule } : null,
   };
 }

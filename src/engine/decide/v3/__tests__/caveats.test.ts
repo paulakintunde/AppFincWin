@@ -143,7 +143,7 @@ describe('05.4-37 caveats (D-64, D-118, D-119)', () => {
     const plan = checkPlan(120000, { count: 24, apr: percent('9.9'), firstPayment: { kind: 'one_period' } }, T);
     const pev = evaluate(sam(), plan);
     const purchase = { ...pev.purchase!, whole: mu(base.month.typicalIncome) };
-    const withHousehold: V3Inputs = { ...sam(), recordsAsOf: '2026-09-01', household: { scope: 'household', notShared: ['noa'] }, accounts: [{ id: 'a1', balance: mu(1000), use: null, joint: true }] };
+    const withHousehold: V3Inputs = { ...sam(), recordsAsOf: '2026-09-01', household: { scope: 'household', notShared: ['noa'], zeroShare: { rule: 'bring' } }, accounts: [{ id: 'a1', balance: mu(1000), use: null, joint: true }] };
     const got = caveatsFor({ ...s, purchase }, withHousehold, plan).map((c) => c.code);
     expect(got).toEqual(CAVEAT_ORDER.filter((c) => c !== 'expected_bills'));
     expect(new Set(got).size).toBe(got.length);
@@ -191,6 +191,33 @@ describe('05.4-37 caveats (D-64, D-118, D-119)', () => {
     it('D-119 order: household_not_shared comes before shared_money', () => {
       const got = codes(src(), withH({ scope: 'household', notShared: ['noa'] }, [acct({ joint: true })]));
       expect(got).toEqual(['household_not_shared', 'shared_money']);
+    });
+  });
+  describe('08.1-25 share_zero_by_rule (owner one-earner fix 2026-11-21)', () => {
+    const withH = (household: V3Inputs['household'], accounts?: V3Inputs['accounts']): V3Inputs => ({ ...sam(), household, ...(accounts === undefined ? {} : { accounts }) });
+    it('present in either scope with the rule that gives the $0 share', () => {
+      expect(caveatsFor(src(), withH({ scope: 'me', notShared: [], zeroShare: { rule: 'bring' } }), ONCE)).toEqual([{ code: 'share_zero_by_rule', values: { rule: 'bring' } }]);
+      expect(caveatsFor(src(), withH({ scope: 'household', notShared: [], zeroShare: { rule: 'bill' } }), ONCE)).toEqual([{ code: 'share_zero_by_rule', values: { rule: 'bill' } }]);
+    });
+    it('absent without zeroShare, with zeroShare null, and without a household block', () => {
+      expect(codes(src(), withH({ scope: 'me', notShared: [] }))).toEqual([]);
+      expect(codes(src(), withH({ scope: 'me', notShared: [], zeroShare: null }))).toEqual([]);
+      expect(codes(src(), withH(null))).toEqual([]);
+      expect(codes(src(), withH(undefined))).toEqual([]);
+    });
+    it('D-119 order: directly after shared_money, before rate_estimated', () => {
+      expect(CAVEAT_ORDER.indexOf('share_zero_by_rule')).toBe(CAVEAT_ORDER.indexOf('shared_money') + 1);
+      const got = codes(src(), withH({ scope: 'household', notShared: ['noa'], zeroShare: { rule: 'bring' } }, [{ id: 'j1', balance: mu(100000), use: null, joint: true }]));
+      expect(got).toEqual(['household_not_shared', 'shared_money', 'share_zero_by_rule']);
+    });
+    it('never changes the answer: code, variant, facts and figures are the same with and without it', () => {
+      const without = evaluate(withH({ scope: 'me', notShared: [] }), ONCE).result;
+      const withIt = evaluate(withH({ scope: 'me', notShared: [], zeroShare: { rule: 'bring' } }), ONCE).result;
+      const { caveats: c1, ...a } = without;
+      const { caveats: c2, ...b } = withIt;
+      expect(b).toEqual(a);
+      expect((c1 ?? []).map((c) => c.code)).not.toContain('share_zero_by_rule');
+      expect((c2 ?? []).map((c) => c.code)).toContain('share_zero_by_rule');
     });
   });
 });

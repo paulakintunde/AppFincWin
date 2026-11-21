@@ -177,10 +177,14 @@ export interface V3Household {
   readonly settleUp?: { readonly lapsedAsPayer: boolean; readonly owed: MinorUnits } | null;
   /** 08.1-22: what takes the viewer's joint slice back out of these inputs (personal money only, for the published partner figure); absent = no joint account */
   readonly jointBack?: JointLay;
+  /* 08.1-25 (owner one-earner fix 2026-11-21): the viewer's share of the joint money is $0 because of the rule (engine/household
+     zeroShareMembers): What each person brings with no pay-ins and nothing carried, or the bill split at 0%. Read only by the
+     share_zero_by_rule caveat; carries no money into any sum. Absent or null = not flagged. */
+  readonly zeroShare?: { readonly rule: 'bring' | 'bill' } | null;
 }
 /** 08.1-22 (householdMoney.ts): a joint slice laid over the viewer's records: the month change, the cash change and each named joint account's balance. */
 export interface JointLay { readonly monthDelta: MinorUnits; readonly cashDelta: MinorUnits; readonly balances: Readonly<Record<string, MinorUnits>> }
-export type CaveatCode = 'large_for_month' | 'your_word' | 'quick_estimates' | 'records_out_of_date' | 'no_debts_recorded' | 'few_months' | 'irregular_income' | 'close_to_line' | 'expected_bills' | 'household_not_shared' | 'shared_money' | 'rate_estimated' | 'tax_not_included' | 'long_plan';
+export type CaveatCode = 'large_for_month' | 'your_word' | 'quick_estimates' | 'records_out_of_date' | 'no_debts_recorded' | 'few_months' | 'irregular_income' | 'close_to_line' | 'expected_bills' | 'household_not_shared' | 'shared_money' | 'share_zero_by_rule' | 'rate_estimated' | 'tax_not_included' | 'long_plan';
 export interface Caveat { readonly code: CaveatCode; readonly values: CodeValues }
 export interface UnseenPay { readonly seriesId: string; readonly date: LocalDate; readonly amount: MinorUnits; readonly arrived: boolean | null }
 export interface IncomeThisMonth { readonly received: MinorUnits; readonly dueConfirmed: MinorUnits; readonly total: MinorUnits; readonly reasons: readonly ReasonCode[]; readonly unseenPay?: readonly UnseenPay[] }

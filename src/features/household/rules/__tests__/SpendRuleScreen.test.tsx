@@ -6,7 +6,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { HouseholdSpendRuleRow } from '@/db/householdSpendRules';
 import { SpendRuleScreen } from '../SpendRuleScreen';
-import { spendViewOf, startingShares, sharedMoneyTotal, moneyParts, percentsOf, billPercentsOf } from '../spendRuleView';
+import { spendViewOf, startingShares, sharedMoneyTotal, moneyParts, percentsOf, billPercentsOf, zeroShareIdsOf } from '../spendRuleView';
+import type { JointAccountSource } from '@/features/decide/snapshot/v3/householdScope';
+import { ZERO_SHARE_SUGGESTION, suggestTargetOf, suggestionFor } from '../zeroShareSuggestion';
 
 jest.setTimeout(30000);
 
@@ -61,6 +63,9 @@ jest.mock('../useSpendRule', () => ({
 }));
 let mockShared: { total: number | null; currency: string | null } = { total: null, currency: null };
 jest.mock('../useSharedMoney', () => ({ useSharedMoney: () => mockShared }));
+// 08.1-25: the Supabase-reading hook is mocked; its pure part (zeroShareIdsOf) is tested for real below.
+let mockZero: { ids: string[]; currency: string | null } = { ids: [], currency: 'USD' };
+jest.mock('../useZeroShare', () => ({ useZeroShare: () => mockZero }));
 
 const TWO: Member[] = [
   { user_id: 'me', weight: 60 },
@@ -77,12 +82,12 @@ const row = (over: Partial<HouseholdSpendRuleRow>): HouseholdSpendRuleRow => ({
   ...over,
 });
 
-async function setup() {
+async function setup(props: { suggest?: 'equalShares' } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await render(
     <QueryClientProvider client={client}>
       <ThemeProvider>
-        <SpendRuleScreen />
+        <SpendRuleScreen {...props} />
       </ThemeProvider>
     </QueryClientProvider>,
   );
@@ -101,6 +106,7 @@ beforeEach(() => {
   mockSave.mockClear();
   mockSave.mockImplementation(async () => ({ ok: true, version: 4 }));
   mockToast.mockClear();
+  mockZero = { ids: [], currency: 'USD' };
 });
 
 describe('spendRuleView (pure)', () => {
@@ -255,5 +261,120 @@ describe('SpendRuleScreen', () => {
     for (const name of ['Separate accounts', 'One joint account', 'Mixed', 'What each person brings', 'Same as the bill split']) {
       expect(screen.getByLabelText(`What ${name} means`)).toBeTruthy();
     }
+  });
+});
+
+describe('08.1-25 zeroShareIdsOf (pure, Q1 A)', () => {
+  const src = (over: Partial<JointAccountSource> = {}): JointAccountSource => ({
+    id: 'j1', currency: 'USD', purpose: 'everyday', spendable: false, balance: 100_000, monthIn: 500_000, monthOut: 400_000,
+    billsDueBeforeNextIn: 0, paidInBy: { sam: 500_000 }, ...over,
+  });
+  const parts = (over: Partial<Parameters<typeof zeroShareIdsOf>[0]> = {}): Parameters<typeof zeroShareIdsOf>[0] => ({
+    sources: [src()], currency: 'USD', members: TWO, row: row({ rule: 'bring' }), defaults: [{ category_ref: null, rule: 'weight' }], setup: 'joint', ...over,
+  });
+  it('names the member who paid nothing in under What each person brings, and the 0% member under the bill split', () => {
+    expect(zeroShareIdsOf(parts())).toEqual(['me']);
+    const zeroWeight = [{ user_id: 'me', weight: 0 }, { user_id: 'sam', weight: 100 }];
+    expect(zeroShareIdsOf(parts({ members: zeroWeight, row: row({ rule: 'bill' }), sources: [src({ paidInBy: {} })] }))).toEqual(['me']);
+  });
+  it('names nobody under a set split, with money carried from before, with no currency, or for one member', () => {
+    expect(zeroShareIdsOf(parts({ row: row({ rule: 'custom', shares: { me: 0, sam: 100 } }) }))).toEqual([]);
+    expect(zeroShareIdsOf(parts({ sources: [src({ balance: 160_000 })] }))).toEqual([]);
+    expect(zeroShareIdsOf(parts({ currency: null }))).toEqual([]);
+    expect(zeroShareIdsOf(parts({ members: [{ user_id: 'me', weight: 100 }] }))).toEqual([]);
+  });
+  it('a joint bills account counts nothing here (its dues are not known), and another currency is left out', () => {
+    expect(zeroShareIdsOf(parts({ sources: [src({ purpose: 'bills' })] }))).toEqual([]);
+    expect(zeroShareIdsOf(parts({ sources: [src({ currency: 'EUR' })] }))).toEqual([]);
+  });
+});
+
+describe('08.1-25 percentsOf with a member at 0 (Rule 1 fix)', () => {
+  it('gives the 0% member 0 and splits 100 among the rest, so a 100/0 split no longer throws', () => {
+    expect(percentsOf([100, 0])).toEqual([100, 0]);
+    expect(percentsOf([60, 40, 0])).toEqual([60, 40, 0]);
+    expect(percentsOf([0, 1, 1])).toEqual([0, 50, 50]);
+    expect(billPercentsOf([{ user_id: 'me', weight: 100 }, { user_id: 'sam', weight: 0 }], [{ category_ref: null, rule: 'weight' }])).toEqual({ me: 100, sam: 0 });
+  });
+});
+
+describe('08.1-25 suggestion target', () => {
+  it('equal shares fill whole percents that add up to 100; a route param is used only when it names a target', () => {
+    expect(suggestionFor('equalShares').prefill(2)).toEqual([50, 50]);
+    expect(suggestionFor('equalShares').prefill(3)).toEqual([34, 33, 33]);
+    expect(suggestionFor(ZERO_SHARE_SUGGESTION).route).toEqual({ pathname: '/household/spending', params: { suggest: 'equalShares' } });
+    expect(suggestTargetOf('equalShares')).toBe('equalShares');
+    expect(suggestTargetOf(['equalShares'])).toBe('equalShares');
+    expect(suggestTargetOf('freeAccess')).toBeUndefined();
+    expect(suggestTargetOf('toString')).toBeUndefined();
+    expect(suggestTargetOf(undefined)).toBeUndefined();
+    expect(() => suggestionFor('nope')).toThrow(RangeError);
+  });
+});
+
+describe('08.1-25 SpendRuleScreen: the $0 share card (Q3 A)', () => {
+  it('names the member and opens the editor at equal shares; nothing is saved until Save', async () => {
+    mockRow = row({ rule: 'bring', setup: 'joint' });
+    mockZero = { ids: ['sam'], currency: 'USD' };
+    await setup();
+    expect(screen.getByText('Under this rule, Sam’s share of the joint money is $0 this month. With equal shares, each person counts the same part.')).toBeTruthy();
+    expect(screen.queryByTestId('spend-shares')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('See equal shares'));
+    expect(checked('spend-rule-custom')).toBe(true);
+    expect(screen.getByTestId('spend-shares')).toBeTruthy();
+    expect(screen.getByLabelText('Your weight, 50 percent')).toBeTruthy();
+    expect(screen.queryByTestId('spend-zero-share')).toBeNull();
+    expect(mockSave).toHaveBeenCalledTimes(0);
+    await fireEvent.press(saveButton());
+    expect(mockSave).toHaveBeenCalledTimes(1);
+    expect(mockSave).toHaveBeenCalledWith({}, { rule: 'custom', setup: 'joint', shares: { me: 50, sam: 50 }, expectedVersion: 3 });
+  });
+
+  it('three members open at 34/33/33; several names read their own words', async () => {
+    mockMembers = [...TWO, { user_id: 'lee', weight: 0 }];
+    mockRow = row({ rule: 'bring' });
+    mockZero = { ids: ['sam', 'lee'], currency: 'USD' };
+    await setup();
+    expect(screen.getByText('Under this rule, Sam and Lee have a $0 share of the joint money this month. With equal shares, each person counts the same part.')).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('See equal shares'));
+    await fireEvent.press(saveButton());
+    expect(mockSave).toHaveBeenCalledWith({}, expect.objectContaining({ rule: 'custom', shares: { me: 34, sam: 33, lee: 33 } }));
+  });
+
+  it('says "your share" when the viewer is the one at $0', async () => {
+    mockRow = row({ rule: 'bill' });
+    mockZero = { ids: ['me'], currency: 'USD' };
+    await setup();
+    expect(screen.getByText('Under this rule, your share of the joint money is $0 this month. With equal shares, each person counts the same part.')).toBeTruthy();
+  });
+
+  it('no card with nobody at $0, under a saved set split, with no currency, or for a household of one', async () => {
+    mockRow = row({ rule: 'bring' });
+    await setup();
+    expect(screen.queryByTestId('spend-zero-share')).toBeNull();
+    await screen.unmount();
+    mockRow = row({ rule: 'custom', shares: { me: 100, sam: 0 } });
+    mockZero = { ids: ['sam'], currency: 'USD' };
+    await setup();
+    expect(screen.queryByTestId('spend-zero-share')).toBeNull();
+    await screen.unmount();
+    mockRow = row({ rule: 'bring' });
+    mockZero = { ids: ['sam'], currency: null };
+    await setup();
+    expect(screen.queryByTestId('spend-zero-share')).toBeNull();
+    await screen.unmount();
+    mockMembers = [{ user_id: 'me', weight: 100 }];
+    mockZero = { ids: ['sam'], currency: 'USD' };
+    await setup();
+    expect(screen.queryByTestId('spend-zero-share')).toBeNull();
+  });
+
+  it('opened with ?suggest=equalShares: the editor is open at equal shares and nothing is saved', async () => {
+    mockRow = row({ rule: 'bring' });
+    await setup({ suggest: 'equalShares' });
+    expect(checked('spend-rule-custom')).toBe(true);
+    expect(screen.getByTestId('spend-shares')).toBeTruthy();
+    expect(screen.getByLabelText('Your weight, 50 percent')).toBeTruthy();
+    expect(mockSave).toHaveBeenCalledTimes(0);
   });
 });

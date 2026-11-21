@@ -5,6 +5,9 @@
 //   Q5: the set-shares editor starts from saved shares that still fit, else the bill split's percents; each share also shows what it
 //       means in money when this month's shared money is known (never a made-up amount).
 //   Q6: out-of-date shares say so, with "Update shares" opening the editor.
+// 08.1-25 (owner one-earner fix 2026-11-21, Q3 A): when the saved rule gives a member a $0 share of the joint money, a card names them
+// and offers the suggestion (zeroShareSuggestion.ts); its button, or opening with `suggest`, picks A set spending split and opens the
+// editor pre-filled. Save stays the only writer: the app never switches the rule on its own.
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -37,10 +40,12 @@ import { useMemberLabel } from '../useMemberLabel';
 import { RULES, SETUPS, moneyParts, sharesFit, startingShares } from './spendRuleView';
 import { useSharedMoney } from './useSharedMoney';
 import { useSpendRule } from './useSpendRule';
+import { useZeroShare } from './useZeroShare';
+import { ZERO_SHARE_SUGGESTION, currentSuggestion, suggestionFor, type SuggestionTarget } from './zeroShareSuggestion';
 
 type Before = Pick<HouseholdSpendRuleRow, 'rule' | 'setup' | 'shares'>;
 
-export function SpendRuleScreen() {
+export function SpendRuleScreen({ suggest }: { readonly suggest?: SuggestionTarget | undefined } = {}) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const qc = useQueryClient();
@@ -62,6 +67,23 @@ export function SpendRuleScreen() {
   const [saving, setSaving] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const [conflict, setConflict] = useState<{ by: string | null } | null>(null);
+  const zero = useZeroShare(householdId, members, row, defaults, view?.setup ?? null);
+
+  // 08.1-25: the suggestion fills the editor; it never saves.
+  const openSuggestion = (target: SuggestionTarget) => {
+    setConflict(null);
+    setFailure(null);
+    setLastHolder(false);
+    setPickedRule('custom');
+    setEdited(suggestionFor(target).prefill(members.length));
+    setEditorOpen(true);
+  };
+  // Opened with ?suggest=: once the members are known, the same as pressing the card's button (state adjusted during render).
+  const [suggestDone, setSuggestDone] = useState(false);
+  if (suggest !== undefined && !suggestDone && members.length >= 2 && view !== null) {
+    setSuggestDone(true);
+    openSuggestion(suggest);
+  }
 
   const refresh = () => (householdId ? qc.invalidateQueries({ queryKey: queryKeys.householdSpendRule(householdId) }) : Promise.resolve());
 
@@ -186,6 +208,24 @@ export function SpendRuleScreen() {
   const muted = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const card = [styles.card, { backgroundColor: colors.surface }];
 
+  // 08.1-25 (Q3 A): every member sees the card, which names the person; it cannot be put away and goes once the rule changes or the
+  // share is above $0. Not shown while A set spending split is picked (the editor is the suggestion).
+  const suggestion = currentSuggestion();
+  const say = t as unknown as (key: string, values?: Readonly<Record<string, string | number>>) => string;
+  const zeroText = zero.currency === null ? null : whole.formatMoney(money(0, zero.currency));
+  const zeroLine = (): string | null => {
+    if (zeroText === null || zero.ids.length === 0) return null;
+    if (zero.ids.length === 1) {
+      const only = zero.ids[0] as string;
+      return only === userId ? say(suggestion.settingsYouKey, { zero: zeroText }) : say(suggestion.settingsKey, { name: label(only), zero: zeroText });
+    }
+    const names = zero.ids.map((id) => label(id));
+    const joined = say('decide.screens.answer.caveat.nameAnd', { a: names.slice(0, -1).join(', '), b: names[names.length - 1] as string });
+    return say(suggestion.settingsManyKey, { names: joined, zero: zeroText });
+  };
+  const savedCounts = view.counted === 'bring' || view.counted === 'bill';
+  const zeroCard = savedCounts && rule !== 'custom' ? zeroLine() : null;
+
   return (
     <Screen scroll>
       <View style={styles.back}>
@@ -237,6 +277,20 @@ export function SpendRuleScreen() {
           </View>
         ) : null}
       </View>
+
+      {zeroCard !== null ? (
+        <View style={card} testID="spend-zero-share">
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.ink }}>{zeroCard}</Text>
+          <Pill
+            label={say(suggestion.actionKey)}
+            variant="secondary"
+            onPress={() => {
+              hapticTap();
+              openSuggestion(ZERO_SHARE_SUGGESTION);
+            }}
+          />
+        </View>
+      ) : null}
 
       {showEditor ? (
         <View style={card} testID="spend-shares">

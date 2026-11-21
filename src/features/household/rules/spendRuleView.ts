@@ -3,11 +3,12 @@
 // beyond the largest-remainder split the engine itself uses.
 import type { HouseholdSpendRuleRow } from '@/db/householdSpendRules';
 import type { SplitDefaultRow } from '@/db/transactionSplits';
-import { defaultRuleFor, inferSetup, resolveSpendRule, sharedMoneyFor, type HouseholdSetup, type SpendRuleKind } from '@/engine/household';
+import { defaultRuleFor, inferSetup, resolveSpendRule, sharedMoneyFor, zeroShareMembers, type HouseholdSetup, type JointAccountFacts, type SpendRuleKind } from '@/engine/household';
 import { evenWeights } from '@/engine/household/weights';
 import { minorUnits } from '@/engine/money/types';
 import { allocate } from '@/engine/split/allocate';
-import { billWeightsOf } from '../decide/scopeSource';
+import { jointToHome, type JointAccountSource } from '@/features/decide/snapshot/v3/householdScope';
+import { billWeightsOf, settingOf } from '../decide/scopeSource';
 
 export const SETUPS: readonly HouseholdSetup[] = ['separate', 'joint', 'mixed'];
 export const RULES: readonly SpendRuleKind[] = ['bring', 'custom', 'bill'];
@@ -20,7 +21,13 @@ type Defaults = readonly Pick<SplitDefaultRow, 'category_ref' | 'rule'>[] | unde
 export function percentsOf(weights: readonly number[]): number[] {
   if (weights.length === 0) return [];
   if (weights.every((w) => w <= 0)) return [...evenWeights(weights.length)];
-  return allocate(minorUnits(100), weights.map((w) => Math.max(0, w))).map(Number);
+  // 08.1-25 (Rule 1): allocate takes only positive weights, so a member at 0 (a 100/0 bill split, a set split with a 0% member) gets
+  // 0 and the rest is split among the others; before this the screen threw on such a split.
+  const positive = weights.map((w, i) => ({ w, i })).filter((x) => x.w > 0);
+  const parts = allocate(minorUnits(100), positive.map((x) => x.w)).map(Number);
+  const out = weights.map(() => 0);
+  positive.forEach((x, k) => (out[x.i] = parts[k] ?? 0));
+  return out;
 }
 
 /** The bill split as whole percents per member, or null when the household default is "Mine only" (the rule counts as bring). */
@@ -134,4 +141,37 @@ export function sharedMoneyTotal(p: SharedMoneyParts): number | null {
 export function moneyParts(total: number | null, percents: readonly number[]): number[] | null {
   if (total === null || !Number.isInteger(total) || total <= 0 || percents.every((p) => p <= 0)) return null;
   return percents.map((_, i) => Number(sharedMoneyFor(minorUnits(total), percents, i)));
+}
+
+export interface ZeroShareParts {
+  readonly sources: readonly JointAccountSource[];
+  /** the household's Decide currency; null = not known yet (nobody is named) */
+  readonly currency: string | null;
+  readonly members: readonly Member[];
+  readonly row: Row | null;
+  readonly defaults: Defaults;
+  /** the setup in force (saved, else worked out from the accounts) */
+  readonly setup: HouseholdSetup;
+}
+
+/**
+ * 08.1-25 (owner one-earner fix 2026-11-21, Q1 A): the member ids, in member order, whose share of the joint money is $0 because of
+ * the SAVED rule (engine zeroShareMembers). Only joint totals are read. Plan 23's known gap stays: the bills due are not known here, so
+ * a joint bills account counts nothing (as the shared-money hint) and is never the reason a member is named; another currency is left
+ * out (no rate is applied here).
+ */
+export function zeroShareIdsOf(p: ZeroShareParts): string[] {
+  const currency = p.currency;
+  if (currency === null || p.members.length < 2) return [];
+  const ids = p.members.map((m) => m.user_id);
+  const counted = p.sources.filter((s) => s.purpose !== 'bills');
+  const joint: JointAccountFacts[] = jointToHome(counted, ids, (amount, c) => (c === currency ? amount : null)).map((r) => ({
+    ...r,
+    viewerBalance: minorUnits(0),
+    viewerOwnMonth: minorUnits(0),
+  }));
+  const bill = billWeightsOf(p.members, p.defaults);
+  const resolved = resolveSpendRule(settingOf(p.row), ids, bill, p.setup);
+  const billWeights = bill === null ? null : ids.map((k) => bill[k] ?? 0);
+  return zeroShareMembers({ resolved, joint, billWeights, memberCount: ids.length }).map((i) => ids[i] as string);
 }

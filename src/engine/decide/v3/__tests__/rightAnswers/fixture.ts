@@ -78,7 +78,12 @@ function withHousehold(inputs: V3Inputs, h: FixtureHousehold | undefined): V3Inp
   const notShared = h.scope === 'household' ? partners.filter((p) => counted(p) === null).map((p) => p.name) : [];
   return {
     ...moved,
-    household: { scope: h.scope, notShared, settleUp: h.settleUp === undefined ? null : { lapsedAsPayer: h.settleUp.lapsed, owed: mu(h.settleUp.owed) } },
+    household: {
+      scope: h.scope,
+      notShared,
+      settleUp: h.settleUp === undefined ? null : { lapsedAsPayer: h.settleUp.lapsed, owed: mu(h.settleUp.owed) },
+      ...(plan.zeroShare === null ? {} : { zeroShare: plan.zeroShare }), // 08.1-25: the same as the app builder (householdScope.ts)
+    },
   };
 }
 

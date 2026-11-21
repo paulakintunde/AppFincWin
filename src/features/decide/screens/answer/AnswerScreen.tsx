@@ -42,6 +42,7 @@ import { useT } from '@/i18n';
 import { stageReadingOf } from '@/features/decide/screens/logic/stageReading';
 import { HouseholdAnswerNote } from '@/features/household/decide/HouseholdAnswerNote';
 import { useHouseholdAnswer } from '@/features/household/decide/useHouseholdAnswer';
+import { ZeroShareLine } from '@/features/household/decide/ZeroShareLine';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { hapticTap } from '@/ui/haptics';
@@ -697,6 +698,17 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       </>
     );
 
+  // 08.1-25 (owner one-earner fix 2026-11-21): the member's own answer, in either scope, offers equal shares when their share of the joint
+  // money is $0 because of the rule. With neither note the frame gets undefined, as before.
+  const zeroShare = result?.caveats?.find((c) => c.code === 'share_zero_by_rule');
+  const householdNote =
+    householdScope === 'household' || zeroShare !== undefined ? (
+      <>
+        {householdScope === 'household' ? <HouseholdAnswerNote householdId={rc.householdId} today={today} /> : null}
+        <ZeroShareLine householdId={rc.householdId} caveat={zeroShare} currency={currency} today={today} />
+      </>
+    ) : undefined;
+
   return (
     <>
       <AnswerFrame
@@ -716,7 +728,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         onReadinessChoice={onReadinessChoice}
         updating={engine.updating}
         answeredRows={answeredRows}
-        householdNote={householdScope === 'household' ? <HouseholdAnswerNote householdId={rc.householdId} today={today} /> : undefined}
+        householdNote={householdNote}
       >
         {body}
       </AnswerFrame>

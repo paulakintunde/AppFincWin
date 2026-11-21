@@ -6,3 +6,5 @@ export { jointSlices, withoutJointSlices } from './jointMoney';
 export type { JointAccountFacts, JointPurpose, JointSplit, JointSlice, JointSlices } from './jointMoney';
 export { householdPlan, jointFactsOf } from './plan';
 export type { HouseholdPlan, HouseholdPlanArgs, JointLayShape, JointRaw } from './plan';
+export { zeroShareMembers } from './zeroShare';
+export type { ZeroShareArgs } from './zeroShare';

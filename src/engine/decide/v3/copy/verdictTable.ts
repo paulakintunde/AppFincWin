@@ -582,6 +582,7 @@ export const CAVEAT_KEYS = Object.freeze({
   expected_bills: 'decide.v3.caveat.expected_bills',
   household_not_shared: 'decide.v3.caveat.household_not_shared',
   shared_money: 'decide.v3.caveat.shared_money',
+  share_zero_by_rule: 'decide.v3.caveat.share_zero_by_rule',
   rate_estimated: 'decide.v3.caveat.rate_estimated',
   tax_not_included: 'decide.v3.notice.tax_not_included',
   long_plan: 'decide.v3.caveat.long_plan',
@@ -600,6 +601,7 @@ export const CAVEAT_VALUE_KEYS: Readonly<Record<CaveatCode, readonly string[]>> 
   expected_bills: [],
   household_not_shared: ['names'],
   shared_money: ['account'],
+  share_zero_by_rule: ['rule', 'zero'], // 08.1-25: rule = 'bring' | 'bill' (the screen names it); zero = the currency's zero, filled by the screen
   rate_estimated: [],
   tax_not_included: [],
   long_plan: ['months'],
