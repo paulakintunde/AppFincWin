@@ -117,6 +117,7 @@ function applyVersionedRow(
     // a version increase may mean the splits changed (split changes bump the parent row)
     void qc.invalidateQueries({ queryKey: queryKeys.householdBalances(hid) });
     void qc.invalidateQueries({ queryKey: queryKeys.settlements(hid) });
+    void qc.invalidateQueries({ queryKey: queryKeys.jointAccountFactsRoot(hid) }); // 08.1-22: a joint account's balance and month totals moved
   }
   return 'apply';
 }
@@ -147,6 +148,15 @@ function applyHouseholdEvent(qc: QueryClient, ctx: ApplyContext, row: Record<str
   if (SPLIT_KINDS.has(kind)) {
     void qc.invalidateQueries({ queryKey: queryKeys.splitDefaults(hid) });
     void qc.invalidateQueries({ queryKey: queryKeys.householdBalances(hid) });
+    return 'invalidate';
+  }
+  if (kind === 'spend_rule_changed') {
+    void qc.invalidateQueries({ queryKey: queryKeys.householdSpendRule(hid) });
+    return 'invalidate';
+  }
+  if (kind === 'joint_purpose_changed') {
+    void qc.invalidateQueries({ queryKey: queryKeys.accounts(hid) });
+    void qc.invalidateQueries({ queryKey: queryKeys.jointAccountFactsRoot(hid) });
     return 'invalidate';
   }
   if (kind.startsWith('settle') || kind === 'written_off') {
