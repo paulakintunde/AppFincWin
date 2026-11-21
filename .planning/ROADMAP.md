@@ -34,6 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21)
+- [ ] **Phase 08.13: Private rooms in a household** (INSERTED) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
@@ -1556,6 +1557,19 @@ Plans:
   4. The non-earning partner's own money and privacy are respected: nothing they keep private is shown to the earner.
 **Plans:** 0 plans (questions before build)
 
+### Phase 08.13: Private rooms in a household (INSERTED)
+
+**Goal:** A household can hold private rooms, such as the parents' own arrangement, a whole-family pot, or two roommates' joint account. Only a room's members know it exists. Every account, line and series sits in exactly one room, and today's household becomes the "everyone" room. Each room has its own spending rule, limit, personal money, settle-up and Decide choice, and money is counted once across overlapping rooms.
+**Requirements**: TBD (from 08.12-RESEARCH-ROOMS.md and the owner's answers in 08.12-OWNER-ANSWERS.md, round 5)
+**Depends on:** Phase 08.12 (its new tables are keyed by room from the start)
+**Size:** L. It touches every shared-table RLS policy, every RPC, the audience of every notice, the two-user privacy test (which becomes multi-room) and the export manifest.
+**Success Criteria** (draft):
+  1. Members outside a room see nothing of it, and the multi-room privacy test proves it.
+  2. The cases RM-01..RM-12 pass, and money is counted once across overlapping rooms in Just me and in each room's Decide answer.
+  3. Each room's removal policy is chosen when the room is made and shown to everyone invited. A removed member keeps their own money and sees settle-up until it is cleared.
+  4. Kids get their own login from age 16, with adult privacy. Under 16, they appear only as names.
+**Plans:** 0 plans (questions before build)
+
 ### Phase 08.2: Decide re-audit (INSERTED)
 
 **Goal:** Prove 10/10, first by checking every fix ID in the Decide fix plan, then with a fresh audit of Decide alongside Activity, Home, Grow and Household. Source: `.planning/research/DECIDE-FIX-PLAN.md` section 9.
@@ -1721,6 +1735,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 18/22 | In progress | - |
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
+| 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
