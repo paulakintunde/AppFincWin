@@ -17,7 +17,7 @@ describe('Decide is paused', () => {
   it('the card has the title and body and no button', async () => {
     await wrap(<DecidePausedCard />);
     expect(screen.getByText('Decide is paused')).toBeTruthy();
-    expect(screen.getByText('Your records are safe. Answers come back soon.')).toBeTruthy();
+    expect(screen.getByText('Your data is safe. Results will be back soon.')).toBeTruthy();
     expect(screen.queryByRole('button')).toBeNull();
   });
 

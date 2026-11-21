@@ -73,14 +73,14 @@ export const members = {
     changedFirst: '{{name}} changed this first',
   },
   partner: {
-    countInDecide: 'Count {{name}}’s money in my Decide checks',
+    countInDecide: 'Include {{name}}’s money in my Decide checks',
     helper:
       'Only a single rounded total is used. {{name}}’s records are never shown to you. {{name}} has to say yes on their side too.',
     waiting: 'Waiting for {{name}} to agree',
     onForBoth: 'On for both of you',
-    caveat: '{{name}} hasn’t logged shared bills since {{date}}, so shared costs may be higher.',
+    caveat: '{{name}} hasn’t entered shared bills since {{date}}, so shared costs could be higher.',
     caveatBadge: 'Shared bills',
-    caveatSpoken: 'Shared bills. {{name}} hasn’t logged shared bills since {{date}}, so shared costs may be higher.',
+    caveatSpoken: 'Shared bills. {{name}} hasn’t added shared bills since {{date}}, so shared costs could be higher.',
     stateOff: 'Off',
     stateOn: 'On',
     rowSpoken: '{{label}}. {{state}}',

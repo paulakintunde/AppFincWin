@@ -950,6 +950,8 @@ export function judge(j: JudgeInput): Result {
   let notYetVariant: Variant | null = null;
   let readyBy: ReadyBy | null = null;
   let beyondYear = false;
+  // 08.1-14 (owner answer 5): true once the D-05 search has read the date (a later day, the same day or beyond a year).
+  let readyChecked = false;
   if (code === 'not_yet') {
     const monthlyLeads = mon !== null && mon.code === 'not_yet' && (one.code !== 'not_yet' || readyKey(mon.readyBy) > readyKey(one.readyBy));
     notYetVariant = monthlyLeads ? 'not_covered' : one.variant;
@@ -968,6 +970,7 @@ export function judge(j: JudgeInput): Result {
     // No such day inside 12 months: no date, and the answer says so. A short month (no date above) and an already-short month (D-63) keep none.
     if (readyBy !== null && !monthAlreadyShort(month.typicalLeft) && j.safeStart !== undefined) {
       const found = j.safeStart(readyKey(readyBy));
+      readyChecked = found !== null;
       if (found !== null && 'beyond' in found) {
         readyBy = null;
         beyondYear = true;
@@ -1165,6 +1168,8 @@ export function judge(j: JudgeInput): Result {
     missing: [],
     reasons: unique([...(said === null ? reasons : [...reasons, ...said.reasons]), ...(cashPlan === null && firstPaymentLater(purchase, month.month) ? (['first_payment_later'] as const) : [])]),
     readyBy: alreadyShort ? null : readyBy,
+    // 08.1-14 (owner answer 5): a Not yet date the D-05 search never read (a sale or replace, pay from history, capped or seasonal pay).
+    ...(finalCode === 'not_yet' && !alreadyShort && readyBy !== null && !readyChecked ? { readyByUntested: true as const } : {}),
     band,
     layers,
     confidence: restsOn ? withReason(confidence, 'user_said_cover', (said as MonthlyPart).saidCover as { monthly: number; months: number }) : confidence,

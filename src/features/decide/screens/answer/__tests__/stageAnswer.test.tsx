@@ -66,12 +66,12 @@ describe('08.1-20 StageLine under the basis sentence', () => {
     await render(first());
     expect(screen.getByText(S.line.first_read)).toBeTruthy();
     expect(screen.getByText(S.line.importLink)).toBeTruthy();
-    expect(screen.getByTestId('answer-basis').props.children).toBe('Based on the figures you typed, not your records.');
+    expect(screen.getByTestId('answer-basis').props.children).toBe('Based on the numbers you typed in, not your account records.');
   });
 
   it('full answer with 2 months names the window and links to add earlier months', async () => {
     await render(two());
-    expect(screen.getByText('A full answer from 2 of 3 months. Three months add pay swings and what could move this answer.')).toBeTruthy();
+    expect(screen.getByText('Full check using 2 of 3 months. Three months add income changes and what could shift this result.')).toBeTruthy();
     expect(screen.getByText(S.line.addLink)).toBeTruthy();
     expect(textOf(screen.getByTestId('answer-basis'))).toContain('Based on your last 2 months of records');
   });
@@ -79,8 +79,8 @@ describe('08.1-20 StageLine under the basis sentence', () => {
   it('deeper: no StageLine and no stage word anywhere on the answer', async () => {
     await render(four());
     expect(screen.queryByTestId('answer-stage-line')).toBeNull();
-    expect(allText()).not.toContain('First read');
-    expect(allText()).not.toContain('Full answer');
+    expect(allText()).not.toContain('First look');
+    expect(allText()).not.toContain('Full check');
     expect(textOf(screen.getByTestId('answer-basis'))).toContain('Based on your last 4 months of records');
   });
 
@@ -96,7 +96,7 @@ describe('08.1-20 the pay-window row', () => {
   it('a variable earner judged over 9 months gets the row; a steady earner gets none', async () => {
     await render({ ...four(), months: 9, basis: { kind: 'records', months: 9, upTo: UP_TO }, treated: 'variable' });
     expect(screen.getByTestId('answer-pay-window')).toBeTruthy();
-    expect(allText()).toContain('Pay is judged over your last 9 months.');
+    expect(allText()).toContain('Income is averaged over your last 9 months.');
   });
 
   it('a steady earner gets none', async () => {

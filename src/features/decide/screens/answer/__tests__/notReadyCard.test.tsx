@@ -201,7 +201,7 @@ describe('the lead line (06.1-66 OQ-66-1, DN-10: no count)', () => {
     expect(screen.queryByText(/0 things/)).toBeNull();
     expect(screen.getByText('Not ready yet')).toBeTruthy();
     expect(screen.queryByTestId('answer-not-ready-more')).toBeNull();
-    await press(screen.getByText('Get a first read'));
+    await press(screen.getByText('Get a first look'));
     expect(calls.estimates).toBe(1);
     await press(screen.getByText('Finish setup'));
     expect(calls.finish).toBe(1);
@@ -220,30 +220,30 @@ describe('quick estimates only when they can count (C-1, F-1)', () => {
 
   it('with no earlier month, estimates are offered alongside the named items', async () => {
     await card([ITEMS.spendingNow as ReadinessItem], true);
-    expect(screen.getByText('Get a first read')).toBeTruthy();
+    expect(screen.getByText('Get a first look')).toBeTruthy();
     expect(screen.getByTestId('answer-not-ready-finish').props.accessibilityRole).toBe('link');
   });
 });
 
 describe('08.1-21: first read and import actions (UI-SPEC owner answer 3)', () => {
-  it('leads with Get a first read, then the import button, then the note, then Finish setup', async () => {
+  it('leads with Get a first look, then the import button, then the note, then Finish setup', async () => {
     const { calls } = await card([], true);
     const tree = JSON.stringify(screen.toJSON());
     const at = (s: string): number => tree.indexOf(s);
-    expect(at('Get a first read')).toBeGreaterThan(-1);
-    expect(at('Get a first read')).toBeLessThan(at('Import statements for a full answer'));
-    expect(at('Import statements for a full answer')).toBeLessThan(at('A first read uses the figures you type'));
-    expect(at('A first read uses the figures you type')).toBeLessThan(at('Finish setup'));
-    await press(screen.getByText('Import statements for a full answer'));
+    expect(at('Get a first look')).toBeGreaterThan(-1);
+    expect(at('Get a first look')).toBeLessThan(at('Import statements for a full check'));
+    expect(at('Import statements for a full check')).toBeLessThan(at('A first look uses the numbers you type in'));
+    expect(at('A first look uses the numbers you type in')).toBeLessThan(at('Finish setup'));
+    await press(screen.getByText('Import statements for a full check'));
     expect(calls.imports).toBe(1);
-    await press(screen.getByText('Get a first read'));
+    await press(screen.getByText('Get a first look'));
     expect(calls.estimates).toBe(1);
   });
 
   it('without estimates there is no import button, note or first-read button (branch unchanged)', async () => {
     await card([ITEMS.pay as ReadinessItem], false);
-    expect(screen.queryByText('Import statements for a full answer')).toBeNull();
-    expect(screen.queryByText('Get a first read')).toBeNull();
+    expect(screen.queryByText('Import statements for a full check')).toBeNull();
+    expect(screen.queryByText('Get a first look')).toBeNull();
     expect(screen.queryByTestId('answer-not-ready-note')).toBeNull();
     expect(screen.getByText('Finish setup')).toBeTruthy();
   });

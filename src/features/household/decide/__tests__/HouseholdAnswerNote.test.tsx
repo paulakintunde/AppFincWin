@@ -64,21 +64,21 @@ describe('HouseholdAnswerNote', () => {
   it('names the counted rule in words', async () => {
     mockNote = note({ counted: 'bill', myPercent: 60 });
     await show();
-    expect(screen.getByText('Counted: your 60% of the shared money, the same as the bill split.')).toBeTruthy();
+    expect(screen.getByText('Counted: your 60% of shared money, matching the bill split.')).toBeTruthy();
   });
 
-  it('adds the out-of-date line, the same words as settings', async () => {
+  it('adds the out-of-date line (08.1-14: the owner reworded the answer line only)', async () => {
     mockNote = note({ outOfDate: true });
     await show();
     expect(screen.getByText('Counted: what you bring.')).toBeTruthy();
-    expect(screen.getByText('Spending shares need updating: someone joined or left. Until then each check counts what each person brings.')).toBeTruthy();
+    expect(screen.getByText('Update spending shares because someone joined or left. Until you do, each check counts what each person brings in.')).toBeTruthy();
   });
 
   it('keeps the shared-bills caveat beside the rule line', async () => {
     mockNote = note({ counted: 'custom', myPercent: 45 });
     mockLastShared = [{ member_id: 'sam', last_date: '2026-09-01' }];
     await show();
-    expect(screen.getByText('Counted: your 45% of the shared money.')).toBeTruthy();
+    expect(screen.getByText('Counted: your 45% of shared money.')).toBeTruthy();
     expect(screen.getByTestId('shared-bills-caveat')).toBeTruthy();
   });
 });

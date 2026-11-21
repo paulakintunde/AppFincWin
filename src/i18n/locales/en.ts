@@ -941,7 +941,7 @@ const en = {
       a11y: '{{figure}} left after everything, {{entries}}. In {{in}}. Out {{out}}.',
       a11yBalance: '{{figure}} left after everything, {{entries}}. {{note}}.',
       a11yStillToCome: '{{amount}} still to come.',
-      shareNote: 'Your share of shared lines.',
+      shareNote: 'Your share of shared expenses.',
     },
     display: {
       title: 'Display',
@@ -2058,7 +2058,10 @@ const en = {
           chip: 'Not yet',
           title: 'Not yet. Your spare money and extra savings don’t cover this.',
           // 08.1-14 (D-05): the ready date is the first start that keeps the account at or above {{zero}} for its own 90 days (08.1-06).
-          body: 'Ready by {{readyMonth}}. Based on your records, buying then keeps your account above {{zero}} for the next 90 days.',
+          body: 'Affordable by {{readyMonth}}. Based on your records, buying then keeps your balance above {{zero}} for at least 90 days.',
+          // 08.1-14 (owner answer 5): the short line where the D-05 search did not read the date (a sale or replace, pay from history,
+          // capped or seasonal pay; Result.readyByUntested). The 90-day sentence is not said there.
+          bodyUntested: 'Affordable by {{readyMonth}}.',
         },
         monthlyShort: {
           chip: 'Short each month',
@@ -2303,7 +2306,7 @@ const en = {
         quoted_differs: 'The quoted payment of {{quoted}} differs from the {{computed}} worked out here.',
         implied_rate: 'The figures given imply about {{rate}}%\u00A0a year.',
         deferred_interest_term: 'If the balance isn’t cleared by the end of the pause, interest back to the start could apply.',
-        back_charge_cost: 'If not paid in full by {{date}}, about {{amount}} of interest is charged back.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
+        back_charge_cost: 'If you don’t pay it off by {{date}}, you’ll be charged about {{amount}} in back interest.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
         promo_cleared: 'The promotion ends on {{date}}. Paid off by then, no interest is charged.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
         at_todays_rate: 'Converted from {{currency}} at today’s rate.',
         low_month: 'In {{month}}, a low month, about {{left}} remains against {{monthly}} a month.',
@@ -2337,10 +2340,10 @@ const en = {
         overdraft_not_cleared_no_pay: 'No pay is due in the next 90 days, so {{account}} would still be {{below}} below {{zero}}.',
         overdraft_cost_90d: 'At {{rate}}%, the days below {{zero}} cost about {{cost}}. That counts the next 90 days. This is an estimate.',
         wait_clears: 'Waiting until {{month}} keeps the account above {{zero}}.',
-        not_within_year: 'Not within a year at your current pace.', // 08.1 D-06 (draft: goes to the wording sign-off)
-        below_zero_without: 'Your account goes below {{zero}} on {{date}} even without this.', // 08.1 D-07, shown as the BelowZeroLine (08.1-14; draft: wording sign-off)
-        below_zero_later_without: 'Later on, your account goes below {{zero}} on {{date}} even without this.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
-        below_zero_later_with: 'With this, your account goes below {{zero}} on {{date}}.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
+        not_within_year: 'Not within a year at your current spending, income, and saving pace.', // 08.1 D-06 (draft: goes to the wording sign-off)
+        below_zero_without: 'Your account goes below {{zero}} on or before {{date}} even without this.', // 08.1 D-07, shown as the BelowZeroLine (08.1-14; draft: wording sign-off)
+        below_zero_later_without: 'Even without this, your balance drops below {{zero}} on or before {{date}}.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
+        below_zero_later_with: 'This puts your account balance below {{zero}} on or before {{date}}.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
         overdraft_repeat: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays. At {{rate}}%, that costs about {{cost}} over the next 90 days.',
         overdraft_repeat_no_rate: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays.',
         other_account_overdrawn: 'Your {{account}} account is {{below}} below {{zero}}. At {{rate}}%, that costs about {{monthlyCost}} a month.',
@@ -2379,14 +2382,14 @@ const en = {
       basis: {
         partialOne: 'Based on your one full month of records, up to {{date}}.',
         partial: 'Based on your last {{used}} months of records, up to {{date}}.',
-        records: 'Based on your last {{months}} months of records, up to {{date}}.',
-        quickEstimates: 'Based on the figures you typed, not your records.',
-        payWindow: 'Pay is judged over your last {{months}} months.',
+        records: 'Based on your last {{months}} months of records, through {{date}}.',
+        quickEstimates: 'Based on the numbers you typed in, not your account records.',
+        payWindow: 'Income is averaged over your last {{months}} months.',
         recordsWithReason: {
-          user_said_cover: 'Based on your last {{months}} months of records, up to {{date}}, and on what you said about covering it.',
-          quick_estimates: 'Based on your last {{months}} months of records, up to {{date}}, and your quick estimates.',
-          pay_missed: 'Based on your last {{months}} months of records, up to {{date}}, leaving out pay that hasn’t arrived.',
-          close_to_line: 'Based on your last {{months}} months of records, up to {{date}}. This is close to your limit.',
+          user_said_cover: 'Based on your last {{months}} months of records, through {{date}}, and on what you said about how you’ll pay for it.',
+          quick_estimates: 'Based on your last {{months}} months of records, through {{date}}, plus your quick estimates.',
+          pay_missed: 'Based on your last {{months}} months of records, through {{date}}, not counting pay that hasn’t come in yet.',
+          close_to_line: 'Based on your last {{months}} months of records, through {{date}}. This is close to your limit.',
         },
       },
       // 05.4 FIN-25: at most one next step, stated as a fact.

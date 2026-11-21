@@ -18,7 +18,7 @@ const show = (hasJointAccount: boolean | undefined, figure: number | null = 50_0
     </ThemeProvider>,
   );
 
-const LINE = 'Count only your own accounts. Joint accounts are counted separately.';
+const LINE = 'Only counts your personal accounts. Joint accounts are counted on their own.';
 
 describe('SpareMoneySheet joint-account line', () => {
   it('shows under the own-figure field when the person has a joint account', async () => {

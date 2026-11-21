@@ -13,12 +13,12 @@ const event = (kind: string, params: Record<string, unknown> = {}): HouseholdEve
 describe('household notices for the spending rule and joint purposes', () => {
   it('names who changed how spending is shared', async () => {
     const { result } = await renderHook(() => useNoticeFormat('h', 'Home'));
-    expect(result.current.text(event('spend_rule_changed', { before: {}, after: {} }))).toBe('Sam changed how spending is shared.');
+    expect(result.current.text(event('spend_rule_changed', { before: {}, after: {} }))).toBe('Sam updated how spending is split.');
   });
 
   it('names the account whose purpose changed, or says a joint account when the name is missing', async () => {
     const { result } = await renderHook(() => useNoticeFormat('h', 'Home'));
-    expect(result.current.text(event('joint_purpose_changed', { account_name: 'Bills pot' }))).toBe('Sam changed what Bills pot is for.');
-    expect(result.current.text(event('joint_purpose_changed'))).toBe('Sam changed what a joint account is for.');
+    expect(result.current.text(event('joint_purpose_changed', { account_name: 'Bills pot' }))).toBe('Sam updated the purpose of Bills pot.');
+    expect(result.current.text(event('joint_purpose_changed'))).toBe('Sam updated the purpose of a joint account.');
   });
 });

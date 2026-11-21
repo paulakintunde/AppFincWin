@@ -4,7 +4,7 @@
 // - D-07: below_zero_without is the BelowZeroLine directly under the verdict card (tight tint, stateTight glyph, "Warning"), before the
 //   facts, and FactLines does not say it again. {{zero}} follows the show-cents setting.
 // - D-05: the Not yet ready date says what it means (above {{zero}} for the next 90 days).
-// - D-06: "Not within a year at your current pace." takes the ready date's place; the cheaper one and Save for it lead the actions.
+// - D-06: "Not within a year at your current spending, income, and saving pace." takes the ready date's place; the cheaper one and Save for it lead the actions.
 import React from 'react';
 import { screen, within } from '@testing-library/react-native';
 import { judgeCheck, prepare, type Fact, type Result } from '@/engine/decide/v3';
@@ -196,7 +196,44 @@ describe('D-05: the ready-by sentence on a Not yet answer', () => {
     const r = ledgerRun('N05'); // not_yet, not_covered, ready later
     await frame(r);
     const label = String(screen.getByTestId('answer-verdict').props.accessibilityLabel);
-    expect(label).toMatch(/Ready by [A-Z][a-z]+ \d{4}\. Based on your records, buying then keeps your account above \$0\.00 for the next 90 days\./);
+    expect(label).toMatch(/Affordable by [A-Z][a-z]+ \d{4}\. Based on your records, buying then keeps your balance above \$0\.00 for at least 90 days\./);
+  });
+
+  // 08.1-14 (owner answer 5): where plan 06's search did not read the date, the body is the short line, never the 90-day sentence.
+  const engineRun = (id: string): Run => {
+    const found = loadCases().find((c) => c.id === id);
+    if (found === undefined) throw new RangeError(id);
+    const { inputs, check } = toEngineInputs(found.fixture);
+    return { inputs, check, evaluation: judgeCheck(prepare(inputs), check) };
+  };
+  const expectShortLine = async (r: Run): Promise<void> => {
+    await frame(r);
+    const label = String(screen.getByTestId('answer-verdict').props.accessibilityLabel);
+    expect(label).toMatch(/Affordable by [A-Z][a-z]+ \d{4}\./);
+    expect(label).not.toMatch(/90 days/);
+  };
+
+  it('a sale or replace (SO-02, engine run): the short line "Affordable by {month}."', async () => {
+    const r = engineRun('SO-02');
+    expect(r.evaluation.result.readyByUntested).toBe(true);
+    await expectShortLine(r);
+  });
+
+  it('pay worked out from history: the short line', async () => {
+    const r = withResult(ledgerRun('N05'), (res) => ({ readyByUntested: true, notices: [...res.notices, { code: 'pay_expected_from_history', values: { amount: 280_000, day: 5, months: 6 } }] as Result['notices'] }));
+    await expectShortLine(r);
+  });
+
+  it('capped or seasonal pay: the short line', async () => {
+    const r = withResult(ledgerRun('N05'), (res) => ({ readyByUntested: true, notices: [...res.notices, { code: 'pay_capped_expected', values: { capped: 225_000 } }] as Result['notices'] }));
+    await expectShortLine(r);
+  });
+
+  it('a date the search read keeps the 90-day sentence (normal case)', async () => {
+    const r = ledgerRun('N05');
+    expect(r.evaluation.result.readyByUntested).toBeUndefined();
+    await frame(r);
+    expect(String(screen.getByTestId('answer-verdict').props.accessibilityLabel)).toMatch(/for at least 90 days\./);
   });
 
   it('the en text keeps {{zero}}, never a literal $0', () => {
@@ -209,10 +246,10 @@ describe('D-05: the ready-by sentence on a Not yet answer', () => {
 describe('D-06: no date within a year', () => {
   const beyond = (r: Run): Run => withResult(r, (res) => ({ readyBy: null, facts: [{ code: 'not_within_year', values: {} } as unknown as Fact, ...res.facts] }));
 
-  it('"Not within a year at your current pace." replaces the ready-by line', async () => {
+  it('"Not within a year at your current spending, income, and saving pace." replaces the ready-by line', async () => {
     await frame(beyond(ledgerRun('N05')));
-    expect(screen.getByText('Not within a year at your current pace.')).toBeTruthy();
-    expect(String(screen.getByTestId('answer-verdict').props.accessibilityLabel)).not.toMatch(/Ready by/);
+    expect(screen.getByText('Not within a year at your current spending, income, and saving pace.')).toBeTruthy();
+    expect(String(screen.getByTestId('answer-verdict').props.accessibilityLabel)).not.toMatch(/Affordable by/);
   });
 
   it('the cheaper one, then Save for it, lead the action bar with equal weight', async () => {
@@ -243,8 +280,8 @@ describe('D-06: no date within a year', () => {
 
 describe('08.1-14 wording changes', () => {
   it('the later-dip facts read "on {{date}}" (FOLLOWUPS 24|14)', () => {
-    expect(en.decide.v3.fact.below_zero_later_without).toBe('Later on, your account goes below {{zero}} on {{date}} even without this.');
-    expect(en.decide.v3.fact.below_zero_later_with).toBe('With this, your account goes below {{zero}} on {{date}}.');
-    expect(en.decide.v3.fact.below_zero_without).toBe('Your account goes below {{zero}} on {{date}} even without this.');
+    expect(en.decide.v3.fact.below_zero_later_without).toBe('Even without this, your balance drops below {{zero}} on or before {{date}}.');
+    expect(en.decide.v3.fact.below_zero_later_with).toBe('This puts your account balance below {{zero}} on or before {{date}}.');
+    expect(en.decide.v3.fact.below_zero_without).toBe('Your account goes below {{zero}} on or before {{date}} even without this.');
   });
 });

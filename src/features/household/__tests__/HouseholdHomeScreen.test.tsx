@@ -193,7 +193,7 @@ describe('HouseholdHomeScreen', () => {
     ['How new shared lines are split', '/household/split-default'],
     ['Category defaults', '/household/category-defaults'],
     ['Shared accounts', '/household/shared-accounts'],
-    ['How spending is shared', '/household/spending'],
+    ['How spending is split', '/household/spending'],
   ])('the Rules card row %s opens %s', async (label, route) => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
     await setup();
@@ -201,11 +201,11 @@ describe('HouseholdHomeScreen', () => {
     expect(mockPush).toHaveBeenCalledWith(route);
   });
 
-  it('08.1-23 Q1/Q6: How spending is shared is the fourth row and shows the current rule, or Needs updating', async () => {
+  it('08.1-23 Q1/Q6: How spending is split is the fourth row and shows the current rule, or Needs updating', async () => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
     mockSpend = { ...mockSpend, view: { asked: 'bring', outOfDate: false } };
     await setup();
-    expect(screen.getByText('How spending is shared')).toBeTruthy();
+    expect(screen.getByText('How spending is split')).toBeTruthy();
     expect(screen.getByText('What each person brings')).toBeTruthy();
   });
 
@@ -218,14 +218,14 @@ describe('HouseholdHomeScreen', () => {
 
   it('08.1-23 Q1: there is no spending row for a household of one', async () => {
     await setup();
-    expect(screen.queryByText('How spending is shared')).toBeNull();
+    expect(screen.queryByText('How spending is split')).toBeNull();
   });
 
   it('08.1-23 Q9: one card counts the joint accounts with no purpose, singular for one, and goes to Shared accounts', async () => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
     mockSpend = { view: null, jointAccounts: [{ id: 'j1' }, { id: 'j2' }], purposes: [{ id: 'j1', joint_purpose: null }, { id: 'j2', joint_purpose: 'bills' }] };
     await setup();
-    expect(screen.getByText('1 joint account has no purpose set. Until then it counts as everyday spending.')).toBeTruthy();
+    expect(screen.getByText('1 joint account doesn’t have a purpose set yet. Until then, it counts as everyday spending.')).toBeTruthy();
     await fireEvent.press(screen.getByTestId('purpose-missing-action'));
     expect(mockPush).toHaveBeenCalledWith('/household/shared-accounts');
   });
@@ -234,7 +234,7 @@ describe('HouseholdHomeScreen', () => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
     mockSpend = { view: null, jointAccounts: [{ id: 'j1' }, { id: 'j2' }], purposes: [{ id: 'j1', joint_purpose: null }] };
     await setup();
-    expect(screen.getByText('2 joint accounts have no purpose set. Until then they count as everyday spending.')).toBeTruthy();
+    expect(screen.getByText('2 joint accounts don’t have a purpose set yet. Until then, they count as everyday spending.')).toBeTruthy();
   });
 
   it('08.1-23 Q9: no card once every joint account has a purpose', async () => {

@@ -64,7 +64,7 @@ export function AsCheckedAnswer({ stored, dateText, currency, today, country = n
   return (
     <View testID="past-as-checked" style={styles.stack}>
       {banner}
-      <VerdictCard code={result.code} variant={result.variant} once={once1} values={lines.verdictValues} caution={caution} lead={lines.afterBuy.lead?.text ?? null} boughtOn={lines.afterBuy.boughtOn?.text ?? null} after={belowZeroOf(lines.facts)} />
+      <VerdictCard code={result.code} variant={result.variant} once={once1} values={lines.verdictValues} caution={caution} readyUntested={result.readyByUntested === true} lead={lines.afterBuy.lead?.text ?? null} boughtOn={lines.afterBuy.boughtOn?.text ?? null} after={belowZeroOf(lines.facts)} />
       <FactLines facts={[...lines.facts, ...lines.missing]} country={country} />
       <LegalBlock basis={lines.basis} caveat={lines.caveat} caveatFigures={lines.caveatFigures} onCantSee={onCantSee} />
     </View>
