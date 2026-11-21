@@ -1,6 +1,6 @@
 import fc from 'fast-check';
 import { minorUnits } from '../../money/types';
-import { householdDelta, householdLeft } from '../pool';
+import { householdDelta, householdLeft, spendDelta, spendSlice } from '../pool';
 
 const mu = minorUnits;
 
@@ -34,6 +34,48 @@ describe('08.1-08 householdLeft (pool and split, owner 2026-11-20)', () => {
         expect(x + y).toBe(a + b);
       }),
       { numRuns: 200, seed: 0x0818 },
+    );
+  });
+});
+
+describe('08.1-22 spendSlice / spendDelta (the group\'s spending rule)', () => {
+  const bring = { kind: 'bring' } as const;
+  const shares = (...weights: number[]) => ({ kind: 'shares', weights }) as const;
+  it('What each person brings is my own money', () => {
+    expect(spendSlice(mu(100_000), [null, mu(400_000)], bring, 0)).toBe(100_000);
+    expect(spendDelta(mu(100_000), [null, mu(400_000)], bring, 0)).toBe(0);
+  });
+  it('HH-14/HH-15: a set 50/50 split of $5,000', () => {
+    expect(spendSlice(mu(100_000), [null, mu(400_000)], shares(50, 50), 0)).toBe(250_000);
+    expect(spendSlice(mu(400_000), [mu(100_000), null], shares(50, 50), 1)).toBe(250_000);
+  });
+  it('HH-21: a member who does not count is left out and the shares re-scale (cents, spare cent to the larger remainder)', () => {
+    const lefts = [mu(60_000), mu(120_000), null] as const;
+    const ben = spendSlice(mu(60_000), lefts, shares(40, 30, 30), 0);
+    const cat = spendSlice(mu(120_000), [null, null, null], shares(40, 30, 30), 1);
+    expect(ben).toBe(102_857);
+    expect(spendSlice(mu(120_000), [mu(60_000), mu(120_000), null], shares(40, 30, 30), 1)).toBe(77_143);
+    expect(cat).toBe(120_000); // alone in the pool: own money
+  });
+  it('a member with 0% has a zero slice (HH-24), and a pool whose shares are all zero is my own money', () => {
+    expect(spendSlice(mu(30_000), [mu(270_000), null], shares(100, 0), 1)).toBe(0);
+    expect(spendSlice(mu(30_000), [mu(270_000), null], shares(0, 0), 1)).toBe(30_000);
+  });
+  it('a pool of one is my own money', () => {
+    expect(spendSlice(mu(30_000), [null, null], shares(50, 50), 1)).toBe(30_000);
+  });
+  it('property: slices of everyone in the pool add up to the pool', () => {
+    fc.assert(
+      fc.property(
+        fc.array(fc.integer({ min: -2_000_000, max: 2_000_000 }), { minLength: 3, maxLength: 3 }),
+        fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 3, maxLength: 3 }),
+        (lefts, weights) => {
+          fc.pre(weights.every((w) => w > 0));
+          const total = [0, 1, 2].reduce((s, i) => s + spendSlice(mu(lefts[i]!), lefts.map((l, j) => (j === i ? null : mu(l))), shares(...weights), i), 0);
+          expect(total).toBe(lefts.reduce((a, b) => a + b, 0));
+        },
+      ),
+      { numRuns: 200, seed: 0x2202 },
     );
   });
 });
