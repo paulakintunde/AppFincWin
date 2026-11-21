@@ -40,6 +40,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'interest_rate',
     // 08 (D-13): a joint account
     'is_shared', 'tombstone_of',
+    // 08.1-22/23: what a joint account is for, and whether its savings can be spent or are the shared safety net
+    'joint_purpose', 'joint_savings_spendable', 'joint_safety_net',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'icon_key', 'created_at', 'updated_at'],
   category_rules: [
@@ -73,6 +75,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   transaction_splits: ['id', 'transaction_id', 'household_id', 'member_id', 'former_member_key', 'position', 'share', 'weight_snapshot', 'created_at'],
   transaction_member_categories: ['transaction_id', 'user_id', 'household_id', 'category_id'],
   household_split_defaults: ['id', 'household_id', 'category_ref', 'rule', 'created_at', 'updated_at'],
+  // 08.1-22: the group's spending rule, setup and set shares (version is internal and not exported)
+  household_spend_rules: ['household_id', 'rule', 'setup', 'shares', 'updated_by', 'created_at', 'updated_at'],
   settlements: [
     'id', 'household_id', 'kind', 'payer_id', 'receiver_id', 'payer_former_key', 'receiver_former_key', 'amount', 'currency', 'status',
     'created_by', 'payer_account_id', 'receiver_account_id', 'payer_tx_id', 'receiver_tx_id', 'payer_fx_rate', 'receiver_fx_rate',
