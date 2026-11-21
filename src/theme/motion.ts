@@ -64,6 +64,33 @@ export function useReduceMotion(): boolean {
   return reduced;
 }
 
+/**
+ * 08.1-24: like useReduceMotion, but null until AccessibilityInfo has answered. A motion that must never start for a person with
+ * Reduce Motion on (the caution sign's breathing) waits for a known `false`. useReduceMotion keeps its `false` start for its callers.
+ */
+export function useReduceMotionKnown(): boolean | null {
+  const [reduced, setReduced] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (mounted) setReduced(value);
+    });
+
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (value: boolean) => {
+      setReduced(value);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
+
+  return reduced;
+}
+
 export interface Motion {
   reduced: boolean;
   duration: (ms: number) => number;
