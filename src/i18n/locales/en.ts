@@ -2380,8 +2380,8 @@ const en = {
       },
       // 05.4 UX-04 / CMP-F12: the one plain sentence under every answer, never more confident than the answer.
       basis: {
-        partialOne: 'Based on your one full month of records, up to {{date}}.',
-        partial: 'Based on your last {{used}} months of records, up to {{date}}.',
+        partialOne: 'Based on your one full month of records, through {{date}}.',
+        partial: 'Based on your last {{used}} months of records, through {{date}}.',
         records: 'Based on your last {{months}} months of records, through {{date}}.',
         quickEstimates: 'Based on the numbers you typed in, not your account records.',
         payWindow: 'Income is averaged over your last {{months}} months.',

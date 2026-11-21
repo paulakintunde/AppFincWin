@@ -39,7 +39,6 @@ const IMPERATIVE_LEAD = /^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Inves
 // Controls and field labels name an action the user takes in the app (a button, a dialog choice, a field caption); they
 // are not a prescription about money. Each one is listed by key so a new descriptive string cannot slip through.
 const ACTION_LABELS = new Set([
-  'decide.v3.basis.payWindow', // the noun "Pay": "Pay is judged over your last 9 months." says how pay was read (08.1-20), not an instruction
   'decide.screens.answerActions.bought.rowPayoff', // tick row on Record as bought: names paying off the old loan the sale pays (08.1-09, UI-SPEC section 5), not advice
   'income.pay.defaultName', // the noun "Pay": the name a new pay series gets (05.2-49), not an instruction
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
@@ -332,6 +331,8 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       // Variants chosen by the UI (05.1-40)
       // 05.4 FIN-02: the wait line names a month when no payday clears the dip
       'decide.v3.fact.wait_keeps_net_month',
+      // 08.1-14 D-05 guard: VerdictCard shows this short body when the 90-day check did not run (readyByUntested)
+      'decide.v3.verdict.notYetNotCovered.bodyUntested',
       'decide.v3.fact.line_crossed_percent',
       'decide.v3.fact.line_crossed_money',
       'decide.v3.fact.line_crossed_tenths',

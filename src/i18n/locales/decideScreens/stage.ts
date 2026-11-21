@@ -14,7 +14,7 @@ export const stage = {
     endLabel: '3 months: extra details',
     a11y: 'How results are worked out. {{stage}}. {{monthsUsed}} of 3 months.',
     a11yDeeper: 'How results are worked out. {{monthsUsed}} months of records.',
-    barA11y: '{{monthsUsed}} of 3 months of records. {{stage}} is on.',
+    barA11y: '{{monthsUsed}} of 3 months of records. {{stage}} is active.',
     // 08.1-14 (FOLLOWUPS 21|14): plural by count, so one month reads "1 month".
     announce_one: 'Decide now has {{count}}\u00A0month of records. {{stage}} is active.',
     announce_other: 'Decide now has {{count}}\u00A0months of records. {{stage}} is active.',

@@ -63,7 +63,7 @@ export const rules = {
   },
   // 08.1-23 (CMP-F19, owner 2026-11-21 Q1-Q6): "How spending is shared". Draft copy, wording sign-off in plan 14.
   spending: {
-    title: 'How spending is shared',
+    title: 'How spending is split',
     intro: 'This sets how much money each person’s checks count. Bills are split separately.',
     setup: {
       label: 'How your accounts are set up',
@@ -109,7 +109,7 @@ export const rules = {
       // owner 2026-11-21 (Q5): the percent in money, for people who find percentages hard.
       money: '{{percent}}% · about {{amount}} of {{total}} shared',
     },
-    outOfDate: 'Spending shares need updating: someone joined or left. Until then each check counts what each person brings.',
+    outOfDate: 'Update spending shares because someone joined or left. Until you do, each check counts what each person brings in.',
     outOfDateTip: 'The old shares don’t match the current group. Until you update them, checks count what each person brings in.',
     update: 'Update shares',
     needsUpdating: 'Needs updating',

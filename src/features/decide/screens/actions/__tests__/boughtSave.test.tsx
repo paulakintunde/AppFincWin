@@ -92,8 +92,8 @@ describe('Bought screen: groups and rows', () => {
     expect(screen.getByText('Close the “Car fund” goal')).toBeTruthy();
     expect(screen.getByText(a.bought.subGoal)).toBeTruthy();
     expect(screen.getAllByRole('switch')).toHaveLength(6);
-    expect(a.bought.save).toBe('Save purchase');
-    expect(screen.getByText('Save purchase')).toBeTruthy();
+    expect(a.bought.save).toBe('Record purchase');
+    expect(screen.getByText('Record purchase')).toBeTruthy();
   });
 
   it('omits a group with no rows (no empty card)', async () => {
@@ -127,7 +127,7 @@ describe('Bought screen: groups and rows', () => {
     await wrap(<BoughtScreen {...props()} />);
     expect(row(/^Fuel or charging, about \$120 a month, Counts until actual spending replaces it, not ticked$/)).toBeTruthy();
     expect(row('Insurance, $140 a month, not ticked')).toBeTruthy();
-    expect(row('Close the “Car fund” goal, You can keep it open., ticked')).toBeTruthy();
+    expect(row('Close the “Car fund” goal, It can stay open., ticked')).toBeTruthy();
     await fireEvent.press(row('Insurance, $140 a month, not ticked'));
     expect(row('Insurance, $140 a month, ticked')).toBeTruthy();
   });

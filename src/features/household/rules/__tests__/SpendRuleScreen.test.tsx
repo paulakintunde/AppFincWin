@@ -155,7 +155,7 @@ describe('SpendRuleScreen', () => {
   it('shows nothing to pick for a household of one', async () => {
     mockMembers = [{ user_id: 'me', weight: 100 }];
     await setup();
-    expect(screen.getByText('How spending is shared')).toBeTruthy();
+    expect(screen.getByText('How spending is split')).toBeTruthy();
     expect(screen.queryByTestId('spend-setup-separate')).toBeNull();
   });
 
@@ -226,7 +226,7 @@ describe('SpendRuleScreen', () => {
     mockRow = row({ rule: 'custom', shares: { me: 50, gone: 50 } });
     await setup();
     expect(screen.getByTestId('spend-out-of-date')).toBeTruthy();
-    expect(screen.getByText('Spending shares need updating: someone joined or left. Until then each check counts what each person brings.')).toBeTruthy();
+    expect(screen.getByText('Update spending shares because someone joined or left. Until you do, each check counts what each person brings in.')).toBeTruthy();
     expect(screen.queryByTestId('spend-shares')).toBeNull();
     await fireEvent.press(screen.getByLabelText('Update shares'));
     expect(screen.getByTestId('spend-shares')).toBeTruthy();

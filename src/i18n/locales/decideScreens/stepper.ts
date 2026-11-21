@@ -57,7 +57,7 @@ export const stepper = {
     rateLabel: 'Interest rate after promo',
     helper: 'If you don’t pay it off by then, interest may be backdated to day one, depending on your plan terms.',
     endMissing: 'A promotion end date is needed.',
-    rateMissing: 'Enter an interest rate.',
+    rateMissing: 'Interest rate needed.',
     warning: 'Warning',
   },
   price: {

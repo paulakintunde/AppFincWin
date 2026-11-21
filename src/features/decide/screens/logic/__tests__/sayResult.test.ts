@@ -316,8 +316,8 @@ describe('sayResult: the Result in reading order', () => {
   it('basis reads every kind; records_with_reason reads its reason', () => {
     const basis = (b: Result['confidence']['basis']): Line | null => sayResult(result({ confidence: { reasons: [], basis: b, nextStep: null } }), deps).basis;
     expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on your last 6 months of records, through <2026-11-09>.' });
-    expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your last 2 months of records, up to <2026-11-09>.');
-    expect(basis({ kind: 'partial', used: 1, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your one full month of records, up to <2026-11-09>.');
+    expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your last 2 months of records, through <2026-11-09>.');
+    expect(basis({ kind: 'partial', used: 1, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your one full month of records, through <2026-11-09>.');
     expect(basis({ kind: 'quick_estimates' })?.text).toBe('Based on the numbers you typed in, not your account records.');
     expect(basis({ kind: 'quick_estimates' })?.key).toBe(BASIS_KEYS.quick_estimates);
     expect(basis({ kind: 'records_with_reason', months: 6, upTo: '2026-11-09', reason: 'close_to_line' })?.key).toBe(BASIS_REASON_KEYS.close_to_line);

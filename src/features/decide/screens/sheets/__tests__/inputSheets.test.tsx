@@ -206,7 +206,7 @@ describe('InstallmentPlanSheet 08.1-11 (FIN-12, 0% if paid off in time)', () => 
     await fireEvent.press(screen.getByLabelText('Use this plan'));
     expect(onUse).not.toHaveBeenCalled();
     expect(screen.getByText('A promotion end date is needed.')).toBeTruthy();
-    expect(screen.getByText('Enter an interest rate.')).toBeTruthy();
+    expect(screen.getByText('Interest rate needed.')).toBeTruthy();
   });
 
   it('a rate out of range is an error and stops Use', async () => {

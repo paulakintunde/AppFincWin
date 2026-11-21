@@ -53,7 +53,7 @@ export const common = {
   // 08.1-05 (APP-21, UI-SPEC section 8): the card shown while Decide is switched off for everyone (app_config decide_off).
   paused: {
     title: 'Decide is paused',
-    body: 'Your data is safe. Results will be back soon.',
+    body: 'Your data is still here. Results will be back soon.',
   },
   error: {
     title: 'Couldn’t work this out',

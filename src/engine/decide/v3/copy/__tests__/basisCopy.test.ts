@@ -31,8 +31,8 @@ describe('basis copy', () => {
   });
 
   it('the sentences the cases quote (QE-02, Theme H)', () => {
-    expect(resolve(BASIS_KEYS.partialOne)).toBe('Based on your one full month of records, up to {{date}}.');
-    expect(resolve(BASIS_KEYS.partial)).toBe('Based on your last {{used}} months of records, up to {{date}}.');
+    expect(resolve(BASIS_KEYS.partialOne)).toBe('Based on your one full month of records, through {{date}}.');
+    expect(resolve(BASIS_KEYS.partial)).toBe('Based on your last {{used}} months of records, through {{date}}.');
     expect(resolve(BASIS_KEYS.records)).toBe('Based on your last {{months}} months of records, through {{date}}.');
     expect(resolve(BASIS_KEYS.quick_estimates)).toBe('Based on the numbers you typed in, not your account records.');
     expect(resolve(BASIS_KEYS.payWindow)).toBe('Income is averaged over your last {{months}} months.');
