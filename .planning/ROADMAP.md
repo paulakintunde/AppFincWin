@@ -33,6 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
+- [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21)
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
 - [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
@@ -1540,6 +1541,19 @@ Plans:
 - [x] 08.1-20-PLAN.md — Visible Decide stages, answer: basis-window sentences, pay-window row, caveat-order rule, StageLine, StageTag, About rows (DCU-10, CMP-F12)
 - [x] 08.1-21-PLAN.md — Visible Decide stages, home and setup: StageCard (no chip at 3+ months), import prompt, Not ready actions, Records setup prompt, import return to Decide (DCU-10)
 
+### Phase 08.12: Joint spending agreements (INSERTED)
+
+**Goal:** Groups can agree how shared money is spent, and Decide shows the agreement in its answers. On an equal-access joint account, the group can set a spend limit: spends over it need another member's OK, or the group can choose "no approval needed". The phase also covers one-earner households, where one person is the main earner and the other partner is at home or not working. That partner may be paid an allowance by the main earner, be given a set sum, spend from the same account, or a mix of these. FincWin only records what the group agreed. It holds no money and cannot block a card payment.
+**Requirements**: TBD (from research and the owner's questions)
+**Depends on:** Phase 08.1 (the spending rule, joint account purposes and joint money counted once, from plans 22 and 23)
+**Source:** owner 2026-11-21. Research into how real one-earner and shared-money households work comes first: `.planning/phases/08.12-joint-spending-agreements/08.12-RESEARCH-ARRANGEMENTS.md`.
+**Success Criteria** (draft, to be confirmed with the owner):
+  1. A group can set an approval limit, or "no approval needed", on a joint everyday account. A Decide check over the limit says who needs to OK it, and the other member can answer OK or Not now.
+  2. One-earner setups (allowance paid by the earner, a set sum, a shared account, or a mix) each give the non-earning partner a correct and fair "Just me" answer, with each dollar counted once. Every setup has right-answer cases.
+  3. Approval and allowance wording is declarative, never "advice" or "you should", and it never suggests that FincWin controls the money.
+  4. The non-earning partner's own money and privacy are respected: nothing they keep private is shown to the earner.
+**Plans:** 0 plans (questions before build)
+
 ### Phase 08.2: Decide re-audit (INSERTED)
 
 **Goal:** Prove 10/10, first by checking every fix ID in the Decide fix plan, then with a fresh audit of Decide alongside Activity, Home, Grow and Household. Source: `.planning/research/DECIDE-FIX-PLAN.md` section 9.
@@ -1704,6 +1718,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 17/20 | In progress | - |
+| 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
