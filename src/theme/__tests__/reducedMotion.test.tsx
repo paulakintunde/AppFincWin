@@ -1,7 +1,7 @@
 import React from 'react';
 import { AccessibilityInfo, StyleSheet, Text, type EmitterSubscription } from 'react-native';
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react-native';
-import { DURATION, useMotion } from '../motion';
+import { DURATION, useMotion, useReduceMotionKnown } from '../motion';
 import { FadeIn } from '@/ui/motion/FadeIn';
 import { FadeSwap } from '@/ui/motion/FadeSwap';
 
@@ -116,5 +116,35 @@ describe('FadeIn and FadeSwap under Reduce Motion (06.2 D-17)', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+});
+
+describe('useReduceMotionKnown (08.1-24)', () => {
+  it('is null until AccessibilityInfo answers, then false', async () => {
+    let answer: (v: boolean) => void = () => {};
+    jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockReturnValue(new Promise<boolean>((res) => (answer = res)));
+    jest.spyOn(AccessibilityInfo, 'addEventListener').mockReturnValue({ remove: jest.fn() } as unknown as EmitterSubscription);
+    const { result } = await renderHook(() => useReduceMotionKnown());
+    expect(result.current).toBeNull();
+    await act(async () => {
+      answer(false);
+    });
+    expect(result.current).toBe(false);
+  });
+
+  it('is true when reduce motion is on', async () => {
+    mockAccessibilityInfo(true);
+    const { result } = await renderHook(() => useReduceMotionKnown());
+    await waitFor(() => expect(result.current).toBe(true));
+  });
+
+  it('follows reduceMotionChanged', async () => {
+    const mocked = mockAccessibilityInfo(false);
+    const { result } = await renderHook(() => useReduceMotionKnown());
+    await waitFor(() => expect(result.current).toBe(false));
+    await act(() => {
+      mocked.fire(true);
+    });
+    expect(result.current).toBe(true);
   });
 });
