@@ -13,6 +13,8 @@ export interface JointPurposeRow {
   opening_balance: number;
   joint_purpose: JointPurposeValue | null;
   joint_savings_spendable: boolean;
+  /** 08.1-23 (Q10, migration 20261125000800): this joint savings account is the household's shared safety net */
+  joint_safety_net: boolean;
   version: number;
 }
 
@@ -35,7 +37,7 @@ export interface JointMonthRow {
 export async function fetchJointPurposes(client: DbClient, householdId: string): Promise<JointPurposeRow[]> {
   const { data, error, status } = await client
     .from('accounts')
-    .select('id, currency, opening_balance, joint_purpose, joint_savings_spendable, version')
+    .select('id, currency, opening_balance, joint_purpose, joint_savings_spendable, joint_safety_net, version')
     .eq('household_id', householdId)
     .eq('is_shared', true)
     .is('deleted_at', null);
@@ -72,6 +74,8 @@ export interface SetJointPurposeArgs {
   purpose: JointPurposeValue | null;
   /** a savings account the group marks spendable; ignored for other purposes */
   spendable: boolean;
+  /** 08.1-23 (Q10): a savings account the group marks as its shared safety net (never spendable); ignored for other purposes */
+  safetyNet?: boolean;
   expectedVersion: number | null;
 }
 
@@ -81,5 +85,6 @@ export function setJointAccountPurpose(client: DbClient, a: SetJointPurposeArgs)
     p_purpose: a.purpose,
     p_spendable: a.spendable,
     p_expected_version: a.expectedVersion,
+    p_safety_net: a.safetyNet === true,
   });
 }

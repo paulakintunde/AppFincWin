@@ -9,6 +9,8 @@ import { queryKeys } from '@/data/keys';
 import { DecideV3Scope, useDecideV3 } from '../decideV3';
 
 const mockCalls: string[] = [];
+// 08.1-23 (Q11): the shared build reads the household source (Just me with a joint account); none here.
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdScopeSource: () => ({ source: undefined, pending: false }) }));
 jest.mock('@/services/supabase', () => {
   const profile = { home_currency: 'CAD', show_cents: true, lead_figure: 'home', region: 'CA' };
   const chain = (data: unknown): unknown =>

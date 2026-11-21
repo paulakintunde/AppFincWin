@@ -20,6 +20,9 @@ jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: jest.fn
 // 08-20: AccountSheet reads the household's members (Joint account row) and checks member lines before turning Joint off.
 let mockHouseholdMembers: unknown[] = [];
 jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: mockHouseholdMembers }) }));
+// 08.1-23: the joint purpose row and sheet read Supabase; their own tests cover them.
+jest.mock('@/features/household/rules/JointPurposeRow', () => ({ JointPurposeRow: () => null }));
+jest.mock('@/features/household/rules/JointPurposeSheet', () => ({ JointPurposeSheet: () => null }));
 jest.mock('@/features/household/rules/jointAccounts', () => ({ countMemberLinesOnAccount: jest.fn(async () => 0) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [] }) }));
 jest.mock('@/data/queries/activity', () => ({

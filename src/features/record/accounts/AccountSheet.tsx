@@ -5,6 +5,8 @@
 // 06.2 (ranked change 9): the kind picker shows each kind's icon (Glyph 20) beside its word.
 // 08-20 (D-13): in a household of two or more, the person who made an account can mark it Joint (accounts.is_shared only; the
 // overdraft limit and account purpose stay owned by this sheet, 05.5 D-10). Anyone else sees a Shared badge, no toggle.
+// 08.1-23 (CMP-F19, UX-21): a joint account carries the group's purpose (joint bills, savings or everyday) instead of the personal
+// "What this account is for" row; saving an account with Joint newly on opens the purpose sheet in its place.
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -44,6 +46,8 @@ import { usePots } from '@/data/queries/decide';
 import { useHouseholdMembers } from '@/data/queries/household';
 import { SharedBadge } from '@/features/household/components/SharedBadge';
 import { countMemberLinesOnAccount } from '@/features/household/rules/jointAccounts';
+import { JointPurposeRow } from '@/features/household/rules/JointPurposeRow';
+import { JointPurposeSheet } from '@/features/household/rules/JointPurposeSheet';
 import { ToggleRow } from '@/ui/ToggleRow';
 
 export type AccountKind = AccountRow['kind'];
@@ -148,6 +152,8 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
   const canJoint = memberCount >= 2 && isCreator && !(account && account.tombstone_of);
   const [joint, setJoint] = useState<boolean>(account ? account.is_shared === true : mode.kind === 'new' && mode.joint === true);
   const [jointRefused, setJointRefused] = useState(false);
+  // 08.1-23: the account just saved with Joint newly on; its purpose sheet shows in this sheet's place.
+  const [purposeFor, setPurposeFor] = useState<{ id: string; name: string } | null>(null);
 
   const exponentFor = (code: string): number => options.find((o) => o.code === code)?.exponent ?? currencyExponent(code);
   const magnitude = (minor: number, code: string): string =>
@@ -249,6 +255,10 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
       showToast({ kind: 'ordinary', text: undoLabelText('accountAdded', { name: nameTrimmed }), stepId });
       getAnalytics().track('account_created', { context: mode.kind === 'new' ? mode.context : 'later' });
       onSaved?.(id);
+      if (canJoint && joint) {
+        setPurposeFor({ id, name: nameTrimmed });
+        return;
+      }
       onClose();
       return;
     }
@@ -277,6 +287,10 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
       }
     }
     onSaved?.(account.id);
+    if (canJoint && joint && account.is_shared !== true) {
+      setPurposeFor({ id: account.id, name: nameTrimmed });
+      return;
+    }
     onClose();
   };
 
@@ -315,6 +329,10 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
     kind === 'credit'
       ? (['accounts.sheet.signIOwe', 'accounts.sheet.signImInCredit'] as const)
       : (['accounts.sheet.signInCredit', 'accounts.sheet.signOverdrawn'] as const);
+
+  if (purposeFor !== null) {
+    return <JointPurposeSheet visible householdId={rc.householdId} account={purposeFor} current={null} onClose={onClose} />;
+  }
 
   return (
     <Sheet visible onDismiss={onClose} accessibilityLabel={title} dirty={dirty}>
@@ -417,7 +435,11 @@ function SheetBody({ mode, onClose, onSaved }: Omit<AccountSheetProps, 'visible'
           </View>
         ) : null}
 
-        {account ? <AccountUseRow account={account} /> : null}
+        {account && account.is_shared === true && !account.tombstone_of ? (
+          holdsMoney(account.kind) ? <JointPurposeRow householdId={account.household_id} account={account} /> : null
+        ) : account ? (
+          <AccountUseRow account={account} />
+        ) : null}
 
         {canSubmit ? null : <Text style={helpStyle}>{t('accounts.sheet.notReady')}</Text>}
         <Pill

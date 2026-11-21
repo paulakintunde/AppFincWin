@@ -104,7 +104,8 @@ export function jointSourcesOf(read: JointFactsParts | undefined, safetyNetAccou
       currency: a.currency,
       purpose: a.joint_purpose,
       spendable: a.joint_savings_spendable,
-      ...(safetyNetAccountIds.has(a.id) ? { safetyNet: true } : {}),
+      // 08.1-23 (Q10, HH-34): the group marks a joint savings account as its shared safety net (accounts.joint_safety_net).
+      ...(safetyNetAccountIds.has(a.id) || (a.joint_purpose === 'savings' && a.joint_safety_net === true) ? { safetyNet: true } : {}),
       balance: a.opening_balance + lines,
       monthIn: m?.money_in ?? 0,
       monthOut: m?.money_out ?? 0,

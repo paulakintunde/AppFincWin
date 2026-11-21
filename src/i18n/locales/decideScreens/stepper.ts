@@ -44,6 +44,11 @@ export const stepper = {
     justMe: 'Just me',
     household: 'Household',
     helper: 'Uses shared money and anything a partner has agreed to share.',
+    // 08.1-23 (Q12): the helper names the spending rule in use. Draft copy, wording sign-off in plan 14.
+    helperBring: 'Counts your own money and your part of any joint account.',
+    helperShares: 'Counts your {{percent}}% of the money everyone has shared.',
+    jointMe: 'Counts your part of {{account}}.',
+    jointMeMany: 'Counts your part of your joint accounts.',
   },
   // 08.1-11 FIN-12 (UI-SPEC section 4): the "0% if paid in full" switch on the plan sheet, its two fields and their errors. Draft copy, wording sign-off in plan 14.
   deferred: {

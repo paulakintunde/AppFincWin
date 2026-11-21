@@ -12,7 +12,8 @@ jest.setTimeout(30000);
 
 const ID = '11111111-1111-4111-8111-111111111111';
 const HOUSEHOLD: ShareScope = { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'even' } };
-let mockShare: { shareScope: ShareScope | null; memberCount: number } = { shareScope: HOUSEHOLD, memberCount: 2 };
+type MockSpend = { counted: 'bring' | 'custom' | 'bill'; outOfDate: boolean; myPercent: number | null; jointAccounts: { id: string; name: string }[] };
+let mockShare: { shareScope: ShareScope | null; memberCount: number; spend?: MockSpend | null } = { shareScope: HOUSEHOLD, memberCount: 2 };
 let mockRow: { id: string; name: string; inputs: unknown; furthest_step: number } | null = null;
 const mockSave = jest.fn();
 let mockDims = { width: 402, height: 874, fontScale: 1, scale: 2 };
@@ -126,6 +127,37 @@ describe('Who pays on the price step', () => {
     expect(me.props.accessibilityRole).toBe('radio');
     expect(me.props.accessibilityState.selected).toBe(true);
     expect(screen.getByLabelText('Who pays, Household').props.accessibilityState.selected).toBe(false);
+  });
+
+  // 08.1-23 (Q12): the helper names the spending rule; Just me with a joint account says only my part of it counts.
+  it('names What each person brings under Household', async () => {
+    mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [] } };
+    await wrap(<WhoPays share={HOUSEHOLD} onChange={jest.fn()} />);
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your own money and your part of any joint account.');
+  });
+
+  it('names my percent under a set or bill split', async () => {
+    mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'custom', outOfDate: false, myPercent: 40, jointAccounts: [] } };
+    await wrap(<WhoPays share={HOUSEHOLD} onChange={jest.fn()} />);
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your 40% of the money everyone has shared.');
+  });
+
+  it('Just me with a joint account counts my part of it, plural for more than one, nothing without one', async () => {
+    mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [{ id: 'j', name: 'Our pot' }] } };
+    await wrap(<WhoPays share={{ kind: 'personal' }} onChange={jest.fn()} />);
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your part of Our pot.');
+    await screen.unmount();
+    mockShare = {
+      shareScope: HOUSEHOLD,
+      memberCount: 2,
+      spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [{ id: 'j', name: 'A' }, { id: 'k', name: 'B' }] },
+    };
+    await wrap(<WhoPays share={{ kind: 'personal' }} onChange={jest.fn()} />);
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your part of your joint accounts.');
+    await screen.unmount();
+    mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [] } };
+    await wrap(<WhoPays share={{ kind: 'personal' }} onChange={jest.fn()} />);
+    expect(screen.queryByTestId('who-pays-helper')).toBeNull();
   });
 
   it('on the stacked layout a press picks the household scope', async () => {

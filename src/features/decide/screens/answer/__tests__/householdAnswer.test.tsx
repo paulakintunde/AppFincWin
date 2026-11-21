@@ -18,6 +18,8 @@ let mockLastShared: { member_id: string; last_date: string | null }[] = [];
 jest.mock('@/data/queries/partnerMoney', () => ({ usePartnerLastSharedLine: () => ({ data: mockLastShared }) }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
 jest.mock('@/features/household/useMemberLabel', () => ({ useMemberLabel: () => (key: string) => (key === 'sam' ? 'Sam' : key) }));
+// 08.1-23: the spending rule line reads the household live; none here (its own tests are in household/decide).
+jest.mock('@/features/household/decide/useSpendNote', () => ({ useSpendNote: () => null }));
 
 const noop = (): void => undefined;
 const UP_TO = '2026-11-09';

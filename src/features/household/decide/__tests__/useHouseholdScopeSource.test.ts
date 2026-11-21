@@ -26,6 +26,8 @@ let mockRule: { data: unknown; isPending: boolean } = { data: null, isPending: f
 let mockJoint: { data: unknown; isPending: boolean } = { data: { purposes: [], balances: [], month: [] }, isPending: false };
 jest.mock('@/data/queries/householdSpendRule', () => ({ useHouseholdSpendRule: () => mockRule }));
 jest.mock('@/data/queries/jointAccounts', () => ({ useJointAccountFacts: () => mockJoint }));
+// 08.1-23: useHouseholdShare also reads the spending rule line (its own tests are in HouseholdAnswerNote.test).
+jest.mock('../useSpendNote', () => ({ useSpendNote: () => null }));
 
 beforeEach(() => {
   mockRule = { data: null, isPending: false };
@@ -121,6 +123,6 @@ describe('useHouseholdShare', () => {
   it('has none while the member list is loading', async () => {
     mockMembersNow = undefined;
     const { result } = await renderHook(() => useHouseholdShare());
-    expect(result.current).toEqual({ shareScope: null, memberCount: 0 });
+    expect(result.current).toEqual({ shareScope: null, memberCount: 0, spend: null });
   });
 });

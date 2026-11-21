@@ -120,6 +120,8 @@ export default function AppLayout() {
                 <Stack.Screen name="household/split-default" />
                 <Stack.Screen name="household/category-defaults" />
                 <Stack.Screen name="household/shared-accounts" />
+                {/* 08.1-23: How spending is shared */}
+                <Stack.Screen name="household/spending" />
                 {/* 08-24 (HH-13): leaving and removing, from Household home and the member sheet; outside the Decide gate. */}
                 <Stack.Screen name="household/leave" />
                 <Stack.Screen name="household/remove" />

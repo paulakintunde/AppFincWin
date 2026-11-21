@@ -49,6 +49,14 @@ describe('joint accounts db (08.1-22)', () => {
     const client = createFakeSupabase();
     client.respondWith(ok({ ok: false, reason }));
     expect(await setJointAccountPurpose(client, { accountId: 'j1', purpose: 'bills', spendable: false, expectedVersion: 3 })).toEqual({ ok: false, reason });
-    expect(client.calls[0]?.args).toEqual(['set_joint_account_purpose', { p_account: 'j1', p_purpose: 'bills', p_spendable: false, p_expected_version: 3 }]);
+    expect(client.calls[0]?.args).toEqual(['set_joint_account_purpose', { p_account: 'j1', p_purpose: 'bills', p_spendable: false, p_expected_version: 3, p_safety_net: false }]);
+  });
+
+  // 08.1-23 (Q10): the safety-net mark rides the same RPC (migration 20261125000800).
+  it('sends the safety-net mark', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(ok({ ok: true, version: 4 }));
+    await setJointAccountPurpose(client, { accountId: 'j1', purpose: 'savings', spendable: false, safetyNet: true, expectedVersion: null });
+    expect(client.calls[0]?.args).toEqual(['set_joint_account_purpose', { p_account: 'j1', p_purpose: 'savings', p_spendable: false, p_expected_version: null, p_safety_net: true }]);
   });
 });

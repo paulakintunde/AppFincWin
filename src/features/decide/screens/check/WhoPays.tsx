@@ -5,6 +5,7 @@ import React from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import type { ShareScope } from '@/engine/decide/v3';
 import { useHouseholdShare } from '@/features/household/decide/useHouseholdScopeSource';
+import { whoPaysLineOf } from '@/features/household/decide/spendNote';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -27,7 +28,7 @@ export function WhoPays({ share, onChange }: WhoPaysProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const { width, fontScale } = useWindowDimensions();
-  const { shareScope } = useHouseholdShare();
+  const { shareScope, spend } = useHouseholdShare();
   if (shareScope === null) return null;
   const value = share.kind === 'household' ? 'household' : 'me';
   const pick = (key: string): void => onChange(key === 'household' ? shareScope : { kind: 'personal' });
@@ -37,6 +38,10 @@ export function WhoPays({ share, onChange }: WhoPaysProps) {
     { key: 'household', label: t('decide.screens.stepper.whoPays.household') },
   ];
   const stacked = fontScale > LARGE_TEXT && width <= NARROW_DP;
+  // 08.1-23 (Q12): the helper names the spending rule the check counts; Just me with a joint account says only my part counts.
+  const line = whoPaysLineOf(spend, value);
+  const say = t as unknown as (key: string, values?: Readonly<Record<string, string | number>>) => string;
+  const helper = line !== null ? say(line.key, line.values) : value === 'household' ? t('decide.screens.stepper.whoPays.helper') : null;
   return (
     <View testID="who-pays" style={styles.wrap}>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{label}</Text>
@@ -58,9 +63,9 @@ export function WhoPays({ share, onChange }: WhoPaysProps) {
       ) : (
         <SegmentedControl itemRole="radio" accessibilityLabel={label} value={value} onChange={pick} options={options} />
       )}
-      {value === 'household' ? (
+      {helper !== null ? (
         <Text testID="who-pays-helper" accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>
-          {t('decide.screens.stepper.whoPays.helper')}
+          {helper}
         </Text>
       ) : null}
     </View>

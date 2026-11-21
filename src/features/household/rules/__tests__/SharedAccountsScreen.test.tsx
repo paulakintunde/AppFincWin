@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import type { AccountRow } from '@/db/rows';
 import { SharedAccountsScreen, jointAccountsOf } from '../SharedAccountsScreen';
@@ -25,6 +25,14 @@ jest.mock('../../useMemberLabel', () => ({ useMemberLabel: () => (id: string | n
 
 let mockAccounts: Partial<AccountRow>[] = [];
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: mockAccounts }) }));
+
+// 08.1-23: purposes come from the joint facts read; the purpose sheet is mocked to show which account it opened for.
+let mockPurposes: { id: string; joint_purpose: string | null }[] = [];
+jest.mock('@/data/queries/jointAccounts', () => ({ useJointAccountFacts: () => ({ data: { purposes: mockPurposes, balances: [], month: [] } }) }));
+jest.mock('../JointPurposeSheet', () => {
+  const { Text } = jest.requireActual('react-native');
+  return { JointPurposeSheet: (p: { visible: boolean; account: { name: string } }) => (p.visible ? <Text testID="purpose-sheet">{p.account.name}</Text> : null) };
+});
 
 let mockBalances: { data?: unknown; isError: boolean } = { data: [], isError: false };
 jest.mock('../jointAccounts', () => {
@@ -71,6 +79,7 @@ describe('SharedAccountsScreen', () => {
   beforeEach(() => {
     mockAccounts = [];
     mockBalances = { data: [], isError: false };
+    mockPurposes = [];
   });
 
   it('shows the empty state with its one button', async () => {
@@ -84,10 +93,21 @@ describe('SharedAccountsScreen', () => {
     mockBalances = { data: [{ account_id: 'a1', balance: -2500, currency: 'GBP' }], isError: false };
     await setup();
     expect(screen.getByText('Bills')).toBeTruthy();
-    expect(screen.getByText('Made by Sam')).toBeTruthy();
+    expect(screen.getByText('Purpose not set · Made by Sam')).toBeTruthy();
     expect(screen.getByTestId('shared-badge-a1')).toBeTruthy();
     expect(screen.queryByText('Former home')).toBeNull();
     expect(screen.getByText(/75\.00/)).toBeTruthy();
+  });
+
+  it('08.1-23: shows each account purpose and opens the purpose sheet on a tap', async () => {
+    mockAccounts = [acct({ id: 'a1' }), acct({ id: 'a3', name: 'Pot', created_by: 'me' })];
+    mockPurposes = [{ id: 'a1', joint_purpose: 'savings' }, { id: 'a3', joint_purpose: null }];
+    await setup();
+    expect(screen.getByText('Joint savings · Made by Sam')).toBeTruthy();
+    expect(screen.getByText('Purpose not set · Made by You')).toBeTruthy();
+    expect(screen.queryByTestId('purpose-sheet')).toBeNull();
+    await fireEvent.press(screen.getByText('Bills'));
+    expect(screen.getByTestId('purpose-sheet').props.children).toBe('Bills');
   });
 
   it('says so when the balances could not be loaded', async () => {

@@ -816,6 +816,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         formatMoney={money}
         onConfirm={confirmSpare}
         onDismiss={closeSheet}
+        hasJointAccount={(v3.inputs?.accounts ?? []).some((a) => a.joint === true)}
       />
       <UnexplainedMoneySheet amount={unexplained === null ? null : money(unexplained.shown)} onAnswer={answerUnexplained} onDismiss={closeSheet} />
       <CoverQuestionSheet question={sheet === 'cover' ? (lines.missing.find((l) => l.code === 'volatile_cover_question')?.text ?? null) : null} onAnswer={answerCover} onDismiss={closeSheet} />

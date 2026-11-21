@@ -1,6 +1,8 @@
 // Screen 4b (D-13): the household's joint accounts with their full balance. A joint account's new lines start shared and every
 // member sees its balance, including lines personal to one member. An account that only holds a departed member's shared lines
 // (tombstone_of) is never listed. Names go through the member resolver (D-32).
+// 08.1-23 (Q8, Q9): each row also says what the account is for ("Purpose not set" until the group picks); tapping a row opens the
+// purpose sheet for any member (22 Q2).
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -27,6 +29,10 @@ import { SharedBadge } from '../components/SharedBadge';
 import { useMemberLabel } from '../useMemberLabel';
 import { useHouseholdScope } from '../useHouseholdScope';
 import { jointBalanceOf, useJointAccountBalances } from './jointAccounts';
+import { usePurposeWord } from './JointPurposeRow';
+import { JointPurposeSheet } from './JointPurposeSheet';
+import { useJointAccountFacts } from '@/data/queries/jointAccounts';
+import { useToday } from './useSpendRule';
 
 /** The joint accounts a list may show: shared, live, and not a departed member's tombstone home. */
 export function jointAccountsOf(accounts: readonly AccountRow[] | undefined): AccountRow[] {
@@ -44,6 +50,10 @@ export function SharedAccountsScreen() {
   const accounts = jointAccountsOf(useAccounts(householdId ?? undefined).data);
   const balances = useJointAccountBalances(householdId);
   const [creating, setCreating] = useState(false);
+  const today = useToday();
+  const purposes = useJointAccountFacts(householdId, today).data?.purposes;
+  const word = usePurposeWord();
+  const [purposeFor, setPurposeFor] = useState<AccountRow | null>(null);
 
   const make = () => setCreating(true);
   return (
@@ -74,7 +84,11 @@ export function SharedAccountsScreen() {
             <Row
               key={a.id}
               label={a.name}
-              sublabel={t('household.rules.shared.madeBy', { name: label(a.created_by) })}
+              sublabel={t('household.rules.shared.purposeLine', {
+                purpose: word(purposes?.find((p) => p.id === a.id)),
+                madeBy: t('household.rules.shared.madeBy', { name: label(a.created_by) }),
+              })}
+              onPress={() => setPurposeFor(a)}
               leading={<IconTile icon={iconForAccountKind(a.kind)} size={tile.row} color={colors.accent} tint={accentTintOver(colors.fill1, colors.accent)} />}
               amount={balances.data ? formatter.formatMoney(money(jointBalanceOf(a.opening_balance, a.currency, balances.data, a.id), a.currency)) : undefined}
               status={<SharedBadge testID={`shared-badge-${a.id}`} />}
@@ -83,6 +97,13 @@ export function SharedAccountsScreen() {
           <Pill label={t('household.sharing.joint.emptyAction')} variant="secondary" onPress={make} />
         </View>
       )}
+      <JointPurposeSheet
+        visible={purposeFor !== null}
+        householdId={householdId}
+        account={{ id: purposeFor?.id ?? '', name: purposeFor?.name ?? '' }}
+        current={purposes?.find((p) => p.id === purposeFor?.id) ?? null}
+        onClose={() => setPurposeFor(null)}
+      />
       {creating ? <AccountSheet visible mode={{ kind: 'new', context: 'later', joint: true }} onClose={() => setCreating(false)} /> : null}
     </Screen>
   );

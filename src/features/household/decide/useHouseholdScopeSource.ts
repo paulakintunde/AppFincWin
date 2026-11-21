@@ -13,6 +13,7 @@ import { localDateIn } from '@/engine/time';
 import type { HouseholdScopeSource } from '@/features/decide/snapshot/v3/householdScope';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { jointSourcesOf, scopeSourceOf, settleUpOf, shareScopeOf } from './scopeSource';
+import { useSpendNote, type SpendNote } from './useSpendNote';
 
 export interface HouseholdScopeRead {
   /** Absent for Just me with no joint account, and until the viewer's household is known. */
@@ -64,14 +65,21 @@ export function useHouseholdScopeSource(on: boolean): HouseholdScopeRead {
   return { source, pending: waiting };
 }
 
-/** The share a new Household check is saved with (Who pays), or null when the viewer's household has fewer than 2 people. */
-export function useHouseholdShare(): { readonly shareScope: ShareScope | null; readonly memberCount: number } {
+/**
+ * The share a new Household check is saved with (Who pays), or null when the viewer's household has fewer than 2 people. 08.1-23 (Q12):
+ * `spend` says which spending rule a check counts, for the Who pays helper (absent until it is read).
+ */
+export function useHouseholdShare(): { readonly shareScope: ShareScope | null; readonly memberCount: number; readonly spend?: SpendNote | null } {
   const { user } = useAuth();
   const householdId = useHouseholdId(user?.id).data ?? undefined;
   const members = useHouseholdMembers(householdId).data;
   const defaults = useSplitDefaults(householdId).data;
+  const spend = useSpendNote();
+  const spendKey = spend === null ? '' : JSON.stringify(spend);
   return useMemo(
-    () => ({ shareScope: members === undefined ? null : shareScopeOf(members, user?.id, defaults), memberCount: members?.length ?? 0 }),
-    [members, defaults, user?.id],
+    () => ({ shareScope: members === undefined ? null : shareScopeOf(members, user?.id, defaults), memberCount: members?.length ?? 0, spend }),
+    // spend is rebuilt each render; spendKey stands for its data.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [members, defaults, user?.id, spendKey],
   );
 }

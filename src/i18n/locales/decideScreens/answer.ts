@@ -33,6 +33,13 @@ export const answer = {
     notSharedMany: 'Only your money is counted. {{names}} haven’t shared theirs.',
     nameAnd: '{{a}} and {{b}}',
   },
+  // 08.1-23 (Q6, Q12): the spending rule a Household check counted. Draft copy, wording sign-off in plan 14.
+  household: {
+    ruleBring: 'Counted: what you bring.',
+    ruleShares: 'Counted: your {{percent}}% of the shared money.',
+    ruleBill: 'Counted: your {{percent}}% of the shared money, the same as the bill split.',
+    outOfDate: 'Spending shares need updating: someone joined or left. Until then each check counts what each person brings.',
+  },
   /** 06.1-49 (A-ANS-2): shown from Check it until the answer is worked out. */
   loading: 'Working out the answer…',
   payA11y: 'How you pay',
@@ -172,6 +179,8 @@ export const answer = {
     right: 'That’s right',
     own: 'Use my own figure',
     ownLabel: 'Your spare money now',
+    // 08.1-23 (Q7): shown only when the person has a joint account. Draft copy, wording sign-off in plan 14.
+    jointNote: 'Count only your own accounts. Joint accounts are counted separately.',
     useOwn: 'Use this figure',
     saved: 'Saved: your spare money.',
   },
