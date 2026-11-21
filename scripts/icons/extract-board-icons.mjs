@@ -87,6 +87,7 @@ const LABELS = {
     View: 'view',
     'First entry': 'firstEntry',
     Undo: 'undo',
+    Info: 'info',
   },
   'State shapes': {
     'Paid, fits': 'stateFits',
@@ -97,6 +98,7 @@ const LABELS = {
     'Safety net': 'stateSafetyNet',
     Up: 'stateUp',
     Down: 'stateDown',
+    Caution: 'caution',
   },
 };
 

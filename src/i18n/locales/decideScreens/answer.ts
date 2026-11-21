@@ -163,6 +163,13 @@ export const answer = {
   },
   // 06.1-68 (CF-3): shown over the dimmed verdict while it is worked out again.
   updating: 'Updating…',
+  // 08.1-24 (owner caution sign 2026-11-21, Q2 A): the caution sign before the verdict word on a Fits answer whose 12-month path
+  // goes below $0 later. The verdict does not change. {{date}} is day and month ("Jun 14" / "14 Jun"); the spoken form uses the long
+  // month. Draft copy, wording sign-off in plan 14.
+  caution: {
+    line: 'dips below {{zero}} on {{date}}',
+    a11y: 'Caution: dips below {{zero}} on {{date}}.',
+  },
   // 06.1-68 (CF-4, CC-8): the answers given under a fact line, each with Undo.
   fact: {
     noneSaved: 'Saved: no other debts.',

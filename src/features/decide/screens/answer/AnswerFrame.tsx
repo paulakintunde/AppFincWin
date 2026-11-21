@@ -10,6 +10,8 @@
 // 06.1-67 (H-6, DS-3): short line first. One notice above the verdict (splitNotices: the one that changes the answer most); the
 // verdict, the first fact, one short missing-figures line whose More opens Give it more to go on, then Why? for every other fact
 // and notice (FactLines).
+// 08.1-24 (owner caution sign 2026-11-21): a Fits answer whose 12-month path goes below $0 later shows the caution sign before the
+// verdict word (useCautionOf, laterDipOf). The verdict does not change; the fact line under it stays.
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Evaluation, LocalDate, Purpose, Result, YearMonth } from '@/engine/decide/v3';
@@ -27,12 +29,13 @@ import { FactLines } from './FactLines';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 import type { Line } from '../logic/sayResult';
 import { splitNotices } from '../logic/answerLines';
+import { laterDipOf } from '../logic/laterDip';
 import { stageReadingOf } from '../logic/stageReading';
 import { LegalBlock } from './LegalBlock';
 import { OptionChips, type OptionKey } from './OptionChips';
 import { StageLine } from './StageLine';
 import { ErrorCard, NotReadyCard, NotReadyExits, OfflineCard, OutcomeLine } from './StatusCards';
-import { VerdictCard } from './VerdictCard';
+import { VerdictCard, type VerdictCaution } from './VerdictCard';
 import { useSaid, type UseSaidOptions } from './useSaid';
 
 export type AnswerAction =
@@ -117,6 +120,31 @@ function monthNameIn(locale: string): (ym: YearMonth) => string {
   return (ym) => new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1, 1)));
 }
 
+/** "Jun 14" / "14 Jun" (short) or "June 14" (long) for a YYYY-MM-DD date, in the locale; built on Date.UTC so no time-zone shift. No
+ * year: the dip is always inside the next 12 months. */
+function dayMonth(locale: string, iso: string, month: 'short' | 'long'): string {
+  const d = new Date(Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))));
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month, timeZone: 'UTC' }).format(d);
+}
+
+/**
+ * 08.1-24: the caution the verdict card shows for a later dip, or null (no dip, or not a Fits answer). The zero is the same money
+ * text the fact lines' {{zero}} uses. `still` on the saved view (Q3 A).
+ */
+export function useCautionOf(result: Result | null, currency: string, showCents = true, still = false): VerdictCaution | null {
+  const t = useT();
+  const fmt = useMoneyFormatter(showCents, currency);
+  const dip = laterDipOf(result);
+  if (dip === null) return null;
+  const zero = makeMoney(0, currency);
+  return {
+    text: t('decide.screens.answer.caution.line', { zero: fmt.formatMoney(zero), date: dayMonth(fmt.locale, dip.date, 'short') }),
+    a11y: t('decide.screens.answer.caution.a11y', { zero: fmt.formatMoneyA11y(zero), date: dayMonth(fmt.locale, dip.date, 'long') }),
+    animateKey: dip.date,
+    still,
+  };
+}
+
 export function AnswerFrame({
   check,
   evaluation,
@@ -146,6 +174,7 @@ export function AnswerFrame({
   // 08.1-20: the stage of this answer (read from the evaluation), the pay window and the caveat order follow from it.
   const reading = useMemo(() => stageReadingOf(status === 'ready' ? evaluation : null), [status, evaluation]);
   const lines = useSaid(result, said, reading);
+  const caution = useCautionOf(result, said.currency, said.showCents ?? true);
 
   const top: AnswerTopBarProps = {
     name: check.name,
@@ -230,7 +259,7 @@ export function AnswerFrame({
           </Text>
         </View>
         <View testID="answer-verdict-area" accessibilityState={{ busy: updating }} style={[styles.verdict, updating ? styles.updating : null]}>
-          <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
+          <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} caution={caution} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
           <FactLines
             facts={lines.facts}
             notices={notices.rest}
