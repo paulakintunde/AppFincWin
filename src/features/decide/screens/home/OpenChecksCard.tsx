@@ -15,6 +15,8 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { verdictRowFor, type Code, type Variant } from '@/engine/decide/v3';
 import { useT } from '@/i18n';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
+import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
 import { iconSize, radii, space, tile } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { stateColors, type StateTone } from '@/theme/tokens';
@@ -143,6 +145,7 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [all, setAll] = useState(false);
+  const gate = useReadOnlyGate('newDecideCheck'); // 09-25 (A2-W): "+ Purchase" starts a new check
   if (props.rows.length === 0) return null;
   const limit = props.limit ?? 5;
   const shown = all ? props.rows : props.rows.slice(0, limit);
@@ -155,14 +158,20 @@ export function OpenChecksCard(props: OpenChecksCardProps) {
         </Text>
         <Pressable
           accessibilityRole="link"
-          accessibilityLabel={t('decide.screens.sheetsHome.openChecks.addPurchaseA11y')}
+          accessibilityLabel={
+            gate.a11ySuffix
+              ? `${t('decide.screens.sheetsHome.openChecks.addPurchaseA11y')}, ${gate.a11ySuffix}`
+              : t('decide.screens.sheetsHome.openChecks.addPurchaseA11y')
+          }
           onPress={() => {
             hapticTick();
-            props.onAddPurchase();
+            gate.run(props.onAddPurchase);
           }}
           style={styles.add}
         >
-          <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.accent }}>{t('decide.screens.sheetsHome.openChecks.addPurchase')}</Text>
+          <LockedLabel gated={gate.gated} color={colors.accent}>
+            <Text style={{ ...textRole(pairing, 'label'), fontWeight: '600', color: colors.accent }}>{t('decide.screens.sheetsHome.openChecks.addPurchase')}</Text>
+          </LockedLabel>
         </Pressable>
       </View>
       {shown.map((row, i) => (

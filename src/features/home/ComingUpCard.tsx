@@ -13,6 +13,7 @@ import type { CategoryLookup } from '@/data/queries/categories';
 import { money } from '@/engine/money';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
+import { LockedLabel } from '@/features/plans/components/LockedLabel';
 import { useTheme } from '@/theme/ThemeProvider';
 import { useFontScale } from '@/theme/FontScaleProvider';
 import { FONT_PAIRINGS } from '@/theme/fonts';
@@ -69,6 +70,8 @@ export interface ComingUpCardProps {
   categories: CategoryLookup;
   state: MonthDataState;
   onPay(row: ActivityRowView): void;
+  /** 09-25 (A2-W): the plan is read-only; Pay keeps its place, shows the lock mark and opens the locked sheet. */
+  payLocked?: boolean;
   onOpenRow(row: ActivityRowView): void;
   onOpenProjection(projection: ProjectionView): void;
   onSeeAll(): void;
@@ -90,6 +93,7 @@ export function ComingUpCard({
   categories,
   state,
   onPay,
+  payLocked = false,
   onOpenRow,
   onOpenProjection,
   onSeeAll,
@@ -178,8 +182,10 @@ export function ComingUpCard({
             icon="payBills"
             heading={t('appLife.empty.comingUp.heading', { month: monthName })}
             body={t('appLife.empty.comingUp.body')}
-            actionLabel={t('appLife.empty.comingUp.action')}
-            onAction={() => openEntry({ kind: 'new', direction: 'out' })}
+            // 09-25 (device check, locked home): read-only, so no "Add a bill" button that would only open the locked sheet.
+            {...(payLocked
+              ? {}
+              : { actionLabel: t('appLife.empty.comingUp.action'), onAction: () => openEntry({ kind: 'new', direction: 'out' }) })}
           />
         )}
       </View>
@@ -293,7 +299,9 @@ export function ComingUpCard({
               {isRow && row ? (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={t('home.upcoming.payA11y', { name })}
+                  accessibilityLabel={
+                    payLocked ? `${t('home.upcoming.payA11y', { name })}, ${t('lock.accessibleSuffix')}` : t('home.upcoming.payA11y', { name })
+                  }
                   onPress={() => onPay(row)}
                   hitSlop={HIT_SLOP}
                   style={({ pressed }) => [
@@ -303,15 +311,17 @@ export function ComingUpCard({
                   ]}
                 >
                   {({ pressed }) => (
-                    <Text
-                      style={{
-                        fontFamily: bodyFont[600],
-                        fontSize: fontSize.meta,
-                        color: pressed ? colors.surface : colors.accent,
-                      }}
-                    >
-                      {t('home.upcoming.pay')}
-                    </Text>
+                    <LockedLabel gated={payLocked} color={pressed ? colors.surface : colors.accent}>
+                      <Text
+                        style={{
+                          fontFamily: bodyFont[600],
+                          fontSize: fontSize.meta,
+                          color: pressed ? colors.surface : colors.accent,
+                        }}
+                      >
+                        {t('home.upcoming.pay')}
+                      </Text>
+                    </LockedLabel>
                   )}
                 </Pressable>
               ) : stacked ? null : (

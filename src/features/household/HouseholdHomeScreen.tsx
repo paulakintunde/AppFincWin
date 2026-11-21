@@ -4,11 +4,12 @@
 // them (T-08-62). Every name is rendered through the member resolver (D-32). Balances (08-21) sit right after the hero.
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
-import type { Href } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { useQueryClient } from '@tanstack/react-query';
 import { Text } from '@/ui/Text';
 import { Chip } from '@/ui/Chip';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { Row } from '@/ui/Row';
 import { Screen } from '@/ui/Screen';
 import { EmptyState, accentTintOver } from '@/ui/EmptyState';
@@ -30,6 +31,8 @@ import { queryKeys } from '@/data/keys';
 import { useHouseholdEvents, useOpenInvites } from '@/data/queries/household';
 import { cancelInvite, inviteLink, restoreInvite } from '@/db/householdInvites';
 import { supabase } from '@/services/supabase';
+import { plansHref } from '@/features/plans/routes';
+import { usePlanState } from '@/features/plans/usePlanState';
 import { ChangeLine } from './components/ChangeLine';
 import { MemberAvatar } from './components/MemberAvatar';
 import { DepartureCard } from './DepartureCard';
@@ -63,6 +66,7 @@ export function HouseholdHomeScreen() {
   const { events, unreadCount } = useHouseholdEvents(householdId, userId ?? undefined);
   const invites = useOpenInvites(householdId, isOwner).data ?? [];
   const { text, when, day } = useNoticeFormat(householdId, scope.name);
+  const plan = usePlanState();
 
   const [memberId, setMemberId] = useState<string | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -81,7 +85,14 @@ export function HouseholdHomeScreen() {
   );
 
   const alone = members.length <= 1;
-  const full = members.length >= HOUSEHOLD_CAP;
+  // 09-20 (UI-SPEC 13): while a plan covers the home, its size, not the old fixed six, says when the home is full. A person
+  // invited past the size goes to the payer for approval, so the invite link stays.
+  const planCovered = plan.status === 'trial' || plan.status === 'active' || plan.status === 'grace';
+  const planKnown = planCovered && plan.planKey !== null && plan.planSize > 0;
+  const full = !planCovered && members.length >= HOUSEHOLD_CAP;
+  const planFull = planKnown && members.length >= plan.planSize;
+  const planName = plan.planKey ? t(`plans.paywall.cards.${plan.planKey}.name`) : '';
+  const payer = plan.payerName ?? '';
   const tint = accentTintOver(colors.fill1, colors.accent);
   const muted = { ...textRole(pairing, 'label'), color: colors.inkMuted };
   const metaStyle = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
@@ -172,7 +183,9 @@ export function HouseholdHomeScreen() {
                 onPress={() => setRenameOpen(true)}
                 style={styles.linkButton}
               >
-                <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.accent : colors.inkFaint }}>{t('household.home.rename')}</Text>
+                <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.accent : colors.inkFaint }}>
+                  {t('household.home.rename')}
+                </Text>
               </Pressable>
             ) : null}
           </View>
@@ -193,6 +206,13 @@ export function HouseholdHomeScreen() {
               {t('household.home.sublabel', { count: members.length, currency: scope.household?.reporting_currency ?? '' })}
             </Text>
           )}
+          {planKnown ? (
+            <View style={styles.planLine} testID="household-plan-line">
+              <Text style={muted}>{t('plans.household.planLine', { plan: planName, name: payer })}</Text>
+              {!plan.payerIsMe ? <StatusBadge status="coveredBy" label={t('plans.household.coveredBy', { name: payer })} /> : null}
+              {isOwner && !plan.payerIsMe ? <Text style={metaStyle}>{t('plans.household.notPayer', { name: payer })}</Text> : null}
+            </View>
+          ) : null}
           {isOwner && !online ? <Text style={metaStyle}>{t('household.home.offline.helper')}</Text> : null}
         </View>
       </FadeIn>
@@ -249,11 +269,30 @@ export function HouseholdHomeScreen() {
                   style={styles.linkButton}
                   testID="household-invite-link"
                 >
-                  <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.accent : colors.inkFaint }}>{t('household.home.people.invite')}</Text>
+                  <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.accent : colors.inkFaint }}>
+                    {t('household.home.people.invite')}
+                  </Text>
                 </Pressable>
               )
             ) : full ? (
               <Text style={metaStyle}>{t('household.home.people.full')}</Text>
+            ) : null}
+            {planFull ? (
+              <View testID="household-plan-full">
+                <Text style={metaStyle}>{t('plans.household.full', { plan: planName, count: plan.planSize })}</Text>
+                {plan.payerIsMe ? (
+                  <Pressable
+                    accessibilityRole="link"
+                    hitSlop={LINK_HIT_SLOP}
+                    onPress={() => router.push(plansHref({ mode: 'change', trigger: 'invite' }))}
+                    style={styles.linkButton}
+                  >
+                    <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('plans.household.seePlans')}</Text>
+                  </Pressable>
+                ) : (
+                  <Text style={metaStyle}>{t('plans.household.askPayer', { payer })}</Text>
+                )}
+              </View>
             ) : null}
             {isOwner && !online ? <Text style={metaStyle}>{t('household.home.offline.helper')}</Text> : null}
           </View>
@@ -281,7 +320,9 @@ export function HouseholdHomeScreen() {
                     onPress={() => void copyLink(inv.code)}
                     style={styles.linkButton}
                   >
-                    <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.accent : colors.inkFaint }}>{t('household.home.invites.copyLink')}</Text>
+                    <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.accent : colors.inkFaint }}>
+                      {t('household.home.invites.copyLink')}
+                    </Text>
                   </Pressable>
                   <Pressable
                     accessibilityRole="button"
@@ -291,7 +332,9 @@ export function HouseholdHomeScreen() {
                     onPress={() => void cancel(inv.invite_id)}
                     style={styles.linkButton}
                   >
-                    <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.danger : colors.inkFaint }}>{t('household.home.invites.cancel')}</Text>
+                    <Text style={{ ...textRole(pairing, 'body'), color: online ? colors.danger : colors.inkFaint }}>
+                      {t('household.home.invites.cancel')}
+                    </Text>
                   </Pressable>
                 </View>
               </View>
@@ -345,9 +388,9 @@ export function HouseholdHomeScreen() {
               <Text style={muted}>{t('household.home.changesEmptyBody')}</Text>
             </View>
           ) : (
-            events.slice(0, RECENT).map((e) => (
-              <ChangeLine key={e.id} householdId={householdId} actorId={e.actor_id} text={text(e)} at={when(e.created_at)} />
-            ))
+            events
+              .slice(0, RECENT)
+              .map((e) => <ChangeLine key={e.id} householdId={householdId} actorId={e.actor_id} text={text(e)} at={when(e.created_at)} />)
           )}
         </View>
       </FadeIn>
@@ -391,6 +434,7 @@ const styles = StyleSheet.create({
   section: { marginTop: step.section },
   card: { padding: step.card, borderRadius: radii.card, gap: step.tight },
   flex: { flex: 1, flexShrink: 1 },
+  planLine: { gap: step.hair, alignItems: 'flex-start' },
   heroName: { flexDirection: 'row', alignItems: 'center', gap: step.row },
   linkButton: { minHeight: space.touchMin, justifyContent: 'center' },
   centerLink: { minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center' },

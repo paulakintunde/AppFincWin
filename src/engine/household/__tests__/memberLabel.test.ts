@@ -46,7 +46,16 @@ describe('memberLabel', () => {
     });
   });
 
+  it('names the Extended-plan colours for keys 6, 7 and 11', () => {
+    expect(memberLabel({ ...base, nameHidden: true, colourKey: 6 }, 'u1')).toEqual({ kind: 'colour', text: 'Navy' });
+    expect(memberLabel({ ...base, nameHidden: true, colourKey: 7 }, 'u1')).toEqual({ kind: 'colour', text: 'Magenta' });
+    expect(memberLabel({ ...base, nameHidden: true, colourKey: 11 }, 'u1')).toEqual({ kind: 'colour', text: 'Brick' });
+  });
+
   it('exposes the colour names in UI-SPEC order', () => {
-    expect(MEMBER_COLOUR_NAMES).toEqual(['Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Teal']);
+    expect(MEMBER_COLOUR_NAMES).toEqual([
+      'Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Teal',
+      'Navy', 'Magenta', 'Brown', 'Orange', 'Charcoal', 'Brick',
+    ]);
   });
 });

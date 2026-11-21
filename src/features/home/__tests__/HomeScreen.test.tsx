@@ -76,6 +76,8 @@ jest.mock('../QuickActions', () => ({ QuickActions: mockProbe('quick') }));
 jest.mock('../ThisMonthCard', () => ({ ThisMonthCard: mockProbe('month') }));
 jest.mock('../ComingUpCard', () => ({ ComingUpCard: mockProbe('coming') }));
 jest.mock('../AccountsCard', () => ({ AccountsCard: mockProbe('accounts') }));
+jest.mock('@/features/levels/OfferSlot', () => ({ OfferSlot: mockProbe('offer') })); // 09-22: inline offer between the coming-up and accounts cards
+jest.mock('@/features/plans/notices/PlanNoticeSlot', () => ({ PlanNoticeSlot: mockProbe('planNotice') })); // 09-19: above This month
 jest.mock('../ProjectionDetailSheet', () => ({ ProjectionDetailSheet: mockProbe('projection') }));
 jest.mock('@/features/record/activity/TransactionDetailSheet', () => ({ TransactionDetailSheet: mockProbe('detail') }));
 jest.mock('@/features/record/entry/EditScopePrompt', () => ({ EditScopePrompt: mockProbe('scope') }));
@@ -96,7 +98,10 @@ describe('HomeScreen', () => {
     expect(at('quick')).toBeGreaterThan(-1);
     expect(at('quick')).toBeLessThan(at('month'));
     expect(at('month')).toBeLessThan(at('coming'));
-    expect(at('coming')).toBeLessThan(at('accounts'));
+    expect(at('coming')).toBeLessThan(at('offer'));
+    expect(at('offer')).toBeLessThan(at('accounts'));
+    expect(at('quick')).toBeLessThan(at('planNotice'));
+    expect(at('planNotice')).toBeLessThan(at('month'));
     expect(getByTestId('tab-root').props.refreshKeys).toBe(mockRefreshKeys);
   });
 

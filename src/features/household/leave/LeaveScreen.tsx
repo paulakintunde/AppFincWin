@@ -4,8 +4,8 @@
 // server answers, the cached household is dropped (resetHouseholdScope) and a calm page says "You're no longer in ...", then
 // Home with the toast "You left ...". A household of one has nothing to leave (Leave is not offered there; `alone` lands here).
 // Names only through the member resolver (D-32). Leaving needs a connection; nothing is queued.
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { Text } from '@/ui/Text';
@@ -13,6 +13,7 @@ import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
 import { Screen } from '@/ui/Screen';
 import { WarningCard } from '@/ui/WarningCard';
+import { ConfirmSheet } from '@/ui/ConfirmSheet';
 import { EmptyState } from '@/ui/EmptyState';
 import { Glyph } from '@/ui/icons/Glyph';
 import { FadeIn } from '@/ui/motion/FadeIn';
@@ -27,7 +28,13 @@ import { fontSize, textRole } from '@/theme/typography';
 import { resetHouseholdScope } from '@/data/queries/household';
 import { useHouseholdBalances, useSettlements } from '@/data/queries/householdBalances';
 import { leaveHousehold } from '@/db/householdDeparture';
+import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
 import { supabase } from '@/services/supabase';
+import { PLAN_ENDED_HREF } from '@/features/plans/routes';
+import { loadOffers } from '@/features/plans/store/purchasesClient';
+import { usePlanState } from '@/features/plans/usePlanState';
+import { usePurchaseFlow } from '@/features/plans/usePurchaseFlow';
+import type { PlanOffer } from '@/features/plans/types';
 import { MemberAvatar } from '../components/MemberAvatar';
 import { householdIcons } from '../glyphs';
 import { otherPartyKey } from '../settle/PendingSettlementCard';
@@ -38,8 +45,15 @@ import { useMemberLabel, useMemberSeen } from '../useMemberLabel';
 const href = (path: string): Href => path as Href;
 
 type Step = 'pick' | 'confirm';
+/** 8d: 'solo' opens "Leave and continue on Solo"; 'own' ("Start your own plan", owner answer Q3) first says what starting it means. */
+export type LeaveMode = 'solo' | 'own';
+type SoloSheet = 'none' | 'intro' | 'confirm';
 
-export function LeaveScreen() {
+export interface LeaveScreenProps {
+  mode?: LeaveMode;
+}
+
+export function LeaveScreen({ mode }: LeaveScreenProps = {}) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const qc = useQueryClient();
@@ -61,19 +75,61 @@ export function LeaveScreen() {
   // The household name is kept from before the call: once the scope resets, the scope reads the new household.
   const [done, setDone] = useState<string | null>(null);
 
+  // 09-20 (D-14, D-41..D-43): leaving to start a Solo plan. The Solo offer is the no-trial one: the trial is a first-plan offer.
+  const plan = usePlanState();
+  const flow = usePurchaseFlow();
+  const [sheet, setSheet] = useState<SoloSheet>(mode === 'solo' ? 'confirm' : mode === 'own' ? 'intro' : 'none');
+  const [soloOffer, setSoloOffer] = useState<PlanOffer | null>(null);
+  const [offerFailed, setOfferFailed] = useState(false);
+  // Set once the leave went through and the Solo purchase is under way; holds the home's name (the scope resets after the leave).
+  const [buying, setBuying] = useState<string | null>(null);
+  const wantSolo = sheet !== 'none';
+
+  useEffect(() => {
+    if (!wantSolo || soloOffer !== null) return;
+    let live = true;
+    loadOffers({ platform: Platform.OS === 'ios' ? 'ios' : 'android', trialAvailable: false })
+      .then((offers) => {
+        if (!live) return;
+        const hit = offers.find((o) => o.planKey === 'solo' && o.period === 'year') ?? offers.find((o) => o.planKey === 'solo') ?? null;
+        setSoloOffer(hit);
+        setOfferFailed(hit === null);
+      })
+      .catch(() => live && setOfferFailed(true));
+    return () => {
+      live = false;
+    };
+  }, [wantSolo, soloOffer]);
+
+  // After the leave, the purchase decides where the person lands: access returns when the server says covered; a failed or
+  // cancelled purchase leaves a household of one that is locked, so the lock explainer ("Choose a plan") is next (UI-SPEC 8d).
+  // Derived, not set from an effect: the server has the Solo plan on record.
+  const soloDone = buying !== null && flow.state === 'done' ? buying : null;
+
   const meta = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   const household = scope.name;
 
-  if (done !== null) {
+  if (buying !== null && done === null && soloDone === null) {
+    return (
+      <Screen scroll>
+        <Text accessibilityLiveRegion="polite" testID="leave-buying" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+          {t('plans.paywall.states.updating')}
+        </Text>
+      </Screen>
+    );
+  }
+
+  const finished = done ?? soloDone;
+  if (finished !== null) {
     const toHome = () => {
-      showToast({ kind: 'ordinary', text: { key: 'household.leave.left', params: { household: done } } });
+      showToast({ kind: 'ordinary', text: { key: 'household.leave.left', params: { household: finished } } });
       router.navigate(href('/home'));
     };
     return (
       <Screen scroll>
         <FadeIn style={styles.calm} testID="leave-done">
           <EmptyState
-            heading={t('household.leave.noLonger.title', { household: done })}
+            heading={t('household.leave.noLonger.title', { household: finished })}
             body={t('household.leave.noLonger.body')}
             icon={householdIcons.people}
             actionLabel={t('household.leave.noLonger.gotIt')}
@@ -113,8 +169,9 @@ export function LeaveScreen() {
   // D-27: an owner with other members picks the new owner first; everyone else goes straight to the confirm.
   const current: Step = step ?? (isOwner ? 'pick' : 'confirm');
 
-  const leave = async () => {
+  const leave = async (andSubscribe = false) => {
     if (busy || !online) return;
+    if (andSubscribe && soloOffer === null) return;
     setBusy(true);
     setFailure(null);
     try {
@@ -131,6 +188,14 @@ export function LeaveScreen() {
       const name = household;
       resetHouseholdScope(qc, userId, householdId);
       hapticTap();
+      if (andSubscribe && soloOffer !== null) {
+        // The leave is done and cannot be undone here; the purchase follows and the server decides when access returns.
+        setSheet('none');
+        setBuying(name);
+        const started = await flow.start({ offer: soloOffer, timing: 'now' });
+        if (started !== 'submitted') router.replace(PLAN_ENDED_HREF);
+        return;
+      }
       setDone(name);
     } catch {
       hapticFailed();
@@ -140,6 +205,7 @@ export function LeaveScreen() {
     }
   };
 
+  const planCovered = plan.status === 'trial' || plan.status === 'active' || plan.status === 'grace';
   const offlineLine = !online ? <Text style={meta}>{t('household.home.offline.helper')}</Text> : null;
   const failureLine = failure ? (
     <Text accessibilityRole="alert" style={{ ...textRole(pairing, 'label'), color: colors.danger }}>
@@ -214,9 +280,7 @@ export function LeaveScreen() {
           const name = label(p.otherKey, { left: !members.some((m) => m.user_id === p.otherKey) });
           const amount = fmt(Math.abs(p.net));
           const sentence =
-            p.net < 0
-              ? t('household.leave.leaveOwes', { name, amount, self })
-              : t('household.leave.leaveOwed', { name, amount, self });
+            p.net < 0 ? t('household.leave.leaveOwes', { name, amount, self }) : t('household.leave.leaveOwed', { name, amount, self });
           return (
             <View key={p.otherKey} testID="leave-balance-warning">
               <WarningCard tone="soft" title={t('household.leave.balanceTitle')} value={amount} body={[sentence]} />
@@ -229,6 +293,26 @@ export function LeaveScreen() {
             <Text style={[styles.flex, meta]}>{t('household.leave.leavePending', { name: label(otherPartyKey(s, userId)) })}</Text>
           </View>
         ))}
+        {/* 8c: what leaving does to access and billing, above the existing text. */}
+        {planCovered && !plan.payerIsMe ? (
+          <View style={styles.planLines} testID="leave-plan-member">
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('plans.leave.member')}</Text>
+            <Pressable
+              accessibilityRole="link"
+              hitSlop={LINK_HIT_SLOP}
+              onPress={() => setSheet('confirm')}
+              style={styles.link}
+              testID="leave-continue-solo"
+            >
+              <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('plans.leave.memberLink')}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {planCovered && plan.payerIsMe ? (
+          <Text testID="leave-plan-payer" style={{ ...textRole(pairing, 'body'), color: colors.ink }}>
+            {t('plans.leave.payer')}
+          </Text>
+        ) : null}
         <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('household.leave.leaveBody', { household })}</Text>
       </View>
       <View style={styles.actions}>
@@ -243,6 +327,45 @@ export function LeaveScreen() {
         {offlineLine}
         {failureLine}
       </View>
+
+      {/* Owner answer Q3: "Start your own plan" says what it means before the 8d confirm. */}
+      <ConfirmSheet
+        visible={sheet === 'intro'}
+        title={t('plans.member.startOwnTitle')}
+        body={t('plans.member.startOwnBody', { home: household })}
+        cancelLabel={t('plans.member.startOwnStay', { home: household })}
+        confirmLabel={t('plans.member.startOwnContinue')}
+        onCancel={() => {
+          setSheet('none');
+          goBack();
+        }}
+        onConfirm={() => setSheet('confirm')}
+      />
+      {/* 8d: leave and buy Solo together, no trial. Accent, not a destructive action: the leave itself keeps its own confirm. */}
+      <ConfirmSheet
+        visible={sheet === 'confirm'}
+        title={t('plans.leave.solo.title')}
+        body={
+          soloOffer
+            ? t('plans.leave.solo.body', {
+                home: household,
+                price: soloOffer.priceString,
+                period: t(soloOffer.period === 'year' ? 'plans.paywall.periodWord.year' : 'plans.paywall.periodWord.month'),
+              })
+            : offerFailed
+              ? t('plans.paywall.states.loadFailed')
+              : t('plans.paywall.states.loadingPrice')
+        }
+        cancelLabel={t('plans.leave.solo.secondary', { home: household })}
+        confirmLabel={t('plans.leave.solo.primary')}
+        onCancel={() => {
+          setSheet('none');
+          if (mode !== undefined) goBack();
+        }}
+        onConfirm={() => void leave(true)}
+      >
+        {failureLine}
+      </ConfirmSheet>
     </Screen>
   );
 }
@@ -255,6 +378,8 @@ const styles = StyleSheet.create({
   pickRow: { minHeight: rowHeight.two, flexDirection: 'row', alignItems: 'center', gap: step.row },
   flex: { flex: 1, flexShrink: 1 },
   note: { flexDirection: 'row', alignItems: 'flex-start', gap: step.tight },
+  planLines: { gap: step.tight },
+  link: { minHeight: space.touchMin, justifyContent: 'center', alignSelf: 'flex-start' },
   actions: { marginTop: step.section, gap: step.row },
   calm: { flex: 1, justifyContent: 'center', marginTop: step.section },
 });

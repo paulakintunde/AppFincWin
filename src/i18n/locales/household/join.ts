@@ -11,6 +11,8 @@ export const join = {
   previewCount: '{{count}} people so far',
   joinCta: 'Join {{household}}',
   notNow: 'Not now',
+  gotIt: 'Close',
+  waitingPerson: 'Someone you invited',
   recordsMoveIn: 'Your accounts and records come with you and stay private.',
   inAnother: {
     title: 'You’re in another household. Leave it first to join this one.',

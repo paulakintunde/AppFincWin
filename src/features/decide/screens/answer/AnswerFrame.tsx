@@ -96,6 +96,8 @@ export interface AnswerFrameProps {
   updating?: boolean;
   /** 06.1-68 (CB-11): readiness rows answered on this screen and not yet dropped by the engine. Absent = none. */
   answeredRows?: ReadonlySet<string>;
+  /** 09-24 (UI-SPEC 4): content above the notices and verdict (the sample look-around's SampleAnswerIntro). Absent = none. */
+  intro?: React.ReactNode;
 }
 
 const NO_ROWS: readonly ReadinessFixRow[] = [];
@@ -124,6 +126,7 @@ export function AnswerFrame({
   onReadinessChoice,
   updating = false,
   answeredRows,
+  intro,
 }: AnswerFrameProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -245,6 +248,7 @@ export function AnswerFrame({
       <ScrollView contentContainerStyle={[styles.content, showBar ? null : { paddingBottom: space.screenH + insets.bottom }]}>
         <AnswerTopBar {...top} showControls={showActions} />
         {offlineDate !== null ? <OfflineCard date={offlineDate} onRetry={retry} /> : null}
+        {intro}
         {body}
       </ScrollView>
       {showOutcome ? (

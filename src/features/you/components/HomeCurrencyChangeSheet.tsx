@@ -8,6 +8,7 @@ import { Text } from '@/ui/Text';
 import { useChangeHomeCurrency } from '@/data/mutations/homeCurrency';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { useSheetWriteGate } from '@/features/plans/useReadOnlyGate';
 import { queueToast, showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -36,6 +37,8 @@ export function HomeCurrencyChangeSheet({ visible, next, onClose }: HomeCurrency
     setFailure(null);
     onClose();
   };
+  // 09-25 (A2-W): the change converts category caps (a locked table); read-only plans open the locked sheet.
+  const gate = useSheetWriteGate(close);
 
   const onConfirm = async () => {
     if (pending) return;
@@ -72,9 +75,10 @@ export function HomeCurrencyChangeSheet({ visible, next, onClose }: HomeCurrency
             label={pending ? t('you.homeCurrency.fetching') : t('you.homeCurrency.confirm', { code: next })}
             variant="primary"
             disabled={pending}
-            onPress={() => {
+            locked={gate.gated}
+            onPress={gate.guard(() => {
               void onConfirm();
-            }}
+            })}
           />
         </View>
       </View>

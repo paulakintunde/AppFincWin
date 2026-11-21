@@ -1,7 +1,10 @@
 // D-32: the ONLY place that turns a member into a label. Never read profiles.full_name.
 // Returns data, not UI words: the UI translates 'you', 'former' and the "(left)" suffix.
 
-export const MEMBER_COLOUR_NAMES = ['Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Teal'] as const;
+export const MEMBER_COLOUR_NAMES = [
+  'Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Teal',
+  'Navy', 'Magenta', 'Brown', 'Orange', 'Charcoal', 'Brick',
+] as const;
 
 export interface LabelMember {
   readonly userId: string | null;

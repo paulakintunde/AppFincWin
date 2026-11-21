@@ -8,6 +8,7 @@ import { type Href } from 'expo-router';
 import { useBackHistory } from '@/shell/backHistory/BackHistoryProvider';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { useHideFab, useProvideDefaultFabAction, useProvideQuickAction } from '@/shell/fab/FabProvider';
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import { closeEntry, openEntry, useEntryHostMode } from './entryHost';
 import { SeriesStatusHost } from './SeriesStatusSheet';
 import { TransactionSheet } from './TransactionSheet';
@@ -19,14 +20,26 @@ export function ShellEntryHost(): React.JSX.Element {
   const mode = useEntryHostMode();
   const { current } = useBackHistory();
   const from = current?.area === 'tab' && current.tab === 'home' ? 'home' : 'activity';
-  const openNew = useCallback((direction: 'out' | 'in' | 'transfer') => openEntry({ kind: 'new', direction }), []);
+  // 09-17 (TIER-09): a locked plan opens the named sheet instead of the entry; the quick menu, You > Add and the
+  // screen-reader actions all call these handlers, so the gate lives here.
+  const addGate = useWriteGate('addTransaction');
+  const importGate = useWriteGate('importStatement');
+  const addRun = addGate.run;
+  const importRun = importGate.run;
+  const openNew = useCallback(
+    (direction: 'out' | 'in' | 'transfer') => addRun(() => openEntry({ kind: 'new', direction })),
+    [addRun],
+  );
   useProvideDefaultFabAction(useCallback(() => openNew('out'), [openNew]));
   useProvideQuickAction('addExpense', useCallback(() => openNew('out'), [openNew]));
   useProvideQuickAction('addIncome', useCallback(() => openNew('in'), [openNew]));
   useProvideQuickAction('transfer', useCallback(() => openNew('transfer'), [openNew]));
   useProvideQuickAction(
     'importStatement',
-    useCallback(() => pushOnce({ pathname: '/import', params: { entry: 'you', from } } as Href), [from]),
+    useCallback(
+      () => importRun(() => pushOnce({ pathname: '/import', params: { entry: 'you', from } } as Href)),
+      [from, importRun],
+    ),
   );
   useHideFab('entryFlow', mode !== null);
   return (

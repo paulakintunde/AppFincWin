@@ -41,6 +41,17 @@ export function useNoticeFormat(householdId: string | null | undefined, househol
     [t],
   );
 
+  /** A plan date carried in the event params, in the device locale. */
+  const dayOf = useCallback(
+    (raw: unknown): string => {
+      if (typeof raw !== 'string') return '';
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return '';
+      return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(d);
+    },
+    [locale],
+  );
+
   /** The finished sentence for one event. */
   const text = useCallback(
     (e: HouseholdEventRow): string => {
@@ -101,11 +112,33 @@ export function useNoticeFormat(householdId: string | null | undefined, househol
           return t('household.notices.settle_undone', { name: actor, amount });
         case 'written_off':
           return t('household.notices.written_off', { name: actor, amount });
+        // 09-19 (UI-SPEC 7, D-19, D-21, D-21a, Owner P4): plan events in the notices list. Prices are not known here, so the
+        // downgrade offer shows its title; the full offer with the price is the notice on Home and Subscription.
+        case 'plan_approval_needed':
+          return t('plans.invite.approval.push', { name: t('household.join.waitingPerson'), home: household });
+        case 'plan_payer_left':
+          return t('plans.notices.payerLeft.body', { name: subject, date: dayOf(e.params.grace_until) });
+        case 'plan_takeover':
+          return t('plans.notices.takeoverDone.toast', { name: label(typeof e.params.payer === 'string' ? e.params.payer : null) });
+        case 'plan_grace':
+          return t('plans.notices.paymentFailed.body', { name: subject, date: dayOf(e.params.grace_until) });
+        case 'plan_locked':
+          return t('lock.bannerHousehold', { home: household });
+        case 'plan_downgrade_offer':
+          return t('plans.notices.downgradeOffer.title');
+        case 'plan_recovered_after_takeover':
+          return t('plans.doubleCover.notChosen.body', { name: label(typeof e.params.payer === 'string' ? e.params.payer : null), home: household });
+        case 'plan_double_cover':
+          // mode 'choose' goes to both payers: plans.doubleCover.body opens with the plans.doubleCover.title sentence, so the
+          // list line is the body alone. mode 'extra' goes to a member who bought while already covered.
+          return e.params.mode === 'extra'
+            ? t('plans.notices.oldPlanRecovers.body', { name: label(typeof e.params.payer === 'string' ? e.params.payer : null), home: household })
+            : t('plans.doubleCover.body');
         default:
           return t('household.notices.fallback', { name: actor, household });
       }
     },
-    [t, label, householdName, amountOf, ruleOf, viewerId],
+    [t, label, householdName, amountOf, ruleOf, viewerId, dayOf],
   );
 
   /** A time for the second line: date and time in the device locale. */

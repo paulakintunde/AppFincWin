@@ -13,6 +13,9 @@ let mockHasSamples = true;
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', today: '2026-10-09', hasSamples: mockHasSamples }),
 }));
+// 09-24: the banner reads the plan; 'trial' keeps the 02.2 behaviour under test, 'sample' hides it for the Sample bar.
+let mockPlanStatus = 'trial';
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: mockPlanStatus, loading: false }) }));
 const mockClear = jest.fn();
 jest.mock('@/data/mutations/sampleData', () => ({
   useSampleData: () => ({ clear: mockClear, seed: jest.fn(), declinePrompt: jest.fn(), pending: false }),
@@ -25,12 +28,19 @@ const wrap = (ui: React.ReactElement) => <ThemeProvider>{ui}</ThemeProvider>;
 beforeEach(() => {
   jest.clearAllMocks();
   mockHasSamples = true;
+  mockPlanStatus = 'trial';
   mockClear.mockResolvedValue(true);
 });
 
 describe('SampleBanner', () => {
   it('renders nothing when no sample rows exist', async () => {
     mockHasSamples = false;
+    const { queryByText } = await render(wrap(<SampleBanner />));
+    expect(queryByText('These are sample figures')).toBeNull();
+  });
+
+  it('renders nothing in the pre-trial look-around (plan status sample): the Sample bar is the one marker', async () => {
+    mockPlanStatus = 'sample';
     const { queryByText } = await render(wrap(<SampleBanner />));
     expect(queryByText('These are sample figures')).toBeNull();
   });

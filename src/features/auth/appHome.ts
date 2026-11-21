@@ -6,3 +6,5 @@ import type { Href } from 'expo-router';
 // Cast because Expo Router's generated route types may not know the route yet.
 export const APP_HOME_HREF = '/home' as Href;
 export const ACTIVITY_HREF = '/activity' as Href;
+// 09-23 (D-28): the first-run route after sign-in, ahead of Home while a person has no setup on the server. Same cast reason.
+export { ONBOARDING_HREF } from '@/features/plans/routes';

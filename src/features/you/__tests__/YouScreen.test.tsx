@@ -8,6 +8,7 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { QUICK_ACTION_ORDER } from '@/shell/fab/quickActions';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { resetPushOnceForTests } from '@/shell/navigation/pushOnce';
+import { setPlanWriteState } from '@/data/sync/planWriteGuard';
 import { YouScreen } from '../YouScreen';
 import { expectFits } from '@/test/textFitMatrix';
 
@@ -172,6 +173,16 @@ jest.mock('@/data/queries/household', () => ({
   useHouseholdEvents: () => ({ events: [], unreadCount: mockUnread, isLoading: false }),
 }));
 
+// 09-15: the Subscription and Features rows read plan state and feature access; stubbed so this screen test needs no providers.
+let mockPlan: Record<string, unknown> = { status: 'sample' };
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
+jest.mock('@/features/levels/useFeatureAccess', () => ({
+  useAllFeatureAccess: () => [{ on: true }, { on: true }, { on: false }],
+  useUserSetup: () => ({ data: { level: 2 }, loading: false }),
+}));
+
+jest.setTimeout(60000);
+
 async function renderScreen() {
   return render(
     <ThemeProvider>
@@ -198,6 +209,7 @@ beforeEach(() => {
   mockConsent = 'declined';
   mockHousehold = { name: 'Flat 4B', members: [{}, {}, {}], householdId: 'h1', userId: 'u1' };
   mockUnread = 0;
+  mockPlan = { status: 'sample' };
   mockSyncStatus = { isOnline: false, queued: 3, failed: 0, conflicts: 0, lastSyncedAt: null };
   mockCheckConnection.mockResolvedValue({ ok: true, latencyMs: 42 });
   mockRequestSignOut.mockResolvedValue({ needsConfirm: false });
@@ -444,6 +456,34 @@ describe('YouScreen Money section', () => {
   });
 });
 
+// 09-25 (A5-4): in a locked (read-only) home every Money row that only opens a screen to read still opens it. Writes
+// inside those screens are gated there (LockedSheet); the row itself is never gated or dead.
+describe('09-25 A5-4: YouScreen Money rows open in a locked home', () => {
+  afterEach(async () => {
+    await act(() => setPlanWriteState(null));
+  });
+  it('Activity, Accounts, Categories, History, Goals, Household, Features and Subscription all navigate', async () => {
+    mockPlan = { status: 'locked', writable: false, loading: false };
+    setPlanWriteState({ status: 'locked', writable: false, loading: false });
+    const { getByText } = await renderScreen();
+    await act(async () => {
+      for (const name of ['Activity', 'Accounts', 'Categories', 'History', 'Goals', 'Household', 'Features', 'Subscription']) {
+        fireEvent.press(getByText(name));
+      }
+    });
+    expect(mockRouterDismissTo).toHaveBeenCalledWith('/activity');
+    expect(mockRouterPush.mock.calls.map((c) => c[0])).toEqual([
+      '/accounts',
+      '/categories',
+      '/history',
+      '/grow?segment=goals',
+      '/household',
+      '/features',
+      '/subscription',
+    ]);
+  });
+});
+
 describe('YouScreen Money rows are full-size touch targets (S-WR-14)', () => {
   it('each row is at least 44pt tall (06.2 D-09: 52, the one-line Row)', async () => {
     const { getByRole } = await renderScreen();
@@ -658,5 +698,49 @@ describe('YouScreen Household row (08-17)', () => {
     const { getByText, queryByLabelText } = await renderScreen();
     expect(getByText('Just you')).toBeTruthy();
     expect(queryByLabelText(/unread/)).toBeNull();
+  });
+});
+
+describe('YouScreen Phase 9 rows (09-15)', () => {
+  it('Subscription leads the Account group and opens SUBSCRIPTION_HREF one level down', async () => {
+    mockPlan = { status: 'trial', payerIsMe: true, payerName: null, trialEndsAt: '2026-12-04T12:00:00Z', coveredUntil: null };
+    const { getByText } = await renderScreen();
+    expect(getByText(/Free trial · ends/)).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(getByText('Subscription'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/subscription')).toHaveLength(1);
+  });
+
+  it('Subscription sublabel names the payer for a member', async () => {
+    mockPlan = { status: 'active', payerIsMe: false, payerName: 'Sam', coveredUntil: '2027-01-09T12:00:00Z' };
+    const { getByText } = await renderScreen();
+    expect(getByText('Covered by Sam')).toBeTruthy();
+  });
+
+  it('Subscription sublabel says Read-only when locked', async () => {
+    mockPlan = { status: 'locked', payerIsMe: false, payerName: null };
+    const { getByText } = await renderScreen();
+    expect(getByText('Read-only')).toBeTruthy();
+  });
+
+  it('Features shows the level and count and opens FEATURES_HREF', async () => {
+    const { getByText } = await renderScreen();
+    expect(getByText('Everyday · 2 of 3 on')).toBeTruthy();
+    await act(async () => {
+      fireEvent.press(getByText('Features'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/features')).toHaveLength(1);
+  });
+
+  it('Free help and Export your data open their routes in every plan state', async () => {
+    mockPlan = { status: 'locked', payerIsMe: false, payerName: null };
+    const { getByText } = await renderScreen();
+    await act(async () => {
+      fireEvent.press(getByText('Free help'));
+      fireEvent.press(getByText('Export your data'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/free-help')).toHaveLength(1);
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/export')).toHaveLength(1);
   });
 });

@@ -13,6 +13,7 @@ import { flowOf, rowTag } from '@/engine/activity';
 import { currencyExponent, knownCurrencyExponent, money } from '@/engine/money';
 import { impliedRate } from '@/engine/statement';
 import { categoryName } from '@/features/record/categoryName';
+import { useWriteGate } from '@/features/plans/useWriteGate';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import type { TransactionRow } from '@/db/rows';
@@ -70,6 +71,7 @@ export interface TransactionDetailSheetProps {
 
 export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatus, onEdit, onClone, onDelete, refundCallbacks }: TransactionDetailSheetProps) {
   const t = useT();
+  const gate = useWriteGate('editRecord'); // 09-17 (TIER-09): reading stays; changing a record names the lock
   const { colors, pairing } = useTheme();
   const ctx = useRecordContext();
   const formatter = useMoneyFormatter(ctx.showCents);
@@ -187,13 +189,13 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
       }
       actions={
         <>
-          {action !== null ? <Pill label={t(`activity.detail.${action.key}`)} variant="primary" onPress={() => onStatus(action.next)} /> : null}
+          {action !== null ? <Pill label={t(`activity.detail.${action.key}`)} variant="primary" locked={gate.gated} onPress={() => gate.run(() => onStatus(action.next))} /> : null}
           <SharedGate row={row} action="edit">
-            <Pill label={t('activity.detail.edit')} variant="secondary" onPress={onEdit} />
+            <Pill label={t('activity.detail.edit')} variant="secondary" locked={gate.gated} onPress={() => gate.run(onEdit)} />
           </SharedGate>
-          {!isTransfer ? <Pill label={t('activity.detail.clone')} variant="secondary" onPress={onClone} /> : null}
+          {!isTransfer ? <Pill label={t('activity.detail.clone')} variant="secondary" locked={gate.gated} onPress={() => gate.run(onClone)} /> : null}
           <SharedGate row={row} action="delete">
-            <Pill label={t('activity.detail.delete')} variant="danger" onPress={onDelete} />
+            <Pill label={t('activity.detail.delete')} variant="danger" locked={gate.gated} onPress={() => gate.run(onDelete)} />
           </SharedGate>
         </>
       }

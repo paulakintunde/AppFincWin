@@ -7,7 +7,9 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
-import { router, type Href } from 'expo-router';
+import { Redirect, router, type Href } from 'expo-router';
+import { planLockVariant, usePlanWriteState } from '@/data/sync/planWriteGuard';
+import { ACTIVITY_HREF } from '@/features/auth/appHome';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { AccountSheet } from '@/features/record/accounts/AccountSheet';
 import { DECIDE_OPEN } from '@/features/decide/availability';
@@ -23,6 +25,10 @@ export function SetupAccountScreen() {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [sheetOpen, setSheetOpen] = useState(true);
+  // 09-25 (A5-3): a locked (read-only) home is never asked for a first account: its Save would only be locked, and Cancel
+  // led back here through the tabs gate. Any way in (a stale route, Back) goes on to the empty Activity tab instead.
+  const locked = planLockVariant(usePlanWriteState()) === 'locked';
+  if (locked) return <Redirect href={ACTIVITY_HREF} />;
   return (
     <Screen>
       <SyncProblemLine inset={false} />

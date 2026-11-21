@@ -50,6 +50,7 @@
     "react-native": "0.86.3",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-get-random-values": "~1.11.0",
+    "react-native-purchases": "10.16.0",
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
@@ -85,7 +86,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "test:deno": "deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts supabase/functions/delete-account/delete.test.ts",
+    "test:deno": "deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts supabase/functions/delete-account/delete.test.ts supabase/functions/_shared/revenuecat/subscriber.test.ts supabase/functions/plan-webhook/verify.test.ts supabase/functions/plan-webhook/sync.test.ts supabase/functions/plan-refresh/refresh.test.ts supabase/functions/plan-grant/grant.test.ts",
     "fixtures:pdf:snapshot": "deno run --allow-read --allow-write --node-modules-dir=none supabase/functions/_fixtures/tools/snapshot-pdf-extractions.ts",
     "start": "expo start",
     "android": "expo run:android",

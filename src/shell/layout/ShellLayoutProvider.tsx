@@ -5,6 +5,9 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 export interface ShellLayoutContextValue {
   tabBarHeight: number;
   setTabBarHeight(h: number): void;
+  /** 09-24 (UI-SPEC 4): the pinned Sample bar's height above the tab bar; 0 when it is not shown. */
+  sampleBarHeight: number;
+  setSampleBarHeight(h: number): void;
   toastHeight: number;
   reportToastHeight(h: number | null): void;
 }
@@ -18,6 +21,7 @@ export function ShellLayoutProvider({
 }): React.JSX.Element {
   const [tabBarHeight, setTabBarHeightState] = useState(0);
   const [toastHeight, setToastHeight] = useState(0);
+  const [sampleBarHeight, setSampleBarHeight] = useState(0);
 
   const setTabBarHeight = useCallback((h: number): void => {
     setTabBarHeightState(h);
@@ -27,8 +31,8 @@ export function ShellLayoutProvider({
   }, []);
 
   const value = useMemo<ShellLayoutContextValue>(
-    () => ({ tabBarHeight, setTabBarHeight, toastHeight, reportToastHeight }),
-    [tabBarHeight, setTabBarHeight, toastHeight, reportToastHeight],
+    () => ({ tabBarHeight, setTabBarHeight, sampleBarHeight, setSampleBarHeight, toastHeight, reportToastHeight }),
+    [tabBarHeight, setTabBarHeight, sampleBarHeight, toastHeight, reportToastHeight],
   );
 
   return <ShellLayoutContext.Provider value={value}>{children}</ShellLayoutContext.Provider>;

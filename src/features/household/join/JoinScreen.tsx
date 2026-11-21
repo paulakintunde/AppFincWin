@@ -4,7 +4,7 @@
 // (HH-15). Too many tries, a full household and being in another household each have their own plain message. Nothing joins
 // until the person taps Join: a link only fills the code and shows the preview (T-08-66).
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,6 +13,7 @@ import { Screen } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 import { TextInput } from '@/ui/TextInput';
 import { WarningCard } from '@/ui/WarningCard';
+import { StatusBadge } from '@/ui/status/StatusBadge';
 import { FadeIn } from '@/ui/motion/FadeIn';
 import { hapticFailed, hapticTap } from '@/ui/haptics';
 import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
@@ -28,6 +29,12 @@ import { useSyncStatus } from '@/data/sync/useSyncStatus';
 import { normaliseInviteCode, previewInvite, redeemInvite, type InvitePreview } from '@/db/householdInvites';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { supabase } from '@/services/supabase';
+import { formatPlanDate } from '@/features/plans/formatPlanDate';
+import { storefrontCountry } from '@/features/plans/store/purchasesClient';
+import { onboardingHref } from '@/features/plans/routes';
+import { useUserSetup } from '@/features/levels/useUserSetup';
+import { setupDone } from '@/features/onboarding/firstRun';
+import { useSaveUserSetup } from '@/data/mutations/userSetup';
 import { useInviterLabel } from '../useMemberLabel';
 import { WhatsSharedSheet } from './WhatsSharedSheet';
 import { formatTypedCode, takePendingInvite } from './pendingInvite';
@@ -36,10 +43,15 @@ export const WHATS_SHARED_SEEN_KEY = (householdId: string) => `fincwin.whatsShar
 
 const href = (path: string): Href => path as Href;
 
+/** D-39: the support route for a refused switch. A plain mail link; the text never names the store country. */
+const SUPPORT_URL = 'mailto:support@fincwin.com';
+
 type Phase =
   | { kind: 'enter' }
   | { kind: 'checking' }
   | { kind: 'preview'; code: string; preview: InvitePreview }
+  | { kind: 'waiting'; payer: string }
+  | { kind: 'switchRule'; code: string; preview: InvitePreview; openFrom: string }
   | { kind: 'error'; text: string };
 
 export interface JoinScreenProps {
@@ -58,6 +70,23 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
   const hasAccounts = (useAccounts(oldHouseholdId ?? undefined).data ?? []).length > 0;
   const { isOnline: online } = useSyncStatus();
   const inviterName = useInviterLabel();
+  const setup = useUserSetup();
+  const { saveUserSetup } = useSaveUserSetup();
+  // 09-23 (D-30): a person with no finished setup goes on to the partner questions after joining, not to the household.
+  const needsSetup = !setup.loading && !setupDone(setup.data);
+  const afterJoin = () => {
+    if (needsSetup && userId !== null) {
+      saveUserSetup({ userId, patch: { partnerVersion: true }, baseVersion: setup.data?.version ?? 0 });
+      router.replace(onboardingHref('partner'));
+      return;
+    }
+    router.replace(href('/household'));
+  };
+  // A new person who arrived here first (an invite waiting at sign-in) and does not join goes on to the first-run questions.
+  const leave = () => {
+    if (needsSetup) router.replace(onboardingHref('first_run'));
+    else goBack();
+  };
 
   const [input, setInput] = useState('');
   const [phase, setPhase] = useState<Phase>({ kind: 'enter' });
@@ -124,9 +153,20 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
     if (joining || userId === null) return;
     setJoining(true);
     try {
-      const res = await redeemInvite(supabase, value);
+      // Read once for the server's switch rule and passed straight on; it is never stored or shown (T-09-70).
+      const country = await storefrontCountry().catch(() => null);
+      const res = await redeemInvite(supabase, value, country);
       if (!res.ok) {
+        if (res.reason === 'needs_approval') {
+          // D-21: the person waits; they cannot join, even provisionally, until the payer's bigger plan goes through.
+          setPhase({ kind: 'waiting', payer: inviterName(preview) });
+          return;
+        }
         hapticFailed();
+        if (res.reason === 'switch_rule') {
+          setPhase({ kind: 'switchRule', code: value, preview, openFrom: typeof res.open_from === 'string' ? res.open_from : '' });
+          return;
+        }
         if (res.reason === 'in_other_household') {
           setPhase({ kind: 'preview', code: value, preview: { ...preview, in_other_household: true } });
         } else {
@@ -145,7 +185,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
       } catch {
         // If the mark cannot be read or written the card shows once more rather than never.
       }
-      if (seen) router.replace(href('/household'));
+      if (seen) afterJoin();
       else setShared({ household });
     } catch {
       hapticFailed();
@@ -162,7 +202,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
   return (
     <Screen scroll>
       <View style={styles.back}>
-        <BackButton variant="compact" onPress={goBack} />
+        <BackButton variant="compact" onPress={leave} />
       </View>
       <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
         {t('household.join.title')}
@@ -190,7 +230,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
           ]}
         />
         <Text style={meta}>{t('household.join.codeHelper')}</Text>
-        {phase.kind !== 'preview' ? (
+        {phase.kind !== 'preview' && phase.kind !== 'waiting' && phase.kind !== 'switchRule' ? (
           <Pill
             label={t('household.join.check')}
             variant="primary"
@@ -208,6 +248,45 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
             {phase.text}
           </Text>
         </View>
+      ) : null}
+
+      {phase.kind === 'waiting' ? (
+        <FadeIn style={styles.section} testID="join-waiting">
+          <View style={styles.badge}>
+            <StatusBadge status="waitingApproval" label={t('plans.invite.waiting.badge')} />
+          </View>
+          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
+            {t('plans.invite.waiting.heading', { payer: phase.payer })}
+          </Text>
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+            {t('plans.invite.waiting.body', { payer: phase.payer })}
+          </Text>
+          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={leave} style={styles.notNow}>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.join.gotIt')}</Text>
+          </Pressable>
+        </FadeIn>
+      ) : null}
+
+      {phase.kind === 'switchRule' ? (
+        <FadeIn style={styles.section} testID="join-switch-rule">
+          <WarningCard
+            tone="soft"
+            title={t('plans.switchRule.title', { date: formatPlanDate(phase.openFrom) })}
+            value=""
+            body={[t('plans.switchRule.body')]}
+          />
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={LINK_HIT_SLOP}
+            onPress={() => void Linking.openURL(SUPPORT_URL)}
+            style={styles.notNow}
+          >
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('plans.switchRule.contact')}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={leave} style={styles.notNow}>
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.join.notNow')}</Text>
+          </Pressable>
+        </FadeIn>
       ) : null}
 
       {phase.kind === 'preview' ? (
@@ -235,7 +314,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
               />
             </View>
           )}
-          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={goBack} style={styles.notNow}>
+          <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={leave} style={styles.notNow}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.join.notNow')}</Text>
           </Pressable>
         </FadeIn>
@@ -246,7 +325,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
         household={shared?.household ?? ''}
         onDone={() => {
           setShared(null);
-          router.replace(href('/household'));
+          afterJoin();
         }}
       />
     </Screen>
@@ -258,5 +337,6 @@ const styles = StyleSheet.create({
   section: { marginTop: step.section, gap: step.tight },
   input: { paddingHorizontal: step.card, paddingVertical: space.rowPadDense, minHeight: space.touchMin },
   card: { padding: step.card, borderRadius: radii.card, gap: step.hair },
+  badge: { alignSelf: 'flex-start' },
   notNow: { minHeight: space.touchMin, justifyContent: 'center', alignSelf: 'flex-start' },
 });
