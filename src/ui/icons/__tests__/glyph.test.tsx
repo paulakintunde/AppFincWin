@@ -100,6 +100,32 @@ describe('Glyph (D-03, D-05)', () => {
   });
 });
 
+describe('caution and info glyphs (08.1-24 Q5 A, drawn on L07)', () => {
+  it('both exist with the 24 viewBox, a 45% back layer and a front layer', () => {
+    for (const name of ['caution', 'info'] as const) {
+      const icon = ICONS[name];
+      expect(icon.viewBox).toBe('0 0 24 24');
+      expect(icon.back.length).toBeGreaterThan(0);
+      expect(icon.front.length).toBeGreaterThan(0);
+    }
+    // caution is a triangle (a path), info is a circle: easy to tell apart from each other and the round state shapes
+    expect(ICONS.caution.back[0]?.tag).toBe('path');
+    expect(ICONS.info.back[0]?.tag).toBe('circle');
+  });
+
+  it('render at 16, 20 and 24 with the back layer at 45%', async () => {
+    for (const name of ['caution', 'info'] as const) {
+      for (const size of [16, 20, 24] as const) {
+        const r = await setup(<Glyph name={name} size={size} color={INK} />);
+        const svg = r.getByTestId(`glyph-${name}`, opts);
+        expect(svg.props).toMatchObject({ width: size, height: size, vbWidth: 24, vbHeight: 24 });
+        expect(hosts(r.toJSON(), 'RNSVGGroup').some((g) => g.props.opacity === BACK_OPACITY)).toBe(true);
+        await r.unmount();
+      }
+    }
+  });
+});
+
 describe('IconTile (D-05, D-07, D-10)', () => {
   const style = (r: Awaited<ReturnType<typeof setup>>) => StyleSheet.flatten(r.getByTestId('tile', opts).props.style);
 
