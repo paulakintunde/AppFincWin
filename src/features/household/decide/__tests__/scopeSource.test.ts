@@ -1,7 +1,7 @@
 // 08.1-10: the household side of a Household check as plain data. A partner is only ever the one rounded figure; the share is the
 // household's default split rule; the settle-up facts are the viewer's own.
 import { minorUnits } from '@/engine/money';
-import { partnersOf, scopeSourceOf, settleUpOf, shareScopeOf } from '../scopeSource';
+import { billWeightsOf, jointSourcesOf, partnersOf, scopeSourceOf, settingOf, settleUpOf, shareScopeOf } from '../scopeSource';
 
 const NOW = Date.parse('2026-11-20T12:00:00Z');
 const DAY = 24 * 60 * 60 * 1000;
@@ -86,10 +86,76 @@ describe('scopeSourceOf', () => {
       myWeight: 60,
       partners: [{ key: 'sam', weight: 40, sharing: true, roundedLeft: 1000, currency: 'USD' }],
       settleUp: null,
+      memberKeys: ['me', 'sam'],
+      setting: null,
+      billWeights: { me: 1, sam: 1 },
+      joint: [],
     });
+  });
+
+  it('08.1-22: carries the scope, the saved rule, the bill weights and the joint accounts', () => {
+    const src = scopeSourceOf({
+      viewerId: 'sam',
+      members: [A, B],
+      totals: [],
+      settleUp: null,
+      scope: 'me',
+      spendRule: { rule: 'custom', setup: 'mixed', shares: { me: 70, sam: 30 } },
+      defaults: [{ category_ref: null, rule: 'weight' }],
+      joint: [{ id: 'j1', currency: 'USD', purpose: 'bills', spendable: false, balance: 1, monthIn: 2, monthOut: 3, billsDueBeforeNextIn: 0, paidInBy: {} }],
+    });
+    expect(src).toMatchObject({
+      scope: 'me',
+      viewerId: 'sam',
+      memberKeys: ['me', 'sam'],
+      setting: { rule: 'custom', setup: 'mixed', shares: { me: 70, sam: 30 } },
+      billWeights: { me: 60, sam: 40 },
+    });
+    expect(src?.joint).toHaveLength(1);
   });
 
   it('is null when the viewer is not among the members', () => {
     expect(scopeSourceOf({ viewerId: 'ghost', members: [A, B], totals: [], settleUp: null })).toBeNull();
+  });
+});
+
+describe('08.1-22 billWeightsOf / settingOf', () => {
+  it('follows the household default bill rule; "mine only" is none', () => {
+    expect(billWeightsOf([A, B], [{ category_ref: null, rule: 'weight' }])).toEqual({ me: 60, sam: 40 });
+    expect(billWeightsOf([A, B], [{ category_ref: null, rule: 'even' }])).toEqual({ me: 1, sam: 1 });
+    expect(billWeightsOf([A, B], undefined)).toEqual({ me: 1, sam: 1 });
+    expect(billWeightsOf([A, B], [{ category_ref: null, rule: 'mine' }])).toBeNull();
+    expect(billWeightsOf([{ ...A, weight: 0 }, { ...B, weight: 0 }], [{ category_ref: null, rule: 'weight' }])).toEqual({ me: 1, sam: 1 });
+  });
+  it('reads the saved row, or none', () => {
+    expect(settingOf(null)).toBeNull();
+    expect(settingOf(undefined)).toBeNull();
+    expect(settingOf({ rule: 'bill', setup: null, shares: null })).toEqual({ rule: 'bill', setup: null, shares: null });
+  });
+});
+
+describe('08.1-22 jointSourcesOf', () => {
+  const purposes = [
+    { id: 'j1', currency: 'USD', opening_balance: 100_000, joint_purpose: 'bills' as const, joint_savings_spendable: false, version: 1 },
+    { id: 'j2', currency: 'EUR', opening_balance: 0, joint_purpose: null, joint_savings_spendable: true, version: 1 },
+  ];
+  it('is none with no read', () => {
+    expect(jointSourcesOf(undefined)).toEqual([]);
+  });
+  it('adds the opening balance to the paid lines of the account in its own currency, and carries this month\'s totals', () => {
+    const out = jointSourcesOf(
+      {
+        purposes,
+        balances: [
+          { account_id: 'j1', balance: 50_000, currency: 'USD' },
+          { account_id: 'j1', balance: 9, currency: 'EUR' }, // a stray leg in another currency is not the account's own
+          { account_id: 'j2', balance: 7, currency: 'EUR' },
+        ],
+        month: [{ account_id: 'j1', currency: 'USD', money_in: 300, money_out: 120, paid_in_by: { me: 300 } }],
+      },
+      new Set(['j2']),
+    );
+    expect(out[0]).toEqual({ id: 'j1', currency: 'USD', purpose: 'bills', spendable: false, balance: 150_000, monthIn: 300, monthOut: 120, billsDueBeforeNextIn: 0, paidInBy: { me: 300 } });
+    expect(out[1]).toEqual({ id: 'j2', currency: 'EUR', purpose: null, spendable: true, safetyNet: true, balance: 7, monthIn: 0, monthOut: 0, billsDueBeforeNextIn: 0, paidInBy: {} });
   });
 });

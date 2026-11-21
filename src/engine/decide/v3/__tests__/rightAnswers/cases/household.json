@@ -661,8 +661,8 @@
         }
       },
       "expected": {
-        "variant": "payday",
-        "readyBy": "2027-01-01",
+        "variant": "not_covered",
+        "readyBy": "2027-01",
         "mustHaveReasons": [],
         "mustHaveFacts": [],
         "mustNotHaveFacts": [],
@@ -957,14 +957,17 @@
               "purpose": "everyday",
               "balance": 140000,
               "monthIn": 300000,
-              "monthOut": 160000,
+              "monthOut": 200000,
               "billsDueBeforeNextIn": 0,
               "paidInBy": [
                 300000,
                 0
-              ]
+              ],
+              "ownMonth": 100000,
+              "carried": 0
             }
-          ]
+          ],
+          "spendRule": "bring"
         }
       },
       "expected": {
@@ -2298,28 +2301,28 @@
       "id": "HH-25",
       "topic": "household",
       "persona": "JA-01: Ali and Noa, one joint account, Just me (invented)",
-      "situation": "No personal accounts. One joint everyday account holds $5,000 carried from before; this month's pay-ins equal this month's bills and everyday, so month money is $0. Ali picks Just me, $5,000.",
+      "situation": "No personal accounts. One joint everyday account holds $5,020 carried from before (the $20 covers the rest of this month's everyday spending); this month's pay-ins equal this month's bills and everyday, so month money is $0. Ali picks Just me, $5,000.",
       "fixture": {
         "asOf": "2026-11-15",
         "currency": "USD",
         "region": null,
         "pay": {
-          "amount": 300000,
+          "amount": 62000,
           "cadence": "monthly",
           "nextDate": "2026-12-01",
           "setupAmount": null,
           "lastThree": null
         },
         "usualMonth": {
-          "bills": 120000,
-          "everyday": 80000,
-          "essentialEveryday": 50000
+          "bills": 60000,
+          "everyday": 2000,
+          "essentialEveryday": 1000
         },
         "thisMonth": {
-          "received": 200000,
-          "billsPaid": 120000,
+          "received": 62000,
+          "billsPaid": 60000,
           "billsDue": 0,
-          "everydaySoFar": 40000
+          "everydaySoFar": 1000
         },
         "historyMonths": 6,
         "quickEstimates": null,
@@ -2329,7 +2332,7 @@
             "id": "j1",
             "kind": "checking",
             "name": "Joint everyday",
-            "balance": 500000,
+            "balance": 441000,
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
@@ -2365,15 +2368,15 @@
             {
               "id": "j1",
               "purpose": "everyday",
-              "balance": 500000,
-              "monthIn": 200000,
-              "monthOut": 160000,
+              "balance": 502000,
+              "monthIn": 124000,
+              "monthOut": 124000,
               "billsDueBeforeNextIn": 0,
               "paidInBy": [
-                100000,
-                100000
+                62000,
+                62000
               ],
-              "carried": 500000
+              "carried": 502000
             }
           ]
         }
@@ -2394,7 +2397,7 @@
           "usualMonth": null
         }
       },
-      "why": "The $5,000 is counted once and split 50/50 (all of it was carried from before): Ali counts $2,500. $2,500 is less than $5,000 and the month adds $0, so Not yet. Today (finding a) every member counts the whole $5,000, so both could be told Fits for the same $5,000.",
+      "why": "The $5,000 is counted once and split 50/50 (all of it was carried from before): Ali counts $2,500. $2,500 is less than $5,000 and the month adds $0, so Not yet. Today (finding a) every member counts the whole $5,000, so both could be told Fits for the same $5,000. (Fixture figures: $5,020 in the account so that each member's $10 of everyday spending still to come is covered; the price is $5,000.)",
       "fixIds": [
         "CMP-F19",
         "UX-21",
@@ -2416,22 +2419,22 @@
         "currency": "USD",
         "region": null,
         "pay": {
-          "amount": 300000,
+          "amount": 62000,
           "cadence": "monthly",
           "nextDate": "2026-12-01",
           "setupAmount": null,
           "lastThree": null
         },
         "usualMonth": {
-          "bills": 120000,
-          "everyday": 80000,
-          "essentialEveryday": 50000
+          "bills": 60000,
+          "everyday": 2000,
+          "essentialEveryday": 1000
         },
         "thisMonth": {
-          "received": 200000,
-          "billsPaid": 120000,
+          "received": 62000,
+          "billsPaid": 60000,
           "billsDue": 0,
-          "everydaySoFar": 40000
+          "everydaySoFar": 1000
         },
         "historyMonths": 6,
         "quickEstimates": null,
@@ -2441,7 +2444,7 @@
             "id": "j1",
             "kind": "checking",
             "name": "Joint everyday",
-            "balance": 500000,
+            "balance": 441000,
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
@@ -2478,15 +2481,15 @@
             {
               "id": "j1",
               "purpose": "everyday",
-              "balance": 500000,
-              "monthIn": 200000,
-              "monthOut": 160000,
+              "balance": 502000,
+              "monthIn": 124000,
+              "monthOut": 124000,
               "billsDueBeforeNextIn": 0,
               "paidInBy": [
-                100000,
-                100000
+                62000,
+                62000
               ],
-              "carried": 500000
+              "carried": 502000
             }
           ]
         }
@@ -2501,13 +2504,13 @@
           "shared_money"
         ],
         "mustNotHaveCaveats": [],
-        "code": "fits_month",
+        "code": "fits_unspent",
         "afterBuy": {
           "month": 0,
           "usualMonth": null
         }
       },
-      "why": "Ali's part of the price is $2,500, his slice is $2,500: $0 left, tight. Noa the same. The two halves add to $5,000, the joint money, so nothing is spent twice.",
+      "why": "Ali's part of the price is $2,500, his slice is $2,500: $0 left, tight. Noa the same. The two halves add to $5,000, the joint money, so nothing is spent twice. (Fixture figures: $5,020 in the account so that each member's $10 of everyday spending still to come is covered; the price is $5,000.)",
       "fixIds": [
         "CMP-F19",
         "UX-21",
@@ -2528,22 +2531,22 @@
         "currency": "USD",
         "region": null,
         "pay": {
-          "amount": 500000,
+          "amount": 300000,
           "cadence": "monthly",
           "nextDate": "2026-12-01",
           "setupAmount": null,
           "lastThree": null
         },
         "usualMonth": {
-          "bills": 200000,
-          "everyday": 100000,
-          "essentialEveryday": 60000
+          "bills": 100000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
         },
         "thisMonth": {
-          "received": 500000,
-          "billsPaid": 200000,
+          "received": 300000,
+          "billsPaid": 100000,
           "billsDue": 0,
-          "everydaySoFar": 50000
+          "everydaySoFar": 25000
         },
         "historyMonths": 6,
         "quickEstimates": null,
@@ -2553,7 +2556,7 @@
             "id": "j1",
             "kind": "checking",
             "name": "Joint everyday",
-            "balance": 350000,
+            "balance": 150000,
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
@@ -2641,22 +2644,22 @@
         "currency": "USD",
         "region": null,
         "pay": {
-          "amount": 500000,
+          "amount": 200000,
           "cadence": "monthly",
           "nextDate": "2026-12-01",
           "setupAmount": null,
           "lastThree": null
         },
         "usualMonth": {
-          "bills": 200000,
-          "everyday": 100000,
-          "essentialEveryday": 60000
+          "bills": 100000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
         },
         "thisMonth": {
-          "received": 500000,
-          "billsPaid": 200000,
+          "received": 200000,
+          "billsPaid": 100000,
           "billsDue": 0,
-          "everydaySoFar": 50000
+          "everydaySoFar": 25000
         },
         "historyMonths": 6,
         "quickEstimates": null,
@@ -2666,7 +2669,7 @@
             "id": "j1",
             "kind": "checking",
             "name": "Joint everyday",
-            "balance": 350000,
+            "balance": 50000,
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
@@ -2717,7 +2720,7 @@
         }
       },
       "expected": {
-        "variant": "tight",
+        "variant": "no_net",
         "readyBy": null,
         "mustHaveReasons": [],
         "mustHaveFacts": [],
@@ -2760,7 +2763,7 @@
           "lastThree": null
         },
         "usualMonth": {
-          "bills": 90000,
+          "bills": 100000,
           "everyday": 80000,
           "essentialEveryday": 50000
         },
@@ -2778,7 +2781,7 @@
             "id": "a1",
             "kind": "checking",
             "name": "Ali everyday",
-            "balance": 120000,
+            "balance": 160000,
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
@@ -2832,7 +2835,8 @@
                 100000,
                 100000
               ],
-              "carried": 40000
+              "carried": 40000,
+              "ownMonth": 0
             }
           ]
         }
@@ -2874,19 +2878,19 @@
         "currency": "USD",
         "region": null,
         "pay": {
-          "amount": 300000,
+          "amount": 200000,
           "cadence": "monthly",
           "nextDate": "2026-12-01",
           "setupAmount": null,
           "lastThree": null
         },
         "usualMonth": {
-          "bills": 90000,
+          "bills": 100000,
           "everyday": 80000,
           "essentialEveryday": 50000
         },
         "thisMonth": {
-          "received": 300000,
+          "received": 200000,
           "billsPaid": 100000,
           "billsDue": 0,
           "everydaySoFar": 40000
@@ -2899,7 +2903,7 @@
             "id": "a1",
             "kind": "checking",
             "name": "Noa everyday",
-            "balance": 20000,
+            "balance": 60000,
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
@@ -2953,14 +2957,15 @@
                 100000,
                 100000
               ],
-              "carried": 40000
+              "carried": 40000,
+              "ownMonth": 0
             }
           ]
         }
       },
       "expected": {
-        "variant": "payday",
-        "readyBy": "2027-04-01",
+        "variant": "not_covered",
+        "readyBy": "2027-03",
         "mustHaveReasons": [],
         "mustHaveFacts": [],
         "mustNotHaveFacts": [],
@@ -3002,7 +3007,7 @@
           "lastThree": null
         },
         "usualMonth": {
-          "bills": 90000,
+          "bills": 100000,
           "everyday": 80000,
           "essentialEveryday": 50000
         },
@@ -3020,7 +3025,7 @@
             "id": "a1",
             "kind": "checking",
             "name": "Ali everyday",
-            "balance": 120000,
+            "balance": 160000,
             "overdraftLimit": null,
             "overdraftRate": null,
             "use": "everyday"
@@ -3074,7 +3079,8 @@
                 100000,
                 100000
               ],
-              "carried": -20000
+              "carried": -20000,
+              "ownMonth": 0
             }
           ]
         }
@@ -3085,9 +3091,7 @@
         "mustHaveReasons": [],
         "mustHaveFacts": [],
         "mustNotHaveFacts": [],
-        "mustHaveCaveats": [
-          "shared_money"
-        ],
+        "mustHaveCaveats": [],
         "mustNotHaveCaveats": [],
         "code": "not_yet",
         "afterBuy": {
@@ -3315,10 +3319,10 @@
         "mustHaveReasons": [],
         "mustHaveFacts": [],
         "mustNotHaveFacts": [],
-        "mustHaveCaveats": [
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
           "shared_money"
         ],
-        "mustNotHaveCaveats": [],
         "code": "not_yet",
         "afterBuy": {
           "month": null,
@@ -3457,10 +3461,10 @@
         "mustNotHaveFacts": [
           "net_used"
         ],
-        "mustHaveCaveats": [
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
           "shared_money"
         ],
-        "mustNotHaveCaveats": [],
         "code": "not_yet",
         "afterBuy": {
           "month": null,

@@ -175,7 +175,11 @@ export interface V3Household {
   readonly scope: 'me' | 'household';
   readonly notShared: readonly string[];
   readonly settleUp?: { readonly lapsedAsPayer: boolean; readonly owed: MinorUnits } | null;
+  /** 08.1-22: what takes the viewer's joint slice back out of these inputs (personal money only, for the published partner figure); absent = no joint account */
+  readonly jointBack?: JointLay;
 }
+/** 08.1-22 (householdMoney.ts): a joint slice laid over the viewer's records: the month change, the cash change and each named joint account's balance. */
+export interface JointLay { readonly monthDelta: MinorUnits; readonly cashDelta: MinorUnits; readonly balances: Readonly<Record<string, MinorUnits>> }
 export type CaveatCode = 'large_for_month' | 'your_word' | 'quick_estimates' | 'records_out_of_date' | 'no_debts_recorded' | 'few_months' | 'irregular_income' | 'close_to_line' | 'expected_bills' | 'household_not_shared' | 'shared_money' | 'rate_estimated' | 'tax_not_included' | 'long_plan';
 export interface Caveat { readonly code: CaveatCode; readonly values: CodeValues }
 export interface UnseenPay { readonly seriesId: string; readonly date: LocalDate; readonly amount: MinorUnits; readonly arrived: boolean | null }

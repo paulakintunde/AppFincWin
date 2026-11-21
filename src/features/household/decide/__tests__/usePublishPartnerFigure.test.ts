@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { AppState } from 'react-native';
-import { mayPublish, PUBLISH_EVERY_MS, roundDownToStep, usePublishPartnerFigure } from '../usePublishPartnerFigure';
+import { mayPublish, personalPrepared, PUBLISH_EVERY_MS, roundDownToStep, usePublishPartnerFigure } from '../usePublishPartnerFigure';
 
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'me' } }) }));
@@ -13,7 +13,15 @@ jest.mock('@/data/queries/partnerMoney', () => ({ usePartnerOptins: () => ({ dat
 jest.mock('@/data/queries/decideV3', () => ({ useDecideV3: () => mockDecide }));
 let mockDecide: { prepared: { inputs: { currency: string; safetyNet?: { saved: number } } } } = { prepared: { inputs: { currency: 'USD' } } };
 let mockLeft = 123456;
-jest.mock('@/engine/month', () => ({ monthPicture: () => ({ leftAfterPlans: mockLeft }) }));
+jest.mock('@/engine/month', () => ({ monthPicture: (p: { left?: number }) => ({ leftAfterPlans: p.left ?? mockLeft }) }));
+// 08.1-22: the household and joint reads are mocked (never a live client); the builder and prepare are stood in for.
+let mockScope: { source: unknown; pending: boolean } = { source: undefined, pending: false };
+jest.mock('../useHouseholdScopeSource', () => ({ useHouseholdScopeSource: () => mockScope }));
+const mockBuild = jest.fn((..._a: unknown[]) => ({ built: true }));
+jest.mock('@/features/decide/snapshot/v3/buildInputs', () => ({ buildInputs: (...a: unknown[]) => mockBuild(...a) }));
+const mockApply = jest.fn((..._a: unknown[]) => ({ personal: true }));
+const mockPrepare = jest.fn((..._a: unknown[]) => ({ left: 77_000, inputs: { currency: 'USD' } }));
+jest.mock('@/engine/decide/v3', () => ({ applyJointMoney: (...a: unknown[]) => mockApply(...a), prepare: (...a: unknown[]) => mockPrepare(...a) }));
 
 const mockPublish = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean }> => ({ ok: true }));
 const mockPublishNet = jest.fn(async (..._a: unknown[]): Promise<{ ok: boolean }> => ({ ok: true }));
@@ -26,6 +34,10 @@ beforeEach(() => {
   mockDecide = { prepared: { inputs: { currency: 'USD' } } };
   mockOptins = [];
   mockLeft = 123456;
+  mockScope = { source: undefined, pending: false };
+  mockBuild.mockClear();
+  mockApply.mockClear();
+  mockPrepare.mockClear();
   jest.useFakeTimers({ now: new Date('2026-11-18T10:00:00Z'), doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
 });
 afterEach(() => jest.useRealTimers());
@@ -98,5 +110,39 @@ describe('usePublishPartnerFigure', () => {
     mockShares = [{ goal_id: 'g1', enabled: true }];
     await renderHook(() => usePublishPartnerFigure());
     expect(mockPublishNet).not.toHaveBeenCalled();
+  });
+});
+
+describe('08.1-22 the published figure is personal money only', () => {
+  const prepared = (jointBack?: unknown) => ({ left: 5, inputs: { currency: 'USD', household: jointBack === undefined ? undefined : { jointBack } } }) as never;
+  it('personalPrepared is the same Prepared when no joint money was laid in', () => {
+    const p = prepared();
+    expect(personalPrepared(p)).toBe(p);
+    expect(mockPrepare).not.toHaveBeenCalled();
+  });
+  it('personalPrepared takes the joint slice back out and prepares again', () => {
+    const back = { monthDelta: -1, cashDelta: -2, balances: {} };
+    expect(personalPrepared(prepared(back))).toEqual({ left: 77_000, inputs: { currency: 'USD' } });
+    expect(mockApply).toHaveBeenCalledWith(expect.objectContaining({ currency: 'USD' }), back);
+  });
+  it('with a household source the hook builds the inputs with the joint slice, then publishes the personal figure', async () => {
+    mockOptins = [{ owner_id: 'me', enabled: true }];
+    mockDecide = { prepared: { inputs: { currency: 'USD' } }, source: { today: 'x' }, v3: null } as never;
+    mockScope = { source: { scope: 'me' }, pending: false };
+    mockPrepare.mockReturnValue({ left: 88_500, inputs: { currency: 'USD', household: { jointBack: { monthDelta: 0, cashDelta: 0, balances: {} } } } } as never);
+    mockApply.mockReturnValue({ personal: true });
+    await act(async () => {
+      renderHook(() => usePublishPartnerFigure());
+    });
+    expect(mockBuild).toHaveBeenCalledWith({ today: 'x', household: { scope: 'me' } }, null);
+    expect(mockPublish).toHaveBeenCalledWith(expect.anything(), 88_000, 'USD');
+  });
+  it('publishes nothing while the household reads are still loading', async () => {
+    mockOptins = [{ owner_id: 'me', enabled: true }];
+    mockScope = { source: undefined, pending: true };
+    await act(async () => {
+      renderHook(() => usePublishPartnerFigure());
+    });
+    expect(mockPublish).not.toHaveBeenCalled();
   });
 });

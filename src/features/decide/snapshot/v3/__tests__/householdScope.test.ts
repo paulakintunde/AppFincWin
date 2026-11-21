@@ -4,7 +4,7 @@ import { monthPicture } from '@/engine/month';
 import { account, household as base, row } from '../../__tests__/helpers/sourceFixtures';
 import { buildInputs } from '../buildInputs';
 import type { InputsSource } from '../buildInputsParts';
-import { viewerRows, withHouseholdScope, type HouseholdPartnerSource, type HouseholdScopeSource } from '../householdScope';
+import { jointToHome, jointWithPending, viewerRows, withHouseholdScope, type HouseholdPartnerSource, type HouseholdScopeSource, type JointAccountSource } from '../householdScope';
 
 const noa: HouseholdPartnerSource = { key: 'noa', weight: 40, sharing: true, roundedLeft: 400_000, currency: 'USD' };
 const hh = (over: Partial<HouseholdScopeSource> = {}): HouseholdScopeSource => ({ scope: 'household', viewerId: 'ali', myWeight: 60, partners: [noa], ...over });
@@ -23,12 +23,30 @@ describe('08.1-08 household scope in the builder', () => {
     expect(left(src(hh({ scope: 'me' })))).toBe(left(src()));
   });
 
-  it("scope 'household' with both opt-ins pools the rounded figure and counts my 60% of it", () => {
+  it("scope 'household' under the bill split pools the rounded figure and counts my 60% of it", () => {
     const own = left(src());
-    const pooled = left(src(hh()));
+    const pooled = left(src(hh({ setting: { rule: 'bill', setup: null, shares: null } })));
     const slice = Math.floor(((own + 400_000) * 60) / 100);
     expect(Math.abs(pooled - slice)).toBeLessThanOrEqual(1);
     expect(buildInputs(src(hh()), null).household?.notShared).toEqual([]);
+  });
+
+  it('08.1-22: with no rule saved the default for separate accounts is What each person brings: my own money, however much a partner shares', () => {
+    expect(left(src(hh()))).toBe(left(src()));
+  });
+
+  it('08.1-22: a set split counts my share of the pool; a split that no longer matches the members counts what each person brings', () => {
+    const own = left(src());
+    const set = left(src(hh({ setting: { rule: 'custom', setup: null, shares: { ali: 50, noa: 50 } } })));
+    expect(Math.abs(set - Math.floor((own + 400_000) / 2))).toBeLessThanOrEqual(1);
+    expect(left(src(hh({ setting: { rule: 'custom', setup: null, shares: { ali: 50, noa: 40 } } })))).toBe(own);
+  });
+
+  it('08.1-22: the bill weights the source carries (by key) decide the bill split; "mine only" counts as bring', () => {
+    const own = left(src());
+    const w = left(src(hh({ memberKeys: ['noa', 'ali'], billWeights: { ali: 25, noa: 75 }, setting: { rule: 'bill', setup: null, shares: null } })));
+    expect(Math.abs(w - Math.floor((own + 400_000) / 4))).toBeLessThanOrEqual(1);
+    expect(left(src(hh({ billWeights: null, setting: { rule: 'bill', setup: null, shares: null } })))).toBe(own);
   });
 
   it('a partner who has not shared (or has no figure, or another currency) is named, and nothing of theirs is counted', () => {
@@ -57,6 +75,26 @@ describe('08.1-08 household scope in the builder', () => {
     const accts = buildInputs(s, null).accounts ?? [];
     expect(accts.find((a) => a.id === 'chk')?.joint).toBe(true);
     expect(accts.find((a) => a.id === 'sav')?.joint).toBeUndefined();
+  });
+
+  it('08.1-22: Just me with a joint account counts my slice of it, not the whole balance (JA-01)', () => {
+    const joint: JointAccountSource = { id: 'chk', currency: 'USD', purpose: null, spendable: false, balance: 1_000_000, monthIn: 0, monthOut: 0, billsDueBeforeNextIn: 0, paidInBy: {} };
+    const accountsJoint = [account({ id: 'chk', name: 'Checking', currency: 'USD', use: 'everyday', is_shared: true })];
+    const withJoint = (h?: HouseholdScopeSource) => src(h, { accounts: accountsJoint, balances: { chk: 1_000_000 } });
+    const bring = { rule: 'bring' as const, setup: null, shares: null };
+    const a = buildInputs(withJoint(hh({ scope: 'me', partners: [noa], joint: [joint], setting: bring })), null);
+    expect(a.accounts?.find((x) => x.id === 'chk')?.balance).toBe(500_000); // carried money splits equally: half of the true $10,000 each
+    // with one joint account and no rule saved the setup is One joint account and the default is the bill split (60/40 here)
+    expect(buildInputs(withJoint(hh({ scope: 'me', partners: [noa], joint: [joint] })), null).accounts?.find((x) => x.id === 'chk')?.balance).toBe(600_000);
+    expect(a.household?.jointBack).toBeDefined();
+    const b = a;
+    expect(b.balance).toBeLessThan(buildInputs(withJoint(), null).balance + 1); // never more than what was held before
+  });
+
+  it('08.1-22: an account no rate converts counts nowhere, and a household with no joint accounts has no jointBack', () => {
+    const joint: JointAccountSource = { id: 'chk', currency: 'JPY', purpose: null, spendable: false, balance: 1, monthIn: 0, monthOut: 0, billsDueBeforeNextIn: 0, paidInBy: {} };
+    expect(buildInputs(src(hh({ scope: 'me', joint: [joint] })), null).household?.jointBack).toBeUndefined();
+    expect(buildInputs(src(hh({ scope: 'me' })), null).household?.jointBack).toBeUndefined();
   });
 
   it('withHouseholdScope returns the same inputs when there is no source', () => {
@@ -99,5 +137,31 @@ describe('08.1-08 viewer scoping (T-08.1-26): no partner item reaches the inputs
   it("without a household source, rows are read as given (a household of one is unchanged)", () => {
     const rows = [...(base() as InputsSource).rows, ...partnerRows];
     expect(buildInputs(src(undefined, { rows }), null).months.flatMap((m) => m.lines.map((l) => l.id))).toContain('noa-private');
+  });
+});
+
+describe('08.1-22 jointToHome / jointWithPending', () => {
+  const j: JointAccountSource = { id: 'j1', currency: 'EUR', purpose: 'bills', spendable: false, safetyNet: true, balance: 100, monthIn: 60, monthOut: 20, billsDueBeforeNextIn: 5, paidInBy: { a: 40, b: 20 } };
+  const x2 = (n: number, c: string): number | null => (c === 'EUR' ? n * 2 : null);
+  it('converts every figure, works out the carried money and orders the pay-ins by member', () => {
+    expect(jointToHome([j], ['b', 'a'], x2)).toEqual([
+      { id: 'j1', purpose: 'bills', spendable: false, safetyNet: true, balance: 200, monthIn: 120, monthOut: 40, carried: 120, billsDueBeforeNextIn: 10, paidInBy: [40, 80] },
+    ]);
+  });
+  it('an account no rate converts is left out; a member with no pay-in has none', () => {
+    expect(jointToHome([{ ...j, currency: 'JPY' }], ['a'], x2)).toEqual([]);
+    expect(jointToHome([{ ...j, paidInBy: {} }], ['a'], x2)[0]?.paidInBy).toEqual([0]);
+  });
+  it('the pending lines on the account add to the bills due before the next pay-in and to this month\'s money out', () => {
+    const rows = [
+      { account_id: 'j1', local_date: '2026-11-18', original_amount: -30, status: 'pending' }, // due before the pay-in, this month
+      { account_id: 'j1', local_date: '2026-12-05', original_amount: -40, status: 'pending' }, // after the pay-in, next month
+      { account_id: 'j1', local_date: '2026-11-10', original_amount: -99, status: 'pending' }, // already past
+      { account_id: 'j1', local_date: '2026-11-18', original_amount: 50, status: 'pending' }, // money in
+      { account_id: 'j1', local_date: '2026-11-18', original_amount: -11, status: 'paid' }, // paid
+      { account_id: 'other', local_date: '2026-11-18', original_amount: -7, status: 'pending' },
+    ];
+    expect(jointWithPending([j], rows, '2026-11-15', '2026-12-01')[0]).toMatchObject({ billsDueBeforeNextIn: 35, monthOut: 50 });
+    expect(jointWithPending([j], rows, '2026-11-15', null)[0]).toMatchObject({ billsDueBeforeNextIn: 75, monthOut: 50 });
   });
 });

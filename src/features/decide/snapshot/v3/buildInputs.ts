@@ -9,6 +9,7 @@ import {
   homeThresholds,
   legacyLimits,
   cadenceOfFreq,
+  nextPayDate,
   type AccountKind,
   type AccountUse,
   type Envelope,
@@ -63,7 +64,7 @@ import {
   type InputsRow,
   type InputsSource,
 } from './buildInputsParts';
-import { viewerRows, withHouseholdScope } from './householdScope';
+import { jointToHome, jointWithPending, viewerRows, withHouseholdScope } from './householdScope';
 import type { V3SeriesExtra, V3SettingsSource } from './types';
 
 const NO_EXTRA: V3SeriesExtra = { pay_group: null, counts_as: null, income_kind: null, saving_mode: null, typical_choice: null, status: null };
@@ -540,5 +541,13 @@ export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource 
     regionSubdivision: source.region !== null && typeof subdivision === 'string' && SUBDIVISION_PATTERN.test(subdivision) ? subdivision : null,
   };
   // 08.1-08: the household's pooled money (Household scope only), its caveat facts and the settle-up facts; untouched with no source.
-  return withHouseholdScope(built, source.household);
+  // 08.1-22: and the viewer's slice of each joint account (both scopes): the joint figures come in the account's own currency with what is
+  // still to come out of them, are converted here, and replace what the viewer's own records hold for those accounts.
+  const hh = source.household;
+  const jointKeys = hh === undefined ? [] : (hh.memberKeys ?? [hh.viewerId, ...hh.partners.map((p) => p.key)]);
+  const joint =
+    hh?.joint === undefined || hh.joint.length === 0
+      ? []
+      : jointToHome(jointWithPending(hh.joint, [...source.rows, ...source.upcomingRows], today, nextPayDate(built.series, today)), jointKeys, toHome);
+  return withHouseholdScope(built, hh, joint);
 }

@@ -33,11 +33,11 @@ describe('05.4 phase gate', () => {
     for (const topic of TOPICS) expect({ topic, red: loadKnownRed(topic) }).toEqual({ topic, red: [] });
   });
 
-  it('household has the 6 older cases still to_do and, from 08.1-08, HH-07 to HH-13 approved', () => {
+  it('household has the 6 older cases still to_do and, from 08.1-08 and 08.1-22, HH-07 to HH-34 approved', () => {
     const household = loadCases().filter((c) => c.topic === 'household');
-    expect(household).toHaveLength(13);
+    expect(household).toHaveLength(34);
     expect(household.filter((c) => c.status === 'to_do').map((c) => c.id)).toEqual(['HH-01', 'HH-02', 'HH-03', 'HH-04', 'HH-05', 'HH-06']);
-    expect(household.filter((c) => c.status === 'approved').map((c) => c.id)).toEqual(['HH-07', 'HH-08', 'HH-09', 'HH-10', 'HH-11', 'HH-12', 'HH-13']);
+    expect(household.filter((c) => c.status === 'approved').map((c) => c.id)).toEqual(Array.from({ length: 28 }, (_, i) => `HH-${String(i + 7).padStart(2, '0')}`));
   });
 
   it('no draft outside household except shadow-run drafts and those open when 05.4-43 was built', () => {

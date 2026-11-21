@@ -5,8 +5,11 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useHouseholdId } from '@/data/queries/household';
 import { useDecideV3 } from '@/data/queries/decideV3';
+import { buildInputs } from '@/features/decide/snapshot/v3/buildInputs';
+import { useHouseholdScopeSource } from './useHouseholdScopeSource';
 import { useOwnNetShares, usePartnerOptins } from '@/data/queries/partnerMoney';
 import { publishPartnerFigure, publishSafetyNetSaved } from '@/db/partnerOptins';
+import { applyJointMoney, prepare, type Prepared } from '@/engine/decide/v3';
 import { monthPicture } from '@/engine/month';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { supabase } from '@/services/supabase';
@@ -28,19 +31,36 @@ export function mayPublish(hasOptIn: boolean, nowMs: number, lastMs: number | nu
   return lastMs === null || nowMs - lastMs >= PUBLISH_EVERY_MS;
 }
 
+/**
+ * 08.1-22 (CMP-F19, owner 2026-11-20): the published figure is personal money only. When joint money was laid into the viewer's inputs
+ * (jointBack on the household facts), the figure is worked from the same inputs with it taken back out, so a joint account is never
+ * counted again in a partner's Household pool.
+ */
+export function personalPrepared(prepared: Prepared): Prepared {
+  const back = prepared.inputs.household?.jointBack;
+  return back === undefined ? prepared : prepare(applyJointMoney(prepared.inputs, back));
+}
+
 export function usePublishPartnerFigure(): void {
   const { user } = useAuth();
   const userId = user?.id;
   const householdId = useHouseholdId(userId).data ?? null;
   const optins = usePartnerOptins(userId, householdId).data;
-  const { prepared } = useDecideV3();
+  const { prepared: shared, source, v3 } = useDecideV3();
+  // 08.1-22: with a joint account the figure is worked from inputs that carry the joint slice, then with it taken back out (personal only).
+  const household = useHouseholdScopeSource(false);
+  const prepared = useMemo<Prepared | null>(() => {
+    if (shared === null || household.pending) return null;
+    if (household.source === undefined || source === null || source === undefined) return shared;
+    return prepare(buildInputs({ ...source, household: household.source }, v3 ?? null));
+  }, [shared, household.pending, household.source, source, v3]);
   // 08.1-10: the shared safety net's "saved" rides the same hourly publish, so nothing else needs a call site.
   const shares = useOwnNetShares(userId, householdId).data;
   const netGoals = useMemo(() => (shares ?? []).filter((s) => s.enabled).map((s) => s.goal_id), [shares]);
   const netSaved = prepared?.inputs.safetyNet?.saved ?? null;
   const hasOptIn = useMemo(() => (optins ?? []).some((o) => o.owner_id === userId && o.enabled), [optins, userId]);
   const figure = useMemo(
-    () => (prepared === null ? null : { left: roundDownToStep(Number(monthPicture(prepared).leftAfterPlans)), currency: prepared.inputs.currency as string }),
+    () => (prepared === null ? null : { left: roundDownToStep(Number(monthPicture(personalPrepared(prepared)).leftAfterPlans)), currency: prepared.inputs.currency as string }),
     [prepared],
   );
   const last = useRef<number | null>(null);

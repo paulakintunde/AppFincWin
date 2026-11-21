@@ -425,24 +425,84 @@ function withGoal(f: RightAnswerFixture, g: GoalRaw): RightAnswerFixture {
 }
 
 /**
- * 08.1-08 (CMP-F19, QA-03): one fixture in four is a Household check with one partner: both opt-ins on or off, a rounded figure
- * (a multiple of 1000, from a little overdrawn to well in credit), an agreed split and which side the viewer is.
+ * 08.1-08 / 08.1-22 (CMP-F19, QA-03): one fixture in four is a household check: 2 to 4 members (the others each both opt-ins on or off, with a
+ * rounded figure from a little overdrawn to well in credit), an agreed bill split, the viewer's place, the spending rule (or none, so the
+ * setup decides), the setup (or none, so it is inferred), and 0 to 2 joint accounts each with a purpose, a balance and this month's totals.
  */
+const jointArb = fc.record({
+  purpose: fc.constantFrom('bills', 'savings', 'everyday', null),
+  spendable: fc.boolean(),
+  net: fc.boolean(),
+  balance: fc.integer({ min: 0, max: 400 }),
+  monthIn: fc.integer({ min: 0, max: 300 }),
+  monthOut: fc.integer({ min: 0, max: 300 }),
+  due: fc.integer({ min: 0, max: 200 }),
+  paid: fc.array(fc.integer({ min: 0, max: 300 }), { minLength: 4, maxLength: 4 }),
+  visible: fc.integer({ min: 0, max: 400 }),
+});
+
 const householdArb = fc.option(
   fc.record({
-    bothOn: fc.boolean(),
-    thousands: fc.integer({ min: -200, max: 2000 }),
-    weight: fc.integer({ min: 1, max: 9 }),
-    me: fc.constantFrom(0, 1),
+    members: fc.integer({ min: 2, max: 4 }),
+    me: fc.integer({ min: 0, max: 3 }),
+    bothOn: fc.array(fc.boolean(), { minLength: 3, maxLength: 3 }),
+    thousands: fc.array(fc.integer({ min: -200, max: 2000 }), { minLength: 3, maxLength: 3 }),
+    weights: fc.array(fc.integer({ min: 1, max: 9 }), { minLength: 4, maxLength: 4 }),
+    shares: fc.array(fc.integer({ min: 0, max: 100 }), { minLength: 4, maxLength: 4 }),
+    rule: fc.constantFrom('bring', 'custom', 'bill', undefined),
+    setup: fc.constantFrom('separate', 'joint', 'mixed', undefined),
+    joint: fc.array(jointArb, { minLength: 0, maxLength: 2 }),
+    scope: fc.constantFrom('me', 'household'),
   }),
   { nil: null, freq: 1 }
 );
 
 type HouseholdRaw = typeof householdArb extends fc.Arbitrary<infer T> ? T : never;
 
+/** Shares that always total 100 over `n` members (the last takes the rest), or null (an out-of-date split) now and then. */
+function sharesOf(raw: readonly number[], n: number): number[] {
+  const cut = raw.slice(0, n - 1).map((x) => Math.min(x, 100));
+  let used = 0;
+  const out = cut.map((x) => {
+    const v = Math.min(x, 100 - used);
+    used += v;
+    return v;
+  });
+  return [...out, 100 - used];
+}
+
 function withHousehold(f: RightAnswerFixture, h: HouseholdRaw): RightAnswerFixture {
   if (h === null) return f;
-  return { ...f, household: { scope: 'household', weights: [h.weight, 10 - h.weight], myIndex: h.me, partnerFigure: { name: 'partner', bothOn: h.bothOn, roundedLeft: h.thousands * 1000 } } };
+  const me = h.me % h.members;
+  const jointAccounts = h.joint.map((j, i) => ({
+    id: `jx${i}`,
+    purpose: j.purpose,
+    spendable: j.spendable,
+    ...(j.net ? { isSafetyNet: true } : {}),
+    balance: j.balance * 1000,
+    monthIn: j.monthIn * 1000,
+    monthOut: j.monthOut * 1000,
+    billsDueBeforeNextIn: j.due * 1000,
+    paidInBy: j.paid.slice(0, h.members).map((x) => x * 1000),
+  }));
+  const accounts = [
+    ...f.accounts,
+    ...h.joint.map((j, i) => ({ id: `jx${i}`, kind: 'checking' as const, name: 'Joint', balance: j.visible * 1000, overdraftLimit: null, overdraftRate: null, use: 'everyday' as const })),
+  ];
+  return {
+    ...f,
+    accounts,
+    household: {
+      scope: h.scope,
+      weights: h.weights.slice(0, h.members),
+      myIndex: me,
+      partnerFigures: Array.from({ length: h.members - 1 }, (_, i) => ({ name: `p${i}`, bothOn: h.bothOn[i] as boolean, roundedLeft: (h.thousands[i] as number) * 1000 })),
+      ...(h.rule === undefined ? {} : { spendRule: h.rule }),
+      ...(h.rule === 'custom' ? { spendShares: sharesOf(h.shares, h.members) } : {}),
+      ...(h.setup === undefined ? {} : { setup: h.setup }),
+      ...(jointAccounts.length === 0 ? {} : { jointAccounts, jointAccountIds: jointAccounts.map((j) => j.id) }),
+    },
+  };
 }
 
 export const fixtureArb: fc.Arbitrary<RightAnswerFixture> = fc

@@ -2,7 +2,8 @@
  * 08.1-08 (CMP-F19): applyHouseholdMoney lays one signed figure into the inputs the way money left this month is read.
  */
 import { minorUnits } from '../../../money/types';
-import { HOUSEHOLD_LINE_ID, applyHouseholdMoney } from '../householdMoney';
+import { HOUSEHOLD_LINE_ID, JOINT_LINE_ID, applyHouseholdMoney, applyJointMoney, jointBackOf, layHouseholdMoney } from '../householdMoney';
+import type { JointLay } from '../types';
 import type { V3Inputs } from '../types';
 import { personById, toV3Inputs } from './golden/adapter';
 
@@ -52,4 +53,58 @@ describe('08.1-08 applyHouseholdMoney', () => {
     const i: V3Inputs = { ...sam(), accounts: [{ id: 'x', balance: mu(5), use: null, noRate: true }] };
     expect(applyHouseholdMoney(i, mu(10)).accounts?.[0]?.balance).toBe(5);
   });
+
+describe('08.1-22 applyJointMoney / jointBackOf / layHouseholdMoney', () => {
+  const lay = (o: Partial<JointLay> = {}): JointLay => ({ monthDelta: mu(-500), cashDelta: mu(250), balances: { j1: mu(1_750) }, ...o });
+  const withJoint = (): V3Inputs => ({
+    ...sam(),
+    unspent: { amount: mu(5_000), at: sam().asOf },
+    accounts: [{ id: 'a', balance: mu(1_000), use: null, kind: 'checking' }, { id: 'j1', balance: mu(1_500), use: null, kind: 'checking', joint: true }],
+  });
+
+  it('sets the named joint account to my slice, moves cash and unspent by the cash change, and adds one month line', () => {
+    const i = withJoint();
+    const out = applyJointMoney(i, lay());
+    expect(out.accounts?.map((a) => a.balance)).toEqual([1_000, 1_750]);
+    expect(out.balance).toBe(i.balance + 250);
+    expect(out.unspent?.amount).toBe(5_250);
+    expect(out.months.flatMap((m) => m.lines).find((l) => l.id === JOINT_LINE_ID)).toMatchObject({ amount: 500, role: 'spending', seriesId: null });
+  });
+  it('a gain reads as income on the pay series; a zero month change adds no line', () => {
+    const i = withJoint();
+    const up = applyJointMoney(i, lay({ monthDelta: mu(300) }));
+    expect(up.months.flatMap((m) => m.lines).find((l) => l.id === JOINT_LINE_ID)).toMatchObject({ amount: 300, role: 'income' });
+    const flat = applyJointMoney(i, lay({ monthDelta: mu(0) }));
+    expect(flat.months).toBe(i.months);
+  });
+  it('without accounts or an unspent figure only the cash and the month move', () => {
+    const { accounts: _a, ...rest } = withJoint();
+    const out = applyJointMoney({ ...rest, unspent: null }, lay());
+    expect(out.accounts).toBeUndefined();
+    expect(out.unspent).toBeNull();
+  });
+  it('jointBackOf is the difference of two lays, ending at the zero balances', () => {
+    const back = jointBackOf(lay(), { monthDelta: mu(-1_000), cashDelta: mu(-1_500), balances: { j1: mu(0) } });
+    expect(back).toEqual({ monthDelta: -500, cashDelta: -1_750, balances: { j1: 0 } });
+  });
+  it('layHouseholdMoney: no joint and no pool changes nothing', () => {
+    const i = withJoint();
+    expect(layHouseholdMoney(i, { joint: null, personalDelta: null }, () => mu(0))).toBe(i);
+  });
+  it('layHouseholdMoney: the pool reads my personal left with joint money taken out, then adds its delta on top of the joint slice', () => {
+    const i = withJoint();
+    const seen: V3Inputs[] = [];
+    const without: JointLay = { monthDelta: mu(-1_000), cashDelta: mu(-1_500), balances: { j1: mu(0) } };
+    const out = layHouseholdMoney(i, { joint: { applied: lay(), without }, personalDelta: (own) => mu(own * 2) }, (x) => { seen.push(x); return mu(40); });
+    expect(seen[0]?.accounts?.[1]?.balance).toBe(0);
+    expect(out.accounts?.map((a) => a.balance)).toEqual([1_080, 1_750]); // a pool delta of 80 on the first spending account
+    expect(out.months.flatMap((m) => m.lines).map((l) => l.id)).toEqual(expect.arrayContaining([JOINT_LINE_ID, HOUSEHOLD_LINE_ID]));
+  });
+  it('layHouseholdMoney: a pool with no joint account reads my left from the inputs as they are', () => {
+    const i = withJoint();
+    const seen: V3Inputs[] = [];
+    layHouseholdMoney(i, { joint: null, personalDelta: () => mu(0) }, (x) => { seen.push(x); return mu(1); });
+    expect(seen[0]).toBe(i);
+  });
+});
 });

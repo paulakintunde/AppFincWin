@@ -12,24 +12,70 @@ import { buildMonthModel } from '../../../../month/model/model';
 import { checkOnce, inputsOf, monthOf, v3Line, v3Series } from '../helpers/fixtures';
 import { monthPicture } from '../../../../month/picture';
 import { prepare } from '../../prepare';
-import { applyHouseholdMoney } from '../../householdMoney';
-import { householdDelta } from '../../../../household/pool';
+import { layHouseholdMoney } from '../../householdMoney';
+import { householdPlan, inferSetup, jointFactsOf } from '../../../../household';
 import type { FixtureHousehold, RightAnswerFixture } from './schema';
 
 const mu = (n: number): MinorUnits => minorUnits(n);
 
 /**
- * 08.1-08: the household block as the builder reads it. A partner counts only with both opt-ins and a figure (pool and split,
- * owner 2026-11-20); the slice less my own left is laid into the month; the inputs carry the caveat and settle-up facts.
+ * 08.1-08 / 08.1-22: the household block as the builder reads it, through the same engine functions (householdPlan,
+ * layHouseholdMoney). A partner counts only with both opt-ins and a figure; the viewer's slice of every joint account is laid first,
+ * then the viewer's share of the personal pool under the group's spending rule; the inputs carry the caveat and settle-up facts.
  */
+type Partner = NonNullable<FixtureHousehold['partnerFigure']>;
+
 function withHousehold(inputs: V3Inputs, h: FixtureHousehold | undefined): V3Inputs {
   if (h === undefined) return inputs;
-  const pf = h.partnerFigure;
-  const counted = h.scope === 'household' && pf !== undefined && pf.bothOn && pf.roundedLeft !== null;
-  const own = monthPicture(prepare(inputs)).leftAfterPlans;
-  const delta = counted ? householdDelta(mu(Number(own)), [mu(pf.roundedLeft as number)], h.weights ?? [1], h.myIndex ?? 0) : mu(0);
-  const moved = applyHouseholdMoney(inputs, delta);
-  const notShared = h.scope === 'household' && pf !== undefined && !counted ? [pf.name] : [];
+  const partners: Partner[] = h.partnerFigures ?? (h.partnerFigure === undefined ? [] : [h.partnerFigure]);
+  const n = h.weights?.length ?? partners.length + 1;
+  const me = h.myIndex ?? 0;
+  const keys = Array.from({ length: n }, (_, i) => `m${i}`);
+  // the viewer is excluded from `partners`: each other member, in order, takes the next partner
+  const counted = (p: Partner | undefined): number | null => (h.scope === 'household' && p !== undefined && p.bothOn && p.roundedLeft !== null ? p.roundedLeft : null);
+  const others = keys.map((_, i) => {
+    if (i === me) return null;
+    const v = counted(partners[i < me ? i : i - 1]);
+    return v === null ? null : mu(v);
+  });
+  const accounts = inputs.accounts ?? [];
+  const jointFixtures = h.jointAccounts ?? [];
+  const bill = h.weights === undefined ? null : Object.fromEntries(keys.map((k, i) => [k, (h.weights as number[])[i] as number]));
+  const myBill = h.weights === undefined ? 1 / n : (h.weights[me] as number) / h.weights.reduce((a, b) => a + b, 0);
+  const jointFacts = jointFactsOf(
+    jointFixtures.map((j) => ({
+      id: j.id,
+      purpose: j.purpose,
+      spendable: j.spendable === true,
+      ...(j.isSafetyNet === true ? { safetyNet: true } : {}),
+      balance: mu(j.balance),
+      monthIn: mu(j.monthIn),
+      monthOut: mu(j.monthOut),
+      carried: mu(j.carried ?? j.balance - (j.monthIn - j.monthOut)),
+      billsDueBeforeNextIn: mu(j.billsDueBeforeNextIn),
+      ...(j.paidInBy === undefined ? {} : { paidInBy: j.paidInBy.map(mu) }),
+      ...(j.ownMonth === undefined ? {} : { ownMonth: mu(j.ownMonth) }),
+    })),
+    accounts,
+    me,
+    myBill,
+  );
+  const plan = householdPlan({
+    scope: h.scope,
+    memberKeys: keys,
+    myIndex: me,
+    setting: { rule: h.spendRule ?? null, setup: h.setup ?? null, shares: h.spendShares === undefined ? null : Object.fromEntries(keys.map((k, i) => [k, (h.spendShares as number[])[i] as number])) },
+    billWeights: bill,
+    inferred: inferSetup({
+      hasJoint: jointFixtures.length > 0,
+      hasPersonalCash: accounts.some((a) => a.joint !== true),
+      hasJointCash: jointFixtures.some((j) => j.purpose !== 'savings'),
+    }),
+    others,
+    joint: jointFacts,
+  });
+  const moved = layHouseholdMoney(inputs, plan, (i) => monthPicture(prepare(i)).leftAfterPlans);
+  const notShared = h.scope === 'household' ? partners.filter((p) => counted(p) === null).map((p) => p.name) : [];
   return {
     ...moved,
     household: { scope: h.scope, notShared, settleUp: h.settleUp === undefined ? null : { lapsedAsPayer: h.settleUp.lapsed, owed: mu(h.settleUp.owed) } },
@@ -372,7 +418,7 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     overdraftLimit: a.overdraftLimit === null ? null : mu(a.overdraftLimit),
     overdraftRate: a.overdraftRate === null ? null : percent(a.overdraftRate),
     ...(a.noRate === true ? { noRate: true } : {}), // 05.4 ENG-17 (D-114)
-    ...(f.household?.jointAccountIds?.includes(a.id) === true ? { joint: true } : {}), // 08.1-08 UX-21
+    ...(f.household?.jointAccountIds?.includes(a.id) === true || f.household?.jointAccounts?.some((j) => j.id === a.id) === true ? { joint: true } : {}), // 08.1-08 UX-21
   }));
   // 05.4-20 (FIN-04, FIN-10, FIN-14): due day, joint and the part already paid as stated. A debt the situation pays as one of its
   // bills (DB-03, DB-04, DB-06, DB-07, DB-12: "pays her $300 card minimum as a monthly bill") is the bills list's monthly bill of
@@ -484,6 +530,8 @@ export function toEngineInputs(f: RightAnswerFixture): { inputs: V3Inputs; check
     ...(c.replaces == null ? {} : { replaces: replacesOf(c.replaces) }),
     // 06.1 D-21: the quick-estimate lines for this one check (judged through judgeWithQuickLines).
     ...(c.quickLines == null ? {} : { quickLines: c.quickLines.map(quickLineOf) }),
+    // 08.1-22: the price shared evenly among the household's members (HH-26); the viewer counts only their part.
+    ...(c.share === 'household_even' ? { share: { kind: 'household' as const, memberCount: f.household?.weights?.length ?? 2, myIndex: f.household?.myIndex ?? 0, rule: { kind: 'even' as const } } } : {}),
   });
   // 05.4-23 (FIN-08): the answer to "Can you cover the low months?"; absent or null = not answered.
   if (c.yourAnswer === 'yes' || c.yourAnswer === 'no') return { inputs, check: { ...check, volatileCover: c.yourAnswer === 'yes' } };

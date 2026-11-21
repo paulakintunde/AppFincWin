@@ -25,6 +25,8 @@ export interface FixtureCheck {
   saveForIt?: boolean; yourAnswer?: 'yes'|'no'|null;
   /** the check's existing `purpose` preset; necessity and for_work read as a need, nice_to_have/treat/luxury as a want (D-41: words and order only) */
   purpose?: 'invest_in_me'|'for_work'|'necessity'|'nice_to_have'|'treat'|'luxury'|null;
+  /** 08.1-22: the price is shared evenly among the household's members (HH-26); absent = the viewer pays all of it */
+  share?: 'household_even';
 }
 /**
  * 08.1-08 (CMP-F19, UX-21, CMP-F04): the household side of a case. scope: the viewer's choice; weights/myIndex: the agreed split of
@@ -36,6 +38,16 @@ export interface FixtureHousehold {
   partnerFigure?: { name: string; bothOn: boolean; roundedLeft: number | null };
   jointAccountIds?: string[];
   settleUp?: { role: 'payer'; owed: number; lapsed: boolean };
+  /** 08.1-22: the group's spending rule (absent = the setup's default), a set split's shares in member order, and the setup (absent = inferred from the accounts) */
+  spendRule?: 'bring'|'custom'|'bill'; spendShares?: number[]; setup?: 'separate'|'joint'|'mixed';
+  /** 08.1-22: three or more members: every other member in member order (the viewer excluded); partnerFigure is the one-partner shorthand */
+  partnerFigures?: { name: string; bothOn: boolean; roundedLeft: number | null }[];
+  /**
+   * 08.1-22: each joint account's true figures. balance = the whole joint balance; monthIn/monthOut = this month's money in and out (planned);
+   * billsDueBeforeNextIn; paidInBy = this month's pay-ins per member in member order. The viewer's own records hold: the account's fixture
+   * balance (when its use counts it) and paidInBy[me] less their bill-split share of monthOut. isSafetyNet = the shared net.
+   */
+  jointAccounts?: { id: string; purpose: 'bills'|'savings'|'everyday'|null; spendable?: boolean; isSafetyNet?: boolean; balance: number; monthIn: number; monthOut: number; billsDueBeforeNextIn: number; paidInBy?: number[]; carried?: number; /** the viewer's own net flow this month on this account when it is not paidInBy[me] less their bill share (transfers are not month money) */ ownMonth?: number }[];
 }
 export interface RightAnswerFixture {
   /** 08.1-08: the household side; absent = a one-person check */

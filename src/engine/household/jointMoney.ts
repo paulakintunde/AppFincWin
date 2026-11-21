@@ -31,6 +31,8 @@ export interface JointAccountFacts {
   /** this month's money paid in and the month's money out (paid, plus planned) */
   readonly monthIn: MinorUnits;
   readonly monthOut: MinorUnits;
+  /** money in the account from before this month: the balance less this month's net so far (paid in less paid out) */
+  readonly carried: MinorUnits;
   /** shared bills due from this account before the next pay-in */
   readonly billsDueBeforeNextIn: MinorUnits;
   /** this month's pay-ins per member, in member order; absent or all zero = counted equally */
@@ -73,12 +75,15 @@ function paidInWeights(a: JointAccountFacts, n: number): readonly number[] {
   return a.paidInBy !== undefined && a.paidInBy.length === n ? a.paidInBy.map((x) => Math.max(0, x)) : equal(n);
 }
 
-/** My slice of `cashTotal` (carried money plus this month's) and of `monthTotal` under the split. */
-function slice(cashTotal: number, monthTotal: number, split: JointSplit, a: JointAccountFacts, n: number, idx: number): { month: number; cash: number } {
+/**
+ * My slice of `cashTotal` (carried money plus this month's) and of `monthTotal` under the split. `carried` is the part of cashTotal
+ * that was there before this month: under bring it splits equally and the rest by what each paid in.
+ */
+function slice(cashTotal: number, monthTotal: number, carried: number, split: JointSplit, a: JointAccountFacts, n: number, idx: number): { month: number; cash: number } {
   if (split === 'paidIn') {
     const pw = paidInWeights(a, n);
-    const monthPart = Math.min(Math.max(monthTotal, 0), Math.max(cashTotal, 0));
-    return { month: part(monthTotal, pw, n, idx), cash: part(cashTotal - monthPart, equal(n), n, idx) + part(monthPart, pw, n, idx) };
+    const carriedPart = Math.min(carried, cashTotal);
+    return { month: part(monthTotal, pw, n, idx), cash: part(carriedPart, equal(n), n, idx) + part(cashTotal - carriedPart, pw, n, idx) };
   }
   return { month: part(monthTotal, split.weights, n, idx), cash: part(cashTotal, split.weights, n, idx) };
 }
@@ -87,7 +92,7 @@ function oneAccount(a: JointAccountFacts, split: JointSplit, billWeights: readon
   const purpose = a.purpose ?? 'everyday';
   if (purpose === 'savings') {
     if (a.safetyNet === true || !a.spendable) return { month: 0, cash: 0 };
-    return { month: 0, cash: slice(a.balance, 0, split, a, n, idx).cash };
+    return { month: 0, cash: slice(a.balance, 0, a.balance, split, a, n, idx).cash };
   }
   if (purpose === 'bills') {
     const above = Math.max(0, a.balance - a.billsDueBeforeNextIn);
@@ -96,10 +101,10 @@ function oneAccount(a: JointAccountFacts, split: JointSplit, billWeights: readon
       const g = -part(gap, billWeights ?? [], n, idx);
       return { month: g, cash: g };
     }
-    const s = slice(above, Math.max(a.monthIn - a.monthOut, 0), split, a, n, idx);
+    const s = slice(above, above, a.carried, split, a, n, idx);
     return { month: s.cash, cash: s.cash };
   }
-  return slice(a.balance, a.monthIn - a.monthOut, split, a, n, idx);
+  return slice(a.balance, a.monthIn - a.monthOut, a.carried, split, a, n, idx);
 }
 
 /**

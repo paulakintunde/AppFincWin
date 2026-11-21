@@ -58,6 +58,7 @@ export const V3_RUNTIME_EXPORTS = [
   'INCOME_VOLATILE_CV_PERCENT',
   'INTRO_KEYS', // 05.4-37 D-120
   'ITEM_TYPES', // 05.5-26: the kept card-rule leaf, so the stored-check reader never imports the old barrel
+  'JOINT_LINE_ID', // 08.1-22 CMP-F19
   'LEGACY_STATE_OF_CODE',
   'LONG_PLAN_MONTHS', // 05.4-37 D-64 (4)
   'LOW_MONTH_RANK',
@@ -133,6 +134,7 @@ export const V3_RUNTIME_EXPORTS = [
   'V3_VARIABLE_HISTORY_MONTHS',
   'VERDICT_TABLE',
   'applyHouseholdMoney', // 08.1-08 CMP-F19
+  'applyJointMoney', // 08.1-22 CMP-F19
   'bandOf',
   'buildMonthModel',
   'buildSchedule',
@@ -156,9 +158,11 @@ export const V3_RUNTIME_EXPORTS = [
   'insteadFutures',
   'insteadLinkFor',
   'isNeedPurpose',
+  'jointBackOf', // 08.1-22 CMP-F19
   'judgeBoth', // 05.4-27 BO-05: cash and installments from one input
   'judgeCheck',
   'judgeWithQuickLines', // 06.1 D-21
+  'layHouseholdMoney', // 08.1-22 CMP-F19
   'layerOfAnswerKey',
   'layersFor',
   'legacyLimits',
@@ -169,6 +173,7 @@ export const V3_RUNTIME_EXPORTS = [
   'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
   'monthlyEquivalentOf',
   'myShareOf',
+  'nextPayDate', // 08.1-22 CMP-F19: the joint bills due before the next pay-in
   'orderOptions', // 05.4-28 D-110
   'parseCheckV2',
   'planCard',
