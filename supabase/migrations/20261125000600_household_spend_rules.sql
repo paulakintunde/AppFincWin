@@ -28,7 +28,12 @@ grant select on public.household_spend_rules to authenticated;
 
 -- The notice kinds: the full list as created in 20261122000200, plus the two this plan announces.
 alter table public.household_events drop constraint if exists household_events_kind_check;
-alter table public.household_events add constraint household_events_kind_check check (kind in ('joined','left','removed','departure_undone','made_private','split_changed','weights_changed','default_changed','category_default_changed','settle_request','settle_reminder','settle_lapsed','settle_not_yet','settled','settle_undone','settle_cancelled','settle_departed','settle_ask','written_off','owner_changed','renamed','currency_changed','spend_rule_changed','joint_purpose_changed'));
+alter table public.household_events add constraint household_events_kind_check check (kind in ('joined','left','removed','departure_undone','made_private','split_changed','weights_changed','default_changed','category_default_changed','settle_request','settle_reminder','settle_lapsed','settle_not_yet','settled','settle_undone','settle_cancelled','settle_departed','settle_ask','written_off','owner_changed','renamed','currency_changed',
+  -- Phase 9 (20261124000300) plan kinds, kept: this list replaces the whole constraint.
+  'plan_approval_needed','plan_payer_left','plan_takeover','plan_grace','plan_locked','plan_downgrade_offer',
+  'plan_recovered_after_takeover','plan_double_cover',
+  -- 08.1-22
+  'spend_rule_changed','joint_purpose_changed'));
 
 -- Any member may set the rule (owner decision Q2). Failures return {"ok": false, "reason": ...}; only a missing session raises.
 -- p_shares: for 'custom', every current member once, whole numbers 0..100, not all zero, total 100. For bring/bill the stored
