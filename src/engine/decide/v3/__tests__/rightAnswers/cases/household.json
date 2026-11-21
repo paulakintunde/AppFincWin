@@ -3481,6 +3481,986 @@
       "approvedAt": "2026-11-20",
       "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
+    },
+    {
+      "id": "HH-35",
+      "topic": "household",
+      "persona": "OE-05: Alex, What each person brings, Just me (invented)",
+      "situation": "One joint account; Sam's pay lands in it; rule What each person brings. Alex, Just me, $100.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Alex",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 100000,
+              "monthIn": 500000,
+              "monthOut": 400000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                500000,
+                0
+              ],
+              "carried": 0,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "not_covered",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": -10000,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. Joint month money $1,000 split by what each paid in this month: Sam $5,000 of $5,000, Alex $0; nothing carried, so Alex's slice is $0. Alex's own month leaves $0, so $100 does not fit and no pay date makes it fit (no ready date): Not yet. This is the one-earner trap; the answer is unchanged and carries the share_zero_by_rule line (Alex's share is $0 because of the rule and Alex paid nothing in). Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-36",
+      "topic": "household",
+      "persona": "OE-05b: Alex, What each person brings, Household (invented)",
+      "situation": "Same as HH-35, Household scope; Sam has shared his figure.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Alex",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 100000,
+              "monthIn": 500000,
+              "monthOut": 400000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                500000,
+                0
+              ],
+              "carried": 0,
+              "ownMonth": 0
+            }
+          ],
+          "partnerFigure": {
+            "name": "Sam",
+            "bothOn": true,
+            "roundedLeft": 0
+          }
+        }
+      },
+      "expected": {
+        "variant": "not_covered",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": -10000,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. Under What each person brings no personal money is pooled, so Household counts the same as Just me: Alex's joint slice is $0 and $100 does not fit. The line shows in either scope. Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-37",
+      "topic": "household",
+      "persona": "OE-07: Alex, Same as the bill split at 100/0 (invented)",
+      "situation": "Same account; the group chose Same as the bill split, and the bill split is Sam 100%, Alex 0%. Alex, Just me, $100.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Alex",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bill",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 100000,
+              "monthIn": 500000,
+              "monthOut": 400000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                500000,
+                0
+              ],
+              "carried": 0,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "not_covered",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": -10000,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. The joint money splits by the bill weights 100/0, so Alex's slice is $0 and $100 does not fit: Not yet, no ready date. The line names the bill split rule. Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-38",
+      "topic": "household",
+      "persona": "OE-06: Alex, a set split 50/50 (invented)",
+      "situation": "Same account; the group set a spending split of 50/50. Alex, Just me, $100.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Alex",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "custom",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 100000,
+              "monthIn": 500000,
+              "monthOut": 400000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                500000,
+                0
+              ],
+              "carried": 0,
+              "ownMonth": 0
+            }
+          ],
+          "spendShares": [
+            50,
+            50
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "month_left_after"
+        ],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 40000,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. Alex's slice is half the $1,000 month money: $500. $500 - $100 = $400 left (the hand sum). A set split is the group's own choice, so no line, even though Alex paid nothing in. Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-39",
+      "topic": "household",
+      "persona": "OE-05c: Alex, What each person brings, $600 carried (invented)",
+      "situation": "Same account, but $600 was in it before this month (balance $1,600). Alex, Just me, $100.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 160000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Alex",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 160000,
+              "monthIn": 500000,
+              "monthOut": 400000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                500000,
+                0
+              ],
+              "carried": 60000,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "code": "fits_unspent",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. Money carried from before splits equally: Alex counts $300 of the $600; the month money is still all Sam's. $300 covers $100 from money from earlier months, so the month is untouched ($0 after the buy, as before). Alex's share is above $0, so no line. Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-40",
+      "topic": "household",
+      "persona": "OE-05d: Sam, who paid in (invented)",
+      "situation": "Same as HH-35, seen by Sam. Sam, Just me, $100.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Sam",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 100000,
+              "monthIn": 500000,
+              "monthOut": 400000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                500000,
+                0
+              ],
+              "carried": 0,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [
+          "month_left_after"
+        ],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 90000,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. Sam paid in all $5,000, so his slice is the whole $1,000. $1,000 - $100 = $900 left. The person who paid in never gets the line. Sam's own records use the same small form as Alex's (own month $0) so only the joint slice counts. Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-41",
+      "topic": "household",
+      "persona": "OE-05e: Alex paid in $50 (invented)",
+      "situation": "Same account, but Alex also paid $50 in this month ($5,050 in, balance $1,050). Alex, Just me, $100.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 105000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Alex",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 105000,
+              "monthIn": 505000,
+              "monthOut": 400000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                500000,
+                5000
+              ],
+              "carried": 0,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "not_covered",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": -8960,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. Month money $1,050 split by what each paid in: Alex $50 of $5,050, about $10.40. $10.40 - $100 = -$89.60: Not yet. Alex paid something in, so the share is not $0 because of the rule: no line (Q1 A). Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-42",
+      "topic": "household",
+      "persona": "OE-07b: bill split 100/0, only joint savings (invented)",
+      "situation": "The only joint account is joint savings ($10,000), not marked spendable. Rule Same as the bill split, 100/0. Alex, Just me, $100.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 40000,
+          "essentialEveryday": 20000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 20000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 20000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "savings",
+            "name": "Joint savings",
+            "balance": 1000000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 10000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Alex",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bill",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "savings",
+              "balance": 1000000,
+              "monthIn": 0,
+              "monthOut": 0,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                0,
+                0
+              ],
+              "carried": 1000000
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "not_covered",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "share_zero_by_rule"
+        ],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": -10000,
+          "usualMonth": null
+        }
+      },
+      "why": "OE shared set-up (08.12-RESEARCH-ARRANGEMENTS.md section 5): today 15 Nov 2026, pay on the 1st, no safety net, no overdraft. One joint everyday account: Sam paid in $5,000, $4,000 went out ($3,200 bills, $800 shared spending), $1,000 left, nothing carried. Joint savings not marked spendable is kept out like a locked goal, so there is no joint money to share and nothing to suggest: no line. Alex's own month leaves $0: Not yet. Alex's own records use the HH-24 non-payer form (a small $400 personal pay, all of it spent on everyday, so Alex's own month leaves $0): a $0 pay leaves the case not ready (it asks when pay arrives and a past month has no spending), so Alex is not given $0. Alex pays nothing into the joint account. ",
+      "fixIds": [
+        "CMP-F19",
+        "ENG-26"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-21",
+      "ownerReason": "Owner 2026-11-21: one-earner fix (suggest equal shares, group picks)",
+      "expertNote": null
     }
   ]
 }

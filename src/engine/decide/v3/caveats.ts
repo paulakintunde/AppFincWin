@@ -22,6 +22,7 @@ export const CAVEAT_ORDER: readonly CaveatCode[] = Object.freeze([
   'expected_bills',
   'household_not_shared',
   'shared_money',
+  'share_zero_by_rule',
   'rate_estimated',
   'tax_not_included',
   'long_plan',
@@ -99,6 +100,10 @@ export function caveatsFor(src: CaveatSource, inputs: V3Inputs, check: CheckV2):
   // money in it, or one no rate converts (it counts nowhere), is not "used".
   const joint = (inputs.accounts ?? []).find((a) => a.joint === true && a.noRate !== true && a.balance > 0);
   if (joint !== undefined) found.push({ code: 'shared_money', values: { account: joint.id } });
+  // 08.1-25 (owner 2026-11-21, either scope): the viewer's share of the joint money is $0 because of the rule. A line only; the
+  // screen offers equal shares and the group picks.
+  const zero = inputs.household?.zeroShare;
+  if (zero != null) found.push({ code: 'share_zero_by_rule', values: { rule: zero.rule } });
   add('rate_estimated', facts.has('implied_rate') || reasons.has('quote_used_no_rate'));
   add('tax_not_included', reasons.has('tax_not_included'));
   // Stryker disable next-line ConditionalExpression: a once check has no schedule, so planMonths gives null the same as the guard does

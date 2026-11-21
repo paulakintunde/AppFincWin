@@ -2439,6 +2439,7 @@ const en = {
         expected_bills: 'Some bills this month are expected, not yet confirmed paid.',
         household_not_shared: 'Only your money is counted. {{names}} hasn’t shared theirs.', // D-03 (08.1-08), wording sign-off pending
         shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21, emitted from 08.1-08
+        share_zero_by_rule: 'Under {{rule}}, your share of the joint money is {{zero}} this month.', // 08.1-25 one-earner fix (Q2 A), wording sign-off pending (plan 14)
         rate_estimated: 'This rate is FincWin’s estimate from the payment, not the rate on your agreement.',
         long_plan: 'Over {{months}} months, a change in income or costs matters more than it does today.',
         // D-64 (5): the figures a big purchase rests on, then the one line under them.

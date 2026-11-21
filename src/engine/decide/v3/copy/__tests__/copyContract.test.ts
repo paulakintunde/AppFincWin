@@ -110,6 +110,8 @@ function buildCorpus(): Emitted[] {
   const sam = toV3Inputs(personById('sam'));
   const own = (id: string, spec: LimitLine['spec']): LimitLine => ({ id, on: true, source: 'own', spec });
   const lines = (...l: LimitLine[]): V3Inputs => ({ ...sam, limits: { lines: l } });
+  // 08.1-25: share_zero_by_rule (the viewer's share of the joint money is $0 because of the rule)
+  collect(out, { ...sam, household: { scope: 'me', notShared: [], zeroShare: { rule: 'bring' } } }, checkOnce(15_000, { taxIncluded: true }));
   // 08.1-08: household_not_shared (D-03) and shared_money (UX-21)
   collect(out, { ...sam, household: { scope: 'household', notShared: ['noa'] }, accounts: (sam.accounts ?? []).map((a, i) => (i === 0 ? { ...a, joint: true } : a)) }, checkOnce(15_000, { taxIncluded: true }));
   // line_crossed, one line of each unit
