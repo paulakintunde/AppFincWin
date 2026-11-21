@@ -2985,11 +2985,11 @@
       "fixIds": [
         "D-07-12M"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Owner (2026-11-20, plan 08.1-13 checkpoint): approve option 1 (say it, keep the answer), name the date, show only the \"even without\" line when both apply. See 08.1-CASES-12MONTH.md.",
       "expertNote": null,
-      "plannerNote": "Draft for owner decision (08.1-CASES-12MONTH.md). Expected code and variant are what the engine says today; the fact name is the proposal."
+      "plannerNote": "Facts only: below_zero_later_without / below_zero_later_with never change the code, variant or ready-by date. Hand month-end table in 08.1-CASES-12MONTH.md."
     },
     {
       "id": "SN-33",
@@ -3082,11 +3082,11 @@
       "fixIds": [
         "D-07-12M"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Owner (2026-11-20, plan 08.1-13 checkpoint): approve option 1 (say it, keep the answer), name the date, show only the \"even without\" line when both apply. See 08.1-CASES-12MONTH.md.",
       "expertNote": null,
-      "plannerNote": "Draft for owner decision. Under option 2 in 08.1-CASES-12MONTH.md the verdict would instead be Not yet."
+      "plannerNote": "Facts only: below_zero_later_without / below_zero_later_with never change the code, variant or ready-by date. Hand month-end table in 08.1-CASES-12MONTH.md."
     },
     {
       "id": "SN-34",
@@ -3178,11 +3178,11 @@
       "fixIds": [
         "D-07-12M"
       ],
-      "status": "draft",
-      "approvedAt": null,
-      "ownerReason": null,
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Owner (2026-11-20, plan 08.1-13 checkpoint): approve option 1 (say it, keep the answer), name the date, show only the \"even without\" line when both apply. See 08.1-CASES-12MONTH.md.",
       "expertNote": null,
-      "plannerNote": "Draft control."
+      "plannerNote": "Facts only: below_zero_later_without / below_zero_later_with never change the code, variant or ready-by date. Hand month-end table in 08.1-CASES-12MONTH.md."
     }
   ]
 }
