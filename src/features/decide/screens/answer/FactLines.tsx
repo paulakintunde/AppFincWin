@@ -4,6 +4,7 @@
 // not the one above the verdict, open in place under one "Why?" (06.1-59 WhyLine). Nothing is removed (D-18: the engine's copy keys
 // are unchanged; only where a line sits changes). Missing figures are one short line whose "More" opens "Give it more to go on",
 // which lists each of them. Free help lives only in its More detail row; its sentence shows here only when that row cannot.
+// 08.1-14 (D-07): below_zero_without is said by the BelowZeroLine under the verdict card, so it is skipped here (said once).
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
@@ -14,6 +15,7 @@ import { textRole } from '@/theme/typography';
 import { usePressFeedback } from '@/ui/pressFeedback';
 import { Text } from '@/ui/Text';
 import { WhyLine } from '../ui/WhyLine';
+import { BELOW_ZERO_FACT } from './BelowZeroLine';
 import type { Line } from '../logic/sayResult';
 
 export interface FactLinesProps {
@@ -46,7 +48,7 @@ export function FactLines({ facts, notices = NO_LINES, missingCount = 0, onMissi
   const press = usePressFeedback('row');
   // CS-4: the free-help sentence has its own More detail row whenever the country has a service listed.
   const helpRow = freeHelpFor(country) !== null;
-  const shown = facts.map((line, index) => ({ line, index })).filter(({ line }) => !(helpRow && line.code === 'free_help'));
+  const shown = facts.map((line, index) => ({ line, index })).filter(({ line }) => !(helpRow && line.code === 'free_help') && line.code !== BELOW_ZERO_FACT);
   const [first, ...rest] = shown;
   // CO-D-36: a not-cleared overdraft warning is the engine's first fact; it reads in bold ink, no new colour.
   const fact = ({ line, index }: { line: Line; index: number }) => (

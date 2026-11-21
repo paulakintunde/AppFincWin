@@ -15,7 +15,9 @@ export const stage = {
     a11y: 'What answers rest on. {{stage}}. {{monthsUsed}} of 3 months.',
     a11yDeeper: 'What answers rest on. {{monthsUsed}} months of records.',
     barA11y: '{{monthsUsed}} of 3 months of records. {{stage}} is on.',
-    announce: 'Decide now has {{monthsUsed}} months of records. {{stage}} is on.',
+    // 08.1-14 (FOLLOWUPS 21|14): plural by count, so one month reads "1 month".
+    announce_one: 'Decide now has {{count}}\u00A0month of records. {{stage}} is on.',
+    announce_other: 'Decide now has {{count}}\u00A0months of records. {{stage}} is on.',
     announceDeeper: 'Decide now has {{monthsUsed}} months of records. Every part is on.',
   },
   line: {

@@ -93,11 +93,15 @@ describe('StageCard', () => {
     expect(announce).not.toHaveBeenCalled();
     await view.rerender(<StageCard reading={reading('full', 1)} monthsTotal={3} onImport={() => undefined} />);
     expect(announce).toHaveBeenCalledTimes(1);
-    expect(announce).toHaveBeenLastCalledWith('Decide now has 1 months of records. Full answer is on.');
+    // 08.1-14 (FOLLOWUPS 21|14): one month is "1 month", never "1 months" (i18next _one / _other).
+    expect(announce).toHaveBeenLastCalledWith('Decide now has 1\u00A0month of records. Full answer is on.');
     await view.rerender(<StageCard reading={reading('full', 1)} monthsTotal={3} onImport={() => undefined} />);
     expect(announce).toHaveBeenCalledTimes(1);
-    await view.rerender(<StageCard reading={reading('deeper', 3)} monthsTotal={3} onImport={() => undefined} />);
+    await view.rerender(<StageCard reading={reading('full', 2)} monthsTotal={3} onImport={() => undefined} />);
     expect(announce).toHaveBeenCalledTimes(2);
+    expect(announce).toHaveBeenLastCalledWith('Decide now has 2\u00A0months of records. Full answer is on.');
+    await view.rerender(<StageCard reading={reading('deeper', 3)} monthsTotal={3} onImport={() => undefined} />);
+    expect(announce).toHaveBeenCalledTimes(3);
     expect(announce).toHaveBeenLastCalledWith('Decide now has 3 months of records. Every part is on.');
   });
 

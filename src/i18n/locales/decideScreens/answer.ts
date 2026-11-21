@@ -170,6 +170,12 @@ export const answer = {
     line: 'dips below {{zero}} on {{date}}',
     a11y: 'Caution: dips below {{zero}} on {{date}}.',
   },
+  // 08.1-14 (D-07, UI-SPEC section 3): the BelowZeroLine under the verdict card. The badge word, then the engine's below_zero_without
+  // sentence; spoken "Warning. " + the sentence. Draft copy, wording sign-off in plan 14.
+  belowZero: {
+    badge: 'Warning',
+    a11y: 'Warning. {{sentence}}',
+  },
   // 06.1-68 (CF-4, CC-8): the answers given under a fact line, each with Undo.
   fact: {
     noneSaved: 'Saved: no other debts.',

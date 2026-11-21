@@ -327,6 +327,7 @@ export const DECISION_MAP: Readonly<Record<string, Decision>> = Object.freeze({
 
 /** One example per placeholder, so a template also reads as a sentence. `count` is 1 on `_one` keys (fillSample). */
 export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
+  a: 'Sam', // 08.1-10 caveat.nameAnd: the names before the last
   above: '$1,200.00',
   account: 'Everyday',
   after: '$640.00',
@@ -334,6 +335,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   amount: '$250.00',
   answer: 'fits, $231.00 left that month',
   apr: '24.9',
+  b: 'Alex', // 08.1-10 caveat.nameAnd: the last name
   balance: '$3,000.00',
   before: '$890.00',
   below: '$320.00',
@@ -368,6 +370,7 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   gap: '$180.00',
   goal: 'Car fund', // 08.1-09 Record as bought: Close the goal
   goals: '$640.00',
+  household: 'Flat 4B', // 08.1-10 scope.household: the household's name
   income: '$3,200.00', // 06.1-65: Records rough figures in use
   interest: '$412.00',
   investing: '$200.00',
@@ -418,6 +421,8 @@ export const SAMPLE_VALUES: Readonly<Record<string, string>> = Object.freeze({
   rule: 'Largest purchase', // 06.1 wave 6
   sameMonth: 'November last year',
   saved: '$600.00',
+  scope: 'Just you', // 08.1-10 scope.withStage
+  sentence: 'Your account goes below $0.00 on 14 Jun even without this.', // 08.1-14 belowZero.a11y
   saving: '$150.00',
   savings: '$2,000.00',
   setup: '$2,200.00',

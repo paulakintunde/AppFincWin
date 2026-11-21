@@ -3,6 +3,8 @@
 // 08.1-24 (owner caution sign 2026-11-21, Q1 A): a Fits answer that goes below $0 later carries the caution sign in the badge's row
 // (icon, badge, words); its spoken form opens the one summary label. The verdict (chip, title, body, tint) never changes. No caution =
 // the same tree as before.
+// 08.1-14 (D-07, D-08): the BelowZeroLine rides under the card in the same RiseIn (`after`). The date line says when it would be
+// bought ("If you buy it today."); a check recorded as bought drops it for the outcome line "Bought on {date}." (DS-4).
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
@@ -35,6 +37,8 @@ export interface VerdictCardProps {
   values?: Readonly<Record<string, string>>;
   /** 08.1-24: the later-dip caution (useCautionOf). Null = no sign. `still` on the saved view (Q3 A). */
   caution?: VerdictCaution | null;
+  /** 08.1-14 (D-07): the BelowZeroLine, directly under the card and rising with it (no animation of its own). Absent = none. */
+  after?: React.ReactNode;
   testID?: string;
 }
 
@@ -48,7 +52,7 @@ export interface VerdictCaution {
   still?: boolean;
 }
 
-export function VerdictCard({ code, variant, once, lead = null, boughtOn = null, values = {}, caution = null, testID = 'answer-verdict' }: VerdictCardProps) {
+export function VerdictCard({ code, variant, once, lead = null, boughtOn = null, values = {}, caution = null, after = null, testID = 'answer-verdict' }: VerdictCardProps) {
   const t = useT();
   const { pairing } = useTheme();
   const fontScale = useFontScale();
@@ -63,33 +67,37 @@ export function VerdictCard({ code, variant, once, lead = null, boughtOn = null,
   const badge = <StateBadge tone={tone} shape={glyph as StateBadgeShape} label={chip} testID="answer-verdict-badge" />;
 
   return (
-    <RiseIn duration={DURATION.sheetUp} style={[styles.card, { backgroundColor: state.tint }]}>
-      <View testID={testID} accessible accessibilityRole="summary" accessibilityLiveRegion="polite" accessibilityLabel={[caution?.a11y.replace(/\.$/, ''), chip, title, body, lead].filter(Boolean).join('. ')}>
-        {caution !== null ? (
-          <CautionSign text={`· ${caution.text}`} still={caution.still === true} animateKey={caution.animateKey}>
-            {badge}
-          </CautionSign>
-        ) : (
-          badge
-        )}
-        {title !== null ? <Text style={[textRole(pairing, titleRole), styles.title, { color: state.color }]}>{title}</Text> : null}
-        {body !== null ? <Text style={{ ...textRole(pairing, 'body'), color: stateMuted }}>{body}</Text> : null}
-        {lead !== null ? (
-          <Text
-            testID="answer-verdict-lead"
-            scale="capped"
-            style={[textRole(pairing, 'bodyStrong'), styles.lead, { color: tone === 'short' ? stateColors.short.color : state.color }]}
-          >
-            {lead}
-          </Text>
-        ) : null}
-        {boughtOn !== null ? <Text style={{ ...textRole(pairing, 'label'), color: stateMuted }}>{boughtOn}</Text> : null}
+    <RiseIn duration={DURATION.sheetUp} style={styles.stack}>
+      <View style={[styles.card, { backgroundColor: state.tint }]}>
+        <View testID={testID} accessible accessibilityRole="summary" accessibilityLiveRegion="polite" accessibilityLabel={[caution?.a11y.replace(/\.$/, ''), chip, title, body, lead].filter(Boolean).join('. ')}>
+          {caution !== null ? (
+            <CautionSign text={`· ${caution.text}`} still={caution.still === true} animateKey={caution.animateKey}>
+              {badge}
+            </CautionSign>
+          ) : (
+            badge
+          )}
+          {title !== null ? <Text style={[textRole(pairing, titleRole), styles.title, { color: state.color }]}>{title}</Text> : null}
+          {body !== null ? <Text style={{ ...textRole(pairing, 'body'), color: stateMuted }}>{body}</Text> : null}
+          {lead !== null ? (
+            <Text
+              testID="answer-verdict-lead"
+              scale="capped"
+              style={[textRole(pairing, 'bodyStrong'), styles.lead, { color: tone === 'short' ? stateColors.short.color : state.color }]}
+            >
+              {lead}
+            </Text>
+          ) : null}
+          {boughtOn !== null ? <Text style={{ ...textRole(pairing, 'label'), color: stateMuted }}>{boughtOn}</Text> : null}
+        </View>
       </View>
+      {after}
     </RiseIn>
   );
 }
 
 const styles = StyleSheet.create({
+  stack: { gap: space.gapSm },
   card: { borderRadius: radii.card, padding: space.cardPad, gap: space.gapSm },
   title: { marginTop: space.gapSm },
   lead: { fontVariant: ['tabular-nums'], marginTop: space.gapSm },
