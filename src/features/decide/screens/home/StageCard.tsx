@@ -66,7 +66,7 @@ export function StageCard({ reading, monthsTotal, onImport }: StageCardProps): R
       return;
     }
     const stageWord = t(`decide.screens.stage.word.full`);
-    AccessibilityInfo.announceForAccessibility(t('decide.screens.stage.card.announce', { monthsUsed, stage: stageWord }));
+    AccessibilityInfo.announceForAccessibility(t('decide.screens.stage.card.announce', { count: monthsUsed, stage: stageWord }));
   }, [monthsUsed, t]);
 
   const label = deeper

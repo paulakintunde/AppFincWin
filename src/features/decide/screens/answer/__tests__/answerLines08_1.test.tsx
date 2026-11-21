@@ -6,7 +6,7 @@
 // - D-05: the Not yet ready date says what it means (above {{zero}} for the next 90 days).
 // - D-06: "Not within a year at your current pace." takes the ready date's place; the cheaper one and Save for it lead the actions.
 import React from 'react';
-import { screen } from '@testing-library/react-native';
+import { screen, within } from '@testing-library/react-native';
 import { judgeCheck, prepare, type Fact, type Result } from '@/engine/decide/v3';
 import { toEngineInputs } from '@/engine/decide/v3/__tests__/rightAnswers/fixture';
 import { loadCases } from '@/engine/decide/v3/__tests__/rightAnswers/loader';
@@ -157,9 +157,9 @@ describe('D-07: the BelowZeroLine', () => {
 
   it('a short verdict stays first, and the verdict word does not change', async () => {
     const r = ledgerRun('N09'); // monthly_short
-    await frame(r);
+    const plain = await frame(r);
     const plainBadge = String(screen.getByTestId('answer-verdict-badge').props.accessibilityLabel);
-    screen.unmount();
+    await plain.unmount();
     await frame(withBelowZero(r));
     expect(String(screen.getByTestId('answer-verdict-badge').props.accessibilityLabel)).toBe(plainBadge);
     const ids = idsInOrder();
@@ -221,10 +221,8 @@ describe('D-06: no date within a year', () => {
     const words = textsUnder('answer-actions');
     expect(words.slice(0, 2)).toEqual(['Cheaper one', 'Save for it']);
     expect(words).toContain('I bought it');
-    const cheaper = screen.getByTestId('answer-action-cheaper');
-    const save = screen.getByTestId('answer-action-saveFor');
-    expect(cheaper.props.accessibilityRole).toBe('button');
-    expect(save.props.accessibilityRole).toBe('button');
+    const cheaper = within(screen.getByTestId('answer-action-cheaper')).getByRole('button');
+    const save = within(screen.getByTestId('answer-action-saveFor')).getByRole('button');
     // equal visual weight: the same pill look
     expect(JSON.stringify([cheaper.props.style].flat(5))).toBe(JSON.stringify([save.props.style].flat(5)));
     // the cheaper one is not offered twice

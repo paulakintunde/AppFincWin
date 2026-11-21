@@ -2057,7 +2057,8 @@ const en = {
         notYetNotCovered: {
           chip: 'Not yet',
           title: 'Not yet. Your spare money and extra savings don’t cover this.',
-          body: 'Based on your typical pace, it could be covered by {{readyMonth}}.', // 06.1-83: no count (owner, 2026-11-14)
+          // 08.1-14 (D-05): the ready date is the first start that keeps the account at or above {{zero}} for its own 90 days (08.1-06).
+          body: 'Ready by {{readyMonth}}. Based on your records, buying then keeps your account above {{zero}} for the next 90 days.',
         },
         monthlyShort: {
           chip: 'Short each month',
@@ -2337,9 +2338,9 @@ const en = {
         overdraft_cost_90d: 'At {{rate}}%, the days below {{zero}} cost about {{cost}}. That counts the next 90 days. This is an estimate.',
         wait_clears: 'Waiting until {{month}} keeps the account above {{zero}}.',
         not_within_year: 'Not within a year at your current pace.', // 08.1 D-06 (draft: goes to the wording sign-off)
-        below_zero_without: 'Your account goes below {{zero}} by {{date}} even without this.', // 08.1 D-07 (draft: goes to the wording sign-off)
-        below_zero_later_without: 'Later on, your account goes below {{zero}} by {{date}} even without this.', // 08.1-13 (draft: wording sign-off)
-        below_zero_later_with: 'With this, your account goes below {{zero}} by {{date}}.', // 08.1-13 (draft: wording sign-off)
+        below_zero_without: 'Your account goes below {{zero}} on {{date}} even without this.', // 08.1 D-07, shown as the BelowZeroLine (08.1-14; draft: wording sign-off)
+        below_zero_later_without: 'Later on, your account goes below {{zero}} on {{date}} even without this.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
+        below_zero_later_with: 'With this, your account goes below {{zero}} on {{date}}.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
         overdraft_repeat: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays. At {{rate}}%, that costs about {{cost}} over the next 90 days.',
         overdraft_repeat_no_rate: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays.',
         other_account_overdrawn: 'Your {{account}} account is {{below}} below {{zero}}. At {{rate}}%, that costs about {{monthlyCost}} a month.',

@@ -12,6 +12,9 @@
 // and notice (FactLines).
 // 08.1-24 (owner caution sign 2026-11-21): a Fits answer whose 12-month path goes below $0 later shows the caution sign before the
 // verdict word (useCautionOf, laterDipOf). The verdict does not change; the fact line under it stays.
+// 08.1-14 (D-06, D-07, D-08): below_zero_without is the BelowZeroLine directly under the verdict card (before the facts, said once).
+// With no ready date inside a year (not_within_year) the action bar leads with the cheaper one, then Save for it. The card's date
+// line says "If you buy it today."; a check recorded as bought shows "Bought on {date}." in the outcome line instead (DS-4).
 import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Evaluation, LocalDate, Purpose, Result, YearMonth } from '@/engine/decide/v3';
@@ -25,6 +28,7 @@ import { Text } from '@/ui/Text';
 import { ActionBar } from './ActionBar';
 import { AnswerLoadingBody } from './AnswerLoading';
 import { AnswerTopBar, type AnswerTopBarProps, type PayMode, type WhenChoice } from './AnswerTopBar';
+import { BELOW_ZERO_FACT, BelowZeroLine } from './BelowZeroLine';
 import { FactLines } from './FactLines';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 import type { Line } from '../logic/sayResult';
@@ -112,6 +116,14 @@ export interface AnswerFrameProps {
 }
 
 const NO_ROWS: readonly ReadinessFixRow[] = [];
+const NO_OPTIONS: readonly OptionKey[] = [];
+const HIDE_CHEAPER: readonly OptionKey[] = ['cheaper'];
+
+/** 08.1-14 (D-07): the BelowZeroLine for the below_zero_without fact, or null. */
+export function belowZeroOf(facts: readonly Line[]): React.ReactNode {
+  const line = facts.find((f) => f.code === BELOW_ZERO_FACT);
+  return line === undefined ? null : <BelowZeroLine text={line.text} />;
+}
 /** 06.1-68 (CF-3): how far the verdict dims while it updates (the same step the pressed state uses). */
 const UPDATING_OPACITY = PRESSED_OPACITY;
 
@@ -192,6 +204,9 @@ export function AnswerFrame({
   };
   const retry = (): void => onAction({ kind: 'retry' });
   const outcome = check.outcome ?? null;
+  // 08.1-14 (D-06): no ready date within a year; the cheaper one leads the bar when the check has one.
+  const notWithinYear = result !== null && result.facts.some((f) => f.code === 'not_within_year');
+  const cheaperLeads = notWithinYear && check.options.includes('cheaper');
 
   let body: React.ReactNode = null;
   let showActions = false;
@@ -259,7 +274,16 @@ export function AnswerFrame({
           </Text>
         </View>
         <View testID="answer-verdict-area" accessibilityState={{ busy: updating }} style={[styles.verdict, updating ? styles.updating : null]}>
-          <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} caution={caution} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
+          <VerdictCard
+            code={result.code}
+            variant={result.variant}
+            once={once}
+            values={lines.verdictValues}
+            caution={caution}
+            lead={lines.afterBuy.lead?.text ?? null}
+            boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null}
+            after={belowZeroOf(lines.facts)}
+          />
           <FactLines
             facts={lines.facts}
             notices={notices.rest}
@@ -269,7 +293,7 @@ export function AnswerFrame({
             renderAfter={renderAfterFact}
           />
         </View>
-        <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} />
+        <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} notWithinYear={notWithinYear} hide={cheaperLeads && outcome === null ? HIDE_CHEAPER : NO_OPTIONS} />
         {children !== undefined ? (
           <View testID="answer-detail" style={styles.group}>
             {children}
@@ -303,7 +327,13 @@ export function AnswerFrame({
       {showOutcome ? (
         <OutcomeLine text={outcome} onOpenPast={() => onAction({ kind: 'openPast' })} onRecordBought={check.canRecordBought === true ? () => onAction({ kind: 'bought' }) : undefined} />
       ) : showActions ? (
-        <ActionBar onBought={() => onAction({ kind: 'bought' })} onSaveFor={() => onAction({ kind: 'saveFor' })} onNotBuying={() => onAction({ kind: 'notBuying' })} />
+        <ActionBar
+          onBought={() => onAction({ kind: 'bought' })}
+          onSaveFor={() => onAction({ kind: 'saveFor' })}
+          onNotBuying={() => onAction({ kind: 'notBuying' })}
+          notWithinYear={notWithinYear}
+          onCheaper={cheaperLeads ? () => onOption('cheaper') : undefined}
+        />
       ) : null}
     </View>
   );
