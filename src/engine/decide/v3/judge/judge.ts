@@ -56,7 +56,7 @@ import { addDays, addYearMonths, daysBetween, yearMonthOf } from '../dates';
 import type { CashCheck, CashPathV3 } from '../cash/path';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, moveMoneyBy, sourceSplit } from '../moneySource';
 import { costlyDebt, costlyFacts, debtFacts } from '../debts';
-import { belowZeroWithoutFacts, depletionFacts, placeBelowZeroWithout,monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
+import { belowZeroLaterFacts, belowZeroWithoutFacts, depletionFacts, placeBelowZeroWithout,monthAlreadyShort, monthShortTier, planTotal } from '../depletion';
 import { askFact, borrowingFacts, cashFits, cashSoon, isExpensive, saveVsBorrow, saveVsBorrowFact, type PlanRate } from '../borrowing';
 import { lastPaymentBefore, paymentsInRange } from '../plan/schedule';
 import { afterBuyBlock, firstPaymentLater } from '../afterBuy';
@@ -137,6 +137,11 @@ export interface JudgeInput {
   readonly safeStart?: (notBefore: string) => SafeStart;
   /** 08.1 D-07: the first day inside the 90 days the account is below $0 with no purchase at all; null or absent = never. */
   readonly belowZeroWithout?: LocalDate | null;
+  /**
+   * 08.1-13 (owner 2026-11-20): read only on a Fits answer. The first day after the first 90 days that the 12-month path is below 0:
+   * 'without' even with no purchase, 'with' only because of it; null when neither (or the path cannot be built). Facts only.
+   */
+  readonly belowZeroLater?: () => { readonly kind: 'without' | 'with'; readonly date: LocalDate } | null;
 }
 
 /** 05.4 BO-05 (05.4-27): a sale's account part that arrives after the purchase date. */
@@ -993,7 +998,7 @@ export function judge(j: JudgeInput): Result {
     ...(od?.facts ?? []),
   ];
   // 08.1 D-07 / CO-D-36: below_zero_without leads, except that the approved not-cleared warning stays first and it follows directly.
-  const facts: Fact[] = placeBelowZeroWithout(belowZeroWithoutFacts(j.belowZeroWithout ?? null), rest);
+  const facts: Fact[] = placeBelowZeroWithout([...belowZeroWithoutFacts(j.belowZeroWithout ?? null), ...belowZeroLaterFacts(code.startsWith('fits_') && j.belowZeroLater !== undefined ? j.belowZeroLater() : null)], rest);
   // 05.4 FIN-05: the save-or-borrow line goes right after the depletion and overdraft lines (they lead, I-D54).
   const compareAt = facts.length;
   // 05.4 FIN-07 / D-40: the floor a tight answer is under. Not under a D-63 / D-65 month-short headline (it reads after the tight body).

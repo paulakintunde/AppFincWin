@@ -18,7 +18,6 @@ describe('explorer at lever 0 agrees with the answer (D-12)', () => {
   it("gives the answer's ready-by month for every not covered result, with a seasonal earner among them", () => {
     let checked = 0;
     let seasonal = 0;
-    let laterByD05 = 0;
     const misses: string[] = [];
     const cases: { id: string; inputs: V3Inputs; check: CheckV2 }[] = [];
     for (const g of [...generateHistories(), ...generateNearLineHistories()]) {
@@ -43,15 +42,14 @@ describe('explorer at lever 0 agrees with the answer (D-12)', () => {
         price: ev.purchase.dayOne,
         unspent: minorUnits(Math.max(0, unspent)),
         answerWaits: true,
+        answerReadyBy: r.readyBy.month,
       });
-      // 08.1 D-05: the answer's date is the first day a fresh check stays at or above 0 for 90 days, so it can be later than the usual-month
-      // month the explorer reads (never earlier). 08.1-06 leaves the explorer on the usual month; the gap is listed for the owner (SUMMARY).
-      if (out.buyLater.readyBy !== r.readyBy.month && !(out.buyLater.readyBy !== null && out.buyLater.readyBy < r.readyBy.month)) misses.push(`${c.id} ${out.buyLater.readyBy} vs ${r.readyBy.month}`);
+      // 08.1 D-05 (owner 2026-11-20): Buy it later follows the answer's own month, so the two are equal.
+      if (out.buyLater.readyBy !== r.readyBy.month) misses.push(`${c.id} ${out.buyLater.readyBy} vs ${r.readyBy.month}`);
       checked += 1;
       if (ev.month.incomePicture?.treated === 'seasonal') seasonal += 1;
     }
     expect(misses).toEqual([]);
-    expect(laterByD05).toBeGreaterThanOrEqual(0);
     expect(checked).toBeGreaterThan(0);
     expect(seasonal).toBeGreaterThan(0);
   });

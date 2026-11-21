@@ -1699,6 +1699,18 @@ export function plainCashReady(f: RightAnswerFixture): { date: string } | { mont
   return dips && pay !== undefined && pay >= `${month}-01` ? { date: pay } : { month };
 }
 
+/**
+ * 08.1-13: a plan whose cash route (the same price paid once) waits, but within the D-80 short wait. The engine now dates that wait by
+ * D-05 (the first day a fresh 90-day check stays at or above $0, plan 08.1-06), which can run past the short wait where this file's
+ * older date (plainCashReady) does not, so "Fits, but borrowing costs more" and "Only by borrowing" can differ. Used by pendingRules
+ * (D05-CASH-ROUTE) until this file restates D-05 on a 12-month path.
+ */
+export function plainCashWaitsShort(f: RightAnswerFixture): boolean {
+  if (f.check.pay.mode !== 'plan') return false;
+  const once: RightAnswerFixture = { ...f, check: { ...f.check, pay: { mode: 'once' } } };
+  return plainCode(once).code === 'not_yet' && plainShortWait(once);
+}
+
 /** D-80, restated: paying at once is ready within 31 days of the check date (a ready month counts by its last day). */
 export function plainShortWait(f: RightAnswerFixture): boolean {
   const r = plainCashReady(f);

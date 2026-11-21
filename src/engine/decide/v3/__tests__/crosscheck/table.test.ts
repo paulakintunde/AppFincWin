@@ -248,7 +248,8 @@ describe('plain calculator: safety net (05.4-18, FIN-01, FIN-02; D-05, D-06, D-3
     for (const c of sn) {
       // 05.4-21: tight (SN-10, SN-11) is compared too.
       const got = plainAnswer(c.fixture);
-      const variant = NET_VARIANTS.includes(c.expected.variant) || c.expected.variant === 'tight' ? got.variant : c.expected.variant;
+      // 08.1-13: a plan's net variant is not restated by the plain calculator (PLAIN-PLANS), so plan cases compare the code only.
+      const variant = c.fixture.check.pay.mode === 'plan' ? c.expected.variant : NET_VARIANTS.includes(c.expected.variant) || c.expected.variant === 'tight' ? got.variant : c.expected.variant;
       expect({ id: c.id, code: got.code, variant }).toEqual({ id: c.id, code: c.expected.code, variant: c.expected.variant });
     }
   });

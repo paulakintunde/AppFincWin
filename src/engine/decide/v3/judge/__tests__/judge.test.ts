@@ -1482,3 +1482,28 @@ describe('judge: D-05 ready-by search, D-06 beyond a year, D-07 below $0 without
     expect(waits({ belowZeroWithout: null }).facts).toEqual(plain.facts);
   });
 });
+
+// 08.1-13 (owner 2026-11-20, option 1): a later dip in the 12-month path is a fact on a Fits answer, never a code change.
+describe('belowZeroLater (08.1-13)', () => {
+  const ABOVE: ResolvedNet = { ...FULL_NET, saved: minorUnits(400_000), aboveSize: minorUnits(100_000) };
+  const fitsInput = (over: Partial<JudgeInput> = {}) => input({ funds: funds(null), net: ABOVE, purchase: purchase({ dayOne: mu(40_000), whole: mu(40_000) }), ...over });
+  it('adds one fact with the date on a Fits answer, and nothing else moves', () => {
+    const plain = judge(fitsInput());
+    expect(plain.code).toBe('fits_month');
+    const without = judge(fitsInput({ belowZeroLater: () => ({ kind: 'without', date: '2027-02-28' }) }));
+    expect(without.facts.filter((f) => f.code === 'below_zero_later_without')).toEqual([{ code: 'below_zero_later_without', values: { date: '2027-02-28', zero: 0 } }]);
+    const withP = judge(fitsInput({ belowZeroLater: () => ({ kind: 'with', date: '2027-08-31' }) }));
+    expect(withP.facts.filter((f) => f.code === 'below_zero_later_with')).toEqual([{ code: 'below_zero_later_with', values: { date: '2027-08-31', zero: 0 } }]);
+    for (const r of [without, withP]) {
+      expect([r.code, r.variant, r.readyBy]).toEqual([plain.code, plain.variant, plain.readyBy]);
+      expect(r.facts.filter((f) => !f.code.startsWith('below_zero_later'))).toEqual(plain.facts);
+    }
+    expect(judge(fitsInput({ belowZeroLater: () => null })).facts).toEqual(plain.facts);
+  });
+  it('is not read on an answer that is not a fit', () => {
+    const later = jest.fn(() => ({ kind: 'without', date: '2027-02-28' }) as const);
+    const r = judge(input({ funds: funds(null), purchase: purchase({ dayOne: mu(40_000_000), whole: mu(40_000_000) }), belowZeroLater: later }));
+    expect(r.code.startsWith('fits_')).toBe(false);
+    expect(later).not.toHaveBeenCalled();
+  });
+});
