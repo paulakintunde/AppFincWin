@@ -136,8 +136,8 @@ describe('08.1-22 billWeightsOf / settingOf', () => {
 
 describe('08.1-22 jointSourcesOf', () => {
   const purposes = [
-    { id: 'j1', currency: 'USD', opening_balance: 100_000, joint_purpose: 'bills' as const, joint_savings_spendable: false, version: 1 },
-    { id: 'j2', currency: 'EUR', opening_balance: 0, joint_purpose: null, joint_savings_spendable: true, version: 1 },
+    { id: 'j1', currency: 'USD', opening_balance: 100_000, joint_purpose: 'bills' as const, joint_savings_spendable: false, joint_safety_net: false, version: 1 },
+    { id: 'j2', currency: 'EUR', opening_balance: 0, joint_purpose: null, joint_savings_spendable: true, joint_safety_net: false, version: 1 },
   ];
   it('is none with no read', () => {
     expect(jointSourcesOf(undefined)).toEqual([]);
@@ -157,5 +157,16 @@ describe('08.1-22 jointSourcesOf', () => {
     );
     expect(out[0]).toEqual({ id: 'j1', currency: 'USD', purpose: 'bills', spendable: false, balance: 150_000, monthIn: 300, monthOut: 120, billsDueBeforeNextIn: 0, paidInBy: { me: 300 } });
     expect(out[1]).toEqual({ id: 'j2', currency: 'EUR', purpose: null, spendable: true, safetyNet: true, balance: 7, monthIn: 0, monthOut: 0, billsDueBeforeNextIn: 0, paidInBy: {} });
+  });
+  // 08.1-23 (Q10, HH-34): the group's "This is our safety net" mark reaches the engine as safetyNet, on joint savings only.
+  it('marks joint savings the group set as the safety net, and nothing else', () => {
+    const read = (purpose: 'savings' | 'everyday', net: boolean) => ({
+      purposes: [{ id: 'j3', currency: 'USD', opening_balance: 500_000, joint_purpose: purpose, joint_savings_spendable: false, joint_safety_net: net, version: 2 }],
+      balances: [],
+      month: [],
+    });
+    expect(jointSourcesOf(read('savings', true))[0]?.safetyNet).toBe(true);
+    expect(jointSourcesOf(read('savings', false))[0]?.safetyNet).toBeUndefined();
+    expect(jointSourcesOf(read('everyday', true))[0]?.safetyNet).toBeUndefined();
   });
 });
