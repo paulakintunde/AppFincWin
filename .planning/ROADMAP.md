@@ -1531,7 +1531,7 @@ Plans:
 - [x] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
 - [x] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
 - [x] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
-- [ ] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
+- [x] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
 - [ ] 08.1-22-PLAN.md — Household money engine: spending rule per group, setup type, joint money counted once and split by the rule (account purposes), double-count fix; migrations 20261125000600-000700, revision 07.1 (owner 2026-11-20)
 - [ ] 08.1-23-PLAN.md — Household money screens: spending setup and rule, custom shares, joint account purpose (bills / savings / everyday), rule lines; copy for plan 14 (owner 2026-11-20)
 - [ ] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
@@ -1703,7 +1703,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 15/20 | In progress | - |
+| 08.1 Decide rebuild on real data | 16/20 | In progress | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
