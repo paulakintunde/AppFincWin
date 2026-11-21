@@ -1,4 +1,4 @@
-// 08.1-12 (D-12, UI-SPEC section 5): a Household purchase says how it is saved. The line "Saved as a shared line, split {{rule}}."
+// 08.1-12 (D-12, UI-SPEC section 5): a Household purchase says how it is saved. The line "Saved as a shared expense, split {{rule}}."
 // shows for the Household scope only, after the title and before the date line, and the amount shown is the full amount written.
 import React from 'react';
 import { fireEvent, screen } from '@testing-library/react-native';
@@ -78,27 +78,27 @@ beforeEach(() => {
 });
 
 describe('Bought screen: household sub-line (D-12)', () => {
-  it('shows "Saved as a shared line, split evenly." for a Household purchase', async () => {
+  it('shows "Saved as a shared expense, split evenly." for a Household purchase', async () => {
     await wrap(<BoughtScreen {...props(householdCheck)} />);
-    expect(a.bought.sharedSub).toBe('Saved as a shared line, split {{rule}}.');
-    expect(screen.getByText('Saved as a shared line, split evenly.')).toBeTruthy();
+    expect(a.bought.sharedSub).toBe('Saved as a shared expense, split {{rule}}.');
+    expect(screen.getByText('Saved as a shared expense, split evenly.')).toBeTruthy();
   });
 
   it('names the rule in plain words for each rule', async () => {
     const weighted: CheckV2 = { ...householdCheck, share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'weight', weights: [3, 1] } } };
     await wrap(<BoughtScreen {...props(weighted)} />);
-    expect(screen.getByText('Saved as a shared line, split by agreed share.')).toBeTruthy();
+    expect(screen.getByText('Saved as a shared expense, split by agreed share.')).toBeTruthy();
   });
 
   it('names the current household rule when it differs from the rule on the check', async () => {
     await wrap(<BoughtScreen {...props(householdCheck)} currentRule="mine" />);
-    expect(screen.getByText(`Saved as a shared line, split ${a.bought.shareRule.mine}.`)).toBeTruthy();
-    expect(screen.queryByText('Saved as a shared line, split evenly.')).toBeNull();
+    expect(screen.getByText(`Saved as a shared expense, split ${a.bought.shareRule.mine}.`)).toBeTruthy();
+    expect(screen.queryByText('Saved as a shared expense, split evenly.')).toBeNull();
   });
 
   it('falls back to the rule on the check while the current rule loads', async () => {
     await wrap(<BoughtScreen {...props(householdCheck)} currentRule={undefined} />);
-    expect(screen.getByText('Saved as a shared line, split evenly.')).toBeTruthy();
+    expect(screen.getByText('Saved as a shared expense, split evenly.')).toBeTruthy();
   });
 
   it('is hidden when the line will not be shared (household of one)', async () => {
@@ -116,7 +116,7 @@ describe('Bought screen: household sub-line (D-12)', () => {
     await wrap(<BoughtScreen {...props(householdCheck)} />);
     const all = texts(screen.toJSON());
     const title = all.indexOf(a.bought.title);
-    const sub = all.indexOf('Saved as a shared line, split evenly.');
+    const sub = all.indexOf('Saved as a shared expense, split evenly.');
     const date = all.indexOf(a.bought.boughtOn.replace('{{date}}', fmtDate(TODAY)));
     expect(title).toBeGreaterThanOrEqual(0);
     expect(sub).toBeGreaterThan(title);

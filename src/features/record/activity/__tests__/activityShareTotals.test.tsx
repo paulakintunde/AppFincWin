@@ -134,10 +134,10 @@ describe('shared row and summary note', () => {
 
   it('shows the note in a household of 2 and not in a household of one', async () => {
     const two = await card(true);
-    expect(two.getByText('Your share of shared lines.')).toBeTruthy();
-    expect(two.getByTestId('activity-summary-card').props.accessibilityLabel).toMatch(/Your share of shared lines\.$/);
+    expect(two.getByText('Your share of shared expenses.')).toBeTruthy();
+    expect(two.getByTestId('activity-summary-card').props.accessibilityLabel).toMatch(/Your share of shared expenses\.$/);
     two.unmount();
     const one = await card(false);
-    expect(one.queryByText('Your share of shared lines.')).toBeNull();
+    expect(one.queryByText('Your share of shared expenses.')).toBeNull();
   });
 });

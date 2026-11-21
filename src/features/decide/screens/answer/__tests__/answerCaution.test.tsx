@@ -70,7 +70,7 @@ const visibleWords = () => screen.queryByTestId('answer-caution-words', opts)?.p
 
 /** Everything about the verdict except the caution: the badge word and the summary label once the caution part is taken off. */
 function verdictWithout(label: string): string {
-  return label.replace(/^Caution: .*? on June 14\. /, '');
+  return label.replace(/^Heads up: .*? on or before June 14\. /, '');
 }
 
 beforeEach(() => {
@@ -93,10 +93,10 @@ describe('the caution sign on the answer (08.1-24)', () => {
     const ids = row.children.flatMap((c) => (typeof c === 'string' ? [] : [String(c.props.testID ?? '')]));
     expect(ids.indexOf('answer-caution-icon')).toBeLessThan(ids.indexOf('answer-verdict-badge'));
     expect(ids.indexOf('answer-verdict-badge')).toBeLessThan(ids.indexOf('answer-caution-words'));
-    expect(visibleWords()).toMatch(/^· dips below \$0(\.00)? on Jun 14$/);
+    expect(visibleWords()).toMatch(/^· drops below \$0(\.00)? on or before Jun 14$/);
     const label = summary().props.accessibilityLabel as string;
     // the spoken zero is the app's spoken money (D-94), with cents as the answer shows them
-    expect(label.startsWith('Caution: dips below 0.00 dollars on June 14. ')).toBe(true);
+    expect(label.startsWith('Heads up: drops below 0.00 dollars on or before June 14. ')).toBe(true);
     expect(verdictWithout(label)).toBe(plainLabel);
     expect(badgeWord()).toBe(plainBadge);
   });
@@ -114,8 +114,8 @@ describe('the caution sign on the answer (08.1-24)', () => {
         onImport={noop}
       />,
     );
-    expect(visibleWords()).toBe('· dips below $0 on Jun 14');
-    expect(String(summary().props.accessibilityLabel).startsWith('Caution: dips below 0 dollars on June 14. ')).toBe(true);
+    expect(visibleWords()).toBe('· drops below $0 on or before Jun 14');
+    expect(String(summary().props.accessibilityLabel).startsWith('Heads up: drops below 0 dollars on or before June 14. ')).toBe(true);
   });
 
   it('a Fits tight answer with a later dip shows the sign too', async () => {
@@ -126,13 +126,13 @@ describe('the caution sign on the answer (08.1-24)', () => {
 
   it('the "with this" kind shows the same sign', async () => {
     await frame(withFact(ledgerRun('N02'), laterFact('below_zero_later_with', '2027-03-02')));
-    expect(visibleWords()).toMatch(/on Mar 2$/);
+    expect(visibleWords()).toMatch(/on or before Mar 2$/);
   });
 
   it('a Not yet answer (forged with a later fact) shows no sign (T-08.1-69)', async () => {
     await frame(withFact(ledgerRun('N05'), laterFact('below_zero_later_without')));
     expect(screen.queryByTestId('answer-caution', opts)).toBeNull();
-    expect(String(summary().props.accessibilityLabel)).not.toMatch(/^Caution/);
+    expect(String(summary().props.accessibilityLabel)).not.toMatch(/^Heads up/);
   });
 
   it('a Household answer shows the sign the same way (Q3 A)', async () => {

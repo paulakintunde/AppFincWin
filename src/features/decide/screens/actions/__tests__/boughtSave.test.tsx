@@ -86,14 +86,14 @@ describe('Bought screen: groups and rows', () => {
     expect(screen.getByText('Insurance, $140 a month')).toBeTruthy();
     expect(screen.getByText('Fuel or charging, about $120 a month')).toBeTruthy();
     expect(screen.getByText(a.bought.subVaries)).toBeTruthy();
-    expect(screen.getByText('Money in from selling Old car loan, $9000')).toBeTruthy();
+    expect(screen.getByText('Cash from selling Old car loan, $9000')).toBeTruthy();
     expect(screen.getByText('Pay off Old car loan, $6000')).toBeTruthy();
-    expect(screen.getByText('Gym stops from on 2026-12-01')).toBeTruthy();
-    expect(screen.getByText('Close the goal Car fund')).toBeTruthy();
+    expect(screen.getByText('Gym ends on 2026-12-01.')).toBeTruthy();
+    expect(screen.getByText('Close the “Car fund” goal')).toBeTruthy();
     expect(screen.getByText(a.bought.subGoal)).toBeTruthy();
     expect(screen.getAllByRole('switch')).toHaveLength(6);
-    expect(a.bought.save).toBe('Record purchase');
-    expect(screen.getByText('Record purchase')).toBeTruthy();
+    expect(a.bought.save).toBe('Save purchase');
+    expect(screen.getByText('Save purchase')).toBeTruthy();
   });
 
   it('omits a group with no rows (no empty card)', async () => {
@@ -104,7 +104,7 @@ describe('Bought screen: groups and rows', () => {
 
   it('a sale with no recorded loan reads "the old one" and offers no payoff row', async () => {
     await wrap(<BoughtScreen {...props({ payoff: null, stopRows: [], goal: null })} />);
-    expect(screen.getByText('Money in from selling the old one, $9000')).toBeTruthy();
+    expect(screen.getByText('Cash from selling the old one, $9000')).toBeTruthy();
     expect(screen.queryByText(/^Pay off/)).toBeNull();
   });
 
@@ -120,14 +120,14 @@ describe('Bought screen: groups and rows', () => {
     await wrap(<BoughtScreen {...props()} />);
     const ticked = screen.getAllByRole('switch').filter((s) => s.props.accessibilityState.checked === true);
     expect(ticked).toHaveLength(1);
-    expect(ticked[0]?.props.accessibilityLabel).toMatch(/^Close the goal Car fund/);
+    expect(ticked[0]?.props.accessibilityLabel).toMatch(/^Close the “Car fund” goal/);
   });
 
   it('each row speaks its title, sub-line and state, and the state follows a tick', async () => {
     await wrap(<BoughtScreen {...props()} />);
-    expect(row(/^Fuel or charging, about \$120 a month, Counts until real spending replaces it, not ticked$/)).toBeTruthy();
+    expect(row(/^Fuel or charging, about \$120 a month, Counts until actual spending replaces it, not ticked$/)).toBeTruthy();
     expect(row('Insurance, $140 a month, not ticked')).toBeTruthy();
-    expect(row('Close the goal Car fund, It can stay open., ticked')).toBeTruthy();
+    expect(row('Close the “Car fund” goal, You can keep it open., ticked')).toBeTruthy();
     await fireEvent.press(row('Insurance, $140 a month, not ticked'));
     expect(row('Insurance, $140 a month, ticked')).toBeTruthy();
   });
@@ -143,14 +143,14 @@ describe('Bought screen: what is sent', () => {
 
   it('the goal close can be unticked', async () => {
     await wrap(<BoughtScreen {...props()} />);
-    await fireEvent.press(row(/^Close the goal/));
+    await fireEvent.press(row(/^Close the “Car fund” goal/));
     await fireEvent.press(screen.getByText(a.bought.save));
     expect(mockGoAhead.mock.calls[0][0].extras.goalId).toBeNull();
   });
 
   it('every ticked row is sent: both costs with their names, the stop, the sale, the payoff naming the loan and version', async () => {
     await wrap(<BoughtScreen {...props()} />);
-    for (const title of [/^Insurance/, /^Fuel or charging/, /^Money in from selling/, /^Pay off/, /^Gym stops/]) await fireEvent.press(row(title));
+    for (const title of [/^Insurance/, /^Fuel or charging/, /^Cash from selling/, /^Pay off/, /^Gym ends/]) await fireEvent.press(row(title));
     await fireEvent.press(screen.getByText(a.bought.save));
     const extras = mockGoAhead.mock.calls[0][0].extras;
     expect(extras.runningCosts.map((c: { line: RunningCostLine; name: string }) => [c.line.id, c.name, c.line.varies === true])).toEqual([
@@ -165,7 +165,7 @@ describe('Bought screen: what is sent', () => {
 
   it('the payoff is not sent when only the sale is ticked, and the sale alone is sent', async () => {
     await wrap(<BoughtScreen {...props()} />);
-    await fireEvent.press(row(/^Money in from selling/));
+    await fireEvent.press(row(/^Cash from selling/));
     await fireEvent.press(screen.getByText(a.bought.save));
     const extras = mockGoAhead.mock.calls[0][0].extras;
     expect(extras.sale).toEqual({ amount: 900000, name: 'Old car loan' });
@@ -182,11 +182,11 @@ describe('Bought screen: what is sent', () => {
 });
 
 describe('Bought screen: after the save', () => {
-  it('shows the toast "Recorded: {item}." with the step, and one Undo reverses the whole save', async () => {
+  it('shows the toast "Saved: {item}." with the step, and one Undo reverses the whole save', async () => {
     await wrap(<BoughtScreen {...props()} />);
     await fireEvent.press(screen.getByText(a.bought.save));
     expect(showToast).toHaveBeenCalledWith({ kind: 'ordinary', text: { key: 'decide.screens.answerActions.bought.toast', params: { item: 'Car' } }, stepId: 'step-go' });
-    expect(en.decide.screens.answerActions.bought.toast.replace('{{item}}', 'Car')).toBe('Recorded: Car.');
+    expect(en.decide.screens.answerActions.bought.toast.replace('{{item}}', 'Car')).toBe('Saved: Car.');
     await fireEvent.press(await screen.findByText(en.decide.screens.common.undo));
     expect(mockUndo).toHaveBeenCalledTimes(1);
     expect(mockUndo.mock.calls[0][0]).toMatchObject({ stepId: 'step-go' });

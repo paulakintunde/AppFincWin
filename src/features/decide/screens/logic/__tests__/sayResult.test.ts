@@ -315,17 +315,17 @@ describe('sayResult: the Result in reading order', () => {
 
   it('basis reads every kind; records_with_reason reads its reason', () => {
     const basis = (b: Result['confidence']['basis']): Line | null => sayResult(result({ confidence: { reasons: [], basis: b, nextStep: null } }), deps).basis;
-    expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on your last 6 months of records, up to <2026-11-09>.' });
+    expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on your last 6 months of records, through <2026-11-09>.' });
     expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your last 2 months of records, up to <2026-11-09>.');
     expect(basis({ kind: 'partial', used: 1, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your one full month of records, up to <2026-11-09>.');
-    expect(basis({ kind: 'quick_estimates' })?.text).toBe('Based on the figures you typed, not your records.');
+    expect(basis({ kind: 'quick_estimates' })?.text).toBe('Based on the numbers you typed in, not your account records.');
     expect(basis({ kind: 'quick_estimates' })?.key).toBe(BASIS_KEYS.quick_estimates);
     expect(basis({ kind: 'records_with_reason', months: 6, upTo: '2026-11-09', reason: 'close_to_line' })?.key).toBe(BASIS_REASON_KEYS.close_to_line);
     expect(() => basis({ kind: 'records_with_reason', months: 6, upTo: '2026-11-09', reason: 'few_months' })).toThrow(MissingCopyError);
   });
 
   it('08.1-20: the pay window row shows only when the caller passes a pay window', () => {
-    expect(sayResult(result(), deps, { payMonths: 9 }).payWindow?.text).toBe('Pay is judged over your last 9 months.');
+    expect(sayResult(result(), deps, { payMonths: 9 }).payWindow?.text).toBe('Income is averaged over your last 9 months.');
     expect(sayResult(result(), deps, { payMonths: null }).payWindow).toBeNull();
     expect(sayResult(result(), deps).payWindow).toBeNull();
   });
@@ -601,7 +601,7 @@ describe('08.1-25 share_zero_by_rule (owner one-earner fix 2026-11-21)', () => {
     expect(sayResult(result({ caveats: [zero('bring'), { code: 'tax_not_included', values: {} }] }), deps).caveat?.code).toBe('tax_not_included');
     expect(sayResult(result({ caveats: [zero('bring')] }), deps, { stage: 'first_read' }).caveat).toBeNull();
   });
-  it('the About sheet lists it with the rule named as on "How spending is shared" and the currency zero', () => {
+  it('the About sheet lists it with the rule named as on "How spending is split" and the currency zero', () => {
     expect(sayCaveats(result({ caveats: [{ code: 'shared_money', values: { account: ID } }, zero('bring')] }), deps).map((l) => l.text)).toEqual([
       'Money in Everyday may be planned by someone else too.',
       'Under What each person brings, your share of the joint money is $0.00 this month.',

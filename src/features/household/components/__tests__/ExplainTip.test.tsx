@@ -11,7 +11,7 @@ jest.setTimeout(20000);
 jest.mock('@/ui/haptics', () => ({ hapticTap: jest.fn(), hapticTick: jest.fn(), hapticFailed: jest.fn(), hapticWarn: jest.fn() }));
 
 const opts = { includeHiddenElements: true };
-const NAME = 'A set spending split';
+const NAME = 'Custom spending split';
 const TIP = 'Each person pays a fixed part.';
 
 const setup = () =>
@@ -42,7 +42,7 @@ describe('ExplainTip info glyph (08.1-24 Q6 A)', () => {
   it('keeps the spoken label, expanded state, live region and touch target', async () => {
     await setup();
     const button = screen.getByTestId('tip');
-    expect(button.props.accessibilityLabel).toBe(`What ${NAME} means`);
+    expect(button.props.accessibilityLabel).toBe(`What “${NAME}” means`);
     expect(button.props.accessibilityState).toMatchObject({ expanded: false });
     const style = StyleSheet.flatten(typeof button.props.style === 'function' ? button.props.style({ pressed: false }) : button.props.style);
     expect(style.minHeight).toBeGreaterThanOrEqual(space.touchMin);

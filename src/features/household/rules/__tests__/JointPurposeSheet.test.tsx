@@ -51,7 +51,7 @@ beforeEach(() => {
 describe('JointPurposeSheet', () => {
   it('asks what the account is for with nothing picked, and Save off until a pick', async () => {
     await setup();
-    expect(screen.getByText('What is Our savings for?')).toBeTruthy();
+    expect(screen.getByText('What is Our savings used for?')).toBeTruthy();
     expect(checked('joint-purpose-bills')).toBe(false);
     expect(checked('joint-purpose-savings')).toBe(false);
     expect(checked('joint-purpose-everyday')).toBe(false);
@@ -92,7 +92,7 @@ describe('JointPurposeSheet', () => {
   it.each([
     ['not_joint', 'This account is no longer a joint account.'],
     ['not_member', 'This account is not in your household any more.'],
-    ['version_conflict', 'Someone changed this a moment ago. The latest is shown.'],
+    ['version_conflict', 'Someone just changed this. You’re seeing the latest version.'],
     ['invalid_purpose', 'This wasn’t saved. Try again.'],
   ])('shows a plain line for %s and does not retry', async (reason, line) => {
     mockSet.mockImplementation(async () => ({ ok: false, reason }));
@@ -115,11 +115,11 @@ describe('JointPurposeSheet', () => {
   it('every purpose and switch has a tip a screen reader reaches', async () => {
     await setup({ current: { joint_purpose: 'savings', joint_savings_spendable: false, joint_safety_net: false, version: 1 } });
     for (const name of ['Joint household bills', 'Joint savings', 'Joint everyday spending', 'Can be spent', 'This is our safety net']) {
-      expect(screen.getByLabelText(`What ${name} means`)).toBeTruthy();
+      expect(screen.getByLabelText(`What “${name}” means`)).toBeTruthy();
     }
-    await fireEvent.press(screen.getByLabelText('What This is our safety net means'));
+    await fireEvent.press(screen.getByLabelText('What “This is our safety net” means'));
     expect(screen.getByTestId('joint-safety-net-tip-text').props.children).toBe(
-      'When on, this money is the group’s safety net. It is counted once for everyone, and checks never spend it.',
+      'When turned on, this is the group’s safety net. It’s counted once for everyone and checks never spend it.',
     );
   });
 });

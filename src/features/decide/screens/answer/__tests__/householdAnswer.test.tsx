@@ -69,14 +69,14 @@ const bar = (stage: 'first_read' | 'full' | 'deeper' | null, scopeLabel: string 
   wrap(<AnswerTopBar name="Laptop" priceText="$900.00" pay="cash" when="today" stage={stage} scopeLabel={scopeLabel} onBack={noop} onNewCheck={noop} onPay={noop} onWhen={noop} />);
 
 describe('top-bar sub-line (APP-22, DCU-10)', () => {
-  it('first read: "First read · Just you"', async () => {
+  it('first read: "First look · Just you"', async () => {
     await bar('first_read', 'Just you');
-    expect(textOf(screen.getByTestId('answer-subline'))).toBe('First read · Just you');
+    expect(textOf(screen.getByTestId('answer-subline'))).toBe('First look · Just you');
   });
 
-  it('full answer: "Full answer · Household · Flat 4B"', async () => {
+  it('full answer: "Full check · Household · Flat 4B"', async () => {
     await bar('full', 'Household · Flat 4B');
-    expect(textOf(screen.getByTestId('answer-subline'))).toBe('Full answer · Household · Flat 4B');
+    expect(textOf(screen.getByTestId('answer-subline'))).toBe('Full check · Household · Flat 4B');
   });
 
   it('three or more months: the scope alone, no stage word', async () => {
@@ -88,14 +88,14 @@ describe('top-bar sub-line (APP-22, DCU-10)', () => {
 
   it('the stage word is in the bar\'s accessibility label, and the sub-line wraps (no line limit)', async () => {
     await bar('first_read', 'Just you');
-    const label = screen.getByLabelText(/Laptop, \$900\.00\. First read · Just you/);
+    const label = screen.getByLabelText(/Laptop, \$900\.00\. First look · Just you/);
     expect(label).toBeTruthy();
     expect(screen.getByTestId('answer-subline').props.numberOfLines).toBeUndefined();
   });
 
   it('a stage with no scope still shows the stage word', async () => {
     await bar('full', null);
-    expect(textOf(screen.getByTestId('answer-subline'))).toBe('Full answer');
+    expect(textOf(screen.getByTestId('answer-subline'))).toBe('Full check');
   });
 
   it('no stage word and no scope: no sub-line', async () => {
@@ -105,7 +105,7 @@ describe('top-bar sub-line (APP-22, DCU-10)', () => {
 
   it('the frame puts the stage of the evaluation before the scope label', async () => {
     await frame(full(), { scopeLabel: 'Household · Flat 4B' });
-    expect(textOf(screen.getByTestId('answer-subline'))).toBe('Full answer · Household · Flat 4B');
+    expect(textOf(screen.getByTestId('answer-subline'))).toBe('Full check · Household · Flat 4B');
   });
 });
 
@@ -144,12 +144,12 @@ describe('the household caveat under the answer (D-03)', () => {
 });
 
 describe('Record as bought on a check saved for later (owner 2026-11-20)', () => {
-  it('a waiting check offers "Record as bought" on its outcome line, and it opens the Bought screen action', async () => {
+  it('a waiting check offers "Mark as bought" on its outcome line, and it opens the Bought screen action', async () => {
     const onAction = jest.fn();
     await frame(full(), { outcome: 'Saving for it since Nov 1.', canRecordBought: true }, onAction);
     fireEvent.press(screen.getByTestId('answer-outcome-bought'));
     expect(onAction).toHaveBeenCalledWith({ kind: 'bought' });
-    expect(screen.getByText('Record as bought')).toBeTruthy();
+    expect(screen.getByText('Mark as bought')).toBeTruthy();
     expect(screen.getByTestId('answer-outcome-past')).toBeTruthy();
   });
 
@@ -165,7 +165,7 @@ describe('the shared-bills caveat on a Household answer (D-37)', () => {
     mockLastShared = [{ member_id: 'sam', last_date: '2026-09-01' }];
     await wrap(<HouseholdAnswerNote householdId="h1" today="2026-11-20" />);
     expect(screen.getByTestId('shared-bills-caveat')).toBeTruthy();
-    expect(allText()).toContain('Sam hasn’t logged shared bills since');
+    expect(allText()).toContain('Sam hasn’t entered shared bills since');
   });
 
   it('is quiet for a recent line and for a member who never logged one', async () => {

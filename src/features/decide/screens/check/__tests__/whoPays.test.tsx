@@ -105,7 +105,7 @@ describe('Who pays on the price step', () => {
     await screen.findByText('Who pays');
     expect(screen.getByLabelText('Household').props.accessibilityState.selected).toBe(true);
     expect(screen.getByTestId('who-pays-helper')).toBeTruthy();
-    expect(screen.getByText('Uses shared money and anything a partner has agreed to share.')).toBeTruthy();
+    expect(screen.getByText('Uses shared money plus anything a partner agreed to share.')).toBeTruthy();
     expect(screen.getByTestId('who-pays-helper').props.accessibilityLiveRegion).toBe('polite');
     // the engine is handed the same check, so it judges with scope household
     expect(mockEngine).toHaveBeenCalledWith('household');
@@ -133,19 +133,19 @@ describe('Who pays on the price step', () => {
   it('names What each person brings under Household', async () => {
     mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [] } };
     await wrap(<WhoPays share={HOUSEHOLD} onChange={jest.fn()} />);
-    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your own money and your part of any joint account.');
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your own money plus your share of any joint account.');
   });
 
   it('names my percent under a set or bill split', async () => {
     mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'custom', outOfDate: false, myPercent: 40, jointAccounts: [] } };
     await wrap(<WhoPays share={HOUSEHOLD} onChange={jest.fn()} />);
-    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your 40% of the money everyone has shared.');
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your 40% share of all shared money.');
   });
 
   it('Just me with a joint account counts my part of it, plural for more than one, nothing without one', async () => {
     mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [{ id: 'j', name: 'Our pot' }] } };
     await wrap(<WhoPays share={{ kind: 'personal' }} onChange={jest.fn()} />);
-    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your part of Our pot.');
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your share of Our pot.');
     await screen.unmount();
     mockShare = {
       shareScope: HOUSEHOLD,
@@ -153,7 +153,7 @@ describe('Who pays on the price step', () => {
       spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [{ id: 'j', name: 'A' }, { id: 'k', name: 'B' }] },
     };
     await wrap(<WhoPays share={{ kind: 'personal' }} onChange={jest.fn()} />);
-    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your part of your joint accounts.');
+    expect(screen.getByTestId('who-pays-helper').props.children).toBe('Counts your share of your joint accounts.');
     await screen.unmount();
     mockShare = { shareScope: HOUSEHOLD, memberCount: 2, spend: { counted: 'bring', outOfDate: false, myPercent: null, jointAccounts: [] } };
     await wrap(<WhoPays share={{ kind: 'personal' }} onChange={jest.fn()} />);

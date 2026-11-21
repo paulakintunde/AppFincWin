@@ -49,7 +49,7 @@ describe('SharedBillsCaveat', () => {
   it('shows the word, the glyph and the sentence in the tight tint', async () => {
     await setup(<SharedBillsCaveat householdId="h" partnerId="u2" lastDate="2026-11-03" />);
     expect(screen.getByText('Shared bills')).toBeTruthy();
-    expect(screen.getByText(/Sam hasn’t logged shared bills since 3 Nov 2026, so shared costs may be higher\./)).toBeTruthy();
+    expect(screen.getByText(/Sam hasn’t entered shared bills since 3 Nov 2026, so shared costs could be higher\./)).toBeTruthy();
     const row = screen.getByTestId('shared-bills-caveat');
     expect(JSON.stringify(row.props.style)).toContain(stateColors.tight.tint);
   });
@@ -58,7 +58,7 @@ describe('SharedBillsCaveat', () => {
     mockMembers = [member('me', 'Paul', 0), member('u2', 'Sam', 1, true)];
     await setup(<SharedBillsCaveat householdId="h" partnerId="u2" lastDate="2026-11-03" />);
     expect(screen.queryByText(/Sam/)).toBeNull();
-    expect(screen.getByText(/Rust hasn’t logged shared bills since/)).toBeTruthy();
+    expect(screen.getByText(/Rust hasn’t entered shared bills since/)).toBeTruthy();
     expect(screen.getByTestId('shared-bills-caveat').props.accessibilityLabel).not.toContain('Sam');
   });
 });

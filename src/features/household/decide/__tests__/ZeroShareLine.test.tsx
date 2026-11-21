@@ -29,7 +29,7 @@ jest.mock('../../rules/zeroShareSuggestion', () => {
   return { ...actual, currentSuggestion: () => actual.suggestionFor(mockTarget, registry) };
 });
 
-const LINE_BRING = 'Under What each person brings, your share of the joint money is $0 this month. With equal shares, each person counts the same part.';
+const LINE_BRING = 'Under “What each person brings,” your share of joint money is $0 this month. With equal shares, everyone counts the same amount.';
 const zero = (rule: string): Caveat => ({ code: 'share_zero_by_rule', values: { rule } });
 
 async function show(props: Partial<React.ComponentProps<typeof ZeroShareLine>> = {}) {
@@ -56,7 +56,7 @@ describe('ZeroShareLine', () => {
 
   it('names the bill split rule, and the currency’s own zero', async () => {
     await show({ caveat: zero('bill'), currency: 'GBP' });
-    expect(await screen.findByText('Under Same as the bill split, your share of the joint money is £0 this month. With equal shares, each person counts the same part.')).toBeTruthy();
+    expect(await screen.findByText('Under “Same as the bill split,” your share of joint money is £0 this month. With equal shares, everyone counts the same amount.')).toBeTruthy();
   });
 
   it('shows nothing without the caveat, without a household, or for a rule it cannot name', async () => {
@@ -101,7 +101,7 @@ describe('ZeroShareLine', () => {
   it('a test-only target swaps the words and the action with no other edit', async () => {
     mockTarget = 'testOnly';
     await show();
-    expect(await screen.findByText('Each person’s checks count their own money and their part of any joint account. Nobody’s check uses someone else’s money.')).toBeTruthy();
+    expect(await screen.findByText('Each person’s checks count their own money plus their share of any joint account, never someone else’s personal money.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('Update shares'));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/household/spending', params: { suggest: 'testOnly' } });
   });

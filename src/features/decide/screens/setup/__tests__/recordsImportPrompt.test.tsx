@@ -65,7 +65,7 @@ describe('Records setup import prompt', () => {
   it('shows add-earlier-months at 2 months', async () => {
     mockMonths = 2;
     await wrap(<RecordsSetup writes={writes} />);
-    expect(screen.getByText('Add earlier months')).toBeTruthy();
+    expect(screen.getByText('Add past months')).toBeTruthy();
     expect(screen.getByText('Months complete enough to use: 2 of 3.')).toBeTruthy();
   });
 

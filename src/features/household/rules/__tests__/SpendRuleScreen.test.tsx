@@ -163,10 +163,10 @@ describe('SpendRuleScreen', () => {
     mockFacts = { hasJoint: true, hasPersonalCash: true, hasJointCash: true };
     await setup();
     expect(checked('spend-setup-mixed')).toBe(true);
-    expect(screen.getByTestId('spend-setup-mixed-tag').props.children).toBe('Worked out from your accounts');
+    expect(screen.getByTestId('spend-setup-mixed-tag').props.children).toBe('Based on your accounts');
     expect(checked('spend-rule-bring')).toBe(true);
     expect(screen.getByTestId('spend-rule-bring-tag').props.children).toBe('Default for this setup');
-    expect(screen.getByText('Each person’s share follows the bill split (By weight).')).toBeTruthy();
+    expect(screen.getByText('Each person’s share matches the bill split (By weight).')).toBeTruthy();
     expect(saveButton().props.accessibilityState.disabled).toBe(true);
   });
 
@@ -239,7 +239,7 @@ describe('SpendRuleScreen', () => {
     await fireEvent.press(screen.getByTestId('spend-rule-bill'));
     await fireEvent.press(saveButton());
     await waitFor(() => expect(screen.getByTestId('spend-conflict')).toBeTruthy());
-    expect(screen.getByText('Sam changed this a moment ago. The latest is shown.')).toBeTruthy();
+    expect(screen.getByText('Sam just changed this. You’re seeing the latest version.')).toBeTruthy();
     expect(checked('spend-rule-bring')).toBe(true);
   });
 
@@ -253,13 +253,13 @@ describe('SpendRuleScreen', () => {
 
   it('each choice has a tap-to-explain tip a screen reader can reach', async () => {
     await setup();
-    const tip = screen.getByLabelText('What A set spending split means');
+    const tip = screen.getByLabelText('What “Custom spending split” means');
     expect(tip.props.accessibilityState).toEqual({ expanded: false });
     await fireEvent.press(tip);
-    expect(screen.getByTestId('spend-rule-custom-tip-text').props.children).toBe('Each check counts the share of everyone’s money the group set for that person.');
+    expect(screen.getByTestId('spend-rule-custom-tip-text').props.children).toBe('Each check counts the share of everyone’s money set by the group for that person.');
     expect(screen.getByTestId('spend-rule-custom-tip-text').props.accessibilityLiveRegion).toBe('polite');
     for (const name of ['Separate accounts', 'One joint account', 'Mixed', 'What each person brings', 'Same as the bill split']) {
-      expect(screen.getByLabelText(`What ${name} means`)).toBeTruthy();
+      expect(screen.getByLabelText(`What “${name}” means`)).toBeTruthy();
     }
   });
 });
@@ -317,7 +317,7 @@ describe('08.1-25 SpendRuleScreen: the $0 share card (Q3 A)', () => {
     mockRow = row({ rule: 'bring', setup: 'joint' });
     mockZero = { ids: ['sam'], currency: 'USD' };
     await setup();
-    expect(screen.getByText('Under this rule, Sam’s share of the joint money is $0 this month. With equal shares, each person counts the same part.')).toBeTruthy();
+    expect(screen.getByText('With this rule, Sam’s share of joint money is $0 this month. With equal shares, everyone counts the same amount.')).toBeTruthy();
     expect(screen.queryByTestId('spend-shares')).toBeNull();
     await fireEvent.press(screen.getByLabelText('See equal shares'));
     expect(checked('spend-rule-custom')).toBe(true);
@@ -335,7 +335,7 @@ describe('08.1-25 SpendRuleScreen: the $0 share card (Q3 A)', () => {
     mockRow = row({ rule: 'bring' });
     mockZero = { ids: ['sam', 'lee'], currency: 'USD' };
     await setup();
-    expect(screen.getByText('Under this rule, Sam and Lee have a $0 share of the joint money this month. With equal shares, each person counts the same part.')).toBeTruthy();
+    expect(screen.getByText('With this rule, Sam and Lee have a $0 share of joint money this month. With equal shares, everyone counts the same amount.')).toBeTruthy();
     await fireEvent.press(screen.getByLabelText('See equal shares'));
     await fireEvent.press(saveButton());
     expect(mockSave).toHaveBeenCalledWith({}, expect.objectContaining({ rule: 'custom', shares: { me: 34, sam: 33, lee: 33 } }));
@@ -345,7 +345,7 @@ describe('08.1-25 SpendRuleScreen: the $0 share card (Q3 A)', () => {
     mockRow = row({ rule: 'bill' });
     mockZero = { ids: ['me'], currency: 'USD' };
     await setup();
-    expect(screen.getByText('Under this rule, your share of the joint money is $0 this month. With equal shares, each person counts the same part.')).toBeTruthy();
+    expect(screen.getByText('With this rule, your share of joint money is $0 this month. With equal shares, everyone counts the same amount.')).toBeTruthy();
   });
 
   it('no card with nobody at $0, under a saved set split, with no currency, or for a household of one', async () => {

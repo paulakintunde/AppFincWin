@@ -54,7 +54,7 @@ describe('PartnerOptInRow', () => {
     await setup();
     const sw = screen.getByRole('switch');
     expect(sw.props.accessibilityState.checked).toBe(false);
-    expect(sw.props.accessibilityLabel).toBe('Count Sam’s money in my Decide checks. Off');
+    expect(sw.props.accessibilityLabel).toBe('Include Sam’s money in my Decide checks. Off');
     expect(screen.getByText(/Only a single rounded total is used\. Sam’s records are never shown to you\. Sam has to say yes on their side too\./)).toBeTruthy();
     expect(screen.queryByTestId('partner-optin-waiting')).toBeNull();
     expect(screen.queryByTestId('partner-optin-both')).toBeNull();
