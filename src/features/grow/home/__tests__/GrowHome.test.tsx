@@ -37,6 +37,8 @@ jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ homeCurrency: 'USD', today: '2026-11-05', userId: 'u1', householdId: 'h1', ready: true }),
 }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// 08.1-23 (Q11): the shared Decide build reads the household source (Just me with a joint account); none here.
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdScopeSource: () => ({ source: undefined, pending: false }), useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }) }));
 jest.mock('@/data/queries/decide', () => ({ useDecideSettings: () => ({ data: { saving_floor: 15000 } }) }));
 
 // 06-22: the sheet itself is covered in goals/__tests__/newGoalSheet.test.tsx; here only that the FAB opens it.
