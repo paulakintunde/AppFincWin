@@ -22,6 +22,10 @@ import { stateForVerdict } from '../logic/stateForVerdict';
 import { CautionSign } from './CautionSign';
 import { isFilled } from './verdictValues';
 
+/** 08.1-14 (owner answer 5): the Not yet body that states the 90-day meaning, and the short line used where the search did not run. */
+const UNTESTED_FROM = 'decide.v3.verdict.notYetNotCovered.body';
+const UNTESTED_BODY = 'decide.v3.verdict.notYetNotCovered.bodyUntested';
+
 /** Above this text scale the title drops from heading to sheetTitle so a long title still fits (UX-02). */
 export const TITLE_DROP_SCALE = 1.3;
 
@@ -37,6 +41,11 @@ export interface VerdictCardProps {
   values?: Readonly<Record<string, string>>;
   /** 08.1-24: the later-dip caution (useCautionOf). Null = no sign. `still` on the saved view (Q3 A). */
   caution?: VerdictCaution | null;
+  /**
+   * 08.1-14 (owner answer 5): the engine did not read the Not yet date with the D-05 90-day search (Result.readyByUntested). The Not yet
+   * body then reads the short ready line, never the 90-day sentence.
+   */
+  readyUntested?: boolean;
   /** 08.1-14 (D-07): the BelowZeroLine, directly under the card and rising with it (no animation of its own). Absent = none. */
   after?: React.ReactNode;
   testID?: string;
@@ -52,7 +61,7 @@ export interface VerdictCaution {
   still?: boolean;
 }
 
-export function VerdictCard({ code, variant, once, lead = null, boughtOn = null, values = {}, caution = null, after = null, testID = 'answer-verdict' }: VerdictCardProps) {
+export function VerdictCard({ code, variant, once, lead = null, boughtOn = null, values = {}, caution = null, readyUntested = false, after = null, testID = 'answer-verdict' }: VerdictCardProps) {
   const t = useT();
   const { pairing } = useTheme();
   const fontScale = useFontScale();
@@ -63,7 +72,7 @@ export function VerdictCard({ code, variant, once, lead = null, boughtOn = null,
   const chip = t(row.chipKey as never);
   const sentence = (key: string): string | null => (isFilled(String(t(key as never)), values) ? String(t(key as never, values as never)) : null);
   const title = sentence(row.titleKey);
-  const body = sentence(row.bodyKey);
+  const body = sentence(readyUntested && row.bodyKey === UNTESTED_FROM ? UNTESTED_BODY : row.bodyKey);
   const badge = <StateBadge tone={tone} shape={glyph as StateBadgeShape} label={chip} testID="answer-verdict-badge" />;
 
   return (

@@ -1456,6 +1456,15 @@ describe('judge: D-05 ready-by search, D-06 beyond a year, D-07 below $0 without
     expect(waits({ safeStart: () => null }).readyBy).toEqual({ kind: 'month', month: '2027-01' });
   });
 
+  it('08.1-14 (owner answer 5): a date the search did not read is marked untested; a read date (later or the same) is not', () => {
+    expect(waits().readyByUntested).toBe(true);
+    expect(waits({ safeStart: () => null }).readyByUntested).toBe(true);
+    expect(waits({ safeStart: () => ({ date: '2027-01-01' }) }).readyByUntested).toBeUndefined();
+    expect(waits({ safeStart: () => ({ date: '2027-03-01' }) }).readyByUntested).toBeUndefined();
+    expect(waits({ safeStart: () => ({ beyond: true }) }).readyByUntested).toBeUndefined();
+    expect(waits({ month: month({ typicalLeft: mu(-10_000) }) }).readyByUntested).toBeUndefined();
+  });
+
   it('no first safe day inside 12 months: no date, and not_within_year leads the facts (D-06)', () => {
     const r = waits({ safeStart: () => ({ beyond: true }) });
     expect(r.code).toBe('not_yet');

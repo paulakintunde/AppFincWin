@@ -280,6 +280,7 @@ export function AnswerFrame({
             once={once}
             values={lines.verdictValues}
             caution={caution}
+            readyUntested={result.readyByUntested === true}
             lead={lines.afterBuy.lead?.text ?? null}
             boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null}
             after={belowZeroOf(lines.facts)}
