@@ -1532,6 +1532,7 @@ Plans:
 - [x] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
 - [x] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
 - [ ] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
+- [ ] 08.1-22-PLAN.md — Household spending rule chosen per group (what you bring / custom split / same as bill split), migration 20261125000600, revision 07.1 (owner 2026-11-20)
 - [ ] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
 - [ ] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, tester preview APK, Maestro smoke, new tester ids (last plan)
 - [x] 08.1-19-PLAN.md — Visible Decide stages, engine: 3-month check (08.1-STAGE-CHECK.md) and the pure stage read-model stageOf / firstShownCaveat (DCU-10)
@@ -1701,7 +1702,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 15/18 | In progress | - |
+| 08.1 Decide rebuild on real data | 15/19 | In progress | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 0/TBD | Not started | - |
 | 10. System | 0/TBD | Not started | - |
