@@ -89,6 +89,14 @@ jest.mock('@/data/queries/household', () => ({
   useFormerMembers: () => ({ data: [] }),
 }));
 
+// 08.1-23: the spending rule row and the purpose card read through useSpendRule (mocked; its view comes from the real spendViewOf).
+let mockSpend: { view: unknown; jointAccounts: { id: string }[]; purposes: { id: string; joint_purpose: string | null }[] | undefined } = {
+  view: null,
+  jointAccounts: [],
+  purposes: [],
+};
+jest.mock('../rules/useSpendRule', () => ({ useSpendRule: () => mockSpend }));
+
 function member(id: string, name: string | null, colour: number, extra: Record<string, unknown> = {}) {
   return {
     household_id: 'h', user_id: id, is_owner: false, role_label: 'Flatmate', weight: 50, colour_key: colour,
@@ -116,6 +124,7 @@ beforeEach(() => {
   mockSettlements = [];
   mockDeparted = [];
   mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' })];
+  mockSpend = { view: null, jointAccounts: [], purposes: [] };
 });
 
 describe('HouseholdHomeScreen', () => {
@@ -184,11 +193,55 @@ describe('HouseholdHomeScreen', () => {
     ['How new shared lines are split', '/household/split-default'],
     ['Category defaults', '/household/category-defaults'],
     ['Shared accounts', '/household/shared-accounts'],
+    ['How spending is shared', '/household/spending'],
   ])('the Rules card row %s opens %s', async (label, route) => {
     mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
     await setup();
     await fireEvent.press(screen.getByText(label));
     expect(mockPush).toHaveBeenCalledWith(route);
+  });
+
+  it('08.1-23 Q1/Q6: How spending is shared is the fourth row and shows the current rule, or Needs updating', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+    mockSpend = { ...mockSpend, view: { asked: 'bring', outOfDate: false } };
+    await setup();
+    expect(screen.getByText('How spending is shared')).toBeTruthy();
+    expect(screen.getByText('What each person brings')).toBeTruthy();
+  });
+
+  it('08.1-23 Q6: the spending row says Needs updating while set shares are out of date', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+    mockSpend = { ...mockSpend, view: { asked: 'custom', outOfDate: true } };
+    await setup();
+    expect(screen.getByText('Needs updating')).toBeTruthy();
+  });
+
+  it('08.1-23 Q1: there is no spending row for a household of one', async () => {
+    await setup();
+    expect(screen.queryByText('How spending is shared')).toBeNull();
+  });
+
+  it('08.1-23 Q9: one card counts the joint accounts with no purpose, singular for one, and goes to Shared accounts', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+    mockSpend = { view: null, jointAccounts: [{ id: 'j1' }, { id: 'j2' }], purposes: [{ id: 'j1', joint_purpose: null }, { id: 'j2', joint_purpose: 'bills' }] };
+    await setup();
+    expect(screen.getByText('1 joint account has no purpose set. Until then it counts as everyday spending.')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('purpose-missing-action'));
+    expect(mockPush).toHaveBeenCalledWith('/household/shared-accounts');
+  });
+
+  it('08.1-23 Q9: the card says the plural, and is gone once every joint account has a purpose', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+    mockSpend = { view: null, jointAccounts: [{ id: 'j1' }, { id: 'j2' }], purposes: [{ id: 'j1', joint_purpose: null }] };
+    await setup();
+    expect(screen.getByText('2 joint accounts have no purpose set. Until then they count as everyday spending.')).toBeTruthy();
+  });
+
+  it('08.1-23 Q9: no card once every joint account has a purpose', async () => {
+    mockMembers = [member('me', 'Paul', 0, { is_owner: true, role_label: 'Owner' }), member('u2', 'Sam', 1)];
+    mockSpend = { view: null, jointAccounts: [{ id: 'j1' }], purposes: [{ id: 'j1', joint_purpose: 'everyday' }] };
+    await setup();
+    expect(screen.queryByTestId('purpose-missing-card')).toBeNull();
   });
 
   it('writes recent changes through the member resolver', async () => {

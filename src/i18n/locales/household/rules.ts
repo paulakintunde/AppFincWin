@@ -57,5 +57,102 @@ export const rules = {
     loadFailed: 'The balances couldn’t be loaded. Try again when you’re back online.',
     hasMemberLines: 'Other members have lines on this account, so it stays joint.',
     notCreator: 'Only the person who made this account can change whether it is joint.',
+    // 08.1-23 (Q9): a joint account nobody has given a purpose yet. Draft copy, wording sign-off in plan 14.
+    purposeNotSet: 'Purpose not set',
+    purposeLine: '{{purpose}} · {{madeBy}}',
+  },
+  // 08.1-23 (CMP-F19, owner 2026-11-21 Q1-Q6): "How spending is shared". Draft copy, wording sign-off in plan 14.
+  spending: {
+    title: 'How spending is shared',
+    intro: 'This sets how much money each person’s checks count. Bills are split separately.',
+    setup: {
+      label: 'How your money is set up',
+      separate: {
+        label: 'Separate accounts',
+        helper: 'Each person keeps their own accounts.',
+        tip: 'Checks start from each person’s own money. The usual rule for this setup is What each person brings.',
+      },
+      joint: {
+        label: 'One joint account',
+        helper: 'Everything goes in and out of one shared account.',
+        tip: 'Checks share out the joint money. The usual rule for this setup is Same as the bill split.',
+      },
+      mixed: {
+        label: 'Mixed',
+        helper: 'A shared account for shared costs, and each person’s own accounts for the rest.',
+        tip: 'Each person’s own money stays theirs. The joint money is shared out by the rule below.',
+      },
+      inferred: 'Worked out from your accounts',
+    },
+    ruleLabel: 'How each check counts money',
+    defaultTag: 'Default for this setup',
+    bring: {
+      label: 'What each person brings',
+      helper: 'Each person’s checks count their own money and their part of any joint account. Nobody’s check uses someone else’s money.',
+      tip: 'A check counts only your own money and your part of joint money. It never counts money another person brings.',
+    },
+    custom: {
+      label: 'A set spending split',
+      helper: 'The group sets each person’s share of the money.',
+      tip: 'Each check counts the share of everyone’s money the group set for that person.',
+    },
+    bill: {
+      label: 'Same as the bill split',
+      helper: 'Each person’s share follows the bill split ({{rule}}).',
+      tip: 'Each check counts the same share of everyone’s money that the bill split gives that person.',
+    },
+    shares: {
+      title: 'Each person’s share',
+      tip: 'These shares set how much of everyone’s money each person’s checks count. They always add up to 100%.',
+      total: 'Total {{total}}%',
+      notHundred: 'The shares add up to {{total}}%. Spending shares add up to 100%.',
+      // owner 2026-11-21 (Q5): the percent in money, for people who find percentages hard.
+      money: '{{percent}}% · about {{amount}} of {{total}} shared',
+    },
+    outOfDate: 'Spending shares need updating: someone joined or left. Until then each check counts what each person brings.',
+    outOfDateTip: 'The old shares no longer match the people in the group. Checks count what each person brings until the shares are updated.',
+    update: 'Update shares',
+    needsUpdating: 'Needs updating',
+    save: 'Save',
+    saved: 'Spending rule saved',
+    conflict: '{{name}} changed this a moment ago. The latest is shown.',
+    conflictNoName: 'Someone changed this a moment ago. The latest is shown.',
+  },
+  // 08.1-23 (owner 2026-11-21): the tap-to-explain line under a setting. Draft copy, wording sign-off in plan 14.
+  explain: {
+    button: 'What this means',
+    a11y: 'What {{name}} means',
+    less: 'Less',
+  },
+  // 08.1-23 (CMP-F19, owner 2026-11-21 Q8-Q10): what a joint account is for. Draft copy, wording sign-off in plan 14.
+  jointPurpose: {
+    title: 'What is {{account}} for?',
+    intro: 'This sets how its money counts in everyone’s checks.',
+    rowLabel: 'What it is for',
+    bills: {
+      label: 'Joint household bills',
+      helper: 'Money kept for shared bills. Only money above the bills due before the next pay-in counts as spare.',
+      tip: 'Checks count only the money left after the bills due before the next pay-in.',
+    },
+    savings: {
+      label: 'Joint savings',
+      helper: 'Money saved together. It is kept out of checks unless the group marks it as money that can be spent.',
+      tip: 'Checks leave this money out, unless it is marked as money that can be spent.',
+    },
+    everyday: {
+      label: 'Joint everyday spending',
+      helper: 'Money for anything. Each person’s checks count their part of it.',
+      tip: 'Checks count this money, shared out between the group by the spending rule.',
+    },
+    spendable: 'Can be spent',
+    spendableTip: 'When on, checks count this savings money, shared out by the spending rule.',
+    safetyNet: 'This is our safety net',
+    safetyNetTip: 'When on, this money is the group’s safety net. It is counted once for everyone, and checks never spend it.',
+    save: 'Save',
+    saved: 'Saved',
+    notJoint: 'This account is no longer a joint account.',
+    notMember: 'This account is not in your household any more.',
+    conflict: 'Someone changed this a moment ago. The latest is shown.',
+    waiting: 'Saving the account first…',
   },
 } as const;

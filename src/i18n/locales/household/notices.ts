@@ -36,4 +36,8 @@ export const notices = {
   split_changed_plain: '{{name}} changed how a line is split',
   category_default_changed: '{{name}} changed a category default to {{rule}}',
   fallback: '{{name}} changed something in {{household}}',
+  /** 08.1-23 (plan 22 event kinds): draft copy, wording sign-off in plan 14. */
+  spend_rule_changed: '{{name}} changed how spending is shared.',
+  joint_purpose_changed: '{{name}} changed what {{account}} is for.',
+  joint_purpose_changed_plain: '{{name}} changed what a joint account is for.',
 } as const;
