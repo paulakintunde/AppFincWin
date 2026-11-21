@@ -65,6 +65,12 @@ $$;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"11111111-1111-1111-1111-111111111111","role":"authenticated"}', true);
 
+-- The row-id overload takes only rows the caller has just inserted (as the app does before it calls the save).
+insert into public.transactions (id, household_id, account_id, original_amount, original_currency, local_date, time_zone, name)
+select ('79113000-0000-0000-0000-0000000000' || n)::uuid, (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
+       'a1130000-0000-0000-0000-000000000001', -1000, 'USD', current_date, 'UTC', 'Purchase ' || n
+  from (values ('01'), ('02')) v(n);
+
 -- (a) a waiting check is recorded, and its own goal closes with it
 select extensions.is(
   public.t113_go('c1130000-0000-0000-0000-000000000001', jsonb_build_object('goal_id', '90113000-0000-0000-0000-000000000001'),

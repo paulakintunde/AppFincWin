@@ -181,7 +181,8 @@ select extensions.is(
       and c.table_name not in (select table_name from public.hh_move_tables())
       and c.table_name not in ('households', 'household_members', 'household_events', 'household_invites', 'statement_periods', 'category_rules',
         'transaction_splits', 'transaction_member_categories', 'household_split_defaults', 'settlements', 'settlement_lines', 'settlement_nudges',
-        'household_former_members', 'member_departures', 'decide_partner_optins', 'partner_figures', 'safety_net_shares')),
+        'household_former_members', 'member_departures', 'decide_partner_optins', 'partner_figures', 'safety_net_shares',
+        'household_spend_rules')),
   null, 'every household_id table either moves with a person (hh_move_tables) or is a listed household table');
 select extensions.is((select count(*)::int from pg_constraint
    where conname in ('transactions_account_same_household', 'recurring_series_account_same_household', 'statement_periods_account_same_household')
