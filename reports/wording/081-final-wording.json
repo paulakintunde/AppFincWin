@@ -1,0 +1,1874 @@
+[
+ {
+  "key": "decide.v3.fact.below_zero_later_with",
+  "where": "Answer screen, fact lines under the verdict",
+  "currentText": "With this, your account goes below {{zero}} on {{date}}.",
+  "currentSample": "With this, your account goes below $0.00 on 14 Jun.",
+  "finalSample": "This puts your account balance below $0.00 on or before 14 Jun.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.fact.below_zero_later_without",
+  "where": "Answer screen, fact lines under the verdict",
+  "currentText": "Later on, your account goes below {{zero}} on {{date}} even without this.",
+  "currentSample": "Later on, your account goes below $0.00 on 14 Jun even without this.",
+  "finalSample": "Even without this, your balance drops below $0.00 on or before 14 Jun.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.figureName.promo_end_missing",
+  "where": "Answer screen, Give it more to go on list",
+  "currentText": "the promotion’s end date",
+  "currentSample": "the promotion’s end date",
+  "finalSample": "the promotion’s end date",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.v3.fact.promo_cleared",
+  "where": "Answer screen, installments result",
+  "currentText": "The promotion ends on {{date}}. Paid off by then, no interest is charged.",
+  "currentSample": "The promotion ends on 14 Jun. Paid off by then, no interest is charged.",
+  "finalSample": "The promotion ends on 14 Jun. Paid off by then, no interest is charged.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.v3.fact.back_charge_cost",
+  "where": "Answer screen, installments result (Warning row)",
+  "currentText": "If not paid in full by {{date}}, about {{amount}} of interest is charged back.",
+  "currentSample": "If not paid in full by 14 Jun, about $212.00 of interest is charged back.",
+  "finalSample": "If you don’t pay it off by 14 Jun, you’ll be charged about $212.00 in back interest.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.missing.promo_end_missing",
+  "where": "Answer screen, missing figures line",
+  "currentText": "The promotion’s end date isn’t entered yet.",
+  "currentSample": "The promotion’s end date isn’t entered yet.",
+  "finalSample": "The promotion’s end date isn’t entered yet.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.frame.itemA11yScope",
+  "where": "Answer screen, top bar (spoken only)",
+  "currentText": "{{name}}, {{price}}. {{sub}}",
+  "currentSample": "Laptop, $900.00. First read · Just you",
+  "finalSample": "Laptop, $900.00. First look · Just you",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.scope.household",
+  "where": "Answer screen, top bar sub-line under the item",
+  "currentText": "Household · {{household}}",
+  "currentSample": "Household · Flat 4B",
+  "finalSample": "Household · Flat 4B",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.scope.justYou",
+  "where": "Answer screen, top bar sub-line under the item",
+  "currentText": "Just you",
+  "currentSample": "Just you",
+  "finalSample": "Just you",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.scope.withStage",
+  "where": "Answer screen, top bar sub-line under the item",
+  "currentText": "{{stage}} · {{scope}}",
+  "currentSample": "Full answer · Just you",
+  "finalSample": "Full check · Just you",
+  "source": "consistency",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.caution.a11y",
+  "where": "Answer screen, verdict card, caution sign beside the verdict word",
+  "currentText": "Caution: dips below {{zero}} on {{date}}.",
+  "currentSample": "Caution: dips below $0.00 on 14 Jun.",
+  "finalSample": "Heads up: drops below $0.00 on or before 14 Jun.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.caution.line",
+  "where": "Answer screen, verdict card, caution sign beside the verdict word",
+  "currentText": "dips below {{zero}} on {{date}}",
+  "currentSample": "dips below $0.00 on 14 Jun",
+  "finalSample": "drops below $0.00 on or before 14 Jun",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.belowZero.a11y",
+  "where": "Answer screen, Warning line directly under the verdict card",
+  "currentText": "Warning. {{sentence}}",
+  "currentSample": "Warning. Your account goes below $0.00 on 14 Jun even without this.",
+  "finalSample": "Warning. Your account goes below $0.00 on or before 14 Jun even without this.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.belowZero.badge",
+  "where": "Answer screen, Warning line directly under the verdict card",
+  "currentText": "Warning",
+  "currentSample": "Warning",
+  "finalSample": "Warning",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.v3.fact.below_zero_without",
+  "where": "Answer screen, Warning line directly under the verdict card",
+  "currentText": "Your account goes below {{zero}} on {{date}} even without this.",
+  "currentSample": "Your account goes below $0.00 on 14 Jun even without this.",
+  "finalSample": "Your account goes below $0.00 on or before 14 Jun even without this.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.deferred.endMissing",
+  "where": "New check, installments step, 0% promotion fields",
+  "currentText": "A promotion end date is needed.",
+  "currentSample": "A promotion end date is needed.",
+  "finalSample": "A promotion end date is needed.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stepper.deferred.endsLabel",
+  "where": "New check, installments step, 0% promotion fields",
+  "currentText": "Promotion ends",
+  "currentSample": "Promotion ends",
+  "finalSample": "Promotion ends",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stepper.deferred.helper",
+  "where": "New check, installments step, 0% promotion fields",
+  "currentText": "If it isn’t paid off by then, interest is charged back to the first day.",
+  "currentSample": "If it isn’t paid off by then, interest is charged back to the first day.",
+  "finalSample": "If you don’t pay it off by then, interest may be backdated to day one, depending on your plan terms.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.deferred.rateLabel",
+  "where": "New check, installments step, 0% promotion fields",
+  "currentText": "Rate if not paid in full",
+  "currentSample": "Rate if not paid in full",
+  "finalSample": "Interest rate after promo",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.deferred.rateMissing",
+  "where": "New check, installments step, 0% promotion fields",
+  "currentText": "A rate is needed.",
+  "currentSample": "A rate is needed.",
+  "finalSample": "Enter an interest rate.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.deferred.switch",
+  "where": "New check, installments step, 0% promotion fields",
+  "currentText": "0% if paid in full",
+  "currentSample": "0% if paid in full",
+  "finalSample": "0% if paid off in time",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.deferred.warning",
+  "where": "New check, installments step, 0% promotion fields",
+  "currentText": "Warning",
+  "currentSample": "Warning",
+  "finalSample": "Warning",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stage.about.heldBack.all",
+  "where": "About Decide answers sheet",
+  "currentText": "These need three months of records: pay swings, pay worked out from your history, and what could move this answer.",
+  "currentSample": "These need three months of records: pay swings, pay worked out from your history, and what could move this answer.",
+  "finalSample": "These need 3 months of history: income changes, estimated pay, and what could change this result.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.about.heldBack.answerRange",
+  "where": "About Decide answers sheet",
+  "currentText": "This needs three months of records: what could move this answer.",
+  "currentSample": "This needs three months of records: what could move this answer.",
+  "finalSample": "This needs 3 months of history: what could change this result.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.about.heldBack.pay",
+  "where": "About Decide answers sheet",
+  "currentText": "These need three months of pay in your records: pay swings and pay worked out from your history.",
+  "currentSample": "These need three months of pay in your records: pay swings and pay worked out from your history.",
+  "finalSample": "These need 3 months of income history: income changes and pay worked out from your history.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.about.howFar",
+  "where": "About Decide answers sheet",
+  "currentText": "Answers look up to 12 months ahead. Dates further out are not given.",
+  "currentSample": "Answers look up to 12 months ahead. Dates further out are not given.",
+  "finalSample": "Results look up to 12 months ahead. We don’t show dates past that.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.about.howFarTitle",
+  "where": "About Decide answers sheet",
+  "currentText": "How far ahead",
+  "currentSample": "How far ahead",
+  "finalSample": "How far ahead",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stage.about.stageRow.first_read",
+  "where": "About Decide answers sheet",
+  "currentText": "Stage: First read. One full month of records gives the full answer.",
+  "currentSample": "Stage: First read. One full month of records gives the full answer.",
+  "finalSample": "Stage: First look. One full month of records gives the full check.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.about.stageRow.full",
+  "where": "About Decide answers sheet",
+  "currentText": "Stage: Full answer. Three months of records add the deeper parts.",
+  "currentSample": "Stage: Full answer. Three months of records add the deeper parts.",
+  "finalSample": "Stage: Full check. Three months of records unlock extra details.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.basis.partial",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on your last {{used}} months of records, up to {{date}}.",
+  "currentSample": "Based on your last 2 months of records, up to 14 Jun.",
+  "finalSample": "Based on your last 2 months of records, up to 14 Jun.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.v3.basis.partialOne",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on your one full month of records, up to {{date}}.",
+  "currentSample": "Based on your one full month of records, up to 14 Jun.",
+  "finalSample": "Based on your one full month of records, up to 14 Jun.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.v3.basis.payWindow",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Pay is judged over your last {{months}} months.",
+  "currentSample": "Pay is judged over your last 4 months.",
+  "finalSample": "Income is averaged over your last 4 months.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.basis.quickEstimates",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on the figures you typed, not your records.",
+  "currentSample": "Based on the figures you typed, not your records.",
+  "finalSample": "Based on the numbers you typed in, not your account records.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.basis.records",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on your last {{months}} months of records, up to {{date}}.",
+  "currentSample": "Based on your last 4 months of records, up to 14 Jun.",
+  "finalSample": "Based on your last 4 months of records, through 14 Jun.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.basis.recordsWithReason.close_to_line",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on your last {{months}} months of records, up to {{date}}. This is close to your limit.",
+  "currentSample": "Based on your last 4 months of records, up to 14 Jun. This is close to your limit.",
+  "finalSample": "Based on your last 4 months of records, through 14 Jun. This is close to your limit.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.basis.recordsWithReason.pay_missed",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on your last {{months}} months of records, up to {{date}}, leaving out pay that hasn’t arrived.",
+  "currentSample": "Based on your last 4 months of records, up to 14 Jun, leaving out pay that hasn’t arrived.",
+  "finalSample": "Based on your last 4 months of records, through 14 Jun, not counting pay that hasn’t come in yet.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.basis.recordsWithReason.quick_estimates",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on your last {{months}} months of records, up to {{date}}, and your quick estimates.",
+  "currentSample": "Based on your last 4 months of records, up to 14 Jun, and your quick estimates.",
+  "finalSample": "Based on your last 4 months of records, through 14 Jun, plus your quick estimates.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.basis.recordsWithReason.user_said_cover",
+  "where": "Answer screen, basis sentence above the legal footer",
+  "currentText": "Based on your last {{months}} months of records, up to {{date}}, and on what you said about covering it.",
+  "currentSample": "Based on your last 4 months of records, up to 14 Jun, and on what you said about covering it.",
+  "finalSample": "Based on your last 4 months of records, through 14 Jun, and on what you said about how you’ll pay for it.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.fact.not_within_year",
+  "where": "Answer screen, first line under a Not yet verdict (no date within a year)",
+  "currentText": "Not within a year at your current pace.",
+  "currentSample": "Not within a year at your current pace.",
+  "finalSample": "Not within a year at your current spending, income, and saving pace.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.verdict.notYetNotCovered.body",
+  "where": "Answer screen, Not yet verdict card body",
+  "currentText": "Ready by {{readyMonth}}. Based on your records, buying then keeps your account above {{zero}} for the next 90 days.",
+  "currentSample": "Ready by February 2027. Based on your records, buying then keeps your account above $0.00 for the next 90 days.",
+  "finalSample": "Affordable by February 2027. Based on your records, buying then keeps your balance above $0.00 for at least 90 days.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.verdict.notYetNotCovered.bodyUntested",
+  "where": "Answer screen, Not yet card, for a sale, a swap, or pay worked out from your history",
+  "currentText": "Ready by {{readyMonth}}.",
+  "currentSample": "Ready by February 2027.",
+  "finalSample": "Affordable by February 2027.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.line.addLink",
+  "where": "Answer screen, stage line above the legal footer",
+  "currentText": "Add earlier months",
+  "currentSample": "Add earlier months",
+  "finalSample": "Add past months",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.line.first_read",
+  "where": "Answer screen, stage line above the legal footer",
+  "currentText": "A first read. It uses the figures you typed. One full month of records unlocks the full answer.",
+  "currentSample": "A first read. It uses the figures you typed. One full month of records unlocks the full answer.",
+  "finalSample": "First look. Uses the numbers you typed in. One full month of records unlocks the full check.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.line.full",
+  "where": "Answer screen, stage line above the legal footer",
+  "currentText": "A full answer from {{monthsUsed}} of 3 months. Three months add pay swings and what could move this answer.",
+  "currentSample": "A full answer from 2 of 3 months. Three months add pay swings and what could move this answer.",
+  "finalSample": "Full check using 2 of 3 months. Three months add income changes and what could shift this result.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.line.importLink",
+  "where": "Answer screen, stage line above the legal footer",
+  "currentText": "Import statements",
+  "currentSample": "Import statements",
+  "finalSample": "Import statements",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stage.card.a11y",
+  "where": "Decide home, stage card",
+  "currentText": "What answers rest on. {{stage}}. {{monthsUsed}} of 3 months.",
+  "currentSample": "What answers rest on. Full answer. 2 of 3 months.",
+  "finalSample": "How results are worked out. Full check. 2 of 3 months.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.a11yDeeper",
+  "where": "Decide home, stage card",
+  "currentText": "What answers rest on. {{monthsUsed}} months of records.",
+  "currentSample": "What answers rest on. 4 months of records.",
+  "finalSample": "How results are worked out. 4 months of records.",
+  "source": "consistency",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.barA11y",
+  "where": "Decide home, stage card",
+  "currentText": "{{monthsUsed}} of 3 months of records. {{stage}} is on.",
+  "currentSample": "2 of 3 months of records. Full answer is on.",
+  "finalSample": "2 of 3 months of records. Full check is on.",
+  "source": "consistency",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.deeper",
+  "where": "Decide home, stage card",
+  "currentText": "Answers use your last {{months}} months of records, with every part on.",
+  "currentSample": "Answers use your last 4 months of records, with every part on.",
+  "finalSample": "Results use your last 4 months of records, with all features active.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.endLabel",
+  "where": "Decide home, stage card",
+  "currentText": "3 months: deeper parts",
+  "currentSample": "3 months: deeper parts",
+  "finalSample": "3 months: extra details",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.first_read",
+  "where": "Decide home, stage card",
+  "currentText": "Answers are a first read. They use the figures you typed, not your records.",
+  "currentSample": "Answers are a first read. They use the figures you typed, not your records.",
+  "finalSample": "Results are a first look. They use the figures you typed in, not your records.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.full",
+  "where": "Decide home, stage card",
+  "currentText": "Answers use your records. Three months of records add the deeper parts.",
+  "currentSample": "Answers use your records. Three months of records add the deeper parts.",
+  "finalSample": "Results use your records. Three months of records add extra details.",
+  "source": "consistency",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.tickLabel",
+  "where": "Decide home, stage card",
+  "currentText": "1 month: full answer",
+  "currentSample": "1 month: full answer",
+  "finalSample": "1 month: full check",
+  "source": "consistency",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.title",
+  "where": "Decide home, stage card",
+  "currentText": "What answers rest on",
+  "currentSample": "What answers rest on",
+  "finalSample": "How results are worked out",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.announce_one",
+  "where": "Decide home, stage card (spoken when months go up)",
+  "currentText": "Decide now has {{count}} month of records. {{stage}} is on.",
+  "currentSample": "Decide now has 1 month of records. Full answer is on.",
+  "finalSample": "Decide now has 1 month of records. Full check is active.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.announce_other",
+  "where": "Decide home, stage card (spoken when months go up)",
+  "currentText": "Decide now has {{count}} months of records. {{stage}} is on.",
+  "currentSample": "Decide now has 2 months of records. Full answer is on.",
+  "finalSample": "Decide now has 2 months of records. Full check is active.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.card.announceDeeper",
+  "where": "Decide home, stage card (spoken when months go up)",
+  "currentText": "Decide now has {{monthsUsed}} months of records. Every part is on.",
+  "currentSample": "Decide now has 3 months of records. Every part is on.",
+  "finalSample": "Decide now has 3 months of records. All features are active.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.word.first_read",
+  "where": "Stage chip on the stage card and the answer top bar",
+  "currentText": "First read",
+  "currentSample": "First read",
+  "finalSample": "First look",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.word.full",
+  "where": "Stage chip on the stage card and the answer top bar",
+  "currentText": "Full answer",
+  "currentSample": "Full answer",
+  "finalSample": "Full check",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.v3.caveat.household_not_shared",
+  "where": "About Decide answers sheet, For this answer",
+  "currentText": "Only your money is counted. {{names}} hasn’t shared theirs.",
+  "currentSample": "Only your money is counted. Sam hasn’t shared theirs.",
+  "finalSample": "Only your money is counted. Sam hasn’t shared theirs.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.v3.caveat.share_zero_by_rule",
+  "where": "About Decide answers sheet, For this answer",
+  "currentText": "Under {{rule}}, your share of the joint money is {{zero}} this month.",
+  "currentSample": "Under What each person brings, your share of the joint money is $0.00 this month.",
+  "finalSample": "Under What each person brings, your share of the joint money is $0.00 this month.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.members.partner.couplesNote",
+  "where": "Answer screen, couples note",
+  "currentText": "Money in {{account}} may be planned by someone else too.",
+  "currentSample": "Money in Joint Everyday may be planned by someone else too.",
+  "finalSample": "Money in Joint Everyday may be planned by someone else too.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.caveat.nameAnd",
+  "where": "Answer screen, household caveat under the answer",
+  "currentText": "{{a}} and {{b}}",
+  "currentSample": "Sam and Alex",
+  "finalSample": "Sam and Alex",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.caveat.notShared",
+  "where": "Answer screen, household caveat under the answer",
+  "currentText": "Only your money is counted. {{name}} hasn’t shared theirs.",
+  "currentSample": "Only your money is counted. Sam hasn’t shared theirs.",
+  "finalSample": "Only your money is counted. Sam hasn’t shared theirs.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.caveat.notSharedMany",
+  "where": "Answer screen, household caveat under the answer",
+  "currentText": "Only your money is counted. {{names}} haven’t shared theirs.",
+  "currentSample": "Only your money is counted. Sam and Alex haven’t shared theirs.",
+  "finalSample": "Only your money is counted. Sam and Alex haven’t shared theirs.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.household.outOfDate",
+  "where": "Answer screen, Household check, the spending rule line",
+  "currentText": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+  "currentSample": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+  "finalSample": "Update spending shares because someone joined or left. Until you do, each check counts what each person brings in.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.household.ruleBill",
+  "where": "Answer screen, Household check, the spending rule line",
+  "currentText": "Counted: your {{percent}}% of the shared money, the same as the bill split.",
+  "currentSample": "Counted: your 60% of the shared money, the same as the bill split.",
+  "finalSample": "Counted: your 60% of shared money, matching the bill split.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.household.ruleBring",
+  "where": "Answer screen, Household check, the spending rule line",
+  "currentText": "Counted: what you bring.",
+  "currentSample": "Counted: what you bring.",
+  "finalSample": "Counted: what you bring.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.household.ruleShares",
+  "where": "Answer screen, Household check, the spending rule line",
+  "currentText": "Counted: your {{percent}}% of the shared money.",
+  "currentSample": "Counted: your 60% of the shared money.",
+  "finalSample": "Counted: your 60% of shared money.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.zeroShare.line",
+  "where": "Answer screen, Household check, zero-share line",
+  "currentText": "Under {{rule}}, your share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.",
+  "currentSample": "Under What each person brings, your share of the joint money is $0.00 this month. With equal shares, each person counts the same part.",
+  "finalSample": "Under \"What each person brings,\" your share of joint money is $0.00 this month. With equal shares, everyone counts the same amount.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.members.partner.caveat",
+  "where": "Answer screen, Shared bills line",
+  "currentText": "{{name}} hasn’t logged shared bills since {{date}}, so shared costs may be higher.",
+  "currentSample": "Sam hasn’t logged shared bills since 14 Jun, so shared costs may be higher.",
+  "finalSample": "Sam hasn’t entered shared bills since 14 Jun, so shared costs could be higher.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.members.partner.caveatBadge",
+  "where": "Answer screen, Shared bills line",
+  "currentText": "Shared bills",
+  "currentSample": "Shared bills",
+  "finalSample": "Shared bills",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.members.partner.caveatSpoken",
+  "where": "Answer screen, Shared bills line",
+  "currentText": "Shared bills. {{name}} hasn’t logged shared bills since {{date}}, so shared costs may be higher.",
+  "currentSample": "Shared bills. Sam hasn’t logged shared bills since 14 Jun, so shared costs may be higher.",
+  "finalSample": "Shared bills. Sam hasn’t added shared bills since 14 Jun, so shared costs could be higher.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.home.purposeMissing_one",
+  "where": "Household home",
+  "currentText": "{{count}} joint account has no purpose set. Until then it counts as everyday spending.",
+  "currentSample": "1 joint account has no purpose set. Until then it counts as everyday spending.",
+  "finalSample": "1 joint account doesn’t have a purpose set yet. Until then, it counts as everyday spending.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.home.purposeMissing_other",
+  "where": "Household home",
+  "currentText": "{{count}} joint accounts have no purpose set. Until then they count as everyday spending.",
+  "currentSample": "2 joint accounts have no purpose set. Until then they count as everyday spending.",
+  "finalSample": "2 joint accounts don’t have a purpose set yet. Until then, they count as everyday spending.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "household.home.purposeMissingAction",
+  "where": "Household home",
+  "currentText": "Go to Shared accounts",
+  "currentSample": "Go to Shared accounts",
+  "finalSample": "Go to Shared accounts",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.home.rules.spending",
+  "where": "Household home",
+  "currentText": "How spending is shared",
+  "currentSample": "How spending is shared",
+  "finalSample": "How spending is split",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "household.members.partner.failed",
+  "where": "Household members, partner and safety net rows",
+  "currentText": "This wasn’t saved. Try again.",
+  "currentSample": "This wasn’t saved. Try again.",
+  "finalSample": "This wasn’t saved. Try again.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.members.partner.rowSpoken",
+  "where": "Household members, partner and safety net rows",
+  "currentText": "{{label}}. {{state}}",
+  "currentSample": "Count Sam’s money in my Decide checks. On",
+  "finalSample": "Include Sam’s money in my Decide checks. On",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.members.partner.stateOff",
+  "where": "Household members, partner and safety net rows",
+  "currentText": "Off",
+  "currentSample": "Off",
+  "finalSample": "Off",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.members.partner.stateOn",
+  "where": "Household members, partner and safety net rows",
+  "currentText": "On",
+  "currentSample": "On",
+  "finalSample": "On",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.members.safetyNet.failed",
+  "where": "Household members, partner and safety net rows",
+  "currentText": "This wasn’t saved. Try again.",
+  "currentSample": "This wasn’t saved. Try again.",
+  "finalSample": "This wasn’t saved. Try again.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.notices.joint_purpose_changed",
+  "where": "Household notices list",
+  "currentText": "{{name}} changed what {{account}} is for.",
+  "currentSample": "Sam changed what Joint Everyday is for.",
+  "finalSample": "Sam updated the purpose of Joint Everyday.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.notices.joint_purpose_changed_plain",
+  "where": "Household notices list",
+  "currentText": "{{name}} changed what a joint account is for.",
+  "currentSample": "Sam changed what a joint account is for.",
+  "finalSample": "Sam updated the purpose of a joint account.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.notices.spend_rule_changed",
+  "where": "Household notices list",
+  "currentText": "{{name}} changed how spending is shared.",
+  "currentSample": "Sam changed how spending is shared.",
+  "finalSample": "Sam updated how spending is split.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.explain.a11y",
+  "where": "Household rules screens, What this means link",
+  "currentText": "What {{name}} means",
+  "currentSample": "What Same as the bill split means",
+  "finalSample": "What \"Same as the bill split\" means",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.explain.button",
+  "where": "Household rules screens, What this means link",
+  "currentText": "What this means",
+  "currentSample": "What this means",
+  "finalSample": "What this means",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.explain.less",
+  "where": "Household rules screens, What this means link",
+  "currentText": "Less",
+  "currentSample": "Less",
+  "finalSample": "Less",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.bill.helper",
+  "where": "How spending is shared screen",
+  "currentText": "Each person’s share follows the bill split ({{rule}}).",
+  "currentSample": "Each person’s share follows the bill split (60% / 40%).",
+  "finalSample": "Each person’s share matches the bill split (60% / 40%).",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.bill.label",
+  "where": "How spending is shared screen",
+  "currentText": "Same as the bill split",
+  "currentSample": "Same as the bill split",
+  "finalSample": "Same as the bill split",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.bill.tip",
+  "where": "How spending is shared screen",
+  "currentText": "Each check counts the same share of everyone’s money that the bill split gives that person.",
+  "currentSample": "Each check counts the same share of everyone’s money that the bill split gives that person.",
+  "finalSample": "Each check counts each person’s share of everyone’s money using the bill split.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.bring.helper",
+  "where": "How spending is shared screen",
+  "currentText": "Each person’s checks count their own money and their part of any joint account. Nobody’s check uses someone else’s money.",
+  "currentSample": "Each person’s checks count their own money and their part of any joint account. Nobody’s check uses someone else’s money.",
+  "finalSample": "Each person’s checks count their own money plus their share of any joint account, never someone else’s personal money.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.bring.label",
+  "where": "How spending is shared screen",
+  "currentText": "What each person brings",
+  "currentSample": "What each person brings",
+  "finalSample": "What each person brings",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.bring.tip",
+  "where": "How spending is shared screen",
+  "currentText": "A check counts only your own money and your part of joint money. It never counts money another person brings.",
+  "currentSample": "A check counts only your own money and your part of joint money. It never counts money another person brings.",
+  "finalSample": "A check only counts your own money and your share of joint money, never another person’s income.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.conflict",
+  "where": "How spending is shared screen",
+  "currentText": "{{name}} changed this a moment ago. The latest is shown.",
+  "currentSample": "Sam changed this a moment ago. The latest is shown.",
+  "finalSample": "Sam just changed this. You’re seeing the latest version.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.conflictNoName",
+  "where": "How spending is shared screen",
+  "currentText": "Someone changed this a moment ago. The latest is shown.",
+  "currentSample": "Someone changed this a moment ago. The latest is shown.",
+  "finalSample": "Someone just changed this. You’re seeing the latest version.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.custom.helper",
+  "where": "How spending is shared screen",
+  "currentText": "The group sets each person’s share of the money.",
+  "currentSample": "The group sets each person’s share of the money.",
+  "finalSample": "The group chooses each person’s share of the money.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.custom.label",
+  "where": "How spending is shared screen",
+  "currentText": "A set spending split",
+  "currentSample": "A set spending split",
+  "finalSample": "Custom spending split",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.custom.tip",
+  "where": "How spending is shared screen",
+  "currentText": "Each check counts the share of everyone’s money the group set for that person.",
+  "currentSample": "Each check counts the share of everyone’s money the group set for that person.",
+  "finalSample": "Each check counts the share of everyone’s money set by the group for that person.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.defaultTag",
+  "where": "How spending is shared screen",
+  "currentText": "Default for this setup",
+  "currentSample": "Default for this setup",
+  "finalSample": "Default for this setup",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.intro",
+  "where": "How spending is shared screen",
+  "currentText": "This sets how much money each person’s checks count. Bills are split separately.",
+  "currentSample": "This sets how much money each person’s checks count. Bills are split separately.",
+  "finalSample": "This sets how much money each person’s checks count. Bills are split separately.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.needsUpdating",
+  "where": "How spending is shared screen",
+  "currentText": "Needs updating",
+  "currentSample": "Needs updating",
+  "finalSample": "Needs updating",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.outOfDate",
+  "where": "How spending is shared screen",
+  "currentText": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+  "currentSample": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+  "finalSample": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.outOfDateTip",
+  "where": "How spending is shared screen",
+  "currentText": "The old shares no longer match the people in the group. Checks count what each person brings until the shares are updated.",
+  "currentSample": "The old shares no longer match the people in the group. Checks count what each person brings until the shares are updated.",
+  "finalSample": "The old shares don’t match the current group. Until you update them, checks count what each person brings in.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.ruleLabel",
+  "where": "How spending is shared screen",
+  "currentText": "How each check counts money",
+  "currentSample": "How each check counts money",
+  "finalSample": "How each check counts money",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.save",
+  "where": "How spending is shared screen",
+  "currentText": "Save",
+  "currentSample": "Save",
+  "finalSample": "Save",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.saved",
+  "where": "How spending is shared screen",
+  "currentText": "Spending rule saved",
+  "currentSample": "Spending rule saved",
+  "finalSample": "Spending rule saved",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.setup.inferred",
+  "where": "How spending is shared screen",
+  "currentText": "Worked out from your accounts",
+  "currentSample": "Worked out from your accounts",
+  "finalSample": "Based on your accounts",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.setup.joint.helper",
+  "where": "How spending is shared screen",
+  "currentText": "Everything goes in and out of one shared account.",
+  "currentSample": "Everything goes in and out of one shared account.",
+  "finalSample": "All money goes in and out of one shared account.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.setup.joint.label",
+  "where": "How spending is shared screen",
+  "currentText": "One joint account",
+  "currentSample": "One joint account",
+  "finalSample": "One joint account",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.setup.joint.tip",
+  "where": "How spending is shared screen",
+  "currentText": "Checks share out the joint money. The usual rule for this setup is Same as the bill split.",
+  "currentSample": "Checks share out the joint money. The usual rule for this setup is Same as the bill split.",
+  "finalSample": "Checks split the joint money. The usual rule for this setup is \"Same as the bill split.\"",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.setup.label",
+  "where": "How spending is shared screen",
+  "currentText": "How your money is set up",
+  "currentSample": "How your money is set up",
+  "finalSample": "How your accounts are set up",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.setup.mixed.helper",
+  "where": "How spending is shared screen",
+  "currentText": "A shared account for shared costs, and each person’s own accounts for the rest.",
+  "currentSample": "A shared account for shared costs, and each person’s own accounts for the rest.",
+  "finalSample": "A shared account for shared costs, and each person’s own accounts for everything else.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.setup.mixed.label",
+  "where": "How spending is shared screen",
+  "currentText": "Mixed",
+  "currentSample": "Mixed",
+  "finalSample": "Mixed",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.setup.mixed.tip",
+  "where": "How spending is shared screen",
+  "currentText": "Each person’s own money stays theirs. The joint money is shared out by the rule below.",
+  "currentSample": "Each person’s own money stays theirs. The joint money is shared out by the rule below.",
+  "finalSample": "Personal money stays personal. Joint money is split using the rule below.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.setup.separate.helper",
+  "where": "How spending is shared screen",
+  "currentText": "Each person keeps their own accounts.",
+  "currentSample": "Each person keeps their own accounts.",
+  "finalSample": "Each person keeps their own separate accounts.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.setup.separate.label",
+  "where": "How spending is shared screen",
+  "currentText": "Separate accounts",
+  "currentSample": "Separate accounts",
+  "finalSample": "Separate accounts",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.setup.separate.tip",
+  "where": "How spending is shared screen",
+  "currentText": "Checks start from each person’s own money. The usual rule for this setup is What each person brings.",
+  "currentSample": "Checks start from each person’s own money. The usual rule for this setup is What each person brings.",
+  "finalSample": "Checks start with each person’s own money. The usual rule for this setup is \"What each person brings.\"",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.shares.money",
+  "where": "How spending is shared screen",
+  "currentText": "{{percent}}% · about {{amount}} of {{total}} shared",
+  "currentSample": "60% · about $900.00 of $1,500.00 shared",
+  "finalSample": "60% · about $900.00 of $1,500.00 shared",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.shares.notHundred",
+  "where": "How spending is shared screen",
+  "currentText": "The shares add up to {{total}}%. Spending shares add up to 100%.",
+  "currentSample": "The shares add up to 90%. Spending shares add up to 100%.",
+  "finalSample": "Shares add up to 90%. Spending shares need to total 100%.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.shares.tip",
+  "where": "How spending is shared screen",
+  "currentText": "These shares set how much of everyone’s money each person’s checks count. They always add up to 100%.",
+  "currentSample": "These shares set how much of everyone’s money each person’s checks count. They always add up to 100%.",
+  "finalSample": "These shares set how much of everyone’s money each check counts, and must add up to 100%.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.spending.shares.title",
+  "where": "How spending is shared screen",
+  "currentText": "Each person’s share",
+  "currentSample": "Each person’s share",
+  "finalSample": "Each person’s share",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.shares.total",
+  "where": "How spending is shared screen",
+  "currentText": "Total {{total}}%",
+  "currentSample": "Total 100%",
+  "finalSample": "Total 100%",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.title",
+  "where": "How spending is shared screen",
+  "currentText": "How spending is shared",
+  "currentSample": "How spending is shared",
+  "finalSample": "How spending is shared",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.spending.update",
+  "where": "How spending is shared screen",
+  "currentText": "Update shares",
+  "currentSample": "Update shares",
+  "finalSample": "Update shares",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.zeroShare.action",
+  "where": "How spending is shared screen, zero-share suggestion card",
+  "currentText": "See equal shares",
+  "currentSample": "See equal shares",
+  "finalSample": "See equal shares",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.zeroShare.notNow",
+  "where": "How spending is shared screen, zero-share suggestion card",
+  "currentText": "Not now",
+  "currentSample": "Not now",
+  "finalSample": "Not now",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.zeroShare.settings",
+  "where": "How spending is shared screen, zero-share suggestion card",
+  "currentText": "Under this rule, {{name}}’s share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.",
+  "currentSample": "Under this rule, Sam’s share of the joint money is $0.00 this month. With equal shares, each person counts the same part.",
+  "finalSample": "With this rule, Sam’s share of joint money is $0.00 this month. With equal shares, everyone counts the same amount.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.zeroShare.settingsMany",
+  "where": "How spending is shared screen, zero-share suggestion card",
+  "currentText": "Under this rule, {{names}} have a {{zero}} share of the joint money this month. With equal shares, each person counts the same part.",
+  "currentSample": "Under this rule, Sam and Alex have a $0.00 share of the joint money this month. With equal shares, each person counts the same part.",
+  "finalSample": "With this rule, Sam and Alex have a $0.00 share of joint money this month. With equal shares, everyone counts the same amount.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.zeroShare.settingsYou",
+  "where": "How spending is shared screen, zero-share suggestion card",
+  "currentText": "Under this rule, your share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.",
+  "currentSample": "Under this rule, your share of the joint money is $0.00 this month. With equal shares, each person counts the same part.",
+  "finalSample": "With this rule, your share of joint money is $0.00 this month. With equal shares, everyone counts the same amount.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.helperBring",
+  "where": "New check, price step, under Who pays",
+  "currentText": "Counts your own money and your part of any joint account.",
+  "currentSample": "Counts your own money and your part of any joint account.",
+  "finalSample": "Counts your own money plus your share of any joint account.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.helperShares",
+  "where": "New check, price step, under Who pays",
+  "currentText": "Counts your {{percent}}% of the money everyone has shared.",
+  "currentSample": "Counts your 60% of the money everyone has shared.",
+  "finalSample": "Counts your 60% share of all shared money.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.jointMe",
+  "where": "New check, price step, under Who pays (Just me with a joint account)",
+  "currentText": "Counts your part of {{account}}.",
+  "currentSample": "Counts your part of Joint Everyday.",
+  "finalSample": "Counts your share of Joint Everyday.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.jointMeMany",
+  "where": "New check, price step, under Who pays (Just me with a joint account)",
+  "currentText": "Counts your part of your joint accounts.",
+  "currentSample": "Counts your part of your joint accounts.",
+  "finalSample": "Counts your share of your joint accounts.",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.helper",
+  "where": "New check, price step, Who pays choice",
+  "currentText": "Uses shared money and anything a partner has agreed to share.",
+  "currentSample": "Uses shared money and anything a partner has agreed to share.",
+  "finalSample": "Uses shared money plus anything a partner agreed to share.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.household",
+  "where": "New check, price step, Who pays choice",
+  "currentText": "Household",
+  "currentSample": "Household",
+  "finalSample": "Household",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.justMe",
+  "where": "New check, price step, Who pays choice",
+  "currentText": "Just me",
+  "currentSample": "Just me",
+  "finalSample": "Just me",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stepper.whoPays.label",
+  "where": "New check, price step, Who pays choice",
+  "currentText": "Who pays",
+  "currentSample": "Who pays",
+  "finalSample": "Who pays",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.shared.purposeLine",
+  "where": "Shared accounts list",
+  "currentText": "{{purpose}} · {{madeBy}}",
+  "currentSample": "Joint household bills · set by Sam",
+  "finalSample": "Joint household bills · set by Sam",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.shared.purposeNotSet",
+  "where": "Shared accounts list",
+  "currentText": "Purpose not set",
+  "currentSample": "Purpose not set",
+  "finalSample": "Purpose not set",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.spare.jointNote",
+  "where": "Spare money sheet, under the figure (joint account holders)",
+  "currentText": "Count only your own accounts. Joint accounts are counted separately.",
+  "currentSample": "Count only your own accounts. Joint accounts are counted separately.",
+  "finalSample": "Only counts your personal accounts. Joint accounts are counted on their own.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.bills.helper",
+  "where": "What is this joint account for? screen",
+  "currentText": "Money kept for shared bills. Only money above the bills due before the next pay-in counts as spare.",
+  "currentSample": "Money kept for shared bills. Only money above the bills due before the next pay-in counts as spare.",
+  "finalSample": "Money set aside for shared bills. Only money left over after upcoming bills before your next payday counts as spare.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.bills.label",
+  "where": "What is this joint account for? screen",
+  "currentText": "Joint household bills",
+  "currentSample": "Joint household bills",
+  "finalSample": "Joint household bills",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.bills.tip",
+  "where": "What is this joint account for? screen",
+  "currentText": "Checks count only the money left after the bills due before the next pay-in.",
+  "currentSample": "Checks count only the money left after the bills due before the next pay-in.",
+  "finalSample": "Checks only count money left after bills due before your next payday.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.conflict",
+  "where": "What is this joint account for? screen",
+  "currentText": "Someone changed this a moment ago. The latest is shown.",
+  "currentSample": "Someone changed this a moment ago. The latest is shown.",
+  "finalSample": "Someone just changed this. You’re seeing the latest version.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.everyday.helper",
+  "where": "What is this joint account for? screen",
+  "currentText": "Money for anything. Each person’s checks count their part of it.",
+  "currentSample": "Money for anything. Each person’s checks count their part of it.",
+  "finalSample": "Money for everyday expenses. Each person’s checks count their share of it.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.everyday.label",
+  "where": "What is this joint account for? screen",
+  "currentText": "Joint everyday spending",
+  "currentSample": "Joint everyday spending",
+  "finalSample": "Joint everyday spending",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.everyday.tip",
+  "where": "What is this joint account for? screen",
+  "currentText": "Checks count this money, shared out between the group by the spending rule.",
+  "currentSample": "Checks count this money, shared out between the group by the spending rule.",
+  "finalSample": "Checks count this money, split across the group using the spending rule.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.intro",
+  "where": "What is this joint account for? screen",
+  "currentText": "This sets how its money counts in everyone’s checks.",
+  "currentSample": "This sets how its money counts in everyone’s checks.",
+  "finalSample": "This controls how this money is counted in everyone’s checks.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.notJoint",
+  "where": "What is this joint account for? screen",
+  "currentText": "This account is no longer a joint account.",
+  "currentSample": "This account is no longer a joint account.",
+  "finalSample": "This account is no longer a joint account.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.notMember",
+  "where": "What is this joint account for? screen",
+  "currentText": "This account is not in your household any more.",
+  "currentSample": "This account is not in your household any more.",
+  "finalSample": "This account is not in your household any more.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.rowLabel",
+  "where": "What is this joint account for? screen",
+  "currentText": "What it is for",
+  "currentSample": "What it is for",
+  "finalSample": "What it is for",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.safetyNet",
+  "where": "What is this joint account for? screen",
+  "currentText": "This is our safety net",
+  "currentSample": "This is our safety net",
+  "finalSample": "This is our safety net",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.safetyNetTip",
+  "where": "What is this joint account for? screen",
+  "currentText": "When on, this money is the group’s safety net. It is counted once for everyone, and checks never spend it.",
+  "currentSample": "When on, this money is the group’s safety net. It is counted once for everyone, and checks never spend it.",
+  "finalSample": "When turned on, this is the group’s safety net. It’s counted once for everyone and checks never spend it.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.save",
+  "where": "What is this joint account for? screen",
+  "currentText": "Save",
+  "currentSample": "Save",
+  "finalSample": "Save",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.saved",
+  "where": "What is this joint account for? screen",
+  "currentText": "Saved",
+  "currentSample": "Saved",
+  "finalSample": "Saved",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.savings.helper",
+  "where": "What is this joint account for? screen",
+  "currentText": "Money saved together. It is kept out of checks unless the group marks it as money that can be spent.",
+  "currentSample": "Money saved together. It is kept out of checks unless the group marks it as money that can be spent.",
+  "finalSample": "Money saved together. Checks ignore it unless the group marks it as available to spend.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.savings.label",
+  "where": "What is this joint account for? screen",
+  "currentText": "Joint savings",
+  "currentSample": "Joint savings",
+  "finalSample": "Joint savings",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.savings.tip",
+  "where": "What is this joint account for? screen",
+  "currentText": "Checks leave this money out, unless it is marked as money that can be spent.",
+  "currentSample": "Checks leave this money out, unless it is marked as money that can be spent.",
+  "finalSample": "Checks leave this out unless it’s marked as available to spend.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.spendable",
+  "where": "What is this joint account for? screen",
+  "currentText": "Can be spent",
+  "currentSample": "Can be spent",
+  "finalSample": "Can be spent",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "household.rules.jointPurpose.spendableTip",
+  "where": "What is this joint account for? screen",
+  "currentText": "When on, checks count this savings money, shared out by the spending rule.",
+  "currentSample": "When on, checks count this savings money, shared out by the spending rule.",
+  "finalSample": "When turned on, checks count this savings split by the spending rule.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.title",
+  "where": "What is this joint account for? screen",
+  "currentText": "What is {{account}} for?",
+  "currentSample": "What is Joint Everyday for?",
+  "finalSample": "What is Joint Everyday used for?",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "household.rules.jointPurpose.waiting",
+  "where": "What is this joint account for? screen",
+  "currentText": "Saving the account first…",
+  "currentSample": "Saving the account first…",
+  "finalSample": "Saving the account first…",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answer.outcome.recordBought",
+  "where": "Answer screen, bottom line of a check saved for later",
+  "currentText": "Record as bought",
+  "currentSample": "Record as bought",
+  "finalSample": "Mark as bought",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.boughtOn",
+  "where": "Record as bought screen",
+  "currentText": "Bought on {{date}}.",
+  "currentSample": "Bought on 14 Jun.",
+  "finalSample": "Bought on 14 Jun.",
+  "source": "owner+fix",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.groupCosts",
+  "where": "Record as bought screen",
+  "currentText": "Costs that start",
+  "currentSample": "Costs that start",
+  "finalSample": "New ongoing costs",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.groupGoal",
+  "where": "Record as bought screen",
+  "currentText": "Your goal",
+  "currentSample": "Your goal",
+  "finalSample": "Your goal",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.groupMoney",
+  "where": "Record as bought screen",
+  "currentText": "Money in and out",
+  "currentSample": "Money in and out",
+  "finalSample": "Money in and out",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.groupStops",
+  "where": "Record as bought screen",
+  "currentText": "Costs that stop",
+  "currentSample": "Costs that stop",
+  "finalSample": "Costs that end",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.lookBack",
+  "where": "Record as bought screen",
+  "currentText": "In 3 months, Your decisions asks if it cost what you expected.",
+  "currentSample": "In 3 months, Your decisions asks if it cost what you expected.",
+  "finalSample": "In 3 months, Your decisions asks if it cost what you expected.",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.oldOne",
+  "where": "Record as bought screen",
+  "currentText": "the old one",
+  "currentSample": "the old one",
+  "finalSample": "the old one",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.rowFallback",
+  "where": "Record as bought screen",
+  "currentText": "Running cost",
+  "currentSample": "Running cost",
+  "finalSample": "Ongoing cost",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.rowFixed",
+  "where": "Record as bought screen",
+  "currentText": "{{name}}, {{amount}} a month",
+  "currentSample": "Phone plan, $45.00 a month",
+  "finalSample": "Phone plan, $45.00 a month",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.rowGoal",
+  "where": "Record as bought screen",
+  "currentText": "Close the goal {{goal}}",
+  "currentSample": "Close the goal Car fund",
+  "finalSample": "Close the \"Car fund\" goal",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.rowPayoff",
+  "where": "Record as bought screen",
+  "currentText": "Pay off {{debt}}, {{amount}}",
+  "currentSample": "Pay off Visa card, $1,200.00",
+  "finalSample": "Pay off Visa card, $1,200.00",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.rowSale",
+  "where": "Record as bought screen",
+  "currentText": "Money in from selling {{item}}, {{amount}}",
+  "currentSample": "Money in from selling the old laptop, $300.00",
+  "finalSample": "Cash from selling the old laptop, $300.00",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.rowStop",
+  "where": "Record as bought screen",
+  "currentText": "{{bill}} stops from {{date}}",
+  "currentSample": "Old phone plan stops from 14 Jun",
+  "finalSample": "Old phone plan ends 14 Jun.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.rowVaries",
+  "where": "Record as bought screen",
+  "currentText": "{{name}}, about {{amount}} a month",
+  "currentSample": "Fuel, about $120.00 a month",
+  "finalSample": "Fuel, about $120.00 a month",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.save",
+  "where": "Record as bought screen",
+  "currentText": "Record purchase",
+  "currentSample": "Record purchase",
+  "finalSample": "Save purchase",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.stateOff",
+  "where": "Record as bought screen",
+  "currentText": "not ticked",
+  "currentSample": "not ticked",
+  "finalSample": "not ticked",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.stateOn",
+  "where": "Record as bought screen",
+  "currentText": "ticked",
+  "currentSample": "ticked",
+  "finalSample": "ticked",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.subGoal",
+  "where": "Record as bought screen",
+  "currentText": "It can stay open.",
+  "currentSample": "It can stay open.",
+  "finalSample": "You can keep it open.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.subVaries",
+  "where": "Record as bought screen",
+  "currentText": "Counts until real spending replaces it",
+  "currentSample": "Counts until real spending replaces it",
+  "finalSample": "Counts until actual spending replaces it",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.title",
+  "where": "Record as bought screen",
+  "currentText": "Record as bought",
+  "currentSample": "Record as bought",
+  "finalSample": "Mark as bought",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.toast",
+  "where": "Record as bought screen",
+  "currentText": "Recorded: {{item}}.",
+  "currentSample": "Recorded: Laptop.",
+  "finalSample": "Saved: Laptop.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.shareRule.amount",
+  "where": "Record as bought screen, inside the shared-line sentence",
+  "currentText": "by set amounts",
+  "currentSample": "by set amounts",
+  "finalSample": "by fixed amounts",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.bought.shareRule.even",
+  "where": "Record as bought screen, inside the shared-line sentence",
+  "currentText": "evenly",
+  "currentSample": "evenly",
+  "finalSample": "evenly",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.shareRule.mine",
+  "where": "Record as bought screen, inside the shared-line sentence",
+  "currentText": "to me alone",
+  "currentSample": "to me alone",
+  "finalSample": "to me alone",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.shareRule.weight",
+  "where": "Record as bought screen, inside the shared-line sentence",
+  "currentText": "by agreed share",
+  "currentSample": "by agreed share",
+  "finalSample": "by agreed share",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.answerActions.bought.sharedSub",
+  "where": "Record as bought screen, under the item (Household check)",
+  "currentText": "Saved as a shared line, split {{rule}}.",
+  "currentSample": "Saved as a shared line, split evenly.",
+  "finalSample": "Saved as a shared expense, split evenly.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answerActions.added.title",
+  "where": "Record as bought, confirmation",
+  "currentText": "Recorded",
+  "currentSample": "Recorded",
+  "finalSample": "Saved",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.notReady.firstRead",
+  "where": "Answer screen, Not ready card",
+  "currentText": "Get a first read",
+  "currentSample": "Get a first read",
+  "finalSample": "Get a first look",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.notReady.import",
+  "where": "Answer screen, Not ready card",
+  "currentText": "Import statements for a full answer",
+  "currentSample": "Import statements for a full answer",
+  "finalSample": "Import statements for a full check",
+  "source": "owner+fix",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.notReady.note",
+  "where": "Answer screen, Not ready card",
+  "currentText": "A first read uses the figures you type. A full answer needs one full month of records.",
+  "currentSample": "A first read uses the figures you type. A full answer needs one full month of records.",
+  "finalSample": "A first look uses the numbers you type in. A full check takes one full month of records.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.empty.body",
+  "where": "Decide home, empty state (no full month yet)",
+  "currentText": "Answers are a first read until there is one. Import statements or add this month as you go.",
+  "currentSample": "Answers are a first read until there is one. Import statements or add this month as you go.",
+  "finalSample": "Results are a first look until you have one. Import statements or log this month as you go.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.empty.title",
+  "where": "Decide home, empty state (no full month yet)",
+  "currentText": "No full month of records yet",
+  "currentSample": "No full month of records yet",
+  "finalSample": "No full month of records yet",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stage.import.a11y",
+  "where": "Decide home, import prompt card",
+  "currentText": "{{title}}. {{sub}}",
+  "currentSample": "Import your last 3 statements. One month gives a full answer today. Three add the deeper parts. CSV, OFX or PDF.",
+  "finalSample": "Import your last 3 statements. One month gives a full check today; three add extra details. Supports CSV, OFX, or PDF.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.import.firstSub",
+  "where": "Decide home, import prompt card",
+  "currentText": "One month gives a full answer today. Three add the deeper parts. CSV, OFX or PDF.",
+  "currentSample": "One month gives a full answer today. Three add the deeper parts. CSV, OFX or PDF.",
+  "finalSample": "One month gives a full check today; three add extra details. Supports CSV, OFX, or PDF.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.import.firstTitle",
+  "where": "Decide home, import prompt card",
+  "currentText": "Import your last 3 statements",
+  "currentSample": "Import your last 3 statements",
+  "finalSample": "Import your last 3 statements",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.stage.import.moreSub",
+  "where": "Decide home, import prompt card",
+  "currentText": "Each month you add moves answers toward the deeper parts. CSV, OFX or PDF.",
+  "currentSample": "Each month you add moves answers toward the deeper parts. CSV, OFX or PDF.",
+  "finalSample": "Every month you add unlocks more detail. Supports CSV, OFX, or PDF.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.stage.import.moreTitle",
+  "where": "Decide home, import prompt card",
+  "currentText": "Add earlier months",
+  "currentSample": "Add earlier months",
+  "finalSample": "Add past months",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.setup.checklist.householdRow",
+  "where": "Decide setup checklist, household row",
+  "currentText": "Who do you share money with?",
+  "currentSample": "Who do you share money with?",
+  "finalSample": "Who do you share money with?",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "activity.row.yourShare",
+  "where": "Activity list, on a shared line",
+  "currentText": "Your share {{amount}}",
+  "currentSample": "Your share $22.50",
+  "finalSample": "Your share $22.50",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "activity.row.yourShareA11y",
+  "where": "Activity list, on a shared line",
+  "currentText": "your share {{amount}}",
+  "currentSample": "your share $22.50",
+  "finalSample": "your share $22.50",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "activity.summary.shareNote",
+  "where": "Activity, month summary under the total",
+  "currentText": "Your share of shared lines.",
+  "currentSample": "Your share of shared lines.",
+  "finalSample": "Your share of shared expenses.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.answer.testerBuild",
+  "where": "Answer screen, under the legal footer (tester accounts only)",
+  "currentText": "Build {{build}}",
+  "currentSample": "Build 0.3.0 (a1b2c3d4)",
+  "finalSample": "Build 0.3.0 (a1b2c3d4)",
+  "source": "ok",
+  "changed": false
+ },
+ {
+  "key": "decide.screens.common.paused.body",
+  "where": "Decide tab, when Decide is switched off",
+  "currentText": "Your records are safe. Answers come back soon.",
+  "currentSample": "Your records are safe. Answers come back soon.",
+  "finalSample": "Your data is safe. Results will be back soon.",
+  "source": "owner",
+  "changed": true
+ },
+ {
+  "key": "decide.screens.common.paused.title",
+  "where": "Decide tab, when Decide is switched off",
+  "currentText": "Decide is paused",
+  "currentSample": "Decide is paused",
+  "finalSample": "Decide is paused",
+  "source": "ok",
+  "changed": false
+ }
+]
