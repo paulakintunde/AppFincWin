@@ -900,18 +900,113 @@ export function plainHouseholdShare(pool: Cents, weights: readonly number[], me:
   return sign * ((parts[me] as { floor: bigint }).floor + extra);
 }
 
-export function foldHousehold(f: RightAnswerFixture): RightAnswerFixture {
-  const h = f.household;
-  const p = h?.partnerFigure;
-  if (h === undefined || h.scope !== 'household' || p === undefined || !p.bothOn || p.roundedLeft === null) return f;
-  const own = leftThisMonth(f);
-  const slice = plainHouseholdShare(own + big(p.roundedLeft), h.weights ?? [1, 1], h.myIndex ?? 0);
-  const delta = Number(slice - own);
-  const first = f.accounts.findIndex((a) => a.kind === 'checking' || a.kind === 'current');
-  return {
+/** My part of `total` by largest remainder over `w` (all weights non-negative; none positive = equal), sign kept; the leftover units go to the larger remainders, then the lower index. */
+function plainApportion(total: bigint, w: readonly number[], me: number): bigint {
+  return plainHouseholdShare(total, w.some((x) => x > 0) ? w : w.map(() => 1), me);
+}
+
+type FixtureJoint = NonNullable<NonNullable<RightAnswerFixture['household']>['jointAccounts']>[number];
+
+/** One joint account's slice for me (cents), restated from the owner-approved rules of 2026-11-20 (08.1-22). Not read from the engine. */
+function plainJointSlice(j: FixtureJoint, shares: readonly number[] | null, bill: readonly number[] | null, me: number, n: number): { month: bigint; cash: bigint } {
+  const purpose = j.purpose ?? 'everyday';
+  const equal = Array.from({ length: n }, () => 1);
+  const paid = j.paidInBy !== undefined && j.paidInBy.length === n ? j.paidInBy.map((x) => Math.max(0, x)) : equal;
+  const carried = j.carried ?? j.balance - (j.monthIn - j.monthOut);
+  // the split of `cash` money (of which `carr` came from before this month) and `month` money
+  const split = (cash: number, month: number, carr: number): { month: bigint; cash: bigint } => {
+    if (shares !== null) return { month: plainApportion(big(month), shares, me), cash: plainApportion(big(cash), shares, me) };
+    const c = Math.min(carr, cash);
+    return { month: plainApportion(big(month), paid, me), cash: plainApportion(big(c), equal, me) + plainApportion(big(cash - c), paid, me) };
+  };
+  if (purpose === 'savings') {
+    if (j.isSafetyNet === true || j.spendable !== true) return { month: 0n, cash: 0n };
+    return { month: 0n, cash: split(j.balance, 0, j.balance).cash };
+  }
+  if (purpose === 'bills') {
+    const above = Math.max(0, j.balance - j.billsDueBeforeNextIn);
+    if (above === 0 && j.billsDueBeforeNextIn > j.balance) {
+      const gap = -plainApportion(big(j.billsDueBeforeNextIn - j.balance), bill ?? equal, me);
+      return { month: gap, cash: gap };
+    }
+    const c = split(above, above, carried).cash;
+    return { month: c, cash: c };
+  }
+  return split(j.balance, j.monthIn - j.monthOut, carried);
+}
+
+/**
+ * 08.1-08 / 08.1-22 (CMP-F19, UX-21, QA-03): the household money a check counts, restated from the owner-approved rules (2026-11-20).
+ * Joint accounts are counted once and I count my slice (everyday: all of it; bills: only what is above the bills due, a short pot's
+ * gap comes off each member by the bill split; savings: nothing unless the group marked it spendable and it is not the safety net);
+ * the slice replaces what my own records hold for the account and the month difference is laid into the month like pay already in.
+ * The personal pool (my money left, with joint money taken out, plus each partner with both opt-ins on) splits by the spending rule:
+ * What each person brings = my own, a set split or the bill split = my share (largest remainder). Not read from the engine.
+ */
+export function foldHousehold(f0: RightAnswerFixture): RightAnswerFixture {
+  const h = f0.household;
+  if (h === undefined) return f0;
+  // a price shared evenly among the members (HH-26): I count my part of it (a once price with no tax, as the cases state it)
+  const nMembers = h.weights?.length ?? (h.partnerFigures ?? (h.partnerFigure === undefined ? [] : [h.partnerFigure])).length + 1;
+  const f: RightAnswerFixture =
+    f0.check.share === 'household_even' && f0.check.price !== null
+      ? { ...f0, check: { ...f0.check, price: Number(plainApportion(big(f0.check.price), Array.from({ length: nMembers }, () => 1), h.myIndex ?? 0)), share: undefined } }
+      : f0;
+  const partners = h.partnerFigures ?? (h.partnerFigure === undefined ? [] : [h.partnerFigure]);
+  const n = h.weights?.length ?? partners.length + 1;
+  const me = h.myIndex ?? 0;
+  const joints = h.jointAccounts ?? [];
+  const bill = h.weights ?? null;
+  const myBill = bill === null ? 1 / n : (bill[me] as number) / bill.reduce((x, y) => x + y, 0);
+  const hasPersonalCash = f.accounts.some((a) => !joints.some((j) => j.id === a.id) && h.jointAccountIds?.includes(a.id) !== true);
+  const setup = h.setup ?? (joints.length === 0 ? 'separate' : hasPersonalCash ? 'mixed' : joints.some((j) => j.purpose !== 'savings') ? 'joint' : 'separate');
+  const asked = h.spendRule ?? (setup === 'joint' ? 'bill' : 'bring');
+  const customOk = h.spendShares !== undefined && h.spendShares.length === n && h.spendShares.every((x) => Number.isInteger(x) && x >= 0) && h.spendShares.reduce((x, y) => x + y, 0) === 100;
+  const billOk = bill !== null && bill.some((x) => x > 0);
+  const weights: readonly number[] | null = asked === 'custom' ? (customOk ? (h.spendShares as number[]) : null) : asked === 'bill' ? (billOk ? bill : null) : null;
+  // joint accounts: the slice replaces my own records' view of the account
+  let monthDelta = 0n;
+  let monthDeltaWithout = 0n;
+  const slices = new Map<string, bigint>();
+  for (const j of joints) {
+    const ownMonth = big(j.ownMonth ?? (j.paidInBy?.[me] ?? 0) - Math.round(j.monthOut * myBill));
+    const s = plainJointSlice(j, weights, bill, me, n);
+    monthDelta += s.month - ownMonth;
+    monthDeltaWithout -= ownMonth;
+    slices.set(j.id, s.cash);
+  }
+  const without: RightAnswerFixture = {
     ...f,
-    thisMonth: { ...f.thisMonth, received: f.thisMonth.received + delta },
-    accounts: f.accounts.map((a, i) => (i === first ? { ...a, balance: a.balance + delta } : a)),
+    thisMonth: { ...f.thisMonth, received: f.thisMonth.received + Number(monthDeltaWithout) },
+    accounts: f.accounts.map((a) => (slices.has(a.id) ? { ...a, balance: 0, use: 'everyday' as const } : a)),
+  };
+  const partnerLeft = (i: number): bigint | null => {
+    const p = partners[i < me ? i : i - 1];
+    return i === me || h.scope !== 'household' || p === undefined || !p.bothOn || p.roundedLeft === null ? null : big(p.roundedLeft);
+  };
+  const others = Array.from({ length: n }, (_, i) => partnerLeft(i));
+  let poolDelta = 0n;
+  if (weights !== null && others.some((o) => o !== null)) {
+    const own = leftThisMonth(without);
+    const inPool = others.map((o, i) => i === me || o !== null);
+    const w = weights.filter((_, i) => inPool[i]);
+    if (w.some((x) => x > 0)) {
+      const pool = others.reduce<bigint>((sum, o, i) => (i === me || o === null ? sum : sum + o), own);
+      poolDelta = plainApportion(pool, w, inPool.slice(0, me).filter(Boolean).length) - own;
+    }
+  }
+  const delta = Number(monthDelta + poolDelta);
+  const joined: RightAnswerFixture = {
+    ...f,
+    thisMonth: { ...f.thisMonth, received: f.thisMonth.received + Number(monthDelta) },
+    accounts: f.accounts.map((a) => (slices.has(a.id) ? { ...a, balance: Number(slices.get(a.id)), use: 'everyday' as const } : a)),
+  };
+  if (poolDelta === 0n) return delta === 0 && joints.length === 0 ? f : joined;
+  const first = joined.accounts.findIndex((a) => a.kind === 'checking' || a.kind === 'current');
+  return {
+    ...joined,
+    thisMonth: { ...joined.thisMonth, received: joined.thisMonth.received + Number(poolDelta) },
+    accounts: joined.accounts.map((a, i) => (i === first ? { ...a, balance: a.balance + Number(poolDelta) } : a)),
   };
 }
 

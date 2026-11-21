@@ -6,7 +6,10 @@ import type { SettlementRow } from '@/db/settlements';
 import type { SplitDefaultRow } from '@/db/transactionSplits';
 import type { ShareScope } from '@/engine/decide/v3';
 import type { PairBalance } from '@/engine/household/balances';
-import type { HouseholdPartnerSource, HouseholdScopeSource } from '@/features/decide/snapshot/v3/householdScope';
+import type { HouseholdPartnerSource, HouseholdScopeSource, JointAccountSource } from '@/features/decide/snapshot/v3/householdScope';
+import type { HouseholdSpendRuleRow } from '@/db/householdSpendRules';
+import type { JointBalanceLeg, JointMonthRow, JointPurposeRow } from '@/db/jointAccounts';
+import type { SpendRuleSetting } from '@/engine/household';
 
 type MemberWeight = Pick<HouseholdMemberRow, 'user_id' | 'weight'>;
 
@@ -71,11 +74,56 @@ export function settleUpOf(
   return lapsedAsPayer || owed > 0 ? { lapsedAsPayer, owed } : null;
 }
 
+/** What "Same as the bill split" follows: the household's default bill rule over the members. "Mine only" (null) counts as What each person brings. */
+export function billWeightsOf(members: readonly MemberWeight[], defaults: readonly Pick<SplitDefaultRow, 'category_ref' | 'rule'>[] | undefined): Record<string, number> | null {
+  const rule = defaults?.find((d) => d.category_ref === null)?.rule ?? 'even';
+  if (rule === 'mine') return null;
+  const weighted = rule === 'weight' && members.some((m) => m.weight > 0);
+  return Object.fromEntries(members.map((m) => [m.user_id, weighted ? m.weight : 1]));
+}
+
+/** The saved rule row as the engine reads it; null when none is saved. */
+export function settingOf(row: Pick<HouseholdSpendRuleRow, 'rule' | 'setup' | 'shares'> | null | undefined): SpendRuleSetting | null {
+  return row === null || row === undefined ? null : { rule: row.rule, setup: row.setup, shares: row.shares };
+}
+
+export interface JointFactsParts {
+  readonly purposes: readonly JointPurposeRow[];
+  readonly balances: readonly JointBalanceLeg[];
+  readonly month: readonly JointMonthRow[];
+}
+
+/** The joint accounts' true figures in each account's own currency: the opening balance plus its paid lines, and this month's totals. Totals only. */
+export function jointSourcesOf(read: JointFactsParts | undefined, safetyNetAccountIds: ReadonlySet<string> = new Set()): JointAccountSource[] {
+  if (read === undefined) return [];
+  return read.purposes.map((a) => {
+    const lines = read.balances.filter((b) => b.account_id === a.id && b.currency === a.currency).reduce((sum, b) => sum + b.balance, 0);
+    const m = read.month.find((x) => x.account_id === a.id && x.currency === a.currency);
+    return {
+      id: a.id,
+      currency: a.currency,
+      purpose: a.joint_purpose,
+      spendable: a.joint_savings_spendable,
+      ...(safetyNetAccountIds.has(a.id) ? { safetyNet: true } : {}),
+      balance: a.opening_balance + lines,
+      monthIn: m?.money_in ?? 0,
+      monthOut: m?.money_out ?? 0,
+      billsDueBeforeNextIn: 0,
+      paidInBy: m?.paid_in_by ?? {},
+    };
+  });
+}
+
 export interface ScopeSourceParts {
   readonly viewerId: string;
   readonly members: readonly MemberWeight[];
   readonly totals: readonly (PartnerMoneyTotal | undefined)[];
   readonly settleUp: HouseholdScopeSource['settleUp'];
+  /** 08.1-22: Household (the default here) or Just me with a joint account. */
+  readonly scope?: 'me' | 'household';
+  readonly spendRule?: Pick<HouseholdSpendRuleRow, 'rule' | 'setup' | 'shares'> | null;
+  readonly defaults?: readonly Pick<SplitDefaultRow, 'category_ref' | 'rule'>[];
+  readonly joint?: readonly JointAccountSource[];
 }
 
 /** The Household source for the builder; null when the viewer is not among the members. */
@@ -83,5 +131,15 @@ export function scopeSourceOf(p: ScopeSourceParts): HouseholdScopeSource | null 
   const me = p.members.find((m) => m.user_id === p.viewerId);
   if (me === undefined) return null;
   const others = p.members.filter((m) => m.user_id !== p.viewerId);
-  return { scope: 'household', viewerId: p.viewerId, myWeight: me.weight, partners: partnersOf(others, p.totals), settleUp: p.settleUp };
+  return {
+    scope: p.scope ?? 'household',
+    viewerId: p.viewerId,
+    myWeight: me.weight,
+    partners: partnersOf(others, p.totals),
+    settleUp: p.settleUp,
+    memberKeys: p.members.map((m) => m.user_id),
+    setting: settingOf(p.spendRule),
+    billWeights: billWeightsOf(p.members, p.defaults),
+    joint: p.joint ?? [],
+  };
 }

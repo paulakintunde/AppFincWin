@@ -109,4 +109,28 @@ describe('applyRealtimeEvent', () => {
     expect(applyRealtimeEvent(qc, ev, ctx)).toBe('invalidate');
     expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.settlements(H) });
   });
+
+  it('08.1-22: a spend_rule_changed notice refreshes the spending rule', () => {
+    const qc = new QueryClient();
+    const spy = jest.spyOn(qc, 'invalidateQueries');
+    const ev: RealtimePayload = { eventType: 'INSERT', table: 'household_events', new: { id: 'e5', household_id: H, kind: 'spend_rule_changed' }, old: {} };
+    expect(applyRealtimeEvent(qc, ev, ctx)).toBe('invalidate');
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.householdSpendRule(H) });
+  });
+
+  it('08.1-22: a joint_purpose_changed notice refreshes the accounts and the joint facts', () => {
+    const qc = new QueryClient();
+    const spy = jest.spyOn(qc, 'invalidateQueries');
+    const ev: RealtimePayload = { eventType: 'INSERT', table: 'household_events', new: { id: 'e6', household_id: H, kind: 'joint_purpose_changed' }, old: {} };
+    expect(applyRealtimeEvent(qc, ev, ctx)).toBe('invalidate');
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.accounts(H) });
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.jointAccountFactsRoot(H) });
+  });
+
+  it('08.1-22: a line change refreshes the joint facts (a joint balance may have moved)', () => {
+    const qc = qcWith([{ id: 't1', version: 2, note: 'old' }]);
+    const spy = jest.spyOn(qc, 'invalidateQueries');
+    expect(applyRealtimeEvent(qc, tx(), ctx)).toBe('apply');
+    expect(spy).toHaveBeenCalledWith({ queryKey: queryKeys.jointAccountFactsRoot(H) });
+  });
 });

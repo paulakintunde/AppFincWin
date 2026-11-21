@@ -655,12 +655,14 @@
             "name": "Noa",
             "bothOn": true,
             "roundedLeft": 400000
-          }
+          },
+          "spendRule": "bring",
+          "setup": "separate"
         }
       },
       "expected": {
-        "variant": "no_net",
-        "readyBy": null,
+        "variant": "not_covered",
+        "readyBy": "2027-01",
         "mustHaveReasons": [],
         "mustHaveFacts": [],
         "mustNotHaveFacts": [],
@@ -668,21 +670,23 @@
         "mustNotHaveCaveats": [
           "household_not_shared"
         ],
-        "code": "fits_month",
+        "code": "not_yet",
         "afterBuy": {
-          "month": 50000,
+          "month": null,
           "usualMonth": null
         }
       },
-      "why": "The two together have $1,000 + $4,000 = $5,000. Ali's agreed 60% of that is $3,000, so $3,000 - $2,500 = $500 left. No \"not shared\" line, because Noa has shared.",
+      "why": "What each person brings (the default for Separate accounts): Ali spends the $1,000 he has left, not a share of the $5,000 together. $1,000 is less than $2,500. His month gains $1,000 on 1 December ($2,000 then) and $1,000 on 1 January ($3,000), so the first date it fits is 1 January 2027. No \"not shared\" line, because Noa has shared.",
       "fixIds": [
         "CMP-F19",
         "FIN-19"
       ],
       "status": "approved",
       "approvedAt": "2026-11-20",
-      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
-      "expertNote": null
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null,
+      "plannerNote": "Was: Fits, $500 left (approved 2026-11-20 under the bill split). Under What each person brings Ali spends only the $1,000 he brings.",
+      "changeApproved": "2026-11-20"
     },
     {
       "id": "HH-09",
@@ -777,7 +781,7 @@
       ],
       "status": "approved",
       "approvedAt": "2026-11-20",
-      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     },
     {
@@ -847,7 +851,9 @@
             "name": "Ali",
             "bothOn": true,
             "roundedLeft": 100000
-          }
+          },
+          "spendRule": "bring",
+          "setup": "separate"
         }
       },
       "expected": {
@@ -862,19 +868,21 @@
         ],
         "code": "fits_month",
         "afterBuy": {
-          "month": 50000,
+          "month": 250000,
           "usualMonth": null
         }
       },
-      "why": "The pool is the same $5,000. Noa's agreed 40% is $2,000, so $2,000 - $1,500 = $500 left. Ali (HH-08) can spend up to $3,000 and Noa up to $2,000: the two slices add up to exactly $5,000, so both saying Fits ($2,500 + $1,500 = $4,000) can never spend more than the shared money.",
+      "why": "What each person brings: Noa spends the $4,000 she has left. $4,000 - $1,500 = $2,500 left. Ali (HH-08) spends only his own $1,000, so two Fits answers can never spend the same money twice.",
       "fixIds": [
         "CMP-F19",
         "FIN-19"
       ],
       "status": "approved",
       "approvedAt": "2026-11-20",
-      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
-      "expertNote": null
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null,
+      "plannerNote": "Was: Fits, $500 left (approved 2026-11-20 under the bill split). Under What each person brings Noa spends the $4,000 she brings.",
+      "changeApproved": "2026-11-20"
     },
     {
       "id": "HH-11",
@@ -941,7 +949,25 @@
           "myIndex": 0,
           "jointAccountIds": [
             "a1"
-          ]
+          ],
+          "setup": "joint",
+          "jointAccounts": [
+            {
+              "id": "a1",
+              "purpose": "everyday",
+              "balance": 140000,
+              "monthIn": 300000,
+              "monthOut": 200000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                300000,
+                0
+              ],
+              "ownMonth": 100000,
+              "carried": 0
+            }
+          ],
+          "spendRule": "bring"
         }
       },
       "expected": {
@@ -967,8 +993,9 @@
       ],
       "status": "approved",
       "approvedAt": "2026-11-20",
-      "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
-      "expertNote": null
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null,
+      "plannerNote": "Unchanged (Fits, $500 left): joint money under What each person brings splits by what each paid in this month, and Ali paid in all of it. Approved 2026-11-20."
     },
     {
       "id": "HH-12",
@@ -1156,6 +1183,2303 @@
       "status": "approved",
       "approvedAt": "2026-11-20",
       "ownerReason": "Approved by the owner 2026-11-20 (pool and split; my share of shared lines in both scopes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-14",
+      "topic": "household",
+      "persona": "Ali and Noa, a set 50/50 spending split (invented)",
+      "situation": "Same couple as HH-08. The group chose \"A set spending split\", 50/50. Ali picks Household, $2,500.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 250000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ali",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "partnerFigure": {
+            "name": "Noa",
+            "bothOn": true,
+            "roundedLeft": 400000
+          },
+          "spendRule": "custom",
+          "spendShares": [
+            50,
+            50
+          ],
+          "setup": "separate"
+        }
+      },
+      "expected": {
+        "variant": "tight",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": null
+        }
+      },
+      "why": "Together $5,000. Ali 50% = $2,500. $2,500 - $2,500 = $0 left, under the $200 floor, so tight.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-15",
+      "topic": "household",
+      "persona": "Ali and Noa, a set 50/50 spending split (invented)",
+      "situation": "Noa picks Household, $1,500, same rule.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 600000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 440000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Noa",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 1,
+          "partnerFigure": {
+            "name": "Ali",
+            "bothOn": true,
+            "roundedLeft": 100000
+          },
+          "spendRule": "custom",
+          "spendShares": [
+            50,
+            50
+          ],
+          "setup": "separate"
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 100000,
+          "usualMonth": null
+        }
+      },
+      "why": "Noa 50% of $5,000 = $2,500. $2,500 - $1,500 = $1,000 left. The two slices add to $5,000.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-16",
+      "topic": "household",
+      "persona": "Ali and Noa, same as the bill split (invented)",
+      "situation": "The group chose \"Same as the bill split\", 60/40. Ali, $2,500.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 250000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ali",
+          "weights": [
+            60,
+            40
+          ],
+          "myIndex": 0,
+          "partnerFigure": {
+            "name": "Noa",
+            "bothOn": true,
+            "roundedLeft": 400000
+          },
+          "spendRule": "bill",
+          "setup": "separate"
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "The old answer: Ali 60% of $5,000 = $3,000, less $2,500 = $500 left.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-17",
+      "topic": "household",
+      "persona": "Ali and Noa, same as the bill split (invented)",
+      "situation": "Noa, $1,500, same rule.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 600000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 440000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 150000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Noa",
+          "weights": [
+            60,
+            40
+          ],
+          "myIndex": 1,
+          "partnerFigure": {
+            "name": "Ali",
+            "bothOn": true,
+            "roundedLeft": 100000
+          },
+          "spendRule": "bill",
+          "setup": "separate"
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "The old answer: Noa 40% of $5,000 = $2,000, less $1,500 = $500 left. Slices $3,000 + $2,000 = $5,000.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-18",
+      "topic": "household",
+      "persona": "Ben, Cat and Dev, roommates, what each brings (invented)",
+      "situation": "Bills split 50/25/25. Left this month: Ben $600, Cat $1,200, Dev $1,200 (pool $3,000). Ben picks Household, a $900 desk. Rule: What each person brings.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 90000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 90000,
+          "billsDue": 0,
+          "everydaySoFar": 25000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 85000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ben",
+          "weights": [
+            50,
+            25,
+            25
+          ],
+          "myIndex": 0,
+          "setup": "separate",
+          "partnerFigures": [
+            {
+              "name": "Cat",
+              "bothOn": true,
+              "roundedLeft": 120000
+            },
+            {
+              "name": "Dev",
+              "bothOn": true,
+              "roundedLeft": 120000
+            }
+          ],
+          "spendRule": "bring"
+        }
+      },
+      "expected": {
+        "variant": "payday",
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "Ben spends the $600 he brings. $600 is less than $900. On 1 December he has $1,200, enough for $900 and the $140 floor.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-19",
+      "topic": "household",
+      "persona": "Ben, Cat and Dev, a set 40/30/30 split (invented)",
+      "situation": "Same house, rule: a set split 40/30/30.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 90000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 90000,
+          "billsDue": 0,
+          "everydaySoFar": 25000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 85000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ben",
+          "weights": [
+            50,
+            25,
+            25
+          ],
+          "myIndex": 0,
+          "setup": "separate",
+          "partnerFigures": [
+            {
+              "name": "Cat",
+              "bothOn": true,
+              "roundedLeft": 120000
+            },
+            {
+              "name": "Dev",
+              "bothOn": true,
+              "roundedLeft": 120000
+            }
+          ],
+          "spendRule": "custom",
+          "spendShares": [
+            40,
+            30,
+            30
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 30000,
+          "usualMonth": null
+        }
+      },
+      "why": "Ben 40% of $3,000 = $1,200. $1,200 - $900 = $300 left, above the $140 floor.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-20",
+      "topic": "household",
+      "persona": "Ben, Cat and Dev, same as the bill split (invented)",
+      "situation": "Same house, rule: same as the bill split, 50/25/25.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 90000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 90000,
+          "billsDue": 0,
+          "everydaySoFar": 25000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 85000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ben",
+          "weights": [
+            50,
+            25,
+            25
+          ],
+          "myIndex": 0,
+          "setup": "separate",
+          "partnerFigures": [
+            {
+              "name": "Cat",
+              "bothOn": true,
+              "roundedLeft": 120000
+            },
+            {
+              "name": "Dev",
+              "bothOn": true,
+              "roundedLeft": 120000
+            }
+          ],
+          "spendRule": "bill"
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 60000,
+          "usualMonth": null
+        }
+      },
+      "why": "Ben 50% of $3,000 = $1,500. $1,500 - $900 = $600 left. Slices $1,500 + $750 + $750 = $3,000.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-21",
+      "topic": "household",
+      "persona": "Ben, Cat and Dev, Dev has not shared (invented)",
+      "situation": "Rule: a set 40/30/30 split, but Dev has not shared. Ben, $900.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 90000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 90000,
+          "billsDue": 0,
+          "everydaySoFar": 25000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 85000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 90000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ben",
+          "weights": [
+            50,
+            25,
+            25
+          ],
+          "myIndex": 0,
+          "setup": "separate",
+          "partnerFigures": [
+            {
+              "name": "Cat",
+              "bothOn": true,
+              "roundedLeft": 120000
+            },
+            {
+              "name": "Dev",
+              "bothOn": false,
+              "roundedLeft": null
+            }
+          ],
+          "spendRule": "custom",
+          "spendShares": [
+            40,
+            30,
+            30
+          ]
+        }
+      },
+      "expected": {
+        "variant": "tight",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "household_not_shared"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 12857,
+          "usualMonth": null
+        }
+      },
+      "why": "Pool = $600 + $1,200 = $1,800, shares re-scaled 40:30. In cents 102,857.14 for Ben and 77,142.86 for Cat; the spare cent goes to the larger remainder (Cat). Ben $1,028.57 - $900 = $128.57 left, under the $140 floor: tight. One line names Dev as not shared.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-22",
+      "topic": "household",
+      "persona": "Ola (parent) and Tayo (17), what each brings (invented)",
+      "situation": "Bills 100/0 (Ola pays them). Tayo earns $400, $300 left; Ola $2,700 left. Tayo picks Household, $250 trainers. Rule: What each person brings.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 10000,
+          "essentialEveryday": 6000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 5000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 35000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 25000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Tayo",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "setup": "separate",
+          "partnerFigure": {
+            "name": "Ola",
+            "bothOn": true,
+            "roundedLeft": 270000
+          },
+          "spendRule": "bring"
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 5000,
+          "usualMonth": null
+        }
+      },
+      "why": "Tayo spends the $300 he brings: $300 - $250 = $50 left, above the $10 floor.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-23",
+      "topic": "household",
+      "persona": "Ola and Tayo, a set 80/20 split (invented)",
+      "situation": "Same family, rule: a set split 80/20 (Ola 80, Tayo 20).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 10000,
+          "essentialEveryday": 6000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 5000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 35000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 25000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Tayo",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "setup": "separate",
+          "partnerFigure": {
+            "name": "Ola",
+            "bothOn": true,
+            "roundedLeft": 270000
+          },
+          "spendRule": "custom",
+          "spendShares": [
+            80,
+            20
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 35000,
+          "usualMonth": null
+        }
+      },
+      "why": "Pool $3,000. Tayo 20% = $600. $600 - $250 = $350 left.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-24",
+      "topic": "household",
+      "persona": "Ola and Tayo, same as the bill split (invented)",
+      "situation": "Same family, rule: same as the bill split (100/0).",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 40000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 0,
+          "everyday": 10000,
+          "essentialEveryday": 6000
+        },
+        "thisMonth": {
+          "received": 40000,
+          "billsPaid": 0,
+          "billsDue": 0,
+          "everydaySoFar": 5000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 35000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 25000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Tayo",
+          "weights": [
+            100,
+            0
+          ],
+          "myIndex": 1,
+          "setup": "separate",
+          "partnerFigure": {
+            "name": "Ola",
+            "bothOn": true,
+            "roundedLeft": 270000
+          },
+          "spendRule": "bill"
+        }
+      },
+      "expected": {
+        "variant": "payday",
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "Tayo has 0% of the bill split, so his slice is $0. On 1 December he has $300, enough for $250 and the $10 floor.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-25",
+      "topic": "household",
+      "persona": "JA-01: Ali and Noa, one joint account, Just me (invented)",
+      "situation": "No personal accounts. One joint everyday account holds $5,020 carried from before (the $20 covers the rest of this month's everyday spending); this month's pay-ins equal this month's bills and everyday, so month money is $0. Ali picks Just me, $5,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 62000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 60000,
+          "everyday": 2000,
+          "essentialEveryday": 1000
+        },
+        "thisMonth": {
+          "received": 62000,
+          "billsPaid": 60000,
+          "billsDue": 0,
+          "everydaySoFar": 1000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 441000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 500000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Ali",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 502000,
+              "monthIn": 124000,
+              "monthOut": 124000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                62000,
+                62000
+              ],
+              "carried": 502000
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "not_covered",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "shared_money"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "The $5,000 is counted once and split 50/50 (all of it was carried from before): Ali counts $2,500. $2,500 is less than $5,000 and the month adds $0, so Not yet. Today (finding a) every member counts the whole $5,000, so both could be told Fits for the same $5,000. (Fixture figures: $5,020 in the account so that each member's $10 of everyday spending still to come is covered; the price is $5,000.)",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null,
+      "plannerNote": "Regression for the double count. Noa (mirror) gets the same answer."
+    },
+    {
+      "id": "HH-26",
+      "topic": "household",
+      "persona": "JA-01b: Ali and Noa, price shared 50/50 (invented)",
+      "situation": "Same account. Ali picks Household and shares the $5,000 price 50/50.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 62000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 60000,
+          "everyday": 2000,
+          "essentialEveryday": 1000
+        },
+        "thisMonth": {
+          "received": 62000,
+          "billsPaid": 60000,
+          "billsDue": 0,
+          "everydaySoFar": 1000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 441000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 500000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          },
+          "share": "household_even"
+        },
+        "household": {
+          "scope": "household",
+          "viewer": "Ali",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 502000,
+              "monthIn": 124000,
+              "monthOut": 124000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                62000,
+                62000
+              ],
+              "carried": 502000
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "tight",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "shared_money"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "fits_unspent",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": null
+        }
+      },
+      "why": "Ali's part of the price is $2,500, his slice is $2,500: $0 left, tight. Noa the same. The two halves add to $5,000, the joint money, so nothing is spent twice. (Fixture figures: $5,020 in the account so that each member's $10 of everyday spending still to come is covered; the price is $5,000.)",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-27",
+      "topic": "household",
+      "persona": "JA-02: Ali and Noa, one joint account, same as the bill split (invented)",
+      "situation": "Ali pays $3,000 in, Noa $2,000. Shared bills $2,000 and everyday $1,000 all come out of the joint account. Joint balance $3,500 on 15 November, $2,000 of month money. Setup One joint account, rule same as the bill split (even). Ali, Just me, $800.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 25000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 150000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 80000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Ali",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bill",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 350000,
+              "monthIn": 500000,
+              "monthOut": 300000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                300000,
+                200000
+              ],
+              "carried": 100000
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "shared_money"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": null
+        }
+      },
+      "why": "Month money $5,000 in - $3,000 planned = $2,000, split 50/50: Ali $1,000. $1,000 - $800 = $200 left, above the $150 floor. Cash path slice $1,750.",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null,
+      "plannerNote": "Today (findings a, c) Ali sees opening + his own $3,000 pay-in less all shared spending, not the true $3,500."
+    },
+    {
+      "id": "HH-28",
+      "topic": "household",
+      "persona": "JA-02b: Noa, what each person brings (invented)",
+      "situation": "Same account, rule What each person brings. Noa, Just me, $800.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 50000,
+          "essentialEveryday": 30000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 25000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint everyday",
+            "balance": 50000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 80000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Noa",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "joint",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "everyday",
+              "balance": 350000,
+              "monthIn": 500000,
+              "monthOut": 300000,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                300000,
+                200000
+              ],
+              "carried": 100000
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "shared_money"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 0,
+          "usualMonth": null
+        }
+      },
+      "why": "Month money $2,000 split by what each paid in this month: Ali 3/5 = $1,200, Noa 2/5 = $800. $800 - $800 = $0, tight. Ali would have $400 left.",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-29",
+      "topic": "household",
+      "persona": "JA-03: Ali, personal account and a joint bills account (invented)",
+      "situation": "Ali earns $3,000, Noa $2,000, each into a personal account; each moves $1,000 into the joint bills account. Shared bills $1,800 a month: $1,200 paid, $600 due on 20 November; joint balance $1,200. Setup Mixed. Ali, Just me, $1,300.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Ali everyday",
+            "balance": 160000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint bills",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "dedicated"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Ali",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "mixed",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "bills",
+              "balance": 120000,
+              "monthIn": 200000,
+              "monthOut": 180000,
+              "billsDueBeforeNextIn": 60000,
+              "paidInBy": [
+                100000,
+                100000
+              ],
+              "carried": 40000,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "shared_money"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 20000,
+          "usualMonth": null
+        }
+      },
+      "why": "Only money above the $600 due before the next pay-in counts: $1,200 - $600 = $600, split equally ($1,000 paid in each): $300 each. Ali: $1,200 own + $300 = $1,500. $1,500 - $1,300 = $200 left. Slices $1,500 + $500 = $2,000 = personal $1,400 + pot $600.",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-30",
+      "topic": "household",
+      "persona": "JA-03b: Noa, personal account and a joint bills account (invented)",
+      "situation": "Same couple. Noa earns $2,000; $200 left of her own money. Noa, Just me, $1,300.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 200000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 200000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Noa everyday",
+            "balance": 60000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint bills",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "dedicated"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Noa",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 1,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "mixed",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "bills",
+              "balance": 120000,
+              "monthIn": 200000,
+              "monthOut": 180000,
+              "billsDueBeforeNextIn": 60000,
+              "paidInBy": [
+                100000,
+                100000
+              ],
+              "carried": 40000,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "not_covered",
+        "readyBy": "2027-03",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [
+          "shared_money"
+        ],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "Noa: $200 own + $300 pot slice = $500, less than $1,300. She adds about $200 a month: $700 on 1 Dec, $900, $1,100, $1,300, then $1,500 on 1 April 2027 clears $1,300 plus the floor (hand estimate; the engine gives the exact date).",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-31",
+      "topic": "household",
+      "persona": "JA-04: the joint bills account is short (invented)",
+      "situation": "As HH-29, but the joint account holds $500 and $600 is due. Ali, Just me, $1,300.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 100000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 100000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Ali everyday",
+            "balance": 160000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "j1",
+            "kind": "checking",
+            "name": "Joint bills",
+            "balance": 120000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "dedicated"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 130000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Ali",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "mixed",
+          "spendRule": "bring",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "bills",
+              "balance": 50000,
+              "monthIn": 200000,
+              "monthOut": 180000,
+              "billsDueBeforeNextIn": 60000,
+              "paidInBy": [
+                100000,
+                100000
+              ],
+              "carried": -20000,
+              "ownMonth": 0
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "payday",
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "The pot has nothing above its bills and is $100 short. The gap is split by the bill split ($50 each) out of personal money: Ali $1,200 - $50 = $1,150, less than $1,300. On 1 December he adds about $1,200, so he is ready then.",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-32",
+      "topic": "household",
+      "persona": "JA-05: Ali and Noa, separate accounts, no joint account (invented)",
+      "situation": "Setup Separate accounts. Ali has $1,000 left, picks Just me, $500. Nothing changes for a couple with no joint account.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Everyday",
+            "balance": 140000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 50000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Ali",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "setup": "separate"
+        }
+      },
+      "expected": {
+        "variant": "no_net",
+        "readyBy": null,
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "shared_money"
+        ],
+        "code": "fits_month",
+        "afterBuy": {
+          "month": 50000,
+          "usualMonth": null
+        }
+      },
+      "why": "$1,000 - $500 = $500 left. No joint account, so no joint line and the same answer as today.",
+      "fixIds": [
+        "CMP-F19",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null
+    },
+    {
+      "id": "HH-33",
+      "topic": "household",
+      "persona": "JA-06: Sam, two current accounts and a joint savings account (invented)",
+      "situation": "Sam has two current accounts ($700 and $500 left, $1,200 together), personal savings of $3,000 marked untouched, and joint savings of $10,000 with Lee. Sam pays $3,000, bills $1,200, everyday $800. Just me, $2,000.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Current A",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "checking",
+            "name": "Current B",
+            "balance": 60000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 300000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          },
+          {
+            "id": "j1",
+            "kind": "savings",
+            "name": "Joint savings",
+            "balance": 1000000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Sam",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "mixed",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "savings",
+              "balance": 1000000,
+              "monthIn": 0,
+              "monthOut": 0,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                0,
+                0
+              ],
+              "carried": 1000000
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "payday",
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "shared_money"
+        ],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "Both current accounts count ($1,200). Personal savings marked untouched do not count. The joint savings is never month money and stays out of the 90-day path. $1,200 + $1,000 on 1 December = $2,200, which covers $2,000 and the $200 floor.",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
+      "expertNote": null,
+      "plannerNote": "Today (finding a) the joint savings may reach the cash path: executor to record."
+    },
+    {
+      "id": "HH-34",
+      "topic": "household",
+      "persona": "JA-06b: the joint savings is the shared safety net (invented)",
+      "situation": "As HH-33, but the joint savings is the household safety net both of them share.",
+      "fixture": {
+        "asOf": "2026-11-15",
+        "currency": "USD",
+        "region": null,
+        "pay": {
+          "amount": 300000,
+          "cadence": "monthly",
+          "nextDate": "2026-12-01",
+          "setupAmount": null,
+          "lastThree": null
+        },
+        "usualMonth": {
+          "bills": 120000,
+          "everyday": 80000,
+          "essentialEveryday": 50000
+        },
+        "thisMonth": {
+          "received": 300000,
+          "billsPaid": 120000,
+          "billsDue": 0,
+          "everydaySoFar": 40000
+        },
+        "historyMonths": 6,
+        "quickEstimates": null,
+        "recordsAsOf": null,
+        "accounts": [
+          {
+            "id": "a1",
+            "kind": "checking",
+            "name": "Current A",
+            "balance": 100000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "a2",
+            "kind": "checking",
+            "name": "Current B",
+            "balance": 60000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "everyday"
+          },
+          {
+            "id": "s1",
+            "kind": "savings",
+            "name": "Savings",
+            "balance": 300000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          },
+          {
+            "id": "j1",
+            "kind": "savings",
+            "name": "Joint savings",
+            "balance": 1000000,
+            "overdraftLimit": null,
+            "overdraftRate": null,
+            "use": "untouched"
+          }
+        ],
+        "safetyNet": null,
+        "bills": [],
+        "debts": [],
+        "userLine": null,
+        "factLines": true,
+        "check": {
+          "price": 200000,
+          "taxPercent": null,
+          "taxIncluded": null,
+          "oneOffFees": 0,
+          "pay": {
+            "mode": "once"
+          }
+        },
+        "household": {
+          "scope": "me",
+          "viewer": "Sam",
+          "weights": [
+            50,
+            50
+          ],
+          "myIndex": 0,
+          "jointAccountIds": [
+            "j1"
+          ],
+          "setup": "mixed",
+          "jointAccounts": [
+            {
+              "id": "j1",
+              "purpose": "savings",
+              "balance": 1000000,
+              "monthIn": 0,
+              "monthOut": 0,
+              "billsDueBeforeNextIn": 0,
+              "paidInBy": [
+                0,
+                0
+              ],
+              "carried": 1000000,
+              "isSafetyNet": true
+            }
+          ]
+        }
+      },
+      "expected": {
+        "variant": "payday",
+        "readyBy": "2026-12-01",
+        "mustHaveReasons": [],
+        "mustHaveFacts": [],
+        "mustNotHaveFacts": [
+          "net_used"
+        ],
+        "mustHaveCaveats": [],
+        "mustNotHaveCaveats": [
+          "shared_money"
+        ],
+        "code": "not_yet",
+        "afterBuy": {
+          "month": null,
+          "usualMonth": null
+        }
+      },
+      "why": "The net's saved amount is the joint savings balance, counted whole once for both. A purchase never draws on it. Same answer as HH-33.",
+      "fixIds": [
+        "CMP-F19",
+        "UX-21",
+        "FIN-19"
+      ],
+      "status": "approved",
+      "approvedAt": "2026-11-20",
+      "ownerReason": "Approved by the owner 2026-11-20 (spending rule per group: bring by default for Separate accounts, same as the bill split for One joint account; joint money counted once and split by the rule, joint money by what each paid in this month with carried money equal; joint bills/savings/everyday purposes)",
       "expertNote": null
     }
   ]

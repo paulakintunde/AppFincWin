@@ -36,7 +36,7 @@ insert into classified (table_name, class, parent) values
   -- household (all members by design)
   ('households', 'household', null), ('household_members', 'household', null), ('household_events', 'household', null),
   ('category_rules', 'household', null), ('household_split_defaults', 'household', null),
-  ('household_former_members', 'household', null), ('member_departures', 'household', null),
+  ('household_former_members', 'household', null), ('member_departures', 'household', null), ('household_spend_rules', 'household', null),
   -- settlement_nudges: no client policy at all (08-11); 'household' only to classify it
   ('settlement_nudges', 'household', null);
 delete from classified where to_regclass('public.' || table_name) is null;
