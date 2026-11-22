@@ -1,6 +1,8 @@
 // 08.1-08 (CMP-F19, D-02, D-03, UX-21, CMP-F04, T-08.1-26, T-08.1-27): me vs household inputs, opt-in on and off, no partner item leaks.
 import { prepare } from '@/engine/decide/v3';
+import { jointSlices } from '@/engine/household';
 import { monthPicture } from '@/engine/month';
+import { minorUnits } from '@/engine/money';
 import { account, household as base, row } from '../../__tests__/helpers/sourceFixtures';
 import { buildInputs } from '../buildInputs';
 import type { InputsSource } from '../buildInputsParts';
@@ -163,5 +165,23 @@ describe('08.1-22 jointToHome / jointWithPending', () => {
     ];
     expect(jointWithPending([j], rows, '2026-11-15', '2026-12-01')[0]).toMatchObject({ billsDueBeforeNextIn: 35, monthOut: 50 });
     expect(jointWithPending([j], rows, '2026-11-15', null)[0]).toMatchObject({ billsDueBeforeNextIn: 75, monthOut: 50 });
+  });
+
+  it('B-CR-01: a pending outflow never raises the carried money, so "What each person brings" splits the hand-worked figures', () => {
+    // balance 2,000 (paid lines only); A paid in 1,500, B 0; nothing paid out; a 1,200 rent line is still pending this month
+    const everyday: JointAccountSource = { id: 'j1', currency: 'USD', purpose: 'everyday', spendable: false, balance: 200000, monthIn: 150000, monthOut: 0, billsDueBeforeNextIn: 0, paidInBy: { a: 150000 } };
+    const rent = [{ account_id: 'j1', local_date: '2026-11-20', original_amount: -120000, status: 'pending' }];
+    const same = (n: number, c: string): number | null => (c === 'USD' ? n : null);
+    const withRent = jointWithPending([everyday], rent, '2026-11-15', '2026-12-01');
+    expect(withRent[0]).toMatchObject({ monthOut: 120000, monthOutPaid: 0 });
+    const [raw] = jointToHome(withRent, ['a', 'b'], same);
+    // carried = balance - (paid in - PAID out) = 2,000 - 1,500 = 500; the month's planned outflow still includes the rent
+    expect(raw).toMatchObject({ carried: 50000, monthOut: 120000 });
+    // the "How spending is shared" view reads the same account with no pending rows: the same carried money
+    expect(jointToHome([everyday], ['a', 'b'], same)[0]?.carried).toBe(50000);
+    const facts = [{ ...raw!, viewerBalance: minorUnits(0), viewerOwnMonth: minorUnits(0) }];
+    // 500 carried splits 250 / 250; the 1,500 brought this month goes to A: A 1,750, B 250
+    expect(jointSlices(facts, 'paidIn', null, 0, 2).cash).toBe(175000);
+    expect(jointSlices(facts, 'paidIn', null, 1, 2).cash).toBe(25000);
   });
 });

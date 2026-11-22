@@ -39,6 +39,11 @@ export interface JointAccountSource {
   readonly balance: number;
   readonly monthIn: number;
   readonly monthOut: number;
+  /**
+   * 08.1 review B-CR-01: the money actually paid out this month, when `monthOut` also carries the planned (pending) outflow. `balance` is
+   * paid lines only, so the money carried from before this month is worked out from this paid figure. Absent = `monthOut` is paid only.
+   */
+  readonly monthOutPaid?: number;
   readonly billsDueBeforeNextIn: number;
   readonly paidInBy: Readonly<Record<string, number>>;
 }
@@ -100,7 +105,8 @@ export function jointWithPending(joint: readonly JointAccountSource[], rows: rea
       if (nextIn === null || r.local_date < nextIn) due += amount;
       if (r.local_date.startsWith(month)) out += amount;
     }
-    return { ...j, billsDueBeforeNextIn: due, monthOut: out };
+    // B-CR-01: the paid-only money out stays apart, so the carried money is not raised by what has not left the account yet
+    return { ...j, billsDueBeforeNextIn: due, monthOut: out, monthOutPaid: j.monthOutPaid ?? j.monthOut };
   });
 }
 
@@ -110,8 +116,9 @@ export function jointToHome(joint: readonly JointAccountSource[], keys: readonly
     const balance = toHome(j.balance, j.currency);
     const monthIn = toHome(j.monthIn, j.currency);
     const monthOut = toHome(j.monthOut, j.currency);
+    const paidOut = toHome(j.monthOutPaid ?? j.monthOut, j.currency);
     const due = toHome(j.billsDueBeforeNextIn, j.currency);
-    if (balance === null || monthIn === null || monthOut === null || due === null) return [];
+    if (balance === null || monthIn === null || monthOut === null || paidOut === null || due === null) return [];
     const paid = keys.map((k) => toHome(j.paidInBy[k] ?? 0, j.currency) ?? 0);
     return [
       {
@@ -122,7 +129,8 @@ export function jointToHome(joint: readonly JointAccountSource[], keys: readonly
         balance: minorUnits(balance),
         monthIn: minorUnits(monthIn),
         monthOut: minorUnits(monthOut),
-        carried: minorUnits(balance - (monthIn - monthOut)),
+        // B-CR-01: balance less this month's net so far, paid in less PAID out (the engine's definition; pending money has not left)
+        carried: minorUnits(balance - (monthIn - paidOut)),
         billsDueBeforeNextIn: minorUnits(due),
         paidInBy: paid.map(minorUnits),
       },
