@@ -1409,7 +1409,8 @@ Plans:
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
 **Depends on**: Phase 6, and Phase 08.1 (so charts include the household view and the health score reads Decide's own figures; ARC-21)
-**Amended 2026-11-22 (owner, quick 261122-m82):** Insights no longer waits for the Decide re-audit; former Phase 08.2 is merged into Phase 11. Insights may run in parallel with Phase 10. The health score (INS-04) is built here and signed off by Phase 11's final audit (criterion 12): a month Decide calls short cannot score in the top band, and no grade words ("healthy", "poor").
+**Amended 2026-11-22 (owner, quick 261122-m82):** Insights no longer waits for the Decide re-audit; former Phase 08.2 is merged into Phase 11. Insights may run in parallel with Phase 10. The health score (INS-06) is built here and signed off by Phase 11's final audit (criterion 12): a month Decide calls short cannot score in the top band, and no grade words ("healthy", "poor").
+**Ready to plan (2026-11-22, quick 261122-fd3):** 08.1 merged into main (PR #180, 36028c69). ARC-21 is built in this phase: the score reads the Decide engine's month figures and computes nothing of its own. This holds whether or not Decide ships in v1, because the engine stays (Home uses it).
 **Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
 **Success Criteria** (what must be TRUE):
   1. A user can see net worth over time with a selectable range.
