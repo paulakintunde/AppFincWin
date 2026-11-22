@@ -69,11 +69,12 @@ name: Decide I bought it
 - assertVisible: "Saved"
 - assertVisible: ".* is in your records, bought .*"
 # Clean up: Undo takes the purchase (and every ticked part) back out as one step. The toast "Saved: used car." has its own Undo,
-# so the tap is held to the result's own button.
+# so the tap is held to the result's own button: the one between the saved line and Back to Decide (childOf matches direct
+# children only, and the pill sits one level deeper).
 - tapOn:
     text: "Undo"
-    childOf:
-      id: "bought-added"
+    below: ".* is in your records, bought .*"
+    above: "Back to Decide"
 - extendedWaitUntil:
     visible: "Undone\\. Nothing was added\\."
     timeout: 20000

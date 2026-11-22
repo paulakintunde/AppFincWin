@@ -14,21 +14,42 @@ appId: com.fincwin.app
 - extendedWaitUntil:
     visible: "Step [123] of 3|How Decide answers|Do you have a safety net\\? About how much\\?|Not ready yet.*|I bought it"
     timeout: 20000
+# 08.1-15: one step at a time, each waiting for the next step's heading. A loop on notVisible "Step 3 of 3" ran again on Step 3
+# once scrolling to its button had moved the heading out of view, and then looked for a Next that Step 3 has not got.
 - runFlow:
     when:
-      visible: "Step [12] of 3"
+      visible: "Step 1 of 3"
     commands:
-      - repeat:
-          times: 2
-          while:
-            notVisible: "Step 3 of 3"
-          commands:
-            - runFlow:
-                file: scroll-to.yaml
-                env:
-                  TARGET: "Next"
-            - tapOn: "Next"
-            - waitForAnimationToEnd
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "Next"
+      # the button can sit half under the Android navigation bar once its text shows; one short scroll clears it
+      - swipe:
+          start: 50%, 70%
+          end: 50%, 55%
+          duration: 300
+      - tapOn: "Next"
+      - extendedWaitUntil:
+          visible: "Step 2 of 3.*"
+          timeout: 15000
+- runFlow:
+    when:
+      visible: "Step 2 of 3"
+    commands:
+      - runFlow:
+          file: scroll-to.yaml
+          env:
+            TARGET: "Next"
+      # the button can sit half under the Android navigation bar once its text shows; one short scroll clears it
+      - swipe:
+          start: 50%, 70%
+          end: 50%, 55%
+          duration: 300
+      - tapOn: "Next"
+      - extendedWaitUntil:
+          visible: "Step 3 of 3.*"
+          timeout: 15000
 - runFlow:
     when:
       visible: "Step 3 of 3"
@@ -37,5 +58,9 @@ appId: com.fincwin.app
           file: scroll-to.yaml
           env:
             TARGET: "See the answer"
+      - swipe:
+          start: 50%, 70%
+          end: 50%, 55%
+          duration: 300
       - tapOn: "See the answer"
 - runFlow: decide-gate.yaml
