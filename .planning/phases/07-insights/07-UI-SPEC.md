@@ -24,7 +24,7 @@ created: 2026-11-22
 | Icon library | FincWin's own set (`src/ui/icons`, `npm run check:icons`). Used: category glyphs via `CategoryGlyph`, `stateUp`, `stateDown`, `stateFits`, `stateShort`, `info`, `history`, `household`, `profile`, `health`, `calendar`, `categories`, `savedOffline`, `connected`. The Insights tab glyph already exists in `TabGlyphs.tsx`. No third-party icons, no emoji |
 | Font | Active pairing via `textRole(pairing, role)` and `src/theme/fonts.ts` |
 
-New components to build (own tokens only, no new colours): `RangeControl` (a `SegmentedControl` wrapper, 6M / 1Y / All), `LineChart` (react-native-svg, the net-worth line), `InOutBars` (react-native-svg paired bars), `ScoreCard`, `ChartSummary` (one-line text under each chart, also the screen-reader summary). The left-per-month chart reuses `SignedBars` from `src/features/decide/screens/answer/detail/detailKit.tsx` (move or re-export it; do not draw a second copy), so Insights and Decide's Month-by-month sheet look the same (D-12).
+New components to build (own tokens only; the only new colours are the six chart-only `chartPalette` hexes, D-24): `RangeControl` (a `SegmentedControl` wrapper, 6M / 1Y / All), `LineChart` (react-native-svg, the net-worth line), `InOutBars` (react-native-svg paired bars), `ScoreCard`, `ChartSummary` (one-line text under each chart, also the screen-reader summary). The left-per-month chart reuses `SignedBars` from `src/features/decide/screens/answer/detail/detailKit.tsx` (move or re-export it; do not draw a second copy), so Insights and Decide's Month-by-month sheet look the same (D-12).
 
 ---
 
@@ -68,7 +68,7 @@ Only the app's existing sizes and roles; no new size or weight. Three weights ap
 
 ## Color
 
-Only `src/theme/tokens.ts`. No gradients, no extra shadows, no new hex (`noRawColours.test.ts` enforces this).
+Only `src/theme/tokens.ts`. No gradients, no extra shadows. **Chart exception (D-24, owner 2026-11-22):** charts and the lines within charts may use vibrant colour: (a) the theme and Decide state colours at full strength where colour carries meaning, and (b) one new chart-only palette, `chartPalette` (six hexes, below), for series such as category bars. These six are the only new hexes; they live only in `tokens.ts`, are in `noRawColours.test.ts`'s allow-list, and are contrast-tested. Colour is never the only signal: every bar and point keeps its spoken label and every chart its summary line. Non-chart UI (rows, tiles, cards, change rows, notes) keeps the normal rule.
 
 | Role | Token | Usage |
 |------|-------|-------|
@@ -77,22 +77,37 @@ Only `src/theme/tokens.ts`. No gradients, no extra shadows, no new hex (`noRawCo
 | Accent (10%) | User accent (`colors.accent`) | Listed below |
 | Destructive | none | Nothing on this tab deletes anything |
 
-Accent reserved for: the selected range segment, the net-worth line and its last-point dot, the "money in" bars, the filled part of category share bars, the selected month chip in the month picker, the selected scope segment. Nothing else.
+Accent reserved for: the selected range segment, the net-worth line and its last-point dot (theme colour at full strength, D-24), Left bars at or above zero (SignedBars default), the selected month chip in the month picker, the selected scope segment. Nothing else.
+
+Chart palette (`chartPalette` in `src/theme/tokens.ts`, D-24 b; chart-only; each tested at 3:1 or better, WCAG 1.4.11, on `surface`, `canvas`, `fill1` and all four page tints in `src/theme/__tests__/contrast.test.ts`):
+
+| Index | Name | Hex | Contrast on surface / page tints / fill1 |
+|-------|------|-----|------------------------------------------|
+| 0 | Blue | #1F6FEB | 4.63 / 4.17-4.21 / 4.03 |
+| 1 | Orange | #D9531E | 4.03 / 3.63-3.67 / 3.51 |
+| 2 | Green | #00876C | 4.49 / 4.03-4.08 / 3.90 |
+| 3 | Magenta | #C2409A | 4.67 / 4.20-4.25 / 4.06 |
+| 4 | Violet | #6B3FCB | 6.57 / 5.91-5.97 / 5.71 |
+| 5 | Olive | #7F7A00 | 4.48 / 4.03-4.07 / 3.89 |
+
+Pairwise CIEDE2000 18.8 or more with normal vision; closest pair under simulated colour-vision deficiency is Orange/Olive (6.6 deuteranopia, 4.5 protanopia). Labels and summaries carry the meaning, so the residual overlap is accepted.
 
 | Mark | Token | Rule |
 |------|-------|------|
-| Money out bars | `inkMuted` | Second series in a pair; never red (money out is not an error). Legend and labels carry the meaning, so colour is not the only signal |
-| Left bar, at or above zero | as `SignedBars` (accent) | Reuse unchanged |
-| Left bar, below zero | as `SignedBars` | Reuse unchanged; the word "short" is spoken and printed beside the amount |
+| Money in bars | `stateColors.fits.stroke` #1B4D3E (full strength, same in every theme) | Left bar of each pair (D-24 a) |
+| Money out bars | `chartPalette[1]` Orange #D9531E | Right bar of each pair; never the short colour (money out is not a shortfall). Position, legend shape (filled vs ringed) and words carry the meaning, so colour is not the only signal |
+| Left bar, at or above zero | as `SignedBars` default (accent) | Reuse unchanged |
+| Left bar, below zero | as `SignedBars` default (`stateColors.short.stroke`) | Reuse unchanged (D-24 a: below zero in the short colour, as in Decide); the word "short" is spoken and printed beside the amount |
+| Net-worth line and last dot | `colors.accent` (theme colour, full strength) | D-24 a |
 | Zero line, gridlines, axis ticks | `line2` / `line1` | `line4` is too faint for a non-text mark, so it is not used for data |
 | Plot well | `fill1` | Behind all three charts |
-| Category share bar | `ProgressBar` thin, tone `accent` | Track on `fill1` |
+| Category share bar | `ProgressBar` thin, `chartColor = chartPalette[rank % 6]`; Everything else in `ink` | Track on `fill1`; a chart (D-24 b). Row text stays ink / inkMuted |
 | Change arrow beside a category | `inkDim` text with `stateUp` / `stateDown` glyph and a word | Neutral. "More" is not bad and "less" is not good, so no green or red. State colours are not used for change |
 | Score figure | `ink` | No tint, no badge colour. The score is not a verdict |
 | Notes (exchange rate, held flat, left out) | `inkMuted` on page/card | `inkFaint` never sits on the page tone |
 | "Just me only" and gap lines | `inkDim` on `fill1` info card with `info` glyph | |
 
-State colours (fits, tight, net, extra, short, cond, notYet) are NOT used for Insights charts. They appear on this tab only if a Decide state is quoted in the score's "short month" line (see ScoreCard), and then only as a `StateBadge` with symbol and word.
+State colours inside charts follow D-24: fits green for money-in bars and the short colour for below-zero Left bars, each with its spoken label and the chart's summary line. Outside charts, state colours appear on this tab only as the `StatTile` status glyph + word for a below-zero Left total and the `StateBadge` (symbol and word) in the score's "short month" line (see ScoreCard). Change rows, tiles, the score figure and notes never use state or chart colours.
 
 ---
 
@@ -115,8 +130,8 @@ One route: `app/(app)/(tabs)/insights.tsx`. Tab screen: date eyebrow, title "Ins
 Rationale: Everyday sections come first so a level-2 user sees a complete tab; level-3 sections append below, so turning on Full picture adds sections without reordering any (matches the app's "reveal gradually" rule). Net worth sits above Score because Score is the most state-sensitive card and is read last. Sections the user's level hides are not rendered and leave no gap.
 
 ### 3. Money in and out (INS-02, INS-03)
-- **In and out mode:** `InOutBars`: for each month in range, two adjacent bars (in = accent, out = `inkMuted`), bar width 10, pair gap 4, month gap 12, x labels `meta` ("Jun", then "Jun '26" when range spans years). Plot height 140, zero line `line2`. 6M shows 6 pairs and fits at 320 dp; 1Y shows 12 pairs and scrolls horizontally if the width cannot fit 12 pairs at font scale 1.0 (never shrinks bars below 8). All shows all recorded months, horizontal scroll, newest at the right edge on first show. Legend below: swatch + "Money in" and swatch + "Money out" (swatch shapes differ: filled square for in, ringed square for out, so colour is not the only signal).
-- **Left each month mode:** `SignedBars` fed by `pastMonthBars` (current month from the same rule). Up for left at or above zero, down for below, with "short" in words under a below-zero month. Same figures as Decide's Month-by-month sheet.
+- **In and out mode:** `InOutBars`: for each month in range, two adjacent bars (in = `stateColors.fits.stroke` on the left, out = `chartPalette[1]` Orange on the right, D-24), bar width 10, pair gap 4, month gap 12, x labels `meta` ("Jun", then "Jun '26" when range spans years). Plot height 140, zero line `line2`. 6M shows 6 pairs and fits at 320 dp; 1Y shows 12 pairs and scrolls horizontally if the width cannot fit 12 pairs at font scale 1.0 (never shrinks bars below 8). All shows all recorded months, horizontal scroll, newest at the right edge on first show. Legend below: swatch + "Money in" and swatch + "Money out" (swatch shapes differ: filled square for in, ringed square for out, so colour is not the only signal).
+- **Left each month mode:** `SignedBars` (default tone, D-24) fed by `pastMonthBars` (current month from the same rule). Up for left at or above zero (accent), down for below in the short colour, with "short" in words under a below-zero month. Same figures as Decide's Month-by-month sheet.
 - **Tap a bar or pair:** opens a small inline readout line under the chart (not a sheet): "June: in $3,200, out $2,950, left $250." Tap targets are the full column height (>= 44 wide via hit slop). Selected bar gets a 2 px `ink` underline marker.
 - **Totals strip** above the chart for the whole range: three `StatTile`s "In" "Out" "Left" (D-12). "Left" below zero reads "-$120" with `stateShort` glyph and "short" in `StatTile.statusText`.
 - Motion: bars grow from the zero line once per session (0.55 s ease-out, `useOncePerSession`); switching range or mode does not replay the grow, it cross-fades. Reduce Motion: bars appear drawn, cross-fade 0.15 s, no grow.
@@ -124,7 +139,7 @@ Rationale: Everyday sections come first so a level-2 user sees a complete tab; l
 ### 4. Where it went (INS-04, D-14, D-15)
 - Period control: `SegmentedToggle` "A month" / "The range". "A month" shows a horizontal month chip list (like Activity's month list, newest first, selected chip accent). "The range" adds up the range from the range control (6M or 1Y; All adds up everything recorded).
 - Header line: total spent (`bodyStrong`, `AmountDisplay`) + period name ("June" or "Last 6 months").
-- Ranked rows, biggest first, `Row` 64 px: `CategoryGlyph` tile 36, name (`bodyStrong`), amount right (`bodyStrong`, `ink`), share sublabel ("34% of spending", `label` / `inkMuted`), thin `ProgressBar` full row width under the text, percent = share. At most 8 rows shown then a text row "Show all N" (44 px) that expands in place. Categories under 1% of the total are grouped into one row "Everything else".
+- Ranked rows, biggest first, `Row` 64 px: `CategoryGlyph` tile 36, name (`bodyStrong`), amount right (`bodyStrong`, `ink`), share sublabel ("34% of spending", `label` / `inkMuted`), thin `ProgressBar` full row width under the text, percent = share, fill `chartPalette[rank % 6]` (D-24; "Everything else" in `ink`). At most 8 rows shown then a text row "Show all N" (44 px) that expands in place. Categories under 1% of the total are grouped into one row "Everything else".
 - **Tapping a category row opens Activity filtered to that category for the same period** (owner choice 2026-11-22). Rows show a chevron and read "Opens Activity" to screen readers. If Activity's route cannot yet take a category and a month or range, the planner adds that filter input (a read-only filter, cleared by Activity's existing filter clear); for 6M / 1Y / All it opens the search-all-months view where that level allows it, otherwise the latest month of the range.
 - Transfers, refunds, settlements and envelope moves follow `pastMonthBars` and ARC-18 (settlements are neither spending nor income; transfers are not spending). A short note under the list when any were left out: "Moves between your own accounts and settlements are not counted as spending."
 - Bars grow once (0.55 s, `ProgressBar animate`); Reduce Motion: filled.
@@ -235,7 +250,7 @@ Compliance voice (hard rules): declarative not prescriptive. Never "advice" (not
 - Roles: range control and scope switch are `tablist`/`tab` (as `SegmentedControl` default); month chips are `radio` in a group "Month".
 - Targets >= 44 x 44 via hit slop on bars and points.
 - Text scaling: tested at 320 dp and font scale 200% (Pixel text-fit matrix). Rows grow from one to two lines before truncating; amounts never truncate. StatTile triplets and the in/out totals strip stack to one column at font scale > 1.3. Bars and line keep fixed plot heights; axis labels thin out (every second or third month) rather than overlap. Horizontal chart scroll at 1Y and All.
-- Colour never the only signal: in vs out distinguished by swatch shape plus legend word; change arrows carry glyph + word; Short carries glyph + word. Contrast: all text tokens used are already tested in `src/theme/contrast.ts`; `inkFaint` is never placed on the page tone.
+- Colour never the only signal (D-24): in vs out distinguished by position in the pair, swatch shape and legend word; every bar/point has a spoken label and every chart a summary line; category bars sit under the named row; change arrows carry glyph + word; Short carries glyph + word. Contrast: all text tokens used are already tested in `src/theme/contrast.ts`; chart colours (`chartPalette`, fits green, short stroke, accent) are 3:1 or better on every chart ground; `inkFaint` is never placed on the page tone.
 - Live regions: none needed (no values change without a user action). On range or mode switch, post `AccessibilityInfo.announceForAccessibility` with the new chart summary once, debounced 600 ms (reuse `useSettledLabel`).
 
 ---
@@ -265,6 +280,6 @@ New npm dependencies: none. Charts use `react-native-svg` 15 and Reanimated 4 al
 Answered by the owner after the draft; these replace the former open list.
 
 1. **Score part names:** "Debt against yearly income" and "Bills paid on time" (as drafted). The planner confirms the engine's unpaid ratio means this month's bills not yet paid before the copy is final.
-2. **Money out bars:** grey (`inkMuted`); money in uses the accent. No state colours in charts.
+2. **Money out bars:** superseded by D-24 (owner, 2026-11-22, later the same day): charts may use vibrant colour. Money in = fits green, money out = chart Orange, below-zero Left bars in the short colour, net-worth line in the theme colour, category bars from `chartPalette`.
 3. **Category rows open Activity** filtered to that category and period (section 4).
 4. **Footer:** "FincWin holds no money and moves none." The word "advice" is not used on Insights.

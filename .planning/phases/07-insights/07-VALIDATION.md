@@ -53,6 +53,8 @@ Filled in by the planner per task. Requirement-level map:
 | D-18 / D-19 / ARC-22 | Partner's personal line never reaches either view; score row replaced in Household | integration | `npx jest src/features/insights src/data/queries --coverage=false` | ❌ W0 | ⬜ pending |
 | D-04 / S1 | Copy guard `insights.` set (grade words, advice); no hard-typed text | unit + lint | `npx jest src/i18n --coverage=false`; `npm run lint` | ❌ W0 | ⬜ pending |
 | UI | Range control, three tiles stack at large font, chart a11y labels, Reduce Motion, empty/error/offline states | component | `npx jest src/features/insights src/ui --coverage=false` | ❌ W0 | ⬜ pending |
+| D-24 | `chartPalette` (six chart-only hexes) each 3:1 or better on surface, canvas, fill1 and all four page tints; chart-only (no overlap with other tokens); allow-listed in noRawColours | unit | `npx jest src/theme --coverage=false` | extend (`contrast.test.ts`, `noRawColours.test.ts`) | ⬜ pending |
+| D-24 | Chart colours: in = fits green, out = chartPalette[1] (never short), Left below zero = short stroke (SignedBars default), net-worth line = accent, category bar = chartPalette[rank % 6]; spoken labels and summaries present | component | `npx jest src/features/insights --coverage=false` | ❌ W0 | ⬜ pending |
 | Gate | 100% coverage for `health`, `insights`, `grow`, `month` engine folders | CI | `npm run test:coverage` | config edit | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
@@ -71,8 +73,8 @@ Filled in by the planner per task. Requirement-level map:
 | 07-04-T2 | 04 | 1 | Gate (coverage + mutation config) | `node scripts/check-stryker-disables.mjs` | ⬜ pending |
 | 07-05-T1 | 05 | 1 | D-16 registry | `npm run typecheck` | ⬜ pending |
 | 07-05-T2 | 05 | 1 | D-16 level map drift | `npx jest src/features/levels src/services/analytics src/i18n --coverage=false` | ⬜ pending |
-| 07-06-T1 | 06 | 1 | INS-03 neutral left bars | `npx jest src/features/decide/screens/answer/detail --coverage=false` | ⬜ pending |
-| 07-06-T2 | 06 | 1 | UI primitives | `npx jest src/ui --coverage=false` | ⬜ pending |
+| 07-06-T1 | 06 | 1 | D-24 chartPalette tokens + contrast | `npx jest src/theme --coverage=false` | ⬜ pending |
+| 07-06-T2 | 06 | 1 | UI primitives (incl. ProgressBar chartColor) | `npx jest src/ui src/theme --coverage=false` | ⬜ pending |
 | 07-07-T1 | 07 | 2 | D-18, D-19, ARC-22 | `npx jest src/data/queries/__tests__/insights.test.ts src/features/insights src/features/home --coverage=false` | ⬜ pending |
 | 07-07-T2 | 07 | 2 | INS-01 (D-11, D-23) | `npx jest src/data/queries/__tests__/insightsNetWorth.test.ts --coverage=false` | ⬜ pending |
 | 07-08-T1 | 08 | 2 | INS-04 rows, range control | `npx jest src/features/insights --coverage=false` | ⬜ pending |
@@ -101,6 +103,7 @@ Criterion 5 (ACT-06) is already met in Phase 2.2 (`.planning/phases/02.2-record-
 - [ ] `stryker.config.mjs` `mutate` and `scripts/check-stryker-disables.mjs` targets: add both folders
 - [ ] `src/i18n/copyGuard/rules.json` `insights` set and its test
 - [ ] `src/features/insights/__tests__/*`, `src/data/queries/__tests__/insights*.test.ts`
+- [ ] `src/theme/__tests__/contrast.test.ts` chart palette block and `noRawColours.test.ts` allow-list entries (D-24)
 
 ---
 

@@ -50,6 +50,9 @@ Not in this phase: Home changes (D-17), a household health score (D-19), Share/B
 - **D-22:** In past net-worth points, a holding appears from the month of its first dated value and is left out before that (no hold-flat for holdings). Debts are still held flat per D-07.
 - **D-23:** Just me net worth counts the user's own personal accounts in full; joint/shared accounts count only in the Household view. Household counts shared money once.
 
+### Chart colour exception (owner, 2026-11-22, after planning)
+- **D-24:** Charts and the lines within charts are an exception to the design-fidelity colour rule (CLAUDE.md amended). They may use vibrant colour: (a) existing theme and Decide state colours at full strength where colour carries meaning (money in vs out, below-zero "left" bars in the short colour, net-worth line in the theme colour); (b) a new bright chart-only palette (`chartPalette`, about 6 colours in `src/theme/tokens.ts`, each tested for contrast against `surface` in `src/theme/contrast.ts`) for series like categories (category row bars). Colour is never the only signal: each bar/point keeps its spoken label and the chart its summary line. Insights uses `SignedBars`' default (state) tone; no neutral tone is needed. Non-chart UI (rows, tiles, cards) keeps the normal rule.
+
 ### Claude's Discretion
 - The range for the money in/out bars and comparison mode: the same 6M / 1Y / All control, defaulting to 6M.
 - Section order on the Insights screen, empty screens (06.2 empty-state pattern: icon + one line + button), and loading and offline states.
