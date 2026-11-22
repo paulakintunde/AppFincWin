@@ -44,6 +44,12 @@ Not in this phase: Home changes (D-17), a household health score (D-19), Share/B
 - **D-18:** One Just me / Household switch at the top of Insights changes every chart, using the existing household scope (`useHouseholdScope`). Just me counts through `countsForMe` (the same rule as Decide). Household counts shared money once. A partner's personal lines never show in either view (ARC-22).
 - **D-19:** The health score is **Just me only**. In the Household view its row reads "Your score is in Just me". The score reads Decide, which answers per person (pool rule: pooled money is held back from the member's own answers).
 
+### Owner answers after research (2026-11-22)
+- **D-20:** Health score part 4 keeps Decide's own figure (`month.billsDue` over `month.moneyOut`, every bill still unpaid this month) and is named "Bills still to pay this month". No new Decide month figure. The score may rise through the month as bills are paid; that is expected.
+- **D-21:** "All" for the money in/out bars, the comparison mode and spending by category stops at Decide's window: up to 12 past months plus this month, with a plain line saying so. No second read path. Net worth "All" may go further back (it reads balances, not Decide's lines).
+- **D-22:** In past net-worth points, a holding appears from the month of its first dated value and is left out before that (no hold-flat for holdings). Debts are still held flat per D-07.
+- **D-23:** Just me net worth counts the user's own personal accounts in full; joint/shared accounts count only in the Household view. Household counts shared money once.
+
 ### Claude's Discretion
 - The range for the money in/out bars and comparison mode: the same 6M / 1Y / All control, defaulting to 6M.
 - Section order on the Insights screen, empty screens (06.2 empty-state pattern: icon + one line + button), and loading and offline states.
