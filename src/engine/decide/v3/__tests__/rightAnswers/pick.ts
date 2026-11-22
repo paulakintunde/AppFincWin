@@ -8,6 +8,7 @@ export interface Picked {
   readyBy: string | null;
   reasons: string[];
   facts: string[];
+  caveats: string[];
 }
 
 /**
@@ -29,5 +30,6 @@ export function pick(e: Evaluation): Picked {
     readyBy: r.readyBy === null ? null : r.readyBy.kind === 'date' ? r.readyBy.date : r.readyBy.month,
     reasons: [...r.reasons, ...r.confidence.reasons.map((x) => x.code), ...(ask ? r.missing : [])],
     facts: r.facts.map((f) => f.code),
+    caveats: (r.caveats ?? []).map((c) => c.code),
   };
 }

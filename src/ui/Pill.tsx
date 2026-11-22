@@ -25,6 +25,10 @@ export interface PillProps {
   onPress?: () => void;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  /** 08.1-10: 'radio' for one choice of a group (Who pays on a narrow, large-text screen); default 'button'. */
+  accessibilityRole?: 'button' | 'radio';
+  /** 08.1-10: a taller touch target (52) for a stacked choice. */
+  tall?: boolean;
   /**
    * 06.1-62 (H-1): work started by this pill is still running. Dimmed, announced busy, repeat taps ignored.
    * Same label, no spinner and no new copy.
@@ -34,7 +38,7 @@ export interface PillProps {
   locked?: boolean;
 }
 
-export function Pill({ label, variant, selected = false, disabled = false, pending = false, locked = false, onPress, accessibilityLabel, accessibilityHint }: PillProps) {
+export function Pill({ label, variant, selected = false, disabled = false, pending = false, locked = false, onPress, accessibilityLabel, accessibilityHint, accessibilityRole = 'button', tall = false }: PillProps) {
   const { colors, pairing } = useTheme();
   // a pill inside a read-only region is announced disabled and inert; the region already dims it
   const scoped = useReadOnlyScope();
@@ -50,7 +54,7 @@ export function Pill({ label, variant, selected = false, disabled = false, pendi
 
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={pending ? { disabled: true, selected, busy: true } : { disabled: inert, selected }}
@@ -59,7 +63,7 @@ export function Pill({ label, variant, selected = false, disabled = false, pendi
       android_ripple={live ? feedback.android_ripple : undefined}
       style={({ pressed }) => [
         styles.pill,
-        { backgroundColor, borderColor, opacity: disabled || pending ? 0.5 : 1 },
+        { backgroundColor, borderColor, opacity: disabled || pending ? 0.5 : 1, ...(tall ? { minHeight: 52 } : null) },
         live ? feedback.pressedStyle(pressed) : null,
       ]}
     >

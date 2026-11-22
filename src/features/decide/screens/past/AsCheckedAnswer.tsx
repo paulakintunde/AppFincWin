@@ -1,6 +1,8 @@
 // 06.1-27 (CO-D-64 (6), T-06.1-27-02): "See the check as it was". The stored Result of one history row, read only: the verdict card, the fact
 // lines and the legal block, under "As checked on {date}". No action bar and no pay or date controls, so nothing here can write. A stored
 // result this build cannot read shows one plain line, never a code or a half-built card.
+// 08.1-24 (owner caution sign Q3 A): a stored Fits answer with a later dip shows the caution sign too; here it stays still.
+// 08.1-14 (D-07): a stored below_zero_without shows as the BelowZeroLine under the card, as on the answer.
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { VERDICT_TABLE, type Result } from '@/engine/decide/v3';
@@ -11,6 +13,7 @@ import { textRole } from '@/theme/typography';
 import { Text } from '@/ui/Text';
 import { FactLines } from '../answer/FactLines';
 import { LegalBlock } from '../answer/LegalBlock';
+import { belowZeroOf, useCautionOf } from '../answer/AnswerFrame';
 import { VerdictCard } from '../answer/VerdictCard';
 import { useSaid } from '../answer/useSaid';
 
@@ -41,6 +44,7 @@ export function AsCheckedAnswer({ stored, dateText, currency, today, country = n
   const { colors, pairing } = useTheme();
   const result = readStoredResult(stored);
   const lines = useSaid(result, { currency, today });
+  const caution = useCautionOf(result, currency, true, true);
   const banner = (
     <Text testID="past-as-checked-banner" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
       {t('decide.screens.past.detail.asChecked', { date: dateText })}
@@ -60,7 +64,7 @@ export function AsCheckedAnswer({ stored, dateText, currency, today, country = n
   return (
     <View testID="past-as-checked" style={styles.stack}>
       {banner}
-      <VerdictCard code={result.code} variant={result.variant} once={once1} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={lines.afterBuy.boughtOn?.text ?? null} />
+      <VerdictCard code={result.code} variant={result.variant} once={once1} values={lines.verdictValues} caution={caution} readyUntested={result.readyByUntested === true} lead={lines.afterBuy.lead?.text ?? null} boughtOn={lines.afterBuy.boughtOn?.text ?? null} after={belowZeroOf(lines.facts)} />
       <FactLines facts={[...lines.facts, ...lines.missing]} country={country} />
       <LegalBlock basis={lines.basis} caveat={lines.caveat} caveatFigures={lines.caveatFigures} onCantSee={onCantSee} />
     </View>

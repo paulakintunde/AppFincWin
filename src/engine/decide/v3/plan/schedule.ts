@@ -42,7 +42,7 @@ function assertFees(fees: PlanFees): void {
 }
 
 /** Largest k with cadenceDate(asOf, c, k) <= firstDate: the full periods that pass before the first payment. */
-function periodsBefore(asOf: string, c: Cadence, firstDate: string): number {
+export function periodsBefore(asOf: string, c: Cadence, firstDate: string): number {
   let k = 0;
   while (cadenceDate(asOf, c, k + 1) <= firstDate) {
     k++;

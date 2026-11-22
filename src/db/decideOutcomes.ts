@@ -6,6 +6,10 @@
 //   WR-A02 (20261021000100): the row-payload overload. The server inserts the rows in the same transaction as
 //   the decision, so a refusal leaves nothing behind; the old row-id overload (rows inserted first in a
 //   separate request) is no longer called.
+//   08.1-02 (20261125000100): three optional trailing arguments, sent only when the user ticked them, all in the same
+//   transaction and under the same single undo step: p_sale (the sale money in), p_payoff (the old loan's final payment)
+//   and p_goal_close ({ goal_id }, closes a goal made by this check). A goal that is not the caller's or not linked to the
+//   check is refused as 'goal_not_linked' (see isDecideGoGoalNotLinked). Series may carry amount_kind 'expected'.
 // record_decide_outcome(p_check_id, p_outcome 'wait' | 'pass', p_decision)
 //   -> { status: 'applied' | 'already-applied' }
 //   20261031000100 (05.3-66): the 4-arg overload record_decide_outcome(..., p_undo_step) records the undo step
@@ -16,6 +20,9 @@ import { DbError, toDbError } from './errors';
 import type { NewRecurringSeries } from './recurringSeries';
 import { BAD_RESPONSE } from './recurringSeries';
 import { assertAllowedKeys, type DbClient, type NewTransaction } from './rows';
+
+/** 08.1-12 (D-12): a row of the one save; is_shared: true writes it as a shared line (Phase 8 share_on_insert applies the household's split rule). */
+export type DecideGoRow = NewTransaction & { is_shared?: true };
 
 export const DECIDE_GO_MAX_ROWS = 60;
 export const DECIDE_GO_MAX_SERIES = 24;
@@ -36,7 +43,8 @@ export const DECIDE_GO_ROW_KEYS = [
   'status',
   'transfer_id',
   'one_off',
-] as const satisfies readonly (keyof NewTransaction)[];
+  'is_shared',
+] as const satisfies readonly (keyof DecideGoRow)[];
 
 export interface DecideGoDebt {
   id: string;
@@ -51,6 +59,43 @@ export interface DecideGoDebt {
   secured: boolean;
   term_months: number | null;
   start_date: string | null;
+}
+
+/** One money leg the save writes for a sale or a payoff (the shape record_debt_sale takes). Minor units, integer. */
+interface DecideGoLeg {
+  id: string;
+  account_id: string;
+  amount: number;
+  currency: string;
+  local_date: string;
+  time_zone: string;
+  name: string;
+}
+
+/** 08.1-02 (D-10): the sale money in, written in the same save. Linked to the old loan when `debt_id` is sent. */
+export interface DecideGoSale extends DecideGoLeg {
+  debt_id?: string | null;
+  expected_version?: number;
+}
+
+/** 08.1-02 (D-10): the old loan's final payment, written in the same save. Names the loan and the version the screen read. */
+export interface DecideGoPayoff extends DecideGoLeg {
+  debt_id: string;
+  expected_version: number;
+  category_id?: string | null;
+}
+
+/** 08.1-02 (D-11): close the goal this check made (savings_goals.done_at). */
+export interface DecideGoGoalClose {
+  goal_id: string;
+}
+
+/** The server's refusal text for a goal the caller does not own or that is not linked to the check. */
+export const DECIDE_GO_GOAL_NOT_LINKED = 'goal_not_linked';
+
+/** True when a thrown error is the server refusing the goal close as goal_not_linked (the screen shows its own words). */
+export function isDecideGoGoalNotLinked(err: unknown): boolean {
+  return err instanceof DbError && err.message.includes(DECIDE_GO_GOAL_NOT_LINKED);
 }
 
 export interface DecideGoEndSeries {
@@ -79,12 +124,16 @@ export interface DecideGoDecision {
 export interface DecideGoInput {
   checkId: string;
   /** The pending rows Go ahead writes; the server inserts them (client uuids, so a replay never doubles them). */
-  rows: readonly NewTransaction[];
+  rows: readonly DecideGoRow[];
   series: readonly NewRecurringSeries[];
   endSeries: readonly DecideGoEndSeries[];
   debt: DecideGoDebt | null;
   decision: DecideGoDecision;
   undo: { id: string; labelKey: 'decisionWritten'; labelParams: { name?: string } };
+  /** 08.1-02: only the parts the user ticked; leave out (or null) to write nothing for them. */
+  sale?: DecideGoSale | null;
+  payoff?: DecideGoPayoff | null;
+  goalClose?: DecideGoGoalClose | null;
 }
 
 export type DecideGoResult = { status: 'applied' | 'already-applied'; undoStepId: string };
@@ -92,6 +141,9 @@ export type DecideGoResult = { status: 'applied' | 'already-applied'; undoStepId
 /** Go ahead: one RPC (one transaction) writes the rows, series, debt and decision and records a single undo step. */
 export async function recordDecideGo(client: DbClient, input: DecideGoInput): Promise<DecideGoResult> {
   const { rows, series, endSeries, debt, decision } = input;
+  const sale = input.sale ?? null;
+  const payoff = input.payoff ?? null;
+  const goalClose = input.goalClose ?? null;
 
   if (rows.length > DECIDE_GO_MAX_ROWS) {
     throw new RangeError(`recordDecideGo: at most ${DECIDE_GO_MAX_ROWS} rows, got ${rows.length}`);
@@ -102,7 +154,7 @@ export async function recordDecideGo(client: DbClient, input: DecideGoInput): Pr
   if (endSeries.length > DECIDE_GO_MAX_SERIES) {
     throw new RangeError(`recordDecideGo: at most ${DECIDE_GO_MAX_SERIES} ended series, got ${endSeries.length}`);
   }
-  if (rows.length + series.length === 0 && debt === null) {
+  if (rows.length + series.length === 0 && debt === null && sale === null && payoff === null) {
     throw new RangeError('recordDecideGo: nothing to write');
   }
   if (decision.row_roles.length !== rows.length) {
@@ -138,6 +190,10 @@ export async function recordDecideGo(client: DbClient, input: DecideGoInput): Pr
       series_roles: decision.series_roles,
     },
     p_undo_step: { id: input.undo.id, label_key: input.undo.labelKey, label_params: input.undo.labelParams },
+    // Sent only when ticked, so a save without them is the same call an older server already understands.
+    ...(sale ? { p_sale: sale } : {}),
+    ...(payoff ? { p_payoff: payoff } : {}),
+    ...(goalClose ? { p_goal_close: goalClose } : {}),
   });
   if (error) throw toDbError(error, status);
 

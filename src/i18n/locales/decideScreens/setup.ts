@@ -36,6 +36,8 @@ export const setup = {
     continue: 'Continue: {{next}}',
     statusDone: 'Done',
     rowA11y: '{{item}}. {{status}}.',
+    // 08.1-10 (carry-over 08-29): the last row; opens Household. Not a setup item, so it never ticks or counts.
+    householdRow: 'Who do you share money with?',
   },
   items: {
     pay: 'Pay and payday',

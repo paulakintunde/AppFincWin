@@ -68,6 +68,29 @@ export function monthAlreadyShort(typicalLeft: MinorUnits | null): boolean {
   return typicalLeft !== null && typicalLeft < 0;
 }
 
+/**
+ * 08.1 D-07: the account goes below 0 inside the 90 days even with no purchase. One fact, leading the depletion lines; it names the first
+ * day below 0 and never changes a code, a variant or a ready-by date. zero is always 0 (the screen formats the currency's zero).
+ */
+export function belowZeroWithoutFacts(date: string | null): Fact[] {
+  return date === null ? [] : [{ code: 'below_zero_without', values: { date, zero: 0 } }];
+}
+
+/**
+ * 08.1 (plan 13, owner 2026-11-20): a Fits answer whose account goes below 0 later in the 12-month path, after the first 90 days that
+ * D-07 and the cash path already cover. 'without': even with no purchase; 'with': only because of the purchase. One fact, a fact only
+ * (never a code, variant or ready-by change), leading in the same place as below_zero_without. zero is the currency's zero.
+ */
+export function belowZeroLaterFacts(later: { readonly kind: 'without' | 'with'; readonly date: string } | null): Fact[] {
+  return later === null ? [] : [{ code: later.kind === 'without' ? 'below_zero_later_without' : 'below_zero_later_with', values: { date: later.date, zero: 0 } }];
+}
+
+/** Put the below-zero-without fact first, or directly after overdraft_not_cleared when that warning leads (CO-D-36). */
+export function placeBelowZeroWithout(below: Fact[], rest: Fact[]): Fact[] {
+  if (rest.length > 0 && rest[0]!.code === 'overdraft_not_cleared') return [rest[0]!, ...below, ...rest.slice(1)];
+  return [...below, ...rest];
+}
+
 export function depletionFacts(d: DepletionInput): Fact[] {
   const TL = d.typicalLeft;
   if (TL === null || d.code === 'needs_input') return [];

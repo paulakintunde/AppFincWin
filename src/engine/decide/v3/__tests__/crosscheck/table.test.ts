@@ -248,7 +248,8 @@ describe('plain calculator: safety net (05.4-18, FIN-01, FIN-02; D-05, D-06, D-3
     for (const c of sn) {
       // 05.4-21: tight (SN-10, SN-11) is compared too.
       const got = plainAnswer(c.fixture);
-      const variant = NET_VARIANTS.includes(c.expected.variant) || c.expected.variant === 'tight' ? got.variant : c.expected.variant;
+      // 08.1-13: a plan's net variant is not restated by the plain calculator (PLAIN-PLANS), so plan cases compare the code only.
+      const variant = c.fixture.check.pay.mode === 'plan' ? c.expected.variant : NET_VARIANTS.includes(c.expected.variant) || c.expected.variant === 'tight' ? got.variant : c.expected.variant;
       expect({ id: c.id, code: got.code, variant }).toEqual({ id: c.id, code: c.expected.code, variant: c.expected.variant });
     }
   });
@@ -733,7 +734,10 @@ describe('regression: a dip inside the overdraft does not wait for payday (D-80,
     expect(plainCashReady(once)).toEqual({ month: '2026-11' });
     expect(plainShortWait(once)).toBe(false);
     const e = toEngineInputs(once);
-    expect(pick(evaluate(e.inputs, e.check))).toMatchObject({ code: 'not_yet', variant: 'not_covered', readyBy: '2026-11' });
+    // 08.1 D-05: the ladder's month (November) is only the earliest it can be; the date is the first day a fresh check stays at or above 0
+    // for its 90 days, and until January the account still dips below 0 inside the overdraft. 08.1 review A-WR-01: the exact safe day
+    // is kept (here 1 January), still January on screen.
+    expect(pick(evaluate(e.inputs, e.check))).toMatchObject({ code: 'not_yet', variant: 'not_covered', readyBy: '2027-01-01' });
   });
   it('the plan: plain and engine both say "Only by borrowing", with no "costs more" line', () => {
     const { inputs, check } = toEngineInputs(f);

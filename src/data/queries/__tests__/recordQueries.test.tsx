@@ -145,7 +145,8 @@ describe('useRecurringSeries', () => {
 
     const { result } = await renderHook(() => useRecurringSeries('h1'), { wrapper: wrapper(newClient()) });
 
-    await waitFor(() => expect(result.current.data).toEqual(rows));
+    // 08.1-02: a row from before the amount_kind column reads as exact.
+    await waitFor(() => expect(result.current.data).toEqual([{ id: 's1', amount_kind: 'exact' }]));
     expect(fakeClient.calls[0]).toMatchObject({ table: 'recurring_series', method: 'select' });
     expect(fakeClient.calls.find((c) => c.method === 'eq')?.args).toEqual(['household_id', 'h1']);
   });

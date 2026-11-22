@@ -38,6 +38,7 @@ async function answer(s: LedgerScenario, scale = 1) {
       onAction={() => undefined}
       onOption={() => undefined}
       onCantSee={() => undefined}
+      onImport={() => undefined}
     />,
     {
       wrapper: ({ children }: { children: React.ReactNode }) => (

@@ -112,6 +112,13 @@ export function useNoticeFormat(householdId: string | null | undefined, househol
           return t('household.notices.settle_undone', { name: actor, amount });
         case 'written_off':
           return t('household.notices.written_off', { name: actor, amount });
+        // 08.1-22 event kinds, worded in 08.1-23 (T-08.1-68: a member changing a rule others rely on is named).
+        case 'spend_rule_changed':
+          return t('household.notices.spend_rule_changed', { name: actor });
+        case 'joint_purpose_changed':
+          return typeof e.params.account_name === 'string'
+            ? t('household.notices.joint_purpose_changed', { name: actor, account: e.params.account_name })
+            : t('household.notices.joint_purpose_changed_plain', { name: actor });
         // 09-19 (UI-SPEC 7, D-19, D-21, D-21a, Owner P4): plan events in the notices list. Prices are not known here, so the
         // downgrade offer shows its title; the full offer with the price is the notice on Home and Subscription.
         case 'plan_approval_needed':

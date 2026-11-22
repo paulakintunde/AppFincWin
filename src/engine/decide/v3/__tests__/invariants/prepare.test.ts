@@ -29,9 +29,10 @@ const digest = (v: unknown): string => createHash('sha256').update(stable(v)).di
  * schedule's exactInterestBp, a new field that only the 10% line reads; the rest must not move. 06 code review (D-22): so are the
  * net's new goalsOutside and goalsOutsideKept (unlocked goal money kept apart from the net's figures); the rest must not move.
  * I51 nightly fix: so is a net-carried cash check's new `before` (the failed check it replaced); the rest must not move.
+ * 08.1-14 (owner answer 5): so is the result's new readyByUntested (which copy a Not yet date reads); the rest must not move.
  */
 const withoutCaveats = (e: Evaluation): unknown => {
-  const { caveats: _caveats, ...result } = e.result;
+  const { caveats: _caveats, readyByUntested: _untested, ...result } = e.result;
   const net = e.net == null ? e.net : (({ goalsOutside: _g, goalsOutsideKept: _k, ...rest }) => rest)(e.net);
   const cash = e.cash.kind === 'net' ? (({ before: _b, ...rest }) => rest)(e.cash) : e.cash;
   if (e.purchase?.schedule == null) return { ...e, result, net, cash };

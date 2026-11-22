@@ -1,0 +1,1882 @@
+[
+  {
+    "key": "decide.v3.fact.below_zero_later_with",
+    "text": "With this, your account goes below {{zero}} on {{date}}.",
+    "sample": "With this, your account goes below $0.00 on 14 Jun.",
+    "where": "Answer screen, fact lines under the verdict",
+    "plan": "08.1-13",
+    "group": "Answer",
+    "status": "new",
+    "note": "Plan 14 changed \"by {{date}}\" to \"on {{date}}\" (owner Q2 A)."
+  },
+  {
+    "key": "decide.v3.fact.below_zero_later_without",
+    "text": "Later on, your account goes below {{zero}} on {{date}} even without this.",
+    "sample": "Later on, your account goes below $0.00 on 14 Jun even without this.",
+    "where": "Answer screen, fact lines under the verdict",
+    "plan": "08.1-13",
+    "group": "Answer",
+    "status": "new",
+    "note": "Plan 14 changed \"by {{date}}\" to \"on {{date}}\" (owner Q2 A)."
+  },
+  {
+    "key": "decide.screens.answer.figureName.promo_end_missing",
+    "text": "the promotion’s end date",
+    "sample": "the promotion’s end date",
+    "where": "Answer screen, Give it more to go on list",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.fact.promo_cleared",
+    "text": "The promotion ends on {{date}}. Paid off by then, no interest is charged.",
+    "sample": "The promotion ends on 14 Jun. Paid off by then, no interest is charged.",
+    "where": "Answer screen, installments result",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.fact.back_charge_cost",
+    "text": "If not paid in full by {{date}}, about {{amount}} of interest is charged back.",
+    "sample": "If not paid in full by 14 Jun, about $212.00 of interest is charged back.",
+    "where": "Answer screen, installments result (Warning row)",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.missing.promo_end_missing",
+    "text": "The promotion’s end date isn’t entered yet.",
+    "sample": "The promotion’s end date isn’t entered yet.",
+    "where": "Answer screen, missing figures line",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.frame.itemA11yScope",
+    "text": "{{name}}, {{price}}. {{sub}}",
+    "sample": "Laptop, $900.00. First read · Just you",
+    "where": "Answer screen, top bar (spoken only)",
+    "plan": "08.1-10",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.scope.household",
+    "text": "Household · {{household}}",
+    "sample": "Household · Flat 4B",
+    "where": "Answer screen, top bar sub-line under the item",
+    "plan": "08.1-10",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.scope.justYou",
+    "text": "Just you",
+    "sample": "Just you",
+    "where": "Answer screen, top bar sub-line under the item",
+    "plan": "08.1-10",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.scope.withStage",
+    "text": "{{stage}} · {{scope}}",
+    "sample": "Full answer · Just you",
+    "where": "Answer screen, top bar sub-line under the item",
+    "plan": "08.1-10",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.caution.a11y",
+    "text": "Caution: dips below {{zero}} on {{date}}.",
+    "sample": "Caution: dips below $0.00 on 14 Jun.",
+    "where": "Answer screen, verdict card, caution sign beside the verdict word",
+    "plan": "08.1-24",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.caution.line",
+    "text": "dips below {{zero}} on {{date}}",
+    "sample": "dips below $0.00 on 14 Jun",
+    "where": "Answer screen, verdict card, caution sign beside the verdict word",
+    "plan": "08.1-24",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.belowZero.a11y",
+    "text": "Warning. {{sentence}}",
+    "sample": "Warning. Your account goes below $0.00 on 14 Jun even without this.",
+    "where": "Answer screen, Warning line directly under the verdict card",
+    "plan": "08.1-14",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.belowZero.badge",
+    "text": "Warning",
+    "sample": "Warning",
+    "where": "Answer screen, Warning line directly under the verdict card",
+    "plan": "08.1-14",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.fact.below_zero_without",
+    "text": "Your account goes below {{zero}} on {{date}} even without this.",
+    "sample": "Your account goes below $0.00 on 14 Jun even without this.",
+    "where": "Answer screen, Warning line directly under the verdict card",
+    "plan": "08.1-06",
+    "group": "Answer",
+    "status": "new",
+    "note": "Plan 14 changed \"by {{date}}\" to \"on {{date}}\" (owner Q2 A)."
+  },
+  {
+    "key": "decide.screens.stepper.deferred.endMissing",
+    "text": "A promotion end date is needed.",
+    "sample": "A promotion end date is needed.",
+    "where": "New check, installments step, 0% promotion fields",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.deferred.endsLabel",
+    "text": "Promotion ends",
+    "sample": "Promotion ends",
+    "where": "New check, installments step, 0% promotion fields",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.deferred.helper",
+    "text": "If it isn’t paid off by then, interest is charged back to the first day.",
+    "sample": "If it isn’t paid off by then, interest is charged back to the first day.",
+    "where": "New check, installments step, 0% promotion fields",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.deferred.rateLabel",
+    "text": "Rate if not paid in full",
+    "sample": "Rate if not paid in full",
+    "where": "New check, installments step, 0% promotion fields",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.deferred.rateMissing",
+    "text": "A rate is needed.",
+    "sample": "A rate is needed.",
+    "where": "New check, installments step, 0% promotion fields",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.deferred.switch",
+    "text": "0% if paid in full",
+    "sample": "0% if paid in full",
+    "where": "New check, installments step, 0% promotion fields",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.deferred.warning",
+    "text": "Warning",
+    "sample": "Warning",
+    "where": "New check, installments step, 0% promotion fields",
+    "plan": "08.1-11",
+    "group": "Answer",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.about.heldBack.all",
+    "text": "These need three months of records: pay swings, pay worked out from your history, and what could move this answer.",
+    "sample": "These need three months of records: pay swings, pay worked out from your history, and what could move this answer.",
+    "where": "About Decide answers sheet",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.about.heldBack.answerRange",
+    "text": "This needs three months of records: what could move this answer.",
+    "sample": "This needs three months of records: what could move this answer.",
+    "where": "About Decide answers sheet",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.about.heldBack.pay",
+    "text": "These need three months of pay in your records: pay swings and pay worked out from your history.",
+    "sample": "These need three months of pay in your records: pay swings and pay worked out from your history.",
+    "where": "About Decide answers sheet",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.about.howFar",
+    "text": "Answers look up to 12 months ahead. Dates further out are not given.",
+    "sample": "Answers look up to 12 months ahead. Dates further out are not given.",
+    "where": "About Decide answers sheet",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.about.howFarTitle",
+    "text": "How far ahead",
+    "sample": "How far ahead",
+    "where": "About Decide answers sheet",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.about.stageRow.first_read",
+    "text": "Stage: First read. One full month of records gives the full answer.",
+    "sample": "Stage: First read. One full month of records gives the full answer.",
+    "where": "About Decide answers sheet",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.about.stageRow.full",
+    "text": "Stage: Full answer. Three months of records add the deeper parts.",
+    "sample": "Stage: Full answer. Three months of records add the deeper parts.",
+    "where": "About Decide answers sheet",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.basis.partial",
+    "text": "Based on your last {{used}} months of records, up to {{date}}.",
+    "sample": "Based on your last 2 months of records, up to 14 Jun.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on {{used}} of the {{lookedFor}} months of records Decide looks for."
+  },
+  {
+    "key": "decide.v3.basis.partialOne",
+    "text": "Based on your one full month of records, up to {{date}}.",
+    "sample": "Based on your one full month of records, up to 14 Jun.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.basis.payWindow",
+    "text": "Pay is judged over your last {{months}} months.",
+    "sample": "Pay is judged over your last 4 months.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.basis.quickEstimates",
+    "text": "Based on the figures you typed, not your records.",
+    "sample": "Based on the figures you typed, not your records.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on your quick estimates, not your records."
+  },
+  {
+    "key": "decide.v3.basis.records",
+    "text": "Based on your last {{months}} months of records, up to {{date}}.",
+    "sample": "Based on your last 4 months of records, up to 14 Jun.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on {{months}} months of your records, up to {{date}}."
+  },
+  {
+    "key": "decide.v3.basis.recordsWithReason.close_to_line",
+    "text": "Based on your last {{months}} months of records, up to {{date}}. This is close to your limit.",
+    "sample": "Based on your last 4 months of records, up to 14 Jun. This is close to your limit.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on {{months}} months of your records, up to {{date}}. This is close to your limit."
+  },
+  {
+    "key": "decide.v3.basis.recordsWithReason.pay_missed",
+    "text": "Based on your last {{months}} months of records, up to {{date}}, leaving out pay that hasn’t arrived.",
+    "sample": "Based on your last 4 months of records, up to 14 Jun, leaving out pay that hasn’t arrived.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on {{months}} months of your records, up to {{date}}, leaving out pay that hasn’t arrived."
+  },
+  {
+    "key": "decide.v3.basis.recordsWithReason.quick_estimates",
+    "text": "Based on your last {{months}} months of records, up to {{date}}, and your quick estimates.",
+    "sample": "Based on your last 4 months of records, up to 14 Jun, and your quick estimates.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on {{months}} months of your records, up to {{date}}, and your quick estimates."
+  },
+  {
+    "key": "decide.v3.basis.recordsWithReason.user_said_cover",
+    "text": "Based on your last {{months}} months of records, up to {{date}}, and on what you said about covering it.",
+    "sample": "Based on your last 4 months of records, up to 14 Jun, and on what you said about covering it.",
+    "where": "Answer screen, basis sentence above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on {{months}} months of your records, up to {{date}}, and on what you said about covering it."
+  },
+  {
+    "key": "decide.v3.fact.not_within_year",
+    "text": "Not within a year at your current pace.",
+    "sample": "Not within a year at your current pace.",
+    "where": "Answer screen, first line under a Not yet verdict (no date within a year)",
+    "plan": "08.1-06",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.verdict.notYetNotCovered.body",
+    "text": "Ready by {{readyMonth}}. Based on your records, buying then keeps your account above {{zero}} for the next 90 days.",
+    "sample": "Ready by February 2027. Based on your records, buying then keeps your account above $0.00 for the next 90 days.",
+    "where": "Answer screen, Not yet verdict card body",
+    "plan": "08.1-14",
+    "group": "Ready by and stages",
+    "status": "changed",
+    "old": "Based on your typical pace, it could be covered by {{readyMonth}}."
+  },
+  {
+    "key": "decide.screens.stage.line.addLink",
+    "text": "Add earlier months",
+    "sample": "Add earlier months",
+    "where": "Answer screen, stage line above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.line.first_read",
+    "text": "A first read. It uses the figures you typed. One full month of records unlocks the full answer.",
+    "sample": "A first read. It uses the figures you typed. One full month of records unlocks the full answer.",
+    "where": "Answer screen, stage line above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.line.full",
+    "text": "A full answer from {{monthsUsed}} of 3 months. Three months add pay swings and what could move this answer.",
+    "sample": "A full answer from 2 of 3 months. Three months add pay swings and what could move this answer.",
+    "where": "Answer screen, stage line above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.line.importLink",
+    "text": "Import statements",
+    "sample": "Import statements",
+    "where": "Answer screen, stage line above the legal footer",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.a11y",
+    "text": "What answers rest on. {{stage}}. {{monthsUsed}} of 3 months.",
+    "sample": "What answers rest on. Full answer. 2 of 3 months.",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.a11yDeeper",
+    "text": "What answers rest on. {{monthsUsed}} months of records.",
+    "sample": "What answers rest on. 4 months of records.",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.barA11y",
+    "text": "{{monthsUsed}} of 3 months of records. {{stage}} is on.",
+    "sample": "2 of 3 months of records. Full answer is on.",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.deeper",
+    "text": "Answers use your last {{months}} months of records, with every part on.",
+    "sample": "Answers use your last 4 months of records, with every part on.",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.endLabel",
+    "text": "3 months: deeper parts",
+    "sample": "3 months: deeper parts",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.first_read",
+    "text": "Answers are a first read. They use the figures you typed, not your records.",
+    "sample": "Answers are a first read. They use the figures you typed, not your records.",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.full",
+    "text": "Answers use your records. Three months of records add the deeper parts.",
+    "sample": "Answers use your records. Three months of records add the deeper parts.",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.tickLabel",
+    "text": "1 month: full answer",
+    "sample": "1 month: full answer",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.title",
+    "text": "What answers rest on",
+    "sample": "What answers rest on",
+    "where": "Decide home, stage card",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.card.announce_one",
+    "text": "Decide now has {{count}} month of records. {{stage}} is on.",
+    "sample": "Decide now has 1 month of records. Full answer is on.",
+    "where": "Decide home, stage card (spoken when months go up)",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new",
+    "note": "Plan 14 split the draft \"{{monthsUsed}} months\" into _one / _other (no \"1 months\")."
+  },
+  {
+    "key": "decide.screens.stage.card.announce_other",
+    "text": "Decide now has {{count}} months of records. {{stage}} is on.",
+    "sample": "Decide now has 2 months of records. Full answer is on.",
+    "where": "Decide home, stage card (spoken when months go up)",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new",
+    "note": "Plan 14 split the draft \"{{monthsUsed}} months\" into _one / _other (no \"1 months\")."
+  },
+  {
+    "key": "decide.screens.stage.card.announceDeeper",
+    "text": "Decide now has {{monthsUsed}} months of records. Every part is on.",
+    "sample": "Decide now has 3 months of records. Every part is on.",
+    "where": "Decide home, stage card (spoken when months go up)",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.word.first_read",
+    "text": "First read",
+    "sample": "First read",
+    "where": "Stage chip on the stage card and the answer top bar",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.word.full",
+    "text": "Full answer",
+    "sample": "Full answer",
+    "where": "Stage chip on the stage card and the answer top bar",
+    "plan": "08.1-20",
+    "group": "Ready by and stages",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.caveat.household_not_shared",
+    "text": "Only your money is counted. {{names}} hasn’t shared theirs.",
+    "sample": "Only your money is counted. Sam hasn’t shared theirs.",
+    "where": "About Decide answers sheet, For this answer",
+    "plan": "08.1-08",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.v3.caveat.share_zero_by_rule",
+    "text": "Under {{rule}}, your share of the joint money is {{zero}} this month.",
+    "sample": "Under What each person brings, your share of the joint money is $0.00 this month.",
+    "where": "About Decide answers sheet, For this answer",
+    "plan": "08.1-25",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.partner.couplesNote",
+    "text": "Money in {{account}} may be planned by someone else too.",
+    "sample": "Money in Joint Everyday may be planned by someone else too.",
+    "where": "Answer screen, couples note",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.caveat.nameAnd",
+    "text": "{{a}} and {{b}}",
+    "sample": "Sam and Alex",
+    "where": "Answer screen, household caveat under the answer",
+    "plan": "08.1-10",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.caveat.notShared",
+    "text": "Only your money is counted. {{name}} hasn’t shared theirs.",
+    "sample": "Only your money is counted. Sam hasn’t shared theirs.",
+    "where": "Answer screen, household caveat under the answer",
+    "plan": "08.1-10",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.caveat.notSharedMany",
+    "text": "Only your money is counted. {{names}} haven’t shared theirs.",
+    "sample": "Only your money is counted. Sam and Alex haven’t shared theirs.",
+    "where": "Answer screen, household caveat under the answer",
+    "plan": "08.1-10",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.household.outOfDate",
+    "text": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+    "sample": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+    "where": "Answer screen, Household check, the spending rule line",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.household.ruleBill",
+    "text": "Counted: your {{percent}}% of the shared money, the same as the bill split.",
+    "sample": "Counted: your 60% of the shared money, the same as the bill split.",
+    "where": "Answer screen, Household check, the spending rule line",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.household.ruleBring",
+    "text": "Counted: what you bring.",
+    "sample": "Counted: what you bring.",
+    "where": "Answer screen, Household check, the spending rule line",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.household.ruleShares",
+    "text": "Counted: your {{percent}}% of the shared money.",
+    "sample": "Counted: your 60% of the shared money.",
+    "where": "Answer screen, Household check, the spending rule line",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.zeroShare.line",
+    "text": "Under {{rule}}, your share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.",
+    "sample": "Under What each person brings, your share of the joint money is $0.00 this month. With equal shares, each person counts the same part.",
+    "where": "Answer screen, Household check, zero-share line",
+    "plan": "08.1-25",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.partner.caveat",
+    "text": "{{name}} hasn’t logged shared bills since {{date}}, so shared costs may be higher.",
+    "sample": "Sam hasn’t logged shared bills since 14 Jun, so shared costs may be higher.",
+    "where": "Answer screen, Shared bills line",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "changed",
+    "old": "{{name}} hasn’t logged shared bills since {{date}}, so shared costs may be higher"
+  },
+  {
+    "key": "household.members.partner.caveatBadge",
+    "text": "Shared bills",
+    "sample": "Shared bills",
+    "where": "Answer screen, Shared bills line",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.partner.caveatSpoken",
+    "text": "Shared bills. {{name}} hasn’t logged shared bills since {{date}}, so shared costs may be higher.",
+    "sample": "Shared bills. Sam hasn’t logged shared bills since 14 Jun, so shared costs may be higher.",
+    "where": "Answer screen, Shared bills line",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.home.purposeMissing_one",
+    "text": "{{count}} joint account has no purpose set. Until then it counts as everyday spending.",
+    "sample": "1 joint account has no purpose set. Until then it counts as everyday spending.",
+    "where": "Household home",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.home.purposeMissing_other",
+    "text": "{{count}} joint accounts have no purpose set. Until then they count as everyday spending.",
+    "sample": "2 joint accounts have no purpose set. Until then they count as everyday spending.",
+    "where": "Household home",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.home.purposeMissingAction",
+    "text": "Go to Shared accounts",
+    "sample": "Go to Shared accounts",
+    "where": "Household home",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.home.rules.spending",
+    "text": "How spending is shared",
+    "sample": "How spending is shared",
+    "where": "Household home",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.partner.failed",
+    "text": "This wasn’t saved. Try again.",
+    "sample": "This wasn’t saved. Try again.",
+    "where": "Household members, partner and safety net rows",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.partner.rowSpoken",
+    "text": "{{label}}. {{state}}",
+    "sample": "Count Sam’s money in my Decide checks. On",
+    "where": "Household members, partner and safety net rows",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.partner.stateOff",
+    "text": "Off",
+    "sample": "Off",
+    "where": "Household members, partner and safety net rows",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.partner.stateOn",
+    "text": "On",
+    "sample": "On",
+    "where": "Household members, partner and safety net rows",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.members.safetyNet.failed",
+    "text": "This wasn’t saved. Try again.",
+    "sample": "This wasn’t saved. Try again.",
+    "where": "Household members, partner and safety net rows",
+    "plan": "08.1-07",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.notices.joint_purpose_changed",
+    "text": "{{name}} changed what {{account}} is for.",
+    "sample": "Sam changed what Joint Everyday is for.",
+    "where": "Household notices list",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.notices.joint_purpose_changed_plain",
+    "text": "{{name}} changed what a joint account is for.",
+    "sample": "Sam changed what a joint account is for.",
+    "where": "Household notices list",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.notices.spend_rule_changed",
+    "text": "{{name}} changed how spending is shared.",
+    "sample": "Sam changed how spending is shared.",
+    "where": "Household notices list",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.explain.a11y",
+    "text": "What {{name}} means",
+    "sample": "What Same as the bill split means",
+    "where": "Household rules screens, What this means link",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.explain.button",
+    "text": "What this means",
+    "sample": "What this means",
+    "where": "Household rules screens, What this means link",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.explain.less",
+    "text": "Less",
+    "sample": "Less",
+    "where": "Household rules screens, What this means link",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.bill.helper",
+    "text": "Each person’s share follows the bill split ({{rule}}).",
+    "sample": "Each person’s share follows the bill split (60% / 40%).",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.bill.label",
+    "text": "Same as the bill split",
+    "sample": "Same as the bill split",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.bill.tip",
+    "text": "Each check counts the same share of everyone’s money that the bill split gives that person.",
+    "sample": "Each check counts the same share of everyone’s money that the bill split gives that person.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.bring.helper",
+    "text": "Each person’s checks count their own money and their part of any joint account. Nobody’s check uses someone else’s money.",
+    "sample": "Each person’s checks count their own money and their part of any joint account. Nobody’s check uses someone else’s money.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.bring.label",
+    "text": "What each person brings",
+    "sample": "What each person brings",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.bring.tip",
+    "text": "A check counts only your own money and your part of joint money. It never counts money another person brings.",
+    "sample": "A check counts only your own money and your part of joint money. It never counts money another person brings.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.conflict",
+    "text": "{{name}} changed this a moment ago. The latest is shown.",
+    "sample": "Sam changed this a moment ago. The latest is shown.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.conflictNoName",
+    "text": "Someone changed this a moment ago. The latest is shown.",
+    "sample": "Someone changed this a moment ago. The latest is shown.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.custom.helper",
+    "text": "The group sets each person’s share of the money.",
+    "sample": "The group sets each person’s share of the money.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.custom.label",
+    "text": "A set spending split",
+    "sample": "A set spending split",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.custom.tip",
+    "text": "Each check counts the share of everyone’s money the group set for that person.",
+    "sample": "Each check counts the share of everyone’s money the group set for that person.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.defaultTag",
+    "text": "Default for this setup",
+    "sample": "Default for this setup",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.intro",
+    "text": "This sets how much money each person’s checks count. Bills are split separately.",
+    "sample": "This sets how much money each person’s checks count. Bills are split separately.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.needsUpdating",
+    "text": "Needs updating",
+    "sample": "Needs updating",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.outOfDate",
+    "text": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+    "sample": "Spending shares need updating: someone joined or left. Until then each check counts what each person brings.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.outOfDateTip",
+    "text": "The old shares no longer match the people in the group. Checks count what each person brings until the shares are updated.",
+    "sample": "The old shares no longer match the people in the group. Checks count what each person brings until the shares are updated.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.ruleLabel",
+    "text": "How each check counts money",
+    "sample": "How each check counts money",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.save",
+    "text": "Save",
+    "sample": "Save",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.saved",
+    "text": "Spending rule saved",
+    "sample": "Spending rule saved",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.inferred",
+    "text": "Worked out from your accounts",
+    "sample": "Worked out from your accounts",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.joint.helper",
+    "text": "Everything goes in and out of one shared account.",
+    "sample": "Everything goes in and out of one shared account.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.joint.label",
+    "text": "One joint account",
+    "sample": "One joint account",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.joint.tip",
+    "text": "Checks share out the joint money. The usual rule for this setup is Same as the bill split.",
+    "sample": "Checks share out the joint money. The usual rule for this setup is Same as the bill split.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.label",
+    "text": "How your money is set up",
+    "sample": "How your money is set up",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.mixed.helper",
+    "text": "A shared account for shared costs, and each person’s own accounts for the rest.",
+    "sample": "A shared account for shared costs, and each person’s own accounts for the rest.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.mixed.label",
+    "text": "Mixed",
+    "sample": "Mixed",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.mixed.tip",
+    "text": "Each person’s own money stays theirs. The joint money is shared out by the rule below.",
+    "sample": "Each person’s own money stays theirs. The joint money is shared out by the rule below.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.separate.helper",
+    "text": "Each person keeps their own accounts.",
+    "sample": "Each person keeps their own accounts.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.separate.label",
+    "text": "Separate accounts",
+    "sample": "Separate accounts",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.setup.separate.tip",
+    "text": "Checks start from each person’s own money. The usual rule for this setup is What each person brings.",
+    "sample": "Checks start from each person’s own money. The usual rule for this setup is What each person brings.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.shares.money",
+    "text": "{{percent}}% · about {{amount}} of {{total}} shared",
+    "sample": "60% · about $900.00 of $1,500.00 shared",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.shares.notHundred",
+    "text": "The shares add up to {{total}}%. Spending shares add up to 100%.",
+    "sample": "The shares add up to 90%. Spending shares add up to 100%.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.shares.tip",
+    "text": "These shares set how much of everyone’s money each person’s checks count. They always add up to 100%.",
+    "sample": "These shares set how much of everyone’s money each person’s checks count. They always add up to 100%.",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.shares.title",
+    "text": "Each person’s share",
+    "sample": "Each person’s share",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.shares.total",
+    "text": "Total {{total}}%",
+    "sample": "Total 100%",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.title",
+    "text": "How spending is shared",
+    "sample": "How spending is shared",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.spending.update",
+    "text": "Update shares",
+    "sample": "Update shares",
+    "where": "How spending is shared screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.zeroShare.action",
+    "text": "See equal shares",
+    "sample": "See equal shares",
+    "where": "How spending is shared screen, zero-share suggestion card",
+    "plan": "08.1-25",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.zeroShare.notNow",
+    "text": "Not now",
+    "sample": "Not now",
+    "where": "How spending is shared screen, zero-share suggestion card",
+    "plan": "08.1-25",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.zeroShare.settings",
+    "text": "Under this rule, {{name}}’s share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.",
+    "sample": "Under this rule, Sam’s share of the joint money is $0.00 this month. With equal shares, each person counts the same part.",
+    "where": "How spending is shared screen, zero-share suggestion card",
+    "plan": "08.1-25",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.zeroShare.settingsMany",
+    "text": "Under this rule, {{names}} have a {{zero}} share of the joint money this month. With equal shares, each person counts the same part.",
+    "sample": "Under this rule, Sam and Alex have a $0.00 share of the joint money this month. With equal shares, each person counts the same part.",
+    "where": "How spending is shared screen, zero-share suggestion card",
+    "plan": "08.1-25",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.zeroShare.settingsYou",
+    "text": "Under this rule, your share of the joint money is {{zero}} this month. With equal shares, each person counts the same part.",
+    "sample": "Under this rule, your share of the joint money is $0.00 this month. With equal shares, each person counts the same part.",
+    "where": "How spending is shared screen, zero-share suggestion card",
+    "plan": "08.1-25",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.helperBring",
+    "text": "Counts your own money and your part of any joint account.",
+    "sample": "Counts your own money and your part of any joint account.",
+    "where": "New check, price step, under Who pays",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.helperShares",
+    "text": "Counts your {{percent}}% of the money everyone has shared.",
+    "sample": "Counts your 60% of the money everyone has shared.",
+    "where": "New check, price step, under Who pays",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.jointMe",
+    "text": "Counts your part of {{account}}.",
+    "sample": "Counts your part of Joint Everyday.",
+    "where": "New check, price step, under Who pays (Just me with a joint account)",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.jointMeMany",
+    "text": "Counts your part of your joint accounts.",
+    "sample": "Counts your part of your joint accounts.",
+    "where": "New check, price step, under Who pays (Just me with a joint account)",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.helper",
+    "text": "Uses shared money and anything a partner has agreed to share.",
+    "sample": "Uses shared money and anything a partner has agreed to share.",
+    "where": "New check, price step, Who pays choice",
+    "plan": "08.1-10",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.household",
+    "text": "Household",
+    "sample": "Household",
+    "where": "New check, price step, Who pays choice",
+    "plan": "08.1-10",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.justMe",
+    "text": "Just me",
+    "sample": "Just me",
+    "where": "New check, price step, Who pays choice",
+    "plan": "08.1-10",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stepper.whoPays.label",
+    "text": "Who pays",
+    "sample": "Who pays",
+    "where": "New check, price step, Who pays choice",
+    "plan": "08.1-10",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.shared.purposeLine",
+    "text": "{{purpose}} · {{madeBy}}",
+    "sample": "Joint household bills · set by Sam",
+    "where": "Shared accounts list",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.shared.purposeNotSet",
+    "text": "Purpose not set",
+    "sample": "Purpose not set",
+    "where": "Shared accounts list",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.spare.jointNote",
+    "text": "Count only your own accounts. Joint accounts are counted separately.",
+    "sample": "Count only your own accounts. Joint accounts are counted separately.",
+    "where": "Spare money sheet, under the figure (joint account holders)",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.bills.helper",
+    "text": "Money kept for shared bills. Only money above the bills due before the next pay-in counts as spare.",
+    "sample": "Money kept for shared bills. Only money above the bills due before the next pay-in counts as spare.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.bills.label",
+    "text": "Joint household bills",
+    "sample": "Joint household bills",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.bills.tip",
+    "text": "Checks count only the money left after the bills due before the next pay-in.",
+    "sample": "Checks count only the money left after the bills due before the next pay-in.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.conflict",
+    "text": "Someone changed this a moment ago. The latest is shown.",
+    "sample": "Someone changed this a moment ago. The latest is shown.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.everyday.helper",
+    "text": "Money for anything. Each person’s checks count their part of it.",
+    "sample": "Money for anything. Each person’s checks count their part of it.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.everyday.label",
+    "text": "Joint everyday spending",
+    "sample": "Joint everyday spending",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.everyday.tip",
+    "text": "Checks count this money, shared out between the group by the spending rule.",
+    "sample": "Checks count this money, shared out between the group by the spending rule.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.intro",
+    "text": "This sets how its money counts in everyone’s checks.",
+    "sample": "This sets how its money counts in everyone’s checks.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.notJoint",
+    "text": "This account is no longer a joint account.",
+    "sample": "This account is no longer a joint account.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.notMember",
+    "text": "This account is not in your household any more.",
+    "sample": "This account is not in your household any more.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.rowLabel",
+    "text": "What it is for",
+    "sample": "What it is for",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.safetyNet",
+    "text": "This is our safety net",
+    "sample": "This is our safety net",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.safetyNetTip",
+    "text": "When on, this money is the group’s safety net. It is counted once for everyone, and checks never spend it.",
+    "sample": "When on, this money is the group’s safety net. It is counted once for everyone, and checks never spend it.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.save",
+    "text": "Save",
+    "sample": "Save",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.saved",
+    "text": "Saved",
+    "sample": "Saved",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.savings.helper",
+    "text": "Money saved together. It is kept out of checks unless the group marks it as money that can be spent.",
+    "sample": "Money saved together. It is kept out of checks unless the group marks it as money that can be spent.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.savings.label",
+    "text": "Joint savings",
+    "sample": "Joint savings",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.savings.tip",
+    "text": "Checks leave this money out, unless it is marked as money that can be spent.",
+    "sample": "Checks leave this money out, unless it is marked as money that can be spent.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.spendable",
+    "text": "Can be spent",
+    "sample": "Can be spent",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.spendableTip",
+    "text": "When on, checks count this savings money, shared out by the spending rule.",
+    "sample": "When on, checks count this savings money, shared out by the spending rule.",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.title",
+    "text": "What is {{account}} for?",
+    "sample": "What is Joint Everyday for?",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "household.rules.jointPurpose.waiting",
+    "text": "Saving the account first…",
+    "sample": "Saving the account first…",
+    "where": "What is this joint account for? screen",
+    "plan": "08.1-23",
+    "group": "Household rules",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.outcome.recordBought",
+    "text": "Record as bought",
+    "sample": "Record as bought",
+    "where": "Answer screen, bottom line of a check saved for later",
+    "plan": "08.1-10",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.boughtOn",
+    "text": "Bought on {{date}}.",
+    "sample": "Bought on 14 Jun.",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.groupCosts",
+    "text": "Costs that start",
+    "sample": "Costs that start",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.groupGoal",
+    "text": "Your goal",
+    "sample": "Your goal",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.groupMoney",
+    "text": "Money in and out",
+    "sample": "Money in and out",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.groupStops",
+    "text": "Costs that stop",
+    "sample": "Costs that stop",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.lookBack",
+    "text": "In 3 months, Your decisions asks if it cost what you expected.",
+    "sample": "In 3 months, Your decisions asks if it cost what you expected.",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "changed",
+    "old": "In 3 months, Your decisions asks if it cost what you expected."
+  },
+  {
+    "key": "decide.screens.answerActions.bought.oldOne",
+    "text": "the old one",
+    "sample": "the old one",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.rowFallback",
+    "text": "Running cost",
+    "sample": "Running cost",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.rowFixed",
+    "text": "{{name}}, {{amount}} a month",
+    "sample": "Phone plan, $45.00 a month",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.rowGoal",
+    "text": "Close the goal {{goal}}",
+    "sample": "Close the goal Car fund",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.rowPayoff",
+    "text": "Pay off {{debt}}, {{amount}}",
+    "sample": "Pay off Visa card, $1,200.00",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.rowSale",
+    "text": "Money in from selling {{item}}, {{amount}}",
+    "sample": "Money in from selling the old laptop, $300.00",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.rowStop",
+    "text": "{{bill}} stops from {{date}}",
+    "sample": "Old phone plan stops from 14 Jun",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.rowVaries",
+    "text": "{{name}}, about {{amount}} a month",
+    "sample": "Fuel, about $120.00 a month",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.save",
+    "text": "Record purchase",
+    "sample": "Record purchase",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.stateOff",
+    "text": "not ticked",
+    "sample": "not ticked",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.stateOn",
+    "text": "ticked",
+    "sample": "ticked",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.subGoal",
+    "text": "It can stay open.",
+    "sample": "It can stay open.",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.subVaries",
+    "text": "Counts until real spending replaces it",
+    "sample": "Counts until real spending replaces it",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.title",
+    "text": "Record as bought",
+    "sample": "Record as bought",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "changed",
+    "old": "Add to your records"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.toast",
+    "text": "Recorded: {{item}}.",
+    "sample": "Recorded: Laptop.",
+    "where": "Record as bought screen",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.shareRule.amount",
+    "text": "by set amounts",
+    "sample": "by set amounts",
+    "where": "Record as bought screen, inside the shared-line sentence",
+    "plan": "08.1-12",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.shareRule.even",
+    "text": "evenly",
+    "sample": "evenly",
+    "where": "Record as bought screen, inside the shared-line sentence",
+    "plan": "08.1-12",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.shareRule.mine",
+    "text": "to me alone",
+    "sample": "to me alone",
+    "where": "Record as bought screen, inside the shared-line sentence",
+    "plan": "08.1-12",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.shareRule.weight",
+    "text": "by agreed share",
+    "sample": "by agreed share",
+    "where": "Record as bought screen, inside the shared-line sentence",
+    "plan": "08.1-12",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.bought.sharedSub",
+    "text": "Saved as a shared line, split {{rule}}.",
+    "sample": "Saved as a shared line, split evenly.",
+    "where": "Record as bought screen, under the item (Household check)",
+    "plan": "08.1-12",
+    "group": "Record as bought",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answerActions.added.title",
+    "text": "Recorded",
+    "sample": "Recorded",
+    "where": "Record as bought, confirmation",
+    "plan": "08.1-09",
+    "group": "Record as bought",
+    "status": "changed",
+    "old": "Added to records"
+  },
+  {
+    "key": "decide.screens.stage.notReady.firstRead",
+    "text": "Get a first read",
+    "sample": "Get a first read",
+    "where": "Answer screen, Not ready card",
+    "plan": "08.1-21",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.notReady.import",
+    "text": "Import statements for a full answer",
+    "sample": "Import statements for a full answer",
+    "where": "Answer screen, Not ready card",
+    "plan": "08.1-21",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.notReady.note",
+    "text": "A first read uses the figures you type. A full answer needs one full month of records.",
+    "sample": "A first read uses the figures you type. A full answer needs one full month of records.",
+    "where": "Answer screen, Not ready card",
+    "plan": "08.1-21",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.empty.body",
+    "text": "Answers are a first read until there is one. Import statements or add this month as you go.",
+    "sample": "Answers are a first read until there is one. Import statements or add this month as you go.",
+    "where": "Decide home, empty state (no full month yet)",
+    "plan": "08.1-21",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.empty.title",
+    "text": "No full month of records yet",
+    "sample": "No full month of records yet",
+    "where": "Decide home, empty state (no full month yet)",
+    "plan": "08.1-21",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.import.a11y",
+    "text": "{{title}}. {{sub}}",
+    "sample": "Import your last 3 statements. One month gives a full answer today. Three add the deeper parts. CSV, OFX or PDF.",
+    "where": "Decide home, import prompt card",
+    "plan": "08.1-20",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.import.firstSub",
+    "text": "One month gives a full answer today. Three add the deeper parts. CSV, OFX or PDF.",
+    "sample": "One month gives a full answer today. Three add the deeper parts. CSV, OFX or PDF.",
+    "where": "Decide home, import prompt card",
+    "plan": "08.1-20",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.import.firstTitle",
+    "text": "Import your last 3 statements",
+    "sample": "Import your last 3 statements",
+    "where": "Decide home, import prompt card",
+    "plan": "08.1-20",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.import.moreSub",
+    "text": "Each month you add moves answers toward the deeper parts. CSV, OFX or PDF.",
+    "sample": "Each month you add moves answers toward the deeper parts. CSV, OFX or PDF.",
+    "where": "Decide home, import prompt card",
+    "plan": "08.1-20",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.stage.import.moreTitle",
+    "text": "Add earlier months",
+    "sample": "Add earlier months",
+    "where": "Decide home, import prompt card",
+    "plan": "08.1-20",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.setup.checklist.householdRow",
+    "text": "Who do you share money with?",
+    "sample": "Who do you share money with?",
+    "where": "Decide setup checklist, household row",
+    "plan": "08.1-10",
+    "group": "Setup and import",
+    "status": "new"
+  },
+  {
+    "key": "activity.row.yourShare",
+    "text": "Your share {{amount}}",
+    "sample": "Your share $22.50",
+    "where": "Activity list, on a shared line",
+    "plan": "08.1-04",
+    "group": "Other",
+    "status": "new"
+  },
+  {
+    "key": "activity.row.yourShareA11y",
+    "text": "your share {{amount}}",
+    "sample": "your share $22.50",
+    "where": "Activity list, on a shared line",
+    "plan": "08.1-04",
+    "group": "Other",
+    "status": "new"
+  },
+  {
+    "key": "activity.summary.shareNote",
+    "text": "Your share of shared lines.",
+    "sample": "Your share of shared lines.",
+    "where": "Activity, month summary under the total",
+    "plan": "08.1-04",
+    "group": "Other",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.answer.testerBuild",
+    "text": "Build {{build}}",
+    "sample": "Build 0.3.0 (a1b2c3d4)",
+    "where": "Answer screen, under the legal footer (tester accounts only)",
+    "plan": "08.1-05",
+    "group": "Other",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.common.paused.body",
+    "text": "Your records are safe. Answers come back soon.",
+    "sample": "Your records are safe. Answers come back soon.",
+    "where": "Decide tab, when Decide is switched off",
+    "plan": "08.1-05",
+    "group": "Other",
+    "status": "new"
+  },
+  {
+    "key": "decide.screens.common.paused.title",
+    "text": "Decide is paused",
+    "sample": "Decide is paused",
+    "where": "Decide tab, when Decide is switched off",
+    "plan": "08.1-05",
+    "group": "Other",
+    "status": "new"
+  }
+]

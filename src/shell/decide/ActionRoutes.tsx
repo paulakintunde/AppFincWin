@@ -10,8 +10,12 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { readStoredCheck } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money';
+import { useHouseholdMembers } from '@/data/queries/household';
+import { useSplitDefaults } from '@/data/queries/householdBalances';
 import { useAccounts } from '@/data/queries/accounts';
-import { useDecideChecks } from '@/data/queries/decide';
+import { useDebts, useDecideChecks } from '@/data/queries/decide';
+import { useRecurringSeries } from '@/data/queries/recurringSeries';
+import { useSavingsGoalRows } from '@/data/queries/growGoals';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { space } from '@/theme/layout';
@@ -26,8 +30,7 @@ import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { DetailScreen } from '@/shell/screen/DetailScreen';
 import { BoughtScreen } from '@/features/decide/screens/actions/BoughtScreen';
 import { SaveForItScreen } from '@/features/decide/screens/actions/SaveForItScreen';
-import { useGoAheadV3 } from '@/data/mutations/decideGoAhead';
-import { useAddRunningCostBill } from '@/data/mutations/runningCostBills';
+import { endSeriesOf, useGoAheadV3 } from '@/data/mutations/decideGoAhead';
 
 
 type Frame = 'bought' | 'saveForIt';
@@ -113,8 +116,40 @@ export function SaveForItRoute({ id }: { id: string }) {
 export function BoughtRoute({ id }: { id: string }) {
   const router = useRouter();
   const { rc, row, v3, engine, gate, formatMoney, formatDate } = useActionData(id);
-  const adder = useAddRunningCostBill();
   const go = useGoAheadV3();
+  // 08.1-09: what the tick rows offer beyond the purchase, read here so the screen stays free of the data layer.
+  const series = useRecurringSeries(rc.householdId ?? undefined);
+  const debts = useDebts(rc.householdId ?? undefined);
+  const goals = useSavingsGoalRows(rc.userId ?? undefined, rc.householdId ?? undefined);
+  const recorded = useMemo(() => (series.data ?? []).filter((s) => s.deleted_at == null), [series.data]);
+  const replaces = v3?.replaces ?? null;
+  // Only a recorded bill that would really end is offered (endSeriesOf is the one rule the save uses too).
+  const stopRows = useMemo(
+    () =>
+      (replaces?.stops ?? []).flatMap((s) => {
+        if (s.source.kind !== 'bill' || endSeriesOf([s], recorded).length === 0) return [];
+        const seriesId = s.source.seriesId;
+        return [{ id: s.id, name: recorded.find((r) => r.id === seriesId)?.name ?? '', date: s.stopDate }];
+      }),
+    [replaces, recorded]
+  );
+  // The old loan the sale pays: live, still owed. What goes to it is the sale, up to what is owed.
+  const payoff = useMemo(() => {
+    const sale = replaces?.sale ?? null;
+    if (sale === null || sale.paysDebtId === null || sale.amount <= 0) return null;
+    const debt = (debts.data ?? []).find((d) => d.id === sale.paysDebtId && d.deleted_at == null && d.paid_off_on == null && d.balance > 0);
+    return debt === undefined ? null : { id: debt.id, version: debt.version, name: debt.name, amount: Math.min(sale.amount, debt.balance) };
+  }, [replaces, debts.data]);
+  // The goal this check made, still open: the only goal the save may close (the server refuses any other, goal_not_linked).
+  const goal = useMemo(() => {
+    const g = (goals.data ?? []).find((x) => x.check_id === id && x.done_at == null && x.deleted_at == null && x.created_by === rc.userId);
+    return g === undefined ? null : { id: g.id, name: g.name };
+  }, [goals.data, id, rc.userId]);
+  // The sub-line names the rule the server will use now: share_on_insert resolves it at save time, and a Decide row carries no category,
+  // so it is the household default. Loading (undefined) keeps the check's rule; under two people the line stays personal (null).
+  const members = useHouseholdMembers(rc.householdId ?? undefined).data;
+  const splitDefaults = useSplitDefaults(rc.householdId).data;
+  const currentRule = members === undefined || splitDefaults === undefined ? undefined : members.length < 2 ? null : (splitDefaults.find((d) => d.category_ref === null)?.rule ?? 'even');
   const accountsQuery = useAccounts(rc.householdId ?? undefined);
   const accounts = useMemo(
     () =>
@@ -129,8 +164,11 @@ export function BoughtRoute({ id }: { id: string }) {
   if (gate === 'away' || row === null || v3 === null || engine.evaluation === null || rc.userId === null || rc.householdId === null) return <Away frame="bought" onBack={toDecide} />;
   return (
     <BoughtScreen
-      addBill={adder.add}
-      goAhead={go.goAhead}
+      goAhead={(a) => go.goAhead({ ...a, extras: { ...a.extras, recorded } })}
+      stopRows={stopRows}
+      payoff={payoff}
+      goal={goal}
+      currentRule={currentRule}
       checkId={id}
       ownerId={rc.userId}
       householdId={rc.householdId}

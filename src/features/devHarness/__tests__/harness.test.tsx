@@ -43,7 +43,7 @@ jest.mock('@tanstack/react-query', () => ({ ...jest.requireActual('@tanstack/rea
 const mockCreate = jest.fn();
 jest.mock('@/data/mutations/decideChecks', () => ({ useCreateCheck: () => ({ create: mockCreate, pendingIds: [], pendingRows: [] }) }));
 const mockRecord = jest.fn();
-jest.mock('@/data/mutations/boughtWrite', () => ({ useRecordBought: () => ({ record: mockRecord, canRecord: () => true }) }));
+jest.mock('@/data/mutations/decideGoAhead', () => ({ useGoAheadV3: () => ({ goAhead: mockRecord }), isGoAheadRefusal: (e: unknown) => e instanceof RangeError }));
 const mockShowToast = jest.fn();
 jest.mock('@/state/undoToast', () => ({ showToast: (t: unknown) => mockShowToast(t) }));
 
@@ -140,7 +140,7 @@ describe('waitForSavedCheck', () => {
 
 describe('BoughtWriteHarness', () => {
   it('creates the check first, records only once it is saved, then shows done with an undo toast', async () => {
-    mockRecord.mockReturnValue({ stepId: 'step-1' });
+    mockRecord.mockReturnValue('step-1');
     mockQc.setQueryData(KEY, [{ id: 'check-1', created_by: 'u1', pending: true }]);
     const view = await render(<BoughtWriteHarness />);
     await act(async () => fireEvent.press(view.getByText('Record the sample as bought')));
@@ -155,17 +155,19 @@ describe('BoughtWriteHarness', () => {
     });
     expect(mockRecord).toHaveBeenCalledTimes(1);
     const args = mockRecord.mock.calls[0][0];
-    expect(args.check.id).toBe('check-1');
-    expect(args.purchase).not.toBeNull();
-    expect(args.ctx).toEqual(
-      expect.objectContaining({ cashAccountId: 'acc1', debtCategoryId: 'cat-debt', runningCostCategoryId: 'cat-ins', currency: 'USD' })
-    );
+    expect(args.checkId).toBe('check-1');
+    expect(args.evaluation.purchase).not.toBeNull();
+    expect(args.accountId).toBe('acc1');
+    expect(args.ctx).toEqual(expect.objectContaining({ cashAccountId: 'acc1', debtCategoryId: 'cat-debt', currency: 'USD' }));
+    expect(args.extras.runningCosts).toHaveLength(1);
     expect(view.getByTestId('harness-bought-done')).toBeTruthy();
     expect(mockShowToast).toHaveBeenCalledWith(expect.objectContaining({ stepId: 'step-1' }));
   });
 
   it('shows refused when the write is refused', async () => {
-    mockRecord.mockReturnValue(null);
+    mockRecord.mockImplementation(() => {
+      throw new RangeError('refused');
+    });
     mockQc.setQueryData(KEY, [{ id: 'check-1', created_by: 'u1' }]);
     const view = await render(<BoughtWriteHarness />);
     await act(async () => fireEvent.press(view.getByText('Record the sample as bought')));

@@ -2,7 +2,7 @@
 // currency's minor units) with a deposit, a 4-payment monthly plan and one monthly running cost, judged by the real v3 engine on
 // the heavy synthetic account dated today, so Purchase and Result are the engine's own (never hand-built).
 import { evaluate, homeThresholds } from '@/engine/decide/v3';
-import type { CheckV2, Purchase, Result } from '@/engine/decide/v3';
+import type { CheckV2, Evaluation } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money/types';
 import { heavyAccount, monthlyPlan } from './heavyAccount';
 
@@ -35,9 +35,9 @@ export function sampleCheck(today: string): CheckV2 {
   };
 }
 
-/** The engine's Purchase and Result for the sample, dated `today`, in `currency`. purchase is null only if the engine refuses it. */
-export function samplePurchase(today: string, currency: string): { purchase: Purchase | null; result: Result } {
+/** 08.1-09: the sample check and the engine's own Evaluation of it, for the one Record-as-bought writer. */
+export function sampleEvaluation(today: string, currency: string): { check: CheckV2; evaluation: Evaluation } {
   const inputs = { ...heavyAccount(), asOf: today, currency: currencyCode(currency), thresholds: homeThresholds(currency, null) };
-  const ev = evaluate(inputs, sampleCheck(today));
-  return { purchase: ev.purchase, result: ev.result };
+  const check = sampleCheck(today);
+  return { check, evaluation: evaluate(inputs, check) };
 }

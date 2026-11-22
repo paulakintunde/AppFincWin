@@ -186,6 +186,16 @@ export const ICONS = {
       {tag:'rect',attrs:{x:'3',y:'13',width:'8',height:'8',rx:'2.4',fill:'C'}},
     ],
   },
+  caution: {
+    viewBox: '0 0 24 24',
+    back: [
+      {tag:'path',attrs:{d:'M10.27 4.1a2 2 0 0 1 3.46 0l7.6 13.15A2 2 0 0 1 19.6 20.25H4.4a2 2 0 0 1-1.73-3l7.6-13.15Z',fill:'C'}},
+    ],
+    front: [
+      {tag:'path',attrs:{d:'M12 9.4v4.4',stroke:'C','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',fill:'none'}},
+      {tag:'circle',attrs:{cx:'12',cy:'16.9',r:'1.25',fill:'C'}},
+    ],
+  },
   checkBuy: {
     viewBox: '0 0 24 24',
     back: [
@@ -373,6 +383,16 @@ export const ICONS = {
     ],
     front: [
       {tag:'path',attrs:{d:'M12 3v9M8.4 8.6 12 12.2l3.6-3.6',stroke:'C','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',fill:'none'}},
+    ],
+  },
+  info: {
+    viewBox: '0 0 24 24',
+    back: [
+      {tag:'circle',attrs:{cx:'12',cy:'12',r:'9.5',fill:'C'}},
+    ],
+    front: [
+      {tag:'path',attrs:{d:'M12 11.2v5.2',stroke:'C','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',fill:'none'}},
+      {tag:'circle',attrs:{cx:'12',cy:'7.9',r:'1.25',fill:'C'}},
     ],
   },
   insurance: {

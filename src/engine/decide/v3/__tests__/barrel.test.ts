@@ -51,12 +51,14 @@ export const V3_RUNTIME_EXPORTS = [
   'FURTHER_SHORTFALL_MAJOR',
   'FUTURE_ORDER',
   'HISTORY_PAY_MIN_MONTHS',
+  'HOUSEHOLD_LINE_ID', // 08.1-08 CMP-F19
   'INCLUDED_COUNTRIES', // 05.4-25 FIN-27 (D-19): UK and EU, prices include tax
   'INCOME_SWING_CV_PERCENT',
   'INCOME_SWING_MIN_MONTHS',
   'INCOME_VOLATILE_CV_PERCENT',
   'INTRO_KEYS', // 05.4-37 D-120
   'ITEM_TYPES', // 05.5-26: the kept card-rule leaf, so the stored-check reader never imports the old barrel
+  'JOINT_LINE_ID', // 08.1-22 CMP-F19
   'LEGACY_STATE_OF_CODE',
   'LONG_PLAN_MONTHS', // 05.4-37 D-64 (4)
   'LOW_MONTH_RANK',
@@ -117,6 +119,8 @@ export const V3_RUNTIME_EXPORTS = [
   'SHADOW_CODES_MAX', // 05.4-36 BO-08
   'SHADOW_SAMPLE_IDS', // 05.4-36 BO-08 (D-12)
   'SHORT_WAIT_DAYS',
+  'STAGE_DEEPER_MIN_MONTHS', // 08.1-19
+  'STAGE_FULL_MIN_MONTHS', // 08.1-19
   'TAX_KEYS', // 05.4-37 APP-20 typecheck
   'TIGHT_FLOOR_DIVISOR',
   'TIGHT_SHARE_BP',
@@ -129,6 +133,8 @@ export const V3_RUNTIME_EXPORTS = [
   'V3_ITEM_TYPES',
   'V3_VARIABLE_HISTORY_MONTHS',
   'VERDICT_TABLE',
+  'applyHouseholdMoney', // 08.1-08 CMP-F19
+  'applyJointMoney', // 08.1-22 CMP-F19
   'bandOf',
   'buildMonthModel',
   'buildSchedule',
@@ -140,19 +146,23 @@ export const V3_RUNTIME_EXPORTS = [
   'changeSinceLooked',
   'cheaperOption', // 05.4-28 UX-28 (D-111): The cheaper one, figures only
   'checkQuoted',
+  'deferredInterest',
   'detectCandidates',
   'evaluate',
   'everydayByMonth',
   'explore',
+  'firstShownCaveat', // 08.1-19
   'freeHelpFor', // 05.4-38 CMP-F04
   'homeFigure', // 05.4-24 FIN-09 (D-24): Decide Home's month figure
   'homeThresholds',
   'insteadFutures',
   'insteadLinkFor',
   'isNeedPurpose',
+  'jointBackOf', // 08.1-22 CMP-F19
   'judgeBoth', // 05.4-27 BO-05: cash and installments from one input
   'judgeCheck',
   'judgeWithQuickLines', // 06.1 D-21
+  'layHouseholdMoney', // 08.1-22 CMP-F19
   'layerOfAnswerKey',
   'layersFor',
   'legacyLimits',
@@ -163,6 +173,7 @@ export const V3_RUNTIME_EXPORTS = [
   'monthAfterPlans', // 05.4-24 FIN-09 (D-22)
   'monthlyEquivalentOf',
   'myShareOf',
+  'nextPayDate', // 08.1-22 CMP-F19: the joint bills due before the next pay-in
   'orderOptions', // 05.4-28 D-110
   'parseCheckV2',
   'planCard',
@@ -181,6 +192,7 @@ export const V3_RUNTIME_EXPORTS = [
   'seriesDrift',
   'shadowRun', // 05.4-36 BO-08 (D-11)
   'shadowSamples', // 05.4-36 BO-08 (D-147)
+  'stageOf', // 08.1-19
   'stagedRequired',
   'stoppedCostFlows', // 05.4-27 BO-05
   'suggestItemType', // 05.5-26: the kept card-rule leaf

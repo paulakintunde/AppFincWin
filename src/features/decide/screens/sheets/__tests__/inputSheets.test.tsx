@@ -185,6 +185,91 @@ describe('InstallmentPlanSheet', () => {
   });
 });
 
+describe('InstallmentPlanSheet 08.1-11 (FIN-12, 0% if paid off in time)', () => {
+  afterEach(() => pickDate.mockReset());
+
+  it('the switch shows the end date and the rate after it, and takes the plan rate field away', async () => {
+    await renderPlan();
+    expect(screen.queryByTestId('deferred-fields')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('0% if paid off in time'));
+    expect(screen.getByTestId('deferred-fields')).toBeTruthy();
+    expect(screen.getByText('Promotion ends')).toBeTruthy();
+    expect(screen.getByText('Interest rate after promo')).toBeTruthy();
+    expect(screen.getByText('If you don’t pay it off by then, interest may be backdated to day one, depending on your plan terms.')).toBeTruthy();
+    expect(screen.getByTestId('deferred-rate-example')).toBeTruthy();
+  });
+
+  it('Use without an end date or a rate shows both errors inline and does not save', async () => {
+    const { onUse } = await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    await fireEvent.press(screen.getByLabelText('0% if paid off in time'));
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(onUse).not.toHaveBeenCalled();
+    expect(screen.getByText('A promotion end date is needed.')).toBeTruthy();
+    expect(screen.getByText('Interest rate needed.')).toBeTruthy();
+  });
+
+  it('a rate out of range is an error and stops Use', async () => {
+    const { onUse } = await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    await fireEvent.press(screen.getByLabelText('0% if paid off in time'));
+    await fireEvent.changeText(screen.getByLabelText('Interest rate after promo'), '99');
+    expect(screen.getByLabelText('Use this plan').props.accessibilityState.disabled).toBe(true);
+    expect(onUse).not.toHaveBeenCalled();
+  });
+
+  it('with an end date and a rate, saves 0% now, the end date and the rate after it; a plan that runs past it shows the warning row', async () => {
+    pickDate.mockImplementation((_cur: unknown, set: (d: string) => void) => set('2027-03-11'));
+    const { onUse } = await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    await fireEvent.press(screen.getByLabelText('0% if paid off in time'));
+    await fireEvent.press(screen.getByTestId('promo-end'));
+    expect(screen.getByText('on 2027-03-11')).toBeTruthy();
+    expect(screen.queryByTestId('back-charge-row')).toBeNull();
+    await fireEvent.changeText(screen.getByLabelText('Interest rate after promo'), '24.99');
+    expect(screen.getByTestId('back-charge-row')).toBeTruthy();
+    expect(screen.getByText('Warning')).toBeTruthy();
+    expect(screen.getByText(/If you don’t pay it off by on 2027-03-11, you’ll be charged about \$\d+(\.\d+)? in back interest\./)).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    expect(onUse).toHaveBeenCalledTimes(1);
+    const pay = onUse.mock.calls[0][0];
+    expect(pay.deferredInterestTerm).toBe(true);
+    expect(pay.apr).toBe(percent('0'));
+    expect(pay.promoEnd).toBe('2027-03-11');
+    expect(pay.rateAfter).toBe(percent('24.99'));
+  });
+
+  it('an end date after the last payment shows no warning row', async () => {
+    pickDate.mockImplementation((_cur: unknown, set: (d: string) => void) => set('2028-01-11'));
+    await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    await fireEvent.press(screen.getByLabelText('0% if paid off in time'));
+    await fireEvent.press(screen.getByTestId('promo-end'));
+    await fireEvent.changeText(screen.getByLabelText('Interest rate after promo'), '24.99');
+    expect(screen.queryByTestId('back-charge-row')).toBeNull();
+  });
+
+  it('switched off, the plan carries no end date or rate after it', async () => {
+    const { onUse } = await renderPlan();
+    await fireEvent.press(await screen.findByLabelText('12 months'));
+    await fireEvent.press(screen.getByLabelText('Use this plan'));
+    const pay = onUse.mock.calls[0][0];
+    expect(pay.deferredInterestTerm).toBe(false);
+    expect('promoEnd' in pay).toBe(false);
+    expect('rateAfter' in pay).toBe(false);
+  });
+
+  it('a saved plan opens with its switch, end date and rate filled in', async () => {
+    const saved = planCheck({
+      pay: { mode: 'plan', cadence: { unit: 'month', every: 1 }, count: 12, termMonths: 12, apr: percent('0'), fees: { setup: 0, perPeriod: 0, end: 0 }, deposit: 0, tradeIn: 0, quotedPayment: null, firstPayment: { kind: 'one_period' }, deferredInterestTerm: true, promoEnd: '2027-03-11', rateAfter: percent('24.99') } as never,
+    });
+    await renderPlan(saved, { editing: true });
+    expect(screen.getByTestId('deferred-fields')).toBeTruthy();
+    expect(screen.getByText('on 2027-03-11')).toBeTruthy();
+    expect(screen.getByLabelText('Interest rate after promo').props.value).toBe('24.99');
+  });
+});
+
 describe('InstallmentPlanSheet 06.1-57 (A-ST-7)', () => {
   it('offers lengths 12, 24, 36 and 48 months plus Other, for a car and for any other kind', async () => {
     for (const itemKind of ['car', 'other'] as const) {

@@ -28,6 +28,8 @@ export const PENDING_RULES: PendingRule[] = [
   // 05.4-28 (ENG-15, ENG-17; D-109, D-114): no pending entry. The price limits (plain.ts priceAsks, PLAIN_PRICE_LIMIT) and accounts
   // with no exchange rate (withoutUnrated) landed on both sides; crosscheck.test compares both on every random fixture (price 0 and
   // over the limit, plus an unrated account added). The unsaved-changes note and The cheaper one change no code or figure.
+  // 08.1-13: D05-CASH-ROUTE is not a pending rule: crosscheck.test.ts skips (and counts) the borrowing comparison on the plans where plain
+  // still dates the cash wait the old way and the engine (D-05) says it is past the short wait. Deleted when plain.ts restates D-05.
   { fixId: 'PLAIN-PLANS', applies: (f) => plan(f), note: 'plans (the plain plan branch is borrowing-complete, not ladder-complete; D-98, D-107); closed before 05.4-43' },
 ];
 

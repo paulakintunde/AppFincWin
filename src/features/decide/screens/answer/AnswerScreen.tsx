@@ -39,6 +39,10 @@ import { checkInputsKey } from '@/features/decide/screens/logic/checkInputsKey';
 import { goDecideHome, withFromAnswer } from '@/features/decide/screens/logic/decideNav';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { stageReadingOf } from '@/features/decide/screens/logic/stageReading';
+import { HouseholdAnswerNote } from '@/features/household/decide/HouseholdAnswerNote';
+import { useHouseholdAnswer } from '@/features/household/decide/useHouseholdAnswer';
+import { ZeroShareLine } from '@/features/household/decide/ZeroShareLine';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { showToast } from '@/state/undoToast';
 import { hapticTap } from '@/ui/haptics';
@@ -97,7 +101,7 @@ const FIX_ROUTE: Readonly<Record<string, string>> = {
   // volatile_cover_question too (CoverQuestionSheet, 05.5-29): answered here, saved as a decide_answers row.
 };
 /** Missing figures that belong to the price and payment steps of this check. */
-const PRICE_STEP_FIXES: ReadonlySet<string> = new Set(['no_price', 'price_too_large', 'plan_count_missing', 'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'first_payment_passed']);
+const PRICE_STEP_FIXES: ReadonlySet<string> = new Set(['no_price', 'price_too_large', 'plan_count_missing', 'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'promo_end_missing', 'first_payment_passed']);
 
 type SheetKey = 'later' | 'cheaper' | 'fullCost' | 'monthAfter' | 'stops' | 'everyDate' | 'monthByMonth' | 'worked' | 'giveMore' | 'help' | 'about' | 'plan' | 'spare' | 'unexplained' | 'cover';
 
@@ -291,6 +295,9 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     if (side === 'installments') setSheet('plan');
   }
 
+  // 08.1-10 (APP-22, D-03): the scope line, and the resolver that names a partner who has not shared (D-32).
+  const householdScope = check?.share.kind ?? 'personal';
+  const { scopeLabel, member } = useHouseholdAnswer(rc.householdId, householdScope);
   const names = useMemo<NonNullable<UseSaidOptions['names']>>(() => {
     const category = new Map(data.categories.map((c) => [c.id, c.name]));
     const series = new Map(data.billChoices.map((b) => [b.id, b.name]));
@@ -302,8 +309,9 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       debt: (x) => debts.get(x) ?? '',
       account: (x) => acct.get(x) ?? '',
       figure: (code) => String(t(`decide.screens.answer.figureName.${code}` as never)),
+      member,
     };
-  }, [data.categories, data.billChoices, data.debts, accounts.data, t]);
+  }, [data.categories, data.billChoices, data.debts, accounts.data, t, member]);
   const said = useMemo<UseSaidOptions>(
     () => ({ currency, today, showCents: rc.showCents, names, monthly: evaluation?.purchase?.monthly ?? null }),
     [currency, today, rc.showCents, names, evaluation]
@@ -348,6 +356,8 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
     options,
     country: v3.inputs?.region ?? rc.region,
     outcome: outcomeOf(row, t, shortMoment),
+    scopeLabel,
+    canRecordBought: row.status === 'waiting',
   };
   // 06.1-66 (CN-11): before the gate is done the frame shows its loading state under the gate, never a blank page.
   const frameStatus = !gated ? 'loading' : engine.status === 'error' ? 'error' : engine.status === 'loading' ? 'loading' : 'ready';
@@ -689,6 +699,17 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
       </>
     );
 
+  // 08.1-25 (owner one-earner fix 2026-11-21): the member's own answer, in either scope, offers equal shares when their share of the joint
+  // money is $0 because of the rule. With neither note the frame gets undefined, as before.
+  const zeroShare = result?.caveats?.find((c) => c.code === 'share_zero_by_rule');
+  const householdNote =
+    householdScope === 'household' || zeroShare !== undefined ? (
+      <>
+        {householdScope === 'household' ? <HouseholdAnswerNote householdId={rc.householdId} today={today} /> : null}
+        <ZeroShareLine householdId={rc.householdId} caveat={zeroShare} currency={currency} today={today} />
+      </>
+    ) : undefined;
+
   return (
     <>
       <AnswerFrame
@@ -700,6 +721,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         onAction={onAction}
         onOption={onOption}
         onCantSee={() => setSheet('about')}
+        onImport={() => pushOnce({ pathname: '/import', params: { entry: 'you', from: 'decide' } } as Href)}
         renderAfterFact={renderAfterFact}
         readinessRows={rows}
         canUseEstimates={canUseEstimates}
@@ -707,6 +729,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         onReadinessChoice={onReadinessChoice}
         updating={engine.updating}
         answeredRows={answeredRows}
+        householdNote={householdNote}
         intro={<SampleAnswerIntro />}
       >
         {body}
@@ -807,11 +830,12 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         formatMoney={money}
         onConfirm={confirmSpare}
         onDismiss={closeSheet}
+        hasJointAccount={(v3.inputs?.accounts ?? []).some((a) => a.joint === true)}
       />
       <UnexplainedMoneySheet amount={unexplained === null ? null : money(unexplained.shown)} onAnswer={answerUnexplained} onDismiss={closeSheet} />
       <CoverQuestionSheet question={sheet === 'cover' ? (lines.missing.find((l) => l.code === 'volatile_cover_question')?.text ?? null) : null} onAnswer={answerCover} onDismiss={closeSheet} />
       {sheet === 'help' ? <FreeHelpSheet country={country} onClose={closeSheet} /> : null}
-      {sheet === 'about' ? <AboutSheet result={result} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
+      {sheet === 'about' ? <AboutSheet result={result} stage={stageReadingOf(evaluation)} country={country} said={{ currency, today }} recordsUpTo={recordsUpTo} onClose={closeSheet} /> : null}
       <InstallmentPlanSheet
         visible={gated && sheet === 'plan'}
         check={check}

@@ -35,12 +35,13 @@ import { convertFloored } from '../conversion';
 import { engineIncomeTypes } from './settingsSource';
 import { waiverOfAnswer } from './waiverKeys';
 import type { V3SettingsSource } from './types';
+import type { HouseholdScopeSource } from './householdScope';
 
 type Obj = Record<string, unknown>;
 type Row = SnapshotSource['rows'][number];
 
 /** A transaction row as the new builder reads it: today's row plus the settlement flag (D-06; Phase 8 08-30 fills it). */
-export type InputsRow = Row & { isSettlement?: boolean };
+export type InputsRow = Row & { isSettlement?: boolean; /* 08.1-08: who wrote the line and whether it is shared; absent = not stated, so the line is kept */ created_by?: string | null; is_shared?: boolean };
 
 /**
  * The source the new builder reads: today's SnapshotSource, with the rows allowed to carry isSettlement, and the category caps
@@ -49,6 +50,8 @@ export type InputsRow = Row & { isSettlement?: boolean };
 export interface InputsSource extends Omit<SnapshotSource, 'rows' | 'upcomingRows'> {
   rows: readonly InputsRow[];
   upcomingRows: readonly InputsRow[];
+  /** 08.1-08 (D-02, D-03): the household side of the check; absent = Just me with every row as given. */
+  household?: HouseholdScopeSource;
   categoryCaps?: Readonly<Record<string, number | null>>;
 }
 

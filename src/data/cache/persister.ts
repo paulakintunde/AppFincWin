@@ -47,7 +47,8 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // Phase 8 08-15: transactions and accounts gained sharing and settlement columns -- bumped 12 -> 13.
 // Merge of 05.5 (05.5-28, 12) into Phase 8 (13): both bumped from 11 with different shapes -- bumped to 14.
 // Phase 9: plan state, user setup, feature switches, holds flags, double-cover state and locked-write records cached -- bumped 14 -> 15.
-export const CACHE_SCHEMA_VERSION = '15';
+// 08.1: decide outcomes, household spend rules, joint accounts, partner opt-ins and recurring series rows changed -- bumped 15 -> 16.
+export const CACHE_SCHEMA_VERSION = '16';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's
@@ -104,7 +105,12 @@ export const WRITES_OVERFLOW_PREFIX = `${QUERY_CACHE_KEY}:writes:`;
 // Large reads that refetch on the next open: not worth the bytes (F-11).
 const NEVER_PERSIST = new Set(['offer-history', 'search', 'refund-links', 'refund-purchases']);
 
+// 08.1 review C-WR-02: another member's shared figure is never written to disk. Switching sharing off is immediate on the server;
+// a copy on the viewer's phone would keep counting for as long as the cache lives (CACHE_MAX_AGE_MS).
+const NEVER_PERSIST_ROOTS = new Set(['partner-money']);
+
 export function isNeverPersisted(queryKey: readonly unknown[]): boolean {
+  if (NEVER_PERSIST_ROOTS.has(String(queryKey[0]))) return true;
   return queryKey[0] === 'transactions' && NEVER_PERSIST.has(String(queryKey[2]));
 }
 

@@ -364,6 +364,22 @@ describe('05.4 UX-28 / D-110..D-112: The cheaper one and the need / want order',
     expect(orderOptions(FUTURE_ORDER, null)).toEqual(FUTURE_ORDER);
   });
 
+  test('08.1 D-06: with no date inside a year, the cheaper one and keeping the money lead; the rest keep their order', () => {
+    const all = OPTION_ORDER.none;
+    expect(orderOptions(all, null, true)).toEqual(['cheaper', 'keep', 'buy_now', 'deposit', 'buy_later']);
+    expect(orderOptions(all, need, true)).toEqual(['cheaper', 'keep', 'buy_now', 'buy_later', 'deposit']);
+    expect(orderOptions(all, treat, true)).toEqual(['cheaper', 'keep', 'buy_later', 'deposit', 'buy_now']);
+    // no cheaper option offered: keeping leads alone; nothing is added or removed
+    expect(orderOptions(FUTURE_ORDER, null, true)).toEqual(['keep', 'buy_now', 'deposit', 'buy_later']);
+    expect(orderOptions(FUTURE_ORDER, null, false)).toEqual(FUTURE_ORDER);
+  });
+
+  test('08.1 D-06: insteadFutures reads not_within_year off the answer', () => {
+    const beyond = { ...result, facts: [{ code: 'not_within_year' as const, values: {} }, ...result.facts] };
+    const out = insteadFutures({ check: withCheaper, result: beyond, month, funds, purchase: purchase(), userRate: null, years: 1 });
+    expect(out.order).toEqual(['cheaper', 'keep', 'buy_now', 'deposit', 'buy_later']);
+  });
+
   test('UX-28: insteadFutures offers the fifth option with its figures, ordered by the purpose', () => {
     const none = insteadFutures({ check: withCheaper, result, month, funds, purchase: purchase(), userRate: null, years: 1 });
     expect(none.cheaper).toEqual({ price: 120000, perYear: 40000, pickedPerYear: 100000 });

@@ -5,12 +5,13 @@
  * counterexample prints as drawn instead of shrinking for hours (each fixture runs the whole engine; seed 14 shrank for 5+ hours).
  */
 import * as fc from 'fast-check';
+import { cashFits, cashSoon } from '../../borrowing';
 import { evaluate } from '../../evaluate';
 import { toEngineInputs } from '../rightAnswers/fixture';
 import { pick } from '../rightAnswers/pick';
 import { fixtureArb } from './fixtureArb';
 import { pendingFixIds } from './pendingRules';
-import { PLAIN_PRICE_LIMIT, plainAnswer } from './plain';
+import { PLAIN_PRICE_LIMIT, plainAnswer, plainCashWaitsShort } from './plain';
 
 const RUNS = Number(process.env.CROSSCHECK_RUNS ?? 1000);
 // A fixed default seed keeps the PR gate and the mutation run repeatable; CROSSCHECK_SEED=random draws from the clock (nightly), a number pins one.
@@ -68,6 +69,7 @@ describe('cross-check calculator vs engine: borrowing on plans', () => {
   it(`agrees on the borrowing answer for the random plans among ${RUNS} fixtures`, () => {
     let compared = 0;
     let borrowed = 0;
+    let d05Skipped = 0;
     try {
       fc.assert(
         fc.property(fixtureArb, (f) => {
@@ -77,6 +79,17 @@ describe('cross-check calculator vs engine: borrowing on plans', () => {
           const got = pick(evaluate(inputs, check));
           const plain = plainAnswer(f);
           if (!FITS.has(got.code) || !FITS.has(plain.code)) return;
+          // 08.1-13 (owner 2026-11-20, Q1): D05-CASH-ROUTE. Plain still dates the cash wait the old way (inside the 31-day short wait);
+          // the engine dates it by D-05 and says it is past the short wait, so "Only by borrowing" is right. Skipped and counted here,
+          // only where the two disagree on that route, until plain.ts restates D-05 on a 12-month path.
+          if (plainCashWaitsShort(f)) {
+            const once = toEngineInputs({ ...f, check: { ...f.check, pay: { mode: 'once' } } });
+            const cash = evaluate(once.inputs, once.check).result;
+            if (!cashFits(cash.code) && !cashSoon(cash, inputs.asOf)) {
+              d05Skipped++;
+              return;
+            }
+          }
           compared++;
           if (got.code === 'fits_by_borrowing') borrowed++;
           expect(borrowing(got.code, got.variant)).toBe(borrowing(plain.code, plain.variant));
@@ -87,7 +100,7 @@ describe('cross-check calculator vs engine: borrowing on plans', () => {
       console.log(`crosscheck (borrowing) seed ${SEED}`);
       throw e;
     }
-    console.log(`crosscheck (borrowing): compared ${compared} plans, ${borrowed} borrowed, seed ${SEED}`);
+    console.log(`crosscheck (borrowing): compared ${compared} plans, ${borrowed} borrowed, skipped D05-CASH-ROUTE ${d05Skipped}, seed ${SEED}`);
     expect(compared).toBeGreaterThan(0);
   });
 });

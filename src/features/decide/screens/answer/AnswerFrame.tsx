@@ -10,7 +10,12 @@
 // 06.1-67 (H-6, DS-3): short line first. One notice above the verdict (splitNotices: the one that changes the answer most); the
 // verdict, the first fact, one short missing-figures line whose More opens Give it more to go on, then Why? for every other fact
 // and notice (FactLines).
-import React from 'react';
+// 08.1-24 (owner caution sign 2026-11-21): a Fits answer whose 12-month path goes below $0 later shows the caution sign before the
+// verdict word (useCautionOf, laterDipOf). The verdict does not change; the fact line under it stays.
+// 08.1-14 (D-06, D-07, D-08): below_zero_without is the BelowZeroLine directly under the verdict card (before the facts, said once).
+// With no ready date inside a year (not_within_year) the action bar leads with the cheaper one, then Save for it. The card's date
+// line says "If you buy it today."; a check recorded as bought shows "Bought on {date}." in the outcome line instead (DS-4).
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import type { Evaluation, LocalDate, Purpose, Result, YearMonth } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
@@ -23,14 +28,18 @@ import { Text } from '@/ui/Text';
 import { ActionBar } from './ActionBar';
 import { AnswerLoadingBody } from './AnswerLoading';
 import { AnswerTopBar, type AnswerTopBarProps, type PayMode, type WhenChoice } from './AnswerTopBar';
+import { BELOW_ZERO_FACT, BelowZeroLine } from './BelowZeroLine';
 import { FactLines } from './FactLines';
 import type { ReadinessFixRow, WaiverChoice } from '../logic/readinessFixes';
 import type { Line } from '../logic/sayResult';
 import { splitNotices } from '../logic/answerLines';
+import { laterDipOf } from '../logic/laterDip';
+import { stageReadingOf } from '../logic/stageReading';
 import { LegalBlock } from './LegalBlock';
 import { OptionChips, type OptionKey } from './OptionChips';
+import { StageLine } from './StageLine';
 import { ErrorCard, NotReadyCard, NotReadyExits, OfflineCard, OutcomeLine } from './StatusCards';
-import { VerdictCard } from './VerdictCard';
+import { VerdictCard, type VerdictCaution } from './VerdictCard';
 import { useSaid, type UseSaidOptions } from './useSaid';
 
 export type AnswerAction =
@@ -65,6 +74,10 @@ export interface AnswerCheckView {
   paydayText?: string | null;
   /** 06.1-66 (FQ8): set once the check is decided ("Bought on Nov 12."); the action bar and the Not ready exits give way to it. */
   outcome?: string | null;
+  /** 08.1-10 (APP-22): the top bar's scope line (Just you, or the household's name). Absent = no scope line. */
+  scopeLabel?: string | null;
+  /** 08.1-10 (owner 2026-11-20): true only for a check saved for later (status waiting); the outcome line then offers Record as bought. */
+  canRecordBought?: boolean;
 }
 
 /** 06.1-66 (OQ-66-2, DS-2): readiness not met and the engine's "More needed" ask are the same not-ready state, never a verdict (D-52). */
@@ -82,10 +95,14 @@ export interface AnswerFrameProps {
   onAction: (action: AnswerAction) => void;
   onOption: (key: OptionKey) => void;
   onCantSee: () => void;
+  /** 08.1-20: the StageLine link opens import (/import from decide). */
+  onImport: () => void;
   /** 06.1-23: extra content under a fact or missing line (factAction buttons, Fix links). */
   renderAfterFact?: (line: Line, index: number) => React.ReactNode;
   /** The "More detail" rows (plan 23). */
   children?: React.ReactNode;
+  /** 08.1-10 (UX-21): household notes between the answer and the legal block (the shared-bills caveat); absent = none. */
+  householdNote?: React.ReactNode;
   /** 06.1-44 (G-1, C-2): the named readiness items for the not-ready card (readinessFixRows). Absent = none named. */
   readinessRows?: readonly ReadinessFixRow[];
   /** D-57 (C-1): true only while quick estimates can count (estimatesCanAnswer). Absent = false: no quick-estimates control. */
@@ -101,12 +118,45 @@ export interface AnswerFrameProps {
 }
 
 const NO_ROWS: readonly ReadinessFixRow[] = [];
+const NO_OPTIONS: readonly OptionKey[] = [];
+const HIDE_CHEAPER: readonly OptionKey[] = ['cheaper'];
+
+/** 08.1-14 (D-07): the BelowZeroLine for the below_zero_without fact, or null. */
+export function belowZeroOf(facts: readonly Line[]): React.ReactNode {
+  const line = facts.find((f) => f.code === BELOW_ZERO_FACT);
+  return line === undefined ? null : <BelowZeroLine text={line.text} />;
+}
 /** 06.1-68 (CF-3): how far the verdict dims while it updates (the same step the pressed state uses). */
 const UPDATING_OPACITY = PRESSED_OPACITY;
 
 /** "November" for 2026-11, in the device locale (the same words YourMonthCard uses). */
 function monthNameIn(locale: string): (ym: YearMonth) => string {
   return (ym) => new Intl.DateTimeFormat(locale, { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1, 1)));
+}
+
+/** "Jun 14" / "14 Jun" (short) or "June 14" (long) for a YYYY-MM-DD date, in the locale; built on Date.UTC so no time-zone shift. No
+ * year: the dip is always inside the next 12 months. */
+function dayMonth(locale: string, iso: string, month: 'short' | 'long'): string {
+  const d = new Date(Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))));
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month, timeZone: 'UTC' }).format(d);
+}
+
+/**
+ * 08.1-24: the caution the verdict card shows for a later dip, or null (no dip, or not a Fits answer). The zero is the same money
+ * text the fact lines' {{zero}} uses. `still` on the saved view (Q3 A).
+ */
+export function useCautionOf(result: Result | null, currency: string, showCents = true, still = false): VerdictCaution | null {
+  const t = useT();
+  const fmt = useMoneyFormatter(showCents, currency);
+  const dip = laterDipOf(result);
+  if (dip === null) return null;
+  const zero = makeMoney(0, currency);
+  return {
+    text: t('decide.screens.answer.caution.line', { zero: fmt.formatMoney(zero), date: dayMonth(fmt.locale, dip.date, 'short') }),
+    a11y: t('decide.screens.answer.caution.a11y', { zero: fmt.formatMoneyA11y(zero), date: dayMonth(fmt.locale, dip.date, 'long') }),
+    animateKey: dip.date,
+    still,
+  };
 }
 
 export function AnswerFrame({
@@ -118,6 +168,7 @@ export function AnswerFrame({
   onAction,
   onOption,
   onCantSee,
+  onImport,
   renderAfterFact,
   children,
   readinessRows = NO_ROWS,
@@ -126,6 +177,7 @@ export function AnswerFrame({
   onReadinessChoice,
   updating = false,
   answeredRows,
+  householdNote,
   intro,
 }: AnswerFrameProps) {
   const t = useT();
@@ -134,7 +186,10 @@ export function AnswerFrame({
   const insets = useScreenInsets();
   const fmt = useMoneyFormatter(said.showCents ?? true, said.currency);
   const result = status === 'ready' ? (evaluation?.result ?? null) : null;
-  const lines = useSaid(result, said);
+  // 08.1-20: the stage of this answer (read from the evaluation), the pay window and the caveat order follow from it.
+  const reading = useMemo(() => stageReadingOf(status === 'ready' ? evaluation : null), [status, evaluation]);
+  const lines = useSaid(result, said, reading);
+  const caution = useCautionOf(result, said.currency, said.showCents ?? true);
 
   const top: AnswerTopBarProps = {
     name: check.name,
@@ -143,6 +198,8 @@ export function AnswerFrame({
     when: check.when,
     dateText: check.dateText ?? null,
     paydayText: check.paydayText ?? null,
+    stage: reading?.stage ?? null,
+    scopeLabel: check.scopeLabel ?? null,
     onBack: () => onAction({ kind: 'back' }),
     onNewCheck: () => onAction({ kind: 'newCheck' }),
     onPay: (mode) => onAction({ kind: 'pay', mode }),
@@ -150,6 +207,9 @@ export function AnswerFrame({
   };
   const retry = (): void => onAction({ kind: 'retry' });
   const outcome = check.outcome ?? null;
+  // 08.1-14 (D-06): no ready date within a year; the cheaper one leads the bar when the check has one.
+  const notWithinYear = result !== null && result.facts.some((f) => f.code === 'not_within_year');
+  const cheaperLeads = notWithinYear && check.options.includes('cheaper');
 
   let body: React.ReactNode = null;
   let showActions = false;
@@ -175,6 +235,7 @@ export function AnswerFrame({
           answered={answeredRows}
           onFinishSetup={() => onAction({ kind: 'finishSetup' })}
           onFromEstimates={() => onAction({ kind: 'fromEstimates' })}
+          onImport={onImport}
         />
         {children !== undefined ? (
           <View testID="answer-detail" style={styles.group}>
@@ -216,7 +277,17 @@ export function AnswerFrame({
           </Text>
         </View>
         <View testID="answer-verdict-area" accessibilityState={{ busy: updating }} style={[styles.verdict, updating ? styles.updating : null]}>
-          <VerdictCard code={result.code} variant={result.variant} once={once} values={lines.verdictValues} lead={lines.afterBuy.lead?.text ?? null} boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null} />
+          <VerdictCard
+            code={result.code}
+            variant={result.variant}
+            once={once}
+            values={lines.verdictValues}
+            caution={caution}
+            readyUntested={result.readyByUntested === true}
+            lead={lines.afterBuy.lead?.text ?? null}
+            boughtOn={outcome === null ? (lines.afterBuy.boughtOn?.text ?? null) : null}
+            after={belowZeroOf(lines.facts)}
+          />
           <FactLines
             facts={lines.facts}
             notices={notices.rest}
@@ -226,13 +297,20 @@ export function AnswerFrame({
             renderAfter={renderAfterFact}
           />
         </View>
-        <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} />
+        <OptionChips present={check.options} purpose={check.purpose} onOption={onOption} notWithinYear={notWithinYear} hide={cheaperLeads && outcome === null ? HIDE_CHEAPER : NO_OPTIONS} />
         {children !== undefined ? (
           <View testID="answer-detail" style={styles.group}>
             {children}
           </View>
         ) : null}
-        <LegalBlock basis={lines.basis} caveat={lines.caveat} caveatFigures={lines.caveatFigures} onCantSee={onCantSee} />
+        {householdNote}
+        <LegalBlock
+          basis={lines.basis}
+          payWindow={lines.payWindow}
+          stageLine={reading !== null ? <StageLine reading={reading} onImport={onImport} /> : null}
+          caveat={lines.caveat} caveatFigures={lines.caveatFigures}
+          onCantSee={onCantSee}
+        />
       </>
     );
   } else {
@@ -252,9 +330,15 @@ export function AnswerFrame({
         {body}
       </ScrollView>
       {showOutcome ? (
-        <OutcomeLine text={outcome} onOpenPast={() => onAction({ kind: 'openPast' })} />
+        <OutcomeLine text={outcome} onOpenPast={() => onAction({ kind: 'openPast' })} onRecordBought={check.canRecordBought === true ? () => onAction({ kind: 'bought' }) : undefined} />
       ) : showActions ? (
-        <ActionBar onBought={() => onAction({ kind: 'bought' })} onSaveFor={() => onAction({ kind: 'saveFor' })} onNotBuying={() => onAction({ kind: 'notBuying' })} />
+        <ActionBar
+          onBought={() => onAction({ kind: 'bought' })}
+          onSaveFor={() => onAction({ kind: 'saveFor' })}
+          onNotBuying={() => onAction({ kind: 'notBuying' })}
+          notWithinYear={notWithinYear}
+          onCheaper={cheaperLeads ? () => onOption('cheaper') : undefined}
+        />
       ) : null}
     </View>
   );

@@ -92,6 +92,8 @@ const RULES: Readonly<Record<string, FixRule>> = {
   'ENG-17': { properties: [], units: [unit('__tests__/invariants/limits.test.ts', 'ENG-17 adding an unrated account')], cases: { none: 'an account with no exchange rate is a note, never an answer (D-114); the input builder does not send them until 05.5' } },
   'ENG-18': { properties: ['I45', 'I46'], cases: { none: 'which reasons are shown: how the app works, not an answer (D-134)' } },
   'ENG-29': { properties: ['I68', 'I69'], cases: 'answer' },
+  // 08.1-25: ENG-26 Household half, the share step. The share_zero_by_rule line (a member's share is $0 because of the rule) is in HH-35..HH-42.
+  'ENG-26': { properties: [], units: [unit('../../household/__tests__/zeroShare.test.ts', 'OE-05: What each person brings, Sam paid in $5,000, Alex nothing, nothing carried: Alex is flagged'), unit('../../household/__tests__/zeroShare.test.ts', 'money carried from before splits equally, so nobody is at $0')], cases: 'answer' },
   'BO-05': { properties: range(68, 72), cases: 'answer' },
   // 06 (Grow): locked goals are kept out and unlocked goals count as spare (D-05, D-22); the net and locked goals are named apart (D-06).
   'D-05': { properties: [], units: [unit('__tests__/lockedGoals.test.ts', 'a locked goal with 30,000 saved of 50,000'), unit('__tests__/invariants/lockedGoals.test.ts', 'locking a goal never raises the lowest point')], cases: 'answer' },

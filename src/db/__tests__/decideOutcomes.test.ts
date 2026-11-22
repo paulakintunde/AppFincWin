@@ -1,5 +1,13 @@
 import { DbError } from '../errors';
-import { recordDecideGo, recordDecideOutcome, type DecideGoInput } from '../decideOutcomes';
+import {
+  isDecideGoGoalNotLinked,
+  recordDecideGo,
+  recordDecideOutcome,
+  type DecideGoGoalClose,
+  type DecideGoInput,
+  type DecideGoPayoff,
+  type DecideGoSale,
+} from '../decideOutcomes';
 import type { NewRecurringSeries } from '../recurringSeries';
 import type { NewTransaction } from '../rows';
 import { createFakeSupabase } from './fakeSupabase';
@@ -66,6 +74,78 @@ describe('recordDecideGo', () => {
       series_roles: ['payment'],
       estimate_running: 50,
     });
+  });
+
+  const SALE: DecideGoSale = {
+    id: 'sale1',
+    account_id: 'a1',
+    amount: 1000000,
+    currency: 'USD',
+    local_date: '2026-11-23',
+    time_zone: 'UTC',
+    name: 'Sold the car',
+    debt_id: 'd1',
+    expected_version: 3,
+  };
+  const PAYOFF: DecideGoPayoff = {
+    id: 'pay1',
+    account_id: 'a1',
+    amount: 500000,
+    currency: 'USD',
+    local_date: '2026-11-23',
+    time_zone: 'UTC',
+    name: 'Final payment',
+    debt_id: 'd1',
+    expected_version: 3,
+  };
+  const GOAL: DecideGoGoalClose = { goal_id: 'g1' };
+
+  it('08.1-02: sends p_sale, p_payoff and p_goal_close only when they are given', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(OK);
+    await recordDecideGo(client, goInput({ sale: SALE, payoff: PAYOFF, goalClose: GOAL }));
+    const [, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
+    expect(args.p_sale).toEqual(SALE);
+    expect(args.p_payoff).toEqual(PAYOFF);
+    expect(args.p_goal_close).toEqual(GOAL);
+
+    const bare = createFakeSupabase();
+    bare.respondWith(OK);
+    await recordDecideGo(bare, goInput({ sale: null, payoff: null, goalClose: null }));
+    const [, bareArgs] = bare.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
+    expect(Object.keys(bareArgs)).not.toContain('p_sale');
+    expect(Object.keys(bareArgs)).not.toContain('p_payoff');
+    expect(Object.keys(bareArgs)).not.toContain('p_goal_close');
+  });
+
+  it('08.1-02: a payoff or sale alone counts as something to write', async () => {
+    const dec = goInput().decision;
+    const none = { rows: [], series: [], endSeries: [], decision: { ...dec, row_roles: [], series_roles: [] } };
+    const client = createFakeSupabase();
+    await expect(recordDecideGo(client, goInput(none))).rejects.toBeInstanceOf(RangeError);
+    client.respondWith(OK);
+    await expect(recordDecideGo(client, goInput({ ...none, payoff: PAYOFF }))).resolves.toMatchObject({ status: 'applied' });
+    client.respondWith(OK);
+    await expect(recordDecideGo(client, goInput({ ...none, sale: SALE }))).resolves.toMatchObject({ status: 'applied' });
+  });
+
+  it('08.1-02: carries amount_kind on a series item untouched', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(OK);
+    const expected = { id: 's2', amount_kind: 'expected' } as unknown as NewRecurringSeries;
+    await recordDecideGo(client, goInput({ series: [expected] }));
+    const [, args] = client.calls.find((c) => c.method === 'rpc')?.args as [string, Record<string, unknown>];
+    expect(args.p_series).toEqual([expected]);
+  });
+
+  it('08.1-02: goal_not_linked reaches the screen as a refusal it can recognise', async () => {
+    const client = createFakeSupabase();
+    client.respondWith({ data: null, error: { message: 'record_decide_go: goal_not_linked', code: '22023' }, status: 400 });
+    const err = await recordDecideGo(client, goInput({ goalClose: GOAL })).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(DbError);
+    expect(isDecideGoGoalNotLinked(err)).toBe(true);
+    expect(isDecideGoGoalNotLinked(new DbError('record_decide_go: the check is not yours', '42501', 403))).toBe(false);
+    expect(isDecideGoGoalNotLinked(new Error('goal_not_linked'))).toBe(false);
   });
 
   it('rejects out-of-bounds input before any request', async () => {

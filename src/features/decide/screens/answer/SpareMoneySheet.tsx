@@ -25,6 +25,8 @@ export interface SpareMoneySheetProps {
   formatMoney: (minor: number) => string;
   /** Saves the confirmed figure (minor units). */
   onConfirm: (figure: number) => void;
+  /** 08.1-23 (Q7, 22 Q14): the person has a joint account, so a typed figure must leave joint money out (it is counted separately). */
+  hasJointAccount?: boolean;
   onDismiss: () => void;
 }
 
@@ -34,7 +36,7 @@ export function SpareMoneySheet(props: SpareMoneySheetProps) {
   return props.visible ? <SpareMoneyForm {...props} /> : null;
 }
 
-function SpareMoneyForm({ figure, currency, formatMoney, onConfirm, onDismiss }: SpareMoneySheetProps) {
+function SpareMoneyForm({ figure, currency, formatMoney, onConfirm, onDismiss, hasJointAccount = false }: SpareMoneySheetProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [ownOpen, setOwnOpen] = useState(figure === null);
@@ -72,6 +74,11 @@ function SpareMoneyForm({ figure, currency, formatMoney, onConfirm, onDismiss }:
               label={t('decide.screens.answer.spare.ownLabel')}
               accessibilityLabel={t('decide.screens.answer.spare.ownLabel')}
             />
+            {hasJointAccount ? (
+              <Text testID="spare-joint-note" style={meta}>
+                {t('decide.screens.answer.spare.jointNote')}
+              </Text>
+            ) : null}
             <View style={styles.actions}>
               <Pill
                 variant={figure === null ? 'primary' : 'secondary'}

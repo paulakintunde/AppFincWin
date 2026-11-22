@@ -144,6 +144,20 @@ describe('parseCheckV2', () => {
     expect(readStoredCheck({ v: 2, pay: { mode: 'plan', housing: true } }).check.pay).toMatchObject({ housing: true });
   });
 
+  it('08.1-11 FIN-12: the end date and the rate after it are kept only when asked for (null = asked, not given), and round trip', () => {
+    const plan = (extra: Record<string, unknown>) => parseCheckV2({ v: 2, pay: { mode: 'plan', deferredInterestTerm: true, ...extra } })!.pay;
+    const none = plan({});
+    expect(none).not.toHaveProperty('promoEnd');
+    expect(none).not.toHaveProperty('rateAfter');
+    expect(plan({ promoEnd: '2027-11-15', rateAfter: '24.99' })).toMatchObject({ promoEnd: '2027-11-15', rateAfter: percentFromScaled(249_900_000_000n) });
+    expect(plan({ promoEnd: 'soon', rateAfter: 'lots' })).toMatchObject({ promoEnd: null, rateAfter: null });
+    expect(plan({ promoEnd: 5, rateAfter: null })).toMatchObject({ promoEnd: null, rateAfter: null });
+    const c = parseCheckV2({ v: 2, pay: { mode: 'plan', deferredInterestTerm: true, promoEnd: '2027-11-15', rateAfter: '24.99' } })!;
+    expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(c))))!.pay).toEqual(c.pay);
+    const asked = parseCheckV2({ v: 2, pay: { mode: 'plan', deferredInterestTerm: true, promoEnd: null, rateAfter: null } })!;
+    expect(parseCheckV2(JSON.parse(JSON.stringify(toStoredV2(asked))))!.pay).toEqual(asked.pay);
+  });
+
   it('an unknown split rule resets the share to personal', () => {
     const c = parseCheckV2({ v: 2, share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'bogus' } } })!;
     expect(c.share).toEqual({ kind: 'personal' });

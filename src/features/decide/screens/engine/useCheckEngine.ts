@@ -8,6 +8,7 @@ import {
   judgeBoth,
   judgeCheck,
   judgeWithQuickLines,
+  prepare,
   withQuickLinesPrepared,
   saveForItReadyDate,
   type BothResults,
@@ -18,9 +19,12 @@ import {
   type LocalDate,
   type Prepared,
 } from '@/engine/decide/v3';
-import type { DbErrorKind } from '@/db/errors';
+import { classifyReadError, type DbErrorKind } from '@/db/errors';
 import { useDecideV3, type DecideV3State } from '@/data/queries/decideV3';
 import { perfMark, usePerfMount } from '@/features/decide/perf/perfMarks';
+import { buildInputs } from '@/features/decide/snapshot/v3/buildInputs';
+import { withUnsaved } from '@/features/decide/snapshot/v3/computeV3';
+import { useHouseholdScopeSource } from '@/features/household/decide/useHouseholdScopeSource';
 import { decideBreadcrumb } from '@/services/errors/decideBreadcrumbs';
 
 export interface CheckEngine {
@@ -88,7 +92,24 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   usePerfMount('answer.mount');
   useState(() => perfMark('answer.firstJudge:start')); // the first render only
   const state = useDecideV3();
-  const prepared: Prepared | null = state.prepared;
+  // 08.1-10 (D-02, D-03): a Household check is judged on its own Prepared, built once per data change with the household laid in
+  // (withHouseholdScope, inside buildInputs). Just me keeps the shared one, so it costs nothing and reads exactly what it did.
+  const householdCheck = check !== null && check.share.kind === 'household';
+  const household = useHouseholdScopeSource(householdCheck);
+  // A-CR-01 (fail closed): a Household check whose household facts could not be read is an error, never the Just me answer and never
+  // judged on an unsliced joint balance. A Just me check is covered by the shared build (useDecideV3), which fails closed itself.
+  const householdFailed = householdCheck ? household.failed : undefined;
+  const householdSource = state.source ?? null;
+  const heldHousehold = useMemo<Prepared | null>(
+    () => (household.source === undefined || householdSource === null ? null : prepare(buildInputs({ ...householdSource, household: household.source }, state.v3 ?? null))),
+    [household.source, householdSource, state.v3]
+  );
+  const unsavedNow = state.inputs?.unsavedWrites ?? 0;
+  const prepared: Prepared | null = useMemo(
+    () => (householdFailed !== undefined ? null : heldHousehold === null ? state.prepared : withUnsaved(heldHousehold, unsavedNow)),
+    [householdFailed, heldHousehold, state.prepared, unsavedNow]
+  );
+  const waitingOnHousehold = household.pending;
   const checkId = opts?.checkId;
   const answers = state.v3?.answers;
 
@@ -105,7 +126,7 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   // (both, judgeOn, timeline, readyDate) still use the live check: they run only when the user asks for them.
   const deferredJudged = useDeferredValue(judged);
   const evaluation = useMemo<Evaluation | null>(() => {
-    if (prepared === null || deferredJudged === null) return null;
+    if (prepared === null || deferredJudged === null || waitingOnHousehold) return null;
     perfMark('answer.judge:start');
     try {
       const judgedNow = (deferredJudged.quickLines ?? []).length > 0 ? judgeWithQuickLines(prepared, deferredJudged) : judgeCheck(prepared, deferredJudged);
@@ -116,7 +137,7 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
       decideBreadcrumb('engine_error');
       throw e;
     }
-  }, [prepared, deferredJudged]);
+  }, [prepared, deferredJudged, waitingOnHousehold]);
 
   // 05.5-09 (APP-12): a check starts computing once per check id (not per keystroke); a failed read is an engine error too.
   const startedFor = useRef<string | null>(null);
@@ -186,5 +207,14 @@ export function useCheckEngine(check: CheckV2 | null, opts?: { checkId?: string 
   // 06.1-68 (CF-3): the verdict on screen is a step behind while the deferred copy has not caught up; the frame dims it and says so.
   const updating = deferredJudged !== judged;
 
-  return { status: state.status, errorKind: state.errorKind, missingReads: state.missingReads, refetch: state.refetch, evaluation, both, futures, readyDate, timeline, judgeOn, paydays, updating };
+  const status: DecideV3State['status'] = householdFailed !== undefined ? 'error' : waitingOnHousehold && state.status === 'ready' ? 'loading' : state.status;
+  const errorKind = householdFailed !== undefined && state.status !== 'error' ? classifyReadError(householdFailed.error) : state.errorKind;
+  const missingReads = householdFailed === undefined ? state.missingReads : [...state.missingReads, householdFailed.read];
+  const retryHousehold = householdFailed?.retry;
+  const stateRefetch = state.refetch;
+  const refetch = useCallback(() => {
+    stateRefetch();
+    retryHousehold?.();
+  }, [stateRefetch, retryHousehold]);
+  return { status, errorKind, missingReads, refetch, evaluation, both, futures, readyDate, timeline, judgeOn, paydays, updating };
 }

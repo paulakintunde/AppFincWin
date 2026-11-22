@@ -152,7 +152,7 @@ describe('verdict table (I22 one code one text)', () => {
     expect(Object.keys(MISSING_KEYS).sort()).toEqual(
       [
         'no_income_figures', 'unspent_not_confirmed', 'records_look_behind', 'no_price', 'plan_count_missing',
-        'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'everyday_unknown',
+        'first_payment_not_chosen', 'pause_interest_not_answered', 'plan_rate_missing', 'promo_end_missing', 'everyday_unknown',
         'legacy_invest_check', 'share_invalid', 'income_pattern_unconfirmed', 'expected_income_needed',
         'first_payment_passed', 'volatile_cover_question', 'unexplained_money_question', 'account_use_question',
         'pay_arrival_question', 'price_too_large',
@@ -161,10 +161,10 @@ describe('verdict table (I22 one code one text)', () => {
     expect(Object.keys(FACT_KEYS).sort()).toEqual(
       [
         'month_left_after', 'unspent_before_after', 'emergency_untouched', 'net_used', 'envelope_used',
-        'line_crossed', 'quoted_differs', 'implied_rate', 'deferred_interest_term', 'at_todays_rate', 'low_month',
+        'line_crossed', 'quoted_differs', 'implied_rate', 'deferred_interest_term', 'back_charge_cost', 'promo_cleared', 'at_todays_rate', 'low_month',
         'lean_bridge', 'unspent_held_back', 'lean_months_judged', 'low_month_judged', 'rests_on_your_answer',
         'no_full_month', 'overdraft_use', 'overdraft_without_purchase', 'overdraft_purchase_adds', 'overdraft_not_cleared',
-        'overdraft_cost_90d', 'wait_clears', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
+        'overdraft_cost_90d', 'wait_clears', 'not_within_year', 'below_zero_without', 'below_zero_later_without', 'below_zero_later_with', 'overdraft_repeat', 'other_account_overdrawn', 'no_overdraft_limit',
         'ready_without_interest', 'clearing_first', 'net_left', 'net_refill', 'net_zero_is_off', 'net_protection_off',
         'net_none_start', 'net_progress', 'net_above_size', 'wait_keeps_net', 'need_net_line',
         'bills_held_back', 'yearly_bill_ahead', 'net_locked', 'extra_savings_used', 'net_two_months', 'move_money_by',

@@ -112,6 +112,17 @@ export const queryKeys = {
   holdsFlags: (householdId: string) => ['transactions', householdId, 'holds-flags'] as const,
   splitDefaults: (householdId: string) => ['split-defaults', householdId] as const,
   settlements: (householdId: string) => ['settlements', householdId] as const,
+  // 08.1-22: the household's spending rule, and the joint accounts' purposes, true balances and month totals. The facts sit under transactionsRoot so a line write refreshes them.
+  householdSpendRule: (householdId: string) => ['household-spend-rule', householdId] as const,
+  jointAccountFactsRoot: (householdId: string) => ['transactions', householdId, 'joint-facts'] as const,
+  jointAccountFacts: (householdId: string, month: string) => ['transactions', householdId, 'joint-facts', month] as const,
+  // 08.1-07: partner opt-ins, the partner's one rounded total, the shared safety net and the last shared line (all viewer-scoped)
+  partnerOptins: (userId: string, householdId: string) => ['partner-optins', userId, householdId] as const,
+  partnerMoneyRoot: (userId: string) => ['partner-money', userId] as const,
+  partnerMoney: (userId: string, partnerId: string) => ['partner-money', userId, partnerId] as const,
+  safetyNetShares: (userId: string, householdId: string) => ['safety-net-shares', userId, householdId] as const,
+  sharedSafetyNet: (userId: string) => ['shared-safety-net', userId] as const,
+  partnerLastShared: (userId: string, householdId: string) => ['partner-last-shared', userId, householdId] as const,
   // 09-10: the server plan record for the signed-in user's household.
   planState: (userId: string) => ['plan-state', userId] as const,
   // 09-13: the person's private level, answers and feature switches.
@@ -170,7 +181,6 @@ export const mutationKeys = {
   saveCheckAnswer: ['decide-checks', 'save-answer'] as const,
   decideGoAhead: ['decide-checks', 'go-ahead'] as const,
   decideOutcome: ['decide-checks', 'outcome'] as const,
-  recordBought: ['decide-checks', 'record-bought'] as const,
   updateDecideSettings: ['decide-settings', 'update'] as const,
   saveCardRate: ['debts', 'save-card-rate'] as const,
   saveCardTerms: ['debts', 'save-card-terms'] as const, // D-40 (05-19 useSaveCardTerms)

@@ -40,7 +40,7 @@ async function frame(r: Run, over: Partial<AnswerFrameProps> = {}, scale = 1) {
       said={{ currency: r.inputs.currency, today: r.inputs.asOf }}
       onAction={(a) => actions.push(a)}
       onOption={noop}
-      onCantSee={noop}
+      onCantSee={noop} onImport={noop}
       {...over}
     />
   );
@@ -298,7 +298,7 @@ describe('top bar inside the safe area (06.1-49, A-ANS-1, C-7)', () => {
     await render(
       <SafeAreaProvider initialMetrics={at48}>
         <ThemeProvider>
-          <AnswerFrame check={viewOf(r)} evaluation={r.evaluation} said={{ currency: r.inputs.currency, today: r.inputs.asOf }} onAction={noop} onOption={noop} onCantSee={noop} />
+          <AnswerFrame check={viewOf(r)} evaluation={r.evaluation} said={{ currency: r.inputs.currency, today: r.inputs.asOf }} onAction={noop} onOption={noop} onCantSee={noop} onImport={noop} />
         </ThemeProvider>
       </SafeAreaProvider>
     );

@@ -5,8 +5,12 @@
  * Draft copy, signed under D-08. "surer" is replaced by "Give it more to go on" (CMP-F12).
  */
 export const answer = {
+  // 08.1-05 (ROADMAP SC8): tester accounts see the build under the legal footer.
+  testerBuild: 'Build {{build}}',
   frame: {
     itemA11y: '{{name}}, {{price}}',
+    // 08.1-10: with the stage and scope line read after the price ("First read · Just you").
+    itemA11yScope: '{{name}}, {{price}}. {{sub}}',
     payTabs: 'How you pay',
     whenGroup: 'When you buy',
     whenToday: 'Today',
@@ -16,6 +20,25 @@ export const answer = {
     optionsA11y: 'Other ways to look at it',
     actionsA11y: 'What you did with this answer',
     helpLinkA11y: '{{name}}. Opens a website outside the app',
+  },
+  // 08.1-10 (APP-22, DCU-10): the top-bar sub-line. Below 3 full months it is "{stage} · {scope}"; from 3 months the scope alone.
+  scope: {
+    justYou: 'Just you',
+    household: 'Household · {{household}}',
+    withStage: '{{stage}} · {{scope}}',
+  },
+  // 08.1-10 (D-03): the household caveat under the answer; the names go through the member resolver (a hidden name reads as its colour).
+  caveat: {
+    notShared: 'Only your money is counted. {{name}} hasn’t shared theirs.',
+    notSharedMany: 'Only your money is counted. {{names}} haven’t shared theirs.',
+    nameAnd: '{{a}} and {{b}}',
+  },
+  // 08.1-23 (Q6, Q12): the spending rule a Household check counted. Draft copy, wording sign-off in plan 14.
+  household: {
+    ruleBring: 'Counted: what you bring.',
+    ruleShares: 'Counted: your {{percent}}% of shared money.',
+    ruleBill: 'Counted: your {{percent}}% of shared money, matching the bill split.',
+    outOfDate: 'Update spending shares because someone joined or left. Until you do, each check counts what each person brings in.',
   },
   /** 06.1-49 (A-ANS-2): shown from Check it until the answer is worked out. */
   loading: 'Working out the answer…',
@@ -83,6 +106,7 @@ export const answer = {
     first_payment_not_chosen: 'the first payment date',
     pause_interest_not_answered: 'whether interest runs during the pause',
     plan_rate_missing: 'the plan’s rate',
+    promo_end_missing: 'the promotion’s end date', // 08.1-11 FIN-12 (draft)
     everyday_unknown: 'your everyday spending',
     legacy_invest_check: 'this check again',
     share_invalid: 'your share',
@@ -139,6 +163,19 @@ export const answer = {
   },
   // 06.1-68 (CF-3): shown over the dimmed verdict while it is worked out again.
   updating: 'Updating…',
+  // 08.1-24 (owner caution sign 2026-11-21, Q2 A): the caution sign before the verdict word on a Fits answer whose 12-month path
+  // goes below $0 later. The verdict does not change. {{date}} is day and month ("Jun 14" / "14 Jun"); the spoken form uses the long
+  // month. Draft copy, wording sign-off in plan 14.
+  caution: {
+    line: 'drops below {{zero}} on or before {{date}}',
+    a11y: 'Heads up: drops below {{zero}} on or before {{date}}.',
+  },
+  // 08.1-14 (D-07, UI-SPEC section 3): the BelowZeroLine under the verdict card. The badge word, then the engine's below_zero_without
+  // sentence; spoken "Warning. " + the sentence. Draft copy, wording sign-off in plan 14.
+  belowZero: {
+    badge: 'Warning',
+    a11y: 'Warning. {{sentence}}',
+  },
   // 06.1-68 (CF-4, CC-8): the answers given under a fact line, each with Undo.
   fact: {
     noneSaved: 'Saved: no other debts.',
@@ -155,6 +192,8 @@ export const answer = {
     right: 'That’s right',
     own: 'Use my own figure',
     ownLabel: 'Your spare money now',
+    // 08.1-23 (Q7): shown only when the person has a joint account. Draft copy, wording sign-off in plan 14.
+    jointNote: 'Only counts your personal accounts. Joint accounts are counted on their own.',
     useOwn: 'Use this figure',
     saved: 'Saved: your spare money.',
   },
@@ -191,6 +230,8 @@ export const answer = {
     waiting: 'Saving for it since {{date}}.',
     passed: 'Not buying, {{date}}.',
     pastLink: 'See it in Past decisions',
+    // 08.1-10 (owner 2026-11-20): a check saved for later can be recorded as bought; only a waiting check shows it.
+    recordBought: 'Mark as bought',
   },
   // 06.1-66 (FQ5, CS-8): the safety-net question was put away unanswered; this line opens it again.
   netLine: 'Safety net: not answered yet.',

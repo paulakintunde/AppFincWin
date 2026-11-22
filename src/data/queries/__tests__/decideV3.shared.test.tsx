@@ -12,6 +12,8 @@ import * as buildInputsModule from '@/features/decide/snapshot/v3/buildInputs';
 import { queryKeys } from '../../keys';
 import { useDecideV3, type DecideV3State } from '../decideV3';
 
+// 08.1-23 (Q11): the shared build reads the household source (Just me with a joint account); none here.
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdScopeSource: () => ({ source: undefined, pending: false }) }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 const never = () => new Promise(() => undefined);
 jest.mock('@/db/decideChecks', () => ({ fetchDecideChecks: () => never() }));

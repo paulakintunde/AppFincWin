@@ -21,7 +21,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Shell** - Five tabs, bespoke glyphs, back stack, bottom sheets, context-aware FAB, Home content (completed 2026-10-14)
 - [x] **Phase 03.1: Activity header redesign** (INSERTED) - Activity header from ten bands to four: month row with Search/Filter/More, summary card, Display chip (completed 2026-10-15)
 - [x] **Phase 4: Decide Engine** - Pure TypeScript affordability engine, fully tested, no UI (parallel-eligible with Phases 1-3) (completed 2026-10-16)
-- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged; the screens were rebuilt in 06.1. Decide has been open to every tester since 2026-11-06, quick 261106-bf2, `DECIDE_OPEN = true`; the public store switch-on follows 08.2)
+- [x] **Phase 5: Decide UI** - Quick check, five-step flow, open checks, alternatives, decision journal (merged; the screens were rebuilt in 06.1. Decide has been open to every tester since 2026-11-06, quick 261106-bf2, `DECIDE_OPEN = true`; the public store switch-on is part of Phase 11's final audit)
 - [x] **Phase 05.1: Decide engine v3** (INSERTED) - Recurring first, money in vs out, unspent money rolled forward, emergency fund kept out, payment plans, one judge with six answers, built beside the old engine (50/50 plans: 32 on 2026-10-26, gap closure 05.1-33..50 on 2026-10-27; owner shadow sign-off and re-verification 6/6 passed 2026-10-27) (completed 2026-10-27)
 - [x] **Phase 05.2: Decide data and setup** (INSERTED) - Shared income profile, Decide setup and settings, Activity income prompts and tags, unspent and emergency sheets, additive migrations (completed 2026-10-29)
 - [ ] **Phase 05.3: Decide screens v3** (INSERTED) - REPLACED by 05.4, not to be resumed. STOPPED 2026-11-01 (Theme N): the Calm Ledger screens; branch parked, not merged; parts harvested in 05.4
@@ -30,10 +30,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
-- [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after Phase 08.2, per the Decide fix plan)
+- [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
-- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
-- [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
+- [x] **Phase 08.1: Decide rebuild on real data** (INSERTED, completed 2026-11-22) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
+- [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
+- [ ] **Phase 08.13: Private rooms in a household** (INSERTED) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
@@ -1407,7 +1408,9 @@ Plans:
 
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
-**Depends on**: Phase 6, and Phase 08.2 (Decide fix plan: built after the re-audit so charts include the household view and the health score agrees with Decide; ARC-21)
+**Depends on**: Phase 6, and Phase 08.1 (so charts include the household view and the health score reads Decide's own figures; ARC-21)
+**Amended 2026-11-22 (owner, quick 261122-m82):** Insights no longer waits for the Decide re-audit; former Phase 08.2 is merged into Phase 11. Insights may run in parallel with Phase 10. The health score (INS-06) is built here and signed off by Phase 11's final audit (criterion 12): a month Decide calls short cannot score in the top band, and no grade words ("healthy", "poor").
+**Ready to plan (2026-11-22, quick 261122-fd3):** 08.1 merged into main (PR #180, 36028c69). ARC-21 is built in this phase: the score reads the Decide engine's month figures and computes nothing of its own. This holds whether or not Decide ships in v1, because the engine stays (Home uses it).
 **Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
 **Success Criteria** (what must be TRUE):
   1. A user can see net worth over time with a selectable range.
@@ -1499,6 +1502,8 @@ Plans:
 
 **Amended 2026-11-19 (owner, quick 261119-as7; 08.1-OWNER-QUESTIONS R1-R5):** 08.1 ends at plan 15 (schema push, tester build, tester list). Reading test round 2, its fix pass, the QA-01 design freeze and the compliance gate (former plans 16 and 17), and the carry-over audit with the Create-from-Decide check (former 14 Task 2), move to Phase 08.2. Success criteria 4, 5 and 7 are therefore checked in 08.2. Former plan 18 (named testers) is dropped: Decide has been open to every tester since 2026-11-06, so criterion 8's per-account switch is no longer the access path. New tester ids go in through plan 15. The wording sign-off stays in plan 14 because the wording lock (active since 06.1) blocks the merge. The audit gate stays: nothing after wave 2 builds before 05.4-43 has its full mutation score.
 
+**Amended 2026-11-22 (owner, quick 261122-m82):** Phase 08.2 (Decide re-audit) is merged into Phase 11. Everything above that says "moves to 08.2" or "after 08.2" now means Phase 11's final audit (criteria 9-13). Gap fixes found by that audit still open gap plans in 08.1 (or the phase that owns the code).
+
 **Goal:** Decide reaches 10/10 on every auditor's checklist using real goals, debts and household data, with the full cost of a purchase (tax, fees and running costs) and the Variant C screens the owner signs off at the design freeze (QA-01). Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 4, 6 (Theme L) and 8. Design: Variant C, chosen by the owner on 2026-11-01 ("Decide redesign: three variants" canvas, 40 screens); Variants A and B are retired. Reading-test round 1 runs on Variant C alone (about 5 people) to find what confuses people; its findings are fixed and the screens are then frozen (QA-01).
 **Requirements**: FIN-12; APP-21; UX-26 round 2; CMP-F19; ENG-26 (Household half); UX-21 (shared_money emission); QA-01 (changes after round 2), QA-02/QA-03 (household cases); household rows of the 05.4 carry-over; any of FIN-20, FIN-22, FIN-23 returned by 06.1 (D-26). Screens moved to 06.1 (D-04).
 **Depends on:** Phase 8
@@ -1508,7 +1513,7 @@ Plans:
   3. Every borrowing option shows its total cost next to paying cash, with preset and custom lengths.
   4. Reading test round 2 meets its pass bars, including the "$0 left" and "talk the app into a yes" tasks; iOS and VoiceOver checked if Apple enrolment has landed.
   5. Compliance gate: CMP-F12, F14 and F15 merged; no plain "Fits" below the safety net, with a short month, or resting on the user's word; free-help trigger tests green; builder scoped to the viewer.
-  6. The public switch-on is the last task and runs only after Phase 08.2 passes.
+  6. The public switch-on runs only after Phase 11's final audit passes (former 08.2, merged 2026-11-22).
   7. Screens match the signed set from the design freeze (QA-01), with every change traced to a reading-test round 2 finding or another allowed reason; the right-answer table and the plain calculator cover running costs, loans and household money and still agree with the engine.
   8. Theme N: the Variant C screens are built once, in a new folder, on the finished plumbing and the six connection points, with nothing copied from the parked 05.3 screens; named testers see them behind the per-account switch (not a second tab), with the build name in the footer.
   9. Theme O: version 1 contains the scope listed in the fix plan, Theme O, including the decision record and its "did it cost what you expected?" follow-up; home-buying screens are hidden until their own phase.
@@ -1519,45 +1524,54 @@ Plans:
 **Plans:** 18 plans in 10 waves (trimmed 2026-11-19 from 21 plans in 13 waves: 16, 17 and 18 removed, see the amendment above). Was: 21 plans in 13 waves (planned 2026-11-18; revised the same day after the full UI design run: new plan 19 for the visible Decide stages, plans 04, 05, 07, 09, 10, 11, 12, 14 and 17 edited to match `08.1-UI-SPEC.md`; checker round 1 the same day split the stage work into 19 engine (wave 4), 20 answer side (wave 5) and 21 home and setup (wave 7)). Engine plans (06 onward) wait for the post-05.5 test audit (06 Task 0 gate); waves 1-2 non-engine plans do not. Open owner questions, planned on defaults: `08.1-OWNER-QUESTIONS.md`. Phase 9's sample-data answer uses the First read treatment from plans 19-20.
 
 Plans:
-- [ ] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
-- [ ] 08.1-02-PLAN.md — Record as bought server: expected lines, sale, payoff and goal close in one save, one undo (ARC-24; migration 20261123000100, pgTAP 112)
-- [ ] 08.1-03-PLAN.md — Partner opt-ins, rounded partner figure, shared safety net, sharedMoneyFor (carry-over 08-28; migration 20261123000200, pgTAP 111)
-- [ ] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
-- [ ] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261123000300)
-- [ ] 08.1-06-PLAN.md — Engine: ready-by means stays above $0, no dates past 12 months, below-$0-without line (D-05..D-07; audit gate)
-- [ ] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
-- [ ] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
-- [ ] 08.1-09-PLAN.md — Record as bought client: one writer, fixed vs varying costs, tick rows, stops wiring, contract todos (ARC-24, D-09..D-11)
-- [ ] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
-- [ ] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
-- [ ] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
-- [ ] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
-- [ ] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
-- [ ] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, tester preview APK, Maestro smoke, new tester ids (last plan)
-- [ ] 08.1-19-PLAN.md — Visible Decide stages, engine: 3-month check (08.1-STAGE-CHECK.md) and the pure stage read-model stageOf / firstShownCaveat (DCU-10)
-- [ ] 08.1-20-PLAN.md — Visible Decide stages, answer: basis-window sentences, pay-window row, caveat-order rule, StageLine, StageTag, About rows (DCU-10, CMP-F12)
-- [ ] 08.1-21-PLAN.md — Visible Decide stages, home and setup: StageCard (no chip at 3+ months), import prompt, Not ready actions, Records setup prompt, import return to Decide (DCU-10)
+- [x] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
+- [x] 08.1-02-PLAN.md — Record as bought server: expected lines, sale, payoff and goal close in one save, one undo (ARC-24; migration 20261125000100, pgTAP 112)
+- [x] 08.1-03-PLAN.md — Partner opt-ins, rounded partner figure, shared safety net, sharedMoneyFor (carry-over 08-28; migration 20261125000200, pgTAP 111)
+- [x] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
+- [x] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261125000300)
+- [x] 08.1-06-PLAN.md — Engine: ready-by means stays above $0, no dates past 12 months, below-$0-without line (D-05..D-07; audit gate)
+- [x] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
+- [x] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
+- [x] 08.1-09-PLAN.md — Record as bought client: one writer, fixed vs varying costs, tick rows, stops wiring, contract todos (ARC-24, D-09..D-11)
+- [x] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
+- [x] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
+- [x] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
+- [x] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
+- [x] 08.1-22-PLAN.md — Household money engine: spending rule per group, setup type, joint money counted once and split by the rule (account purposes), double-count fix; migrations 20261125000600-000700, revision 07.1 (owner 2026-11-20)
+- [x] 08.1-23-PLAN.md — Household money screens: spending setup and rule, custom shares, joint account purpose (bills / savings / everyday), rule lines; copy for plan 14 (owner 2026-11-20)
+- [x] 08.1-24-PLAN.md — Caution sign on "Fits" answers that dip below $0 later in the 12 months: the app's own caution icon (plus an info icon for the tips), amber tight colours with words, breathes 2-3 times then stays still, no motion when reduce motion is on (owner 2026-11-21)
+- [x] 08.1-25-PLAN.md — One-earner fix: when one member brings no money, the app suggests an equal set split and the group chooses (it never switches on its own) (owner 2026-11-21; free access arrives in 08.12)
+- [x] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
+- [x] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, tester preview APK, Maestro smoke, new tester ids (last plan)
+- [x] 08.1-19-PLAN.md — Visible Decide stages, engine: 3-month check (08.1-STAGE-CHECK.md) and the pure stage read-model stageOf / firstShownCaveat (DCU-10)
+- [x] 08.1-20-PLAN.md — Visible Decide stages, answer: basis-window sentences, pay-window row, caveat-order rule, StageLine, StageTag, About rows (DCU-10, CMP-F12)
+- [x] 08.1-21-PLAN.md — Visible Decide stages, home and setup: StageCard (no chip at 3+ months), import prompt, Not ready actions, Records setup prompt, import return to Decide (DCU-10)
 
-### Phase 08.2: Decide re-audit (INSERTED)
+### Phase 08.12: Joint spending agreements (INSERTED)
 
-**Goal:** Prove 10/10, first by checking every fix ID in the Decide fix plan, then with a fresh audit of Decide alongside Activity, Home, Grow and Household. Source: `.planning/research/DECIDE-FIX-PLAN.md` section 9.
-**Requirements**: The section 7 checklists for the financial, engine, app, UI, UX, compliance and integration auditors
-**Depends on:** Phase 08.1
-**Success Criteria** (what must be TRUE):
-  1. Every fix ID in the plan is checked as done, waived by the owner, or moved with a reason.
-  2. All seven auditors score 10/10, or the owner signs a waiver for each gap; a failed line opens a gap plan in 08.1 and only that auditor re-runs.
-  3. The four household personas run on both partners' accounts, and the reading test (about 5 people) passes.
-  4. *(Moved to Phase 11, criterion 8, owner 2026-11-19.)* At least 95% of Stryker's breaking changes across the Decide engine are caught by a test; each one not caught is recorded as harmless with a reason (QA-04).
-  5. The public switch-on and the deletion of the old Decide screens and routes happen in the same release (Theme N, BO-09).
-**Moved in from 08.1 (2026-11-19, owner; 08.1-OWNER-QUESTIONS R2-R4):** plan these with 08.2, after the whole of 08.1 is built.
-- Reading test round 2 (UX-26; 08.1 D-13, D-14, D-16) on the 08.1 tester build or later; it is the one reading test that criterion 3 counts. Includes the "$0 left" and "talk the app into a yes" tasks, and iOS / VoiceOver if Apple enrolment has landed (former 08.1-16; 08.1 SC4).
-- The round-2 fix pass, then the QA-01 design freeze signed by the owner (former 08.1-17 Tasks 1, 2 and 4; 08.1 SC7).
-- The compliance gate: CMP-F12, F14, F15 and F19 render tests, the three "stage gate" tests (DCU-10: StageLine shown at stages 1-2, quick_estimates and few_months caveats in About, no Fits at stage 1 without "First read"), and the SC1-SC3 checks (first answer under 60 s / 8 taps, Decide's own setup count of 4, running-cost and borrowing checks) (former 08.1-17 Task 3; 08.1 SC5). Phase 11 checks store compliance again.
-- The row-by-row check of `08.1-CARRY-OVER-FROM-05.4.md` against the 06.1 and 08.1 summaries, and the Create-from-Decide end-to-end check (former 08.1-14 Task 2); this feeds criterion 1.
-**Plans:** 0 plans
+**Goal:** Groups can agree how shared money is spent, and Decide shows the agreement in its answers. On an equal-access joint account, the group can set a spend limit: spends over it need another member's OK, or the group can choose "no approval needed". The phase also covers one-earner households, where one person is the main earner and the other partner is at home or not working. That partner may be paid an allowance by the main earner, be given a set sum, spend from the same account, or a mix of these. FincWin only records what the group agreed. It holds no money and cannot block a card payment.
+**Requirements**: TBD (from research and the owner's questions)
+**Depends on:** Phase 08.1 (the spending rule, joint account purposes and joint money counted once, from plans 22 and 23)
+**Source:** owner 2026-11-21. Research into how real one-earner and shared-money households work comes first: `.planning/phases/08.12-joint-spending-agreements/08.12-RESEARCH-ARRANGEMENTS.md`.
+**Success Criteria** (draft, to be confirmed with the owner):
+  1. A group can set an approval limit, or "no approval needed", on a joint everyday account. A Decide check over the limit says who needs to OK it, and the other member can answer OK or Not now.
+  2. One-earner setups (allowance paid by the earner, a set sum, a shared account, or a mix) each give the non-earning partner a correct and fair "Just me" answer, with each dollar counted once. Every setup has right-answer cases.
+  3. Approval and allowance wording is declarative, never "advice" or "you should", and it never suggests that FincWin controls the money.
+  4. The non-earning partner's own money and privacy are respected: nothing they keep private is shown to the earner.
+**Plans:** 0 plans (questions before build)
 
-Plans:
-- [ ] TBD (run /gsd-plan-phase 08.2 to break down)
+### Phase 08.13: Private rooms in a household (INSERTED)
+
+**Goal:** A household can hold private rooms, such as the parents' own arrangement, a whole-family pot, or two roommates' joint account. Only a room's members know it exists. Every account, line and series sits in exactly one room, and today's household becomes the "everyone" room. Each room has its own spending rule, limit, personal money, settle-up and Decide choice, and money is counted once across overlapping rooms.
+**Requirements**: TBD (from 08.12-RESEARCH-ROOMS.md and the owner's answers in 08.12-OWNER-ANSWERS.md, round 5)
+**Depends on:** Phase 08.12 (its new tables are keyed by room from the start)
+**Size:** L. It touches every shared-table RLS policy, every RPC, the audience of every notice, the two-user privacy test (which becomes multi-room) and the export manifest.
+**Success Criteria** (draft):
+  1. Members outside a room see nothing of it, and the multi-room privacy test proves it.
+  2. The cases RM-01..RM-12 pass, and money is counted once across overlapping rooms in Just me and in each room's Decide answer.
+  3. Each room's removal policy is chosen when the room is made and shown to everyone invited. A removed member keeps their own money and sees settle-up until it is cleared.
+  4. Kids get their own login from age 16, with adult privacy. Under 16, they appear only as names.
+**Plans:** 0 plans (questions before build)
 
 ### Phase 9: Tiers & Onboarding
 **Goal**: The app reveals its depth gradually and converts to a paid subscription cleanly.
@@ -1617,6 +1631,7 @@ Plans:
 **Goal**: The app is secure, resilient offline, and lets a user manage their own data completely.
 **Depends on**: Phase 0 (auth), Phase 1 (write queue mechanism), Phases 2-9 (features being hardened, alerted on, imported and exported)
 **Requirements**: ACC-06, ACC-07, ACC-08, ACC-09, ACC-10, SYN-03, SYN-04, SYN-05, ALR-01, ALR-02, ALR-03, ALR-04, ALR-05, DAT-01, DAT-02, DAT-03, DAT-04, ENV-19, ACC-11, ACC-13, DAT-05, DAT-06, ALR-06, DSG-08, ENV-16, IMP-06
+**Note (2026-11-22, owner, quick 261122-m82):** may run in parallel with Phase 7 Insights. Account deletion, export and archive must cover the tables 08.1 adds, so build those parts after 08.1 merges.
 **Note (02.3 D-20):** ACC-10's in-app account deletion must call `forgetGoogleOnAccountDeletion(email)` (src/services/auth/google.ts) to clear the remembered-account tile and sign out of / revoke Google.
 **Success Criteria** (what must be TRUE):
   1. A user can see every device where their account is signed in with the current device marked, and sign out of one device or all devices at once.
@@ -1629,9 +1644,10 @@ Plans:
 **UI hint**: no (not in the flagged UI-heavy set; ships mostly settings/security surfaces on top of existing shell patterns)
 
 ### Phase 11: Compliance & Release
-**Goal**: The app is truthfully described and ready for store submission.
-**Depends on**: Phases 0-10 (final verification gate)
-**Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08, CMP-09, CMP-10, CMP-11, DSG-01, DSG-05, ENV-11, CMP-12, CMP-13
+**Goal**: The app is truthfully described, proven correct by one final audit, and ready for store submission.
+**Merged in 2026-11-22 (owner, quick 261122-m82):** former Phase 08.2 (Decide re-audit) is now part of this phase. It was an audit, not a build, so it runs once here on the finished app instead of between 08.1 and Insights. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 7 and 9; its scope now also covers Insights and System.
+**Depends on**: Phases 0-10 (final verification gate), including 08.1
+**Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08, CMP-09, CMP-10, CMP-11, DSG-01, DSG-05, ENV-11, CMP-12, CMP-13; from former 08.2: the section 7 checklists for the financial, engine, app, UI, UX, compliance and integration auditors
 **Success Criteria** (what must be TRUE):
   1. A findable disclaimer states the app is not financial advice and involves no institution, and no user-facing string claims data stays on the device or is not sent anywhere.
   2. The App Privacy questionnaire, the Play Data safety form and the Play Financial features declaration are completed, match actual data handling, and are filed before first internal-testing upload.
@@ -1640,7 +1656,19 @@ Plans:
   5. A TestFlight build is installed and exercised on the physical iPhone, an internal-testing build on physical Android, and the store listing carries screenshots for all required device sizes plus a 1024×1024 icon.
   6. Rendered screens match the prototype's screenshots within tolerance on both platforms — the final visual-fidelity gate, verifiable here because every screen now exists.
   7. The review account opens onto months of sample data where Decide returns real verdicts, its credentials are filed with both stores, and a working support URL and in-app contact route exist.
-  8. Pre-launch mutation check (QA-04, moved here by the owner 2026-11-19): one full Stryker run on the final engine scores at least 90% in each of the five Decide groups (the 08.2 aim is 95%), each mutant left is recorded as harmless with a reason, and `thresholds.break` is set to 90. Parts that run out of time are re-run in up to 80 smaller pieces sized by earlier run times; the checklist is in `05.4-VERIFICATION.md`.
+  8. Pre-launch mutation check (QA-04, moved here by the owner 2026-11-19): one full Stryker run on the final engine scores at least 90% in each of the five Decide groups (the final audit's aim is 95%), each mutant left is recorded as harmless with a reason, and `thresholds.break` is set to 90. Parts that run out of time are re-run in up to 80 smaller pieces sized by earlier run times; the checklist is in `05.4-VERIFICATION.md`.
+  9. Final audit, stage 1 (former 08.2): every fix ID in the Decide fix plan is checked as done, waived by the owner, or moved with a reason, in a trace table with evidence; the 16 personas and the failed 31 October walkthrough steps are re-run.
+  10. Final audit, stage 2 (former 08.2): seven auditors (financial, engine, mobile app, UI, UX, compliance, integration), each working alone, score 10/10, or the owner signs a waiver for each gap. Scope: Decide, Activity, Home, Grow, Household, Insights and System and the links between them. A failed line opens a gap plan in the phase that owns the code, and only that auditor re-runs.
+  11. The four household personas (even couple, weighted couple, one partner pays all bills, flatshare of 3) run on both members' accounts, and the reading test (about 5 people, then 5 more after fixes) passes.
+  12. Insights' health score agrees with Decide (ARC-21): a month Decide calls short cannot score in the top band, and the wording is "Score 72 out of 100, from these figures", never grade words.
+  13. The public switch-on of Decide and the deletion of the old Decide screens and routes happen in the same release (Theme N, BO-09).
+**Moved in from 08.1 via 08.2 (2026-11-19, then 2026-11-22):** plan these with the final audit, after 08.1 is built.
+- Reading test round 2 (UX-26; 08.1 D-13, D-14, D-16) on the 08.1 tester build or later; it is the one reading test criterion 11 counts. Includes the "$0 left" and "talk the app into a yes" tasks, and iOS / VoiceOver if Apple enrolment has landed (former 08.1-16; 08.1 SC4).
+- The round-2 fix pass, then the QA-01 design freeze signed by the owner (former 08.1-17 Tasks 1, 2 and 4; 08.1 SC7).
+- The compliance gate: CMP-F12, F14, F15 and F19 render tests, the three stage-gate tests (DCU-10), and the 08.1 SC1-SC3 checks (first answer under 60 s / 8 taps, Decide's own setup count, running-cost and borrowing checks) (former 08.1-17 Task 3; 08.1 SC5).
+- The row-by-row check of `08.1-CARRY-OVER-FROM-05.4.md` against the 06.1 and 08.1 summaries, and the Create-from-Decide end-to-end check (former 08.1-14 Task 2); this feeds criterion 9.
+- The 08.1 device checks (owner 2026-11-22, `08.1-HUMAN-UAT.md`): the caution sign on the Pixel 9 with Reduce Motion and TalkBack, and the household screens on two real accounts (Who pays, spending rule, joint account purpose, zero-share line).
+- The 08.1 review warnings and info left open (`08.1-REVIEW.md`, B-WR-03 and the rest) and the Decide setup gate follow-up (`08.1-DECIDE-SETUP-AUDIT.md`, starting with the missing "Did your pay arrive?" answer screen), unless the owner places them elsewhere.
 **Plans**: TBD
 **UI hint**: no (store assets and copy audit; no new app screens)
 **Research flag**: Guideline 3.2.1(viii) must be re-read against live text; its wording changed since the brief was written. Separately, correct the brief's mis-citation — the 36% APR / 60-day loan cap is 3.2.2(ix), not 3.2.1(viii), and does not apply here regardless.
@@ -1677,8 +1705,8 @@ Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. 
 ## Progress
 
 **Execution Order:**
-Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 08.2 → 7 → 9 → 10 → 11
-The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. Two agreed phases are not inserted yet: home buying (FIN-30), after 08.2, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). *Superseded 2026-11-06 (owner, quick 261106-bf2): Decide is open to every tester; the store switch-on follows 08.2.*
+Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 9 → 7 ∥ 10 → 11
+The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. *Amended 2026-11-22 (owner, quick 261122-m82): 08.2 is merged into Phase 11's final audit; Insights (7) and System (10) run in parallel after 08.1.* Two agreed phases are not inserted yet: home buying (FIN-30), after 08.1, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). *Superseded 2026-11-06 (owner, quick 261106-bf2): Decide is open to every tester; the store switch-on follows Phase 11's final audit (former 08.2).*
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
 2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
 
@@ -1704,8 +1732,9 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 15/18 | In progress on branch `feat/08.1-build` (built: 01-12, 19-21; left: 13 changed-answers review, 14 wording sign-off, 15 production push); not merged | - |
-| 08.2 Decide re-audit | 0/TBD | Not started | - |
+| 08.1 Decide rebuild on real data | 22/22 | Complete (review fixed, verification passed; OTA 7f1776a0) | 2026-11-22 |
+| 08.12 Joint spending agreements | 0/TBD | Not started | - |
+| 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |

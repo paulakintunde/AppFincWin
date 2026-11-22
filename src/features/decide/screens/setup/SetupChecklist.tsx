@@ -14,6 +14,7 @@ import { hapticTap } from '@/ui/haptics';
 import { StateGlyph, type StateGlyphName } from '@/ui/glyphs/StateGlyph';
 import { Pill } from '@/ui/Pill';
 import { StateBadge } from '@/ui/StateBadge';
+import { IconTile } from '@/ui/icons/IconTile';
 import { Text } from '@/ui/Text';
 import { ErrorCard } from '../answer/StatusCards';
 import { SETUP_ORDER, type SetupItemId, type SetupProgress } from '../logic/setupProgress';
@@ -41,6 +42,9 @@ const TILE_GLYPH: Record<SetupItemId, StateGlyphName> = {
 };
 
 const SEGMENT_HEIGHT = 4;
+
+/** 08.1-10 (carry-over 08-29, ENG-26): the extra last row. It is not a setup item: no tick, not counted, Decide's own count stays 6 of 6 items. */
+const HOUSEHOLD_ROUTE = '/household' as Href;
 
 /** DS-20: six segments, one per item, accent when done; no animation, so the fill is there on the first frame with data. */
 function ChecklistBar({ done }: { done: number }) {
@@ -154,6 +158,22 @@ function ChecklistBody({ progress, currency, onOpen, onBack }: SetupChecklistPro
             </Pressable>
           );
         })}
+        <Pressable
+          testID="setup-row-household"
+          accessibilityRole="button"
+          accessibilityLabel={t('decide.screens.setup.checklist.householdRow')}
+          onPress={() => {
+            hapticTap();
+            onOpen(HOUSEHOLD_ROUTE);
+          }}
+          style={({ pressed }) => [styles.row, styles.rowShort, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+        >
+          <IconTile icon="household" size={36} color={colors.ink} tint={colors.fill1} />
+          <View style={styles.rowText}>
+            <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('decide.screens.setup.checklist.householdRow')}</Text>
+          </View>
+          <StateGlyph name="chev" color={colors.inkMuted} size={18} />
+        </Pressable>
       </View>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('decide.screens.setup.checklist.note')}</Text>
       {next !== null ? (
@@ -184,6 +204,7 @@ const styles = StyleSheet.create({
   segment: { flex: 1, minHeight: SEGMENT_HEIGHT, borderRadius: SEGMENT_HEIGHT / 2 },
   list: { borderRadius: radii.card, overflow: 'hidden' },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.gapMd, padding: space.cardPad, minHeight: 64 },
+  rowShort: { minHeight: 52 },
   tile: { width: TILE, minHeight: TILE, borderRadius: radii.glyphTile + 3, alignItems: 'center', justifyContent: 'center' },
   rowText: { flex: 1, gap: 2 },
 });

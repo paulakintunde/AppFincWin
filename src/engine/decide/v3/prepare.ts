@@ -31,7 +31,7 @@ import { debtOutflows, debtsInMonth, debtsNotRecorded, dueDayFacts, type DebtFlo
 import { essentialCosts, essentialSpendingOf } from './essentialCosts';
 import { resolveSafetyNet, spareSavings, type ResolvedNet } from './safetyNet';
 import { overdraftFloor } from './overdraft';
-import { addDays, addYearMonths, yearMonthOf } from './dates';
+import { addDays, addMonthsClamped, addYearMonths, daysBetween, yearMonthOf } from './dates';
 import { buildFunds } from './funds/build';
 import { insteadFutures, type Futures } from './instead/futures';
 import { readinessOf } from './readiness';
@@ -39,13 +39,16 @@ import { judge, type BorrowingCtx } from './judge/judge';
 import { uncoveredIncomeMonths } from './judge/needsInput';
 import { withLiveEmergency } from './funds/emergency';
 import { ownEnvelope } from './funds/envelopes';
-import { buildPurchase, purchaseCashFlowsLabelled } from './judge/purchase';
+import { buildPurchase, purchaseCashFlows, purchaseCashFlowsLabelled } from './judge/purchase';
+import { firstSafeStart, type SafeStart } from './judge/readyBy';
+import { buildHorizon, horizonDays } from './cash/horizon';
 import { purchaseDateOf } from './fullCost/purchaseDate';
 import { replacesEffect, replacesFlowsLabelled, type ReplacesEffect } from './fullCost/replaces';
 import { withRedatedRefunds } from '../../month/model/refunds';
 import { withTaxSetAside } from './income/setAside';
 import { recordsSynced } from '../../month/model/freshness';
 import { dueDrops } from '../../month/model/dueDrops';
+import { expectedDueCounts } from '../../month/model/expected';
 import { buildMonthModel } from '../../month/model/model';
 import { historyPay, type HistoryPay } from '../../month/model/historyPay';
 import { billsHeldTotal, cappedSpare, confirmedUnspent, savingTransferFlows, spareInAccount } from './moneySource';
@@ -54,7 +57,7 @@ import { expectedFor } from '../../month/model/incomePattern';
 import { liveSeriesOf, seriesOccurrences } from '../../month/model/series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from '../../month/model/settle';
 import { caveatsFor } from './caveats';
-import { freeHelpFacts } from './help/freeHelp';
+import { freeHelpFacts, settleUpTrouble } from './help/freeHelp';
 import type { PlanCard } from './plan/planCard';
 import type { QuotedCheck } from './plan/quoted';
 import type { CheckV2, Fact, Funds, MonthModel, Notice, Purchase, ReadyBy, ReasonCode, Result, V3Account, V3Inputs, YearMonth } from './types';
@@ -231,6 +234,7 @@ function openInputOf(inputs: V3Inputs, built: MonthModel): { readonly input: Ope
     e: built.e ?? minorUnits(0),
     payCaps: payCapsOf(inputs, built),
     drops, // 05.3-64 (D-27, D-31, skips): the same rule as the month model and unspent
+    expected: expectedDueCounts({ asOf: inputs.asOf, series: inputs.series, lines: inputs.months.find((m) => m.month === ym)?.lines ?? [] }), // 08.1-09 D-09: the month model's own rule
     extraPays: histDates.map((date) => ({ date, amount: (hp as HistoryPay).amount })),
     savings,
     debts: debts.flows,
@@ -352,6 +356,73 @@ function purchaseSideOf(r: Reading, check: CheckV2, opts: JudgeOpts) {
   return { inputs, pb, rep, funds, savedFor, opening, purchaseDate, labelled };
 }
 
+/** D-06: no ready-by date is given more than this many calendar months after the check day. */
+const READY_BY_MONTHS = 12;
+
+/**
+ * 08.1 D-05 / D-06 (08.1-06): the search for the first day a fresh check would keep the account at or above 0 for 90 days, as a
+ * closure the judge calls on a Not yet answer (judge/readyBy.ts firstSafeStart). It reads the no-purchase path stretched to 12
+ * months plus a window (cash/horizon.ts). Left out (the judge keeps the date it has, never looser) when the stretched path cannot
+ * be built from the records alone: pay from history or a pay cap (variable or seasonal pay is only known 90 days out), or a purchase
+ * that replaces something (its sale and stopped costs are dated from the purchase day). Lazy: nothing is built until a Not yet asks.
+ */
+function stretchOf(r: Reading, opening: MinorUnits): { readonly h: ReturnType<typeof buildHorizon>; readonly total: number; readonly limit: string } | null {
+  const { inputs } = r;
+  const { input } = openInputOf(inputs, r.month);
+  if (input.payCaps != null) return null;
+  const limit = addMonthsClamped(inputs.asOf, READY_BY_MONTHS);
+  const total = horizonDays(inputs.asOf, limit);
+  const ym = yearMonthOf(inputs.asOf);
+  const outflows = [
+    ...savingTransferFlows(inputs.series, savedOccurrences(inputs), inputs.asOf, total),
+    ...debtOutflows(inputs, inputs.months.find((m) => m.month === ym)?.lines ?? [], total).flows,
+  ];
+  return { h: buildHorizon({ ...input, opening, outflows, totalDays: total }), total, limit };
+}
+
+function safeStartOf(r: Reading, purchase: Purchase | null, opening: MinorUnits, replaced: boolean): ((notBefore: string) => SafeStart) | undefined {
+  if (purchase === null || replaced || r.hp !== null) return undefined;
+  const { inputs } = r;
+  return (notBefore) => {
+    const s = stretchOf(r, opening);
+    if (s === null) return null;
+    return firstSafeStart({
+      asOf: inputs.asOf,
+      paydays: payDatesIn(inputs.series, inputs.asOf, s.total),
+      notBefore,
+      maxMonths: READY_BY_MONTHS,
+      floor: 0,
+      lowestFrom: (start) => Number(s.h.lowestFrom(start, purchaseCashFlows(purchase, start, CASH_PATH_DAYS_V3, start))),
+    });
+  };
+}
+
+/**
+ * 08.1-13 (owner 2026-11-20, option 1): a Fits answer reads the same stretched path for a later dip. The first day below 0 counts only
+ * when it falls after the first CASH_PATH_DAYS_V3 days (the cash path and D-07 cover those). Even with no purchase = 'without'; when the
+ * no-purchase path stays at or above 0 for the 12 months, the purchase's own flows (a plan's payments every month, from the purchase
+ * date) are applied and the first day below 0 is 'with'. Lazy; null when the path cannot be built (same limits as safeStartOf).
+ */
+function laterDipOf(
+  r: Reading,
+  purchase: Purchase | null,
+  opening: MinorUnits,
+  replaced: boolean,
+  purchaseDate: string
+): (() => { readonly kind: 'without' | 'with'; readonly date: string } | null) | undefined {
+  if (purchase === null || replaced || r.hp !== null) return undefined;
+  const { inputs } = r;
+  return () => {
+    const s = stretchOf(r, opening);
+    if (s === null) return null;
+    const days = daysBetween(inputs.asOf, s.limit);
+    const none = s.h.firstBelowZero([], days);
+    if (none !== null) return none >= CASH_PATH_DAYS_V3 ? { kind: 'without', date: addDays(inputs.asOf, none) } : null;
+    const withP = s.h.firstBelowZero(purchaseCashFlows(purchase, inputs.asOf, s.total, purchaseDate), days);
+    return withP !== null && withP >= CASH_PATH_DAYS_V3 ? { kind: 'with', date: addDays(inputs.asOf, withP) } : null;
+  };
+}
+
 function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
   const { month, net } = r;
   const { inputs, pb, rep, funds, savedFor, opening, purchaseDate, labelled } = purchaseSideOf(r, check, opts);
@@ -364,6 +435,10 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
   // 05.4 FIN-03 (D-36): the same open path with no purchase flows gives the cost without it; only needed with an overdraft.
   const overdraft = { floor: r.floor, withPurchase: path, withoutPurchase: r.floor < 0 ? applyPurchaseFlows(r.open, opening, []) : null, paydays: r.paydays };
   const borrowing = borrowingOf(r, check, pb.purchase, pb.quoted, opts);
+  // 08.1 D-07: the first day inside the 90 days the account is below 0 with no purchase at all.
+  const without = applyPurchaseFlows(r.open, opening, []).points.find((p) => p.balance < 0);
+  const safeStart = safeStartOf(r, pb.purchase, opening, rep !== null);
+  const belowZeroLater = laterDipOf(r, pb.purchase, opening, rep !== null, purchaseDate);
   const judged = judge({
     inputs,
     month,
@@ -379,6 +454,9 @@ function judgeReading(r: Reading, check: CheckV2, opts: JudgeOpts): Evaluation {
     account,
     borrowing,
     purchaseDate,
+    belowZeroWithout: without === undefined ? null : without.date,
+    ...(safeStart === undefined ? {} : { safeStart }),
+    ...(belowZeroLater === undefined ? {} : { belowZeroLater }),
     ...(rep === null ? {} : { replaces: { freed: rep.freed, showsUsual: rep.showsUsual, saleLater: rep.saleLater } }),
     ...(savedFor > 0 ? { savedFor } : {}),
   });
@@ -535,7 +613,7 @@ export function judgeCheckWith(p: Prepared, check: CheckV2, opts: JudgeOpts): Ev
   // 05.4 D-64 (4), D-119 (05.4-37): read from the finished answer; it never changes it (I75).
   const caveats = caveatsFor({ result, month: chosen.month, purchase: chosen.purchase }, p.inputs, check);
   // 05.4 CMP-F04 (D-123, 05.4-38): the money-help pointer goes last, read from the finished answer; it never changes it (I76).
-  const help = freeHelpFacts(result, p.inputs.region);
+  const help = freeHelpFacts(result, p.inputs.region, settleUpTrouble(p.inputs.household, homeFigure(p)));
   return { ...chosen, result: { ...result, facts: [...result.facts, ...help], caveats } };
 }
 

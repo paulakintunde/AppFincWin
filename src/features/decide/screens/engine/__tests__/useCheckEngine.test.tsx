@@ -32,6 +32,18 @@ jest.mock('@/data/queries/decide', () => ({
 jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => mockState.answers }));
 jest.mock('@/data/queries/recurringDismissals', () => ({ useRecurringDismissals: () => mockState.dismissals }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
+// 08.1-10: the household side is its own hook; here it is a switch (the reads behind it are tested with it).
+type MockRead = { source: unknown; pending: boolean; failed?: { read: string; error: unknown; retry: () => void } };
+let mockHousehold: MockRead = { source: undefined, pending: false };
+// A-CR-01: what the Just me side (the shared build) reads; off by default.
+let mockMeHousehold: MockRead = { source: undefined, pending: false };
+const mockHouseholdOn = jest.fn();
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({
+  useHouseholdScopeSource: (on: boolean) => {
+    mockHouseholdOn(on);
+    return on ? mockHousehold : mockMeHousehold;
+  },
+}));
 
 // stable data references across renders, as the real query hooks give
 const SOURCE = demoSource('2026-10-03');
@@ -52,8 +64,89 @@ const quickMock = engine.judgeWithQuickLines as jest.Mock;
 const timelineMock = engine.cashTimeline as jest.Mock;
 
 beforeEach(() => {
+  mockHousehold = { source: undefined, pending: false };
+  mockMeHousehold = { source: undefined, pending: false };
   ready();
   jest.clearAllMocks();
+});
+
+describe('useCheckEngine: Household scope (08.1-10, D-02, D-03)', () => {
+  const HH = {
+    scope: 'household' as const,
+    viewerId: 'u1',
+    myWeight: 50,
+    partners: [{ key: 'u2', weight: 50, sharing: true, roundedLeft: 300000, currency: 'USD' }],
+  };
+  const householdCheck = (): CheckV2 => ({ ...checkOnce(20000), share: { kind: 'household', memberCount: 2, myIndex: 0, rule: { kind: 'even' } } });
+
+  it('a Just me check never asks for the household and judges on the shared Prepared', async () => {
+    await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(mockHouseholdOn).toHaveBeenLastCalledWith(false);
+    const inputs = prepareMock.mock.calls.map((c) => (c[0] as { household?: unknown }).household);
+    expect(inputs.every((h) => h === undefined)).toBe(true);
+  });
+
+  it('a Household check passes scope household to the builder and judges on its own Prepared', async () => {
+    mockHousehold = { source: HH, pending: false };
+    const { result } = await renderHook(() => useCheckEngine(householdCheck()));
+    expect(mockHouseholdOn).toHaveBeenLastCalledWith(true);
+    const scopes = prepareMock.mock.calls.map((c) => (c[0] as { household?: { scope: string } | null }).household?.scope);
+    expect(scopes).toContain('household');
+    expect(result.current.status).toBe('ready');
+    expect(result.current.evaluation).not.toBeNull();
+  });
+
+  it('hands the builder the partner who has not shared, so the caveat can name them', async () => {
+    mockHousehold = { source: { ...HH, partners: [{ ...HH.partners[0]!, sharing: false, roundedLeft: null, currency: '' }] }, pending: false };
+    await renderHook(() => useCheckEngine(householdCheck()));
+    const households = prepareMock.mock.calls.map((c) => (c[0] as { household?: { notShared: string[] } | null }).household);
+    expect(households.some((h) => h?.notShared.join() === 'u2')).toBe(true);
+  });
+
+  it('waits (loading, no evaluation) while the household figures are on their way', async () => {
+    mockHousehold = { source: HH, pending: true };
+    const { result } = await renderHook(() => useCheckEngine(householdCheck()));
+    expect(result.current.status).toBe('loading');
+    expect(result.current.evaluation).toBeNull();
+  });
+
+  // A-CR-01 (fail closed): a failed joint read is never "no joint account".
+  const jointFailed = () => ({ read: 'jointAccounts', error: new TypeError('Network request failed'), retry: jest.fn() });
+  const withJoint = (): SnapshotSource => ({ ...SOURCE, accounts: SOURCE.accounts.map((a, i) => (i === 0 ? { ...a, is_shared: true } : a)) });
+
+  it('A-CR-01: a Household check whose household reads failed is an error with no evaluation, never the Just me answer', async () => {
+    mockHousehold = { source: undefined, pending: false, failed: jointFailed() };
+    const { result } = await renderHook(() => useCheckEngine(householdCheck()));
+    expect(result.current.status).toBe('error');
+    expect(result.current.errorKind).toBe('network');
+    expect(result.current.missingReads).toContain('jointAccounts');
+    expect(result.current.evaluation).toBeNull();
+  });
+
+  it('A-CR-01: a Just me check with a joint account in the records is an error when the joint facts could not be read', async () => {
+    mockState.snapshot = { ...mockState.snapshot, source: withJoint() };
+    mockMeHousehold = { source: undefined, pending: false, failed: jointFailed() };
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('error');
+    expect(result.current.errorKind).toBe('network');
+    expect(result.current.missingReads).toContain('jointAccounts');
+    expect(result.current.evaluation).toBeNull();
+  });
+
+  it('A-CR-01: a Just me check waits (loading, no evaluation) while the joint facts are on their way', async () => {
+    mockState.snapshot = { ...mockState.snapshot, source: withJoint() };
+    mockMeHousehold = { source: undefined, pending: true };
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('loading');
+    expect(result.current.evaluation).toBeNull();
+  });
+
+  it('A-CR-01: a failed household read does not block a Just me check that holds no joint account', async () => {
+    mockMeHousehold = { source: undefined, pending: false, failed: jointFailed() };
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('ready');
+    expect(result.current.evaluation).not.toBeNull();
+  });
 });
 
 describe('useCheckEngine', () => {

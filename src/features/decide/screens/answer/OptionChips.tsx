@@ -14,8 +14,8 @@ export type OptionKey = 'later' | 'cheaper' | 'installments';
 /** The engine orders FutureKinds; the installments route is the buy-now one, so it sits where buy_now sits. */
 const KIND: Readonly<Record<OptionKey, FutureKind>> = { later: 'buy_later', cheaper: 'cheaper', installments: 'buy_now' };
 
-export function optionOrder(present: readonly OptionKey[], purpose: Purpose | null): readonly OptionKey[] {
-  const kinds = orderOptions(present.map((k) => KIND[k]), purpose);
+export function optionOrder(present: readonly OptionKey[], purpose: Purpose | null, notWithinYear = false): readonly OptionKey[] {
+  const kinds = orderOptions(present.map((k) => KIND[k]), purpose, notWithinYear);
   return kinds.map((kind) => (Object.keys(KIND) as OptionKey[]).find((k) => KIND[k] === kind) as OptionKey);
 }
 
@@ -23,12 +23,16 @@ export interface OptionChipsProps {
   present: readonly OptionKey[];
   purpose: Purpose | null;
   onOption: (key: OptionKey) => void;
+  /** 08.1-14 (D-06): no ready date within a year (engine order: the cheaper one first). Absent = false. */
+  notWithinYear?: boolean;
+  /** 08.1-14 (D-06): chips the action bar already offers (the cheaper one leads it), so none is offered twice. */
+  hide?: readonly OptionKey[];
 }
 
-export function OptionChips({ present, purpose, onOption }: OptionChipsProps) {
+export function OptionChips({ present, purpose, onOption, notWithinYear = false, hide = [] }: OptionChipsProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
-  const ordered = optionOrder(present, purpose);
+  const ordered = optionOrder(present, purpose, notWithinYear).filter((k) => !hide.includes(k));
   if (ordered.length === 0) return null;
   return (
     <View testID="answer-options" accessibilityLabel={t('decide.screens.answer.frame.optionsA11y')} style={styles.row}>

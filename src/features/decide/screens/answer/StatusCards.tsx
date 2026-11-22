@@ -55,6 +55,24 @@ export function ErrorCard({ item, onRetry }: { item: string; onRetry: () => void
   );
 }
 
+/**
+ * 08.1-05 (APP-21, UI-SPEC section 8): shown in place of Decide while app_config decide_off is 'true'. The error card's look and
+ * glyph, no figures and no retry (a retry cannot help). A failed read never reaches here (fail-open).
+ */
+export function DecidePausedCard() {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  return (
+    <Card testID="decide-paused">
+      <StateGlyph name="sQuestion" color={stateColors.notYet.color} size={22} />
+      <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
+        {t('decide.screens.common.paused.title')}
+      </Text>
+      <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('decide.screens.common.paused.body')}</Text>
+    </Card>
+  );
+}
+
 export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
   /** 06.1-44 (C-2): the named readiness items with their fixes and answers (readinessFixRows). */
   rows: readonly ReadinessFixRow[];
@@ -67,6 +85,8 @@ export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
   canUseEstimates: boolean;
   onFinishSetup: () => void;
   onFromEstimates: () => void;
+  /** 08.1-21 (DCU-10): opens the statement import, returning to Decide. */
+  onImport: () => void;
 }
 
 /**
@@ -76,7 +96,7 @@ export interface NotReadyCardProps extends Omit<ReadinessFixListProps, 'rows'> {
  * 06.1-66 (OQ-66-1, DN-10): no count. Decide finds some items only after earlier ones are done, so the card names the first item
  * ("First: …") and says more may follow; answering it re-judges and the next one shows.
  */
-export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSetup, onFromEstimates, ...list }: NotReadyCardProps) {
+export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSetup, onFromEstimates, onImport, ...list }: NotReadyCardProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   // 06.1-68 (CB-11): a row just answered stays in view as "Saved, updating…" over the next open row until the engine drops it.
@@ -102,7 +122,12 @@ export function NotReadyCard({ rows, missing = null, canUseEstimates, onFinishSe
       {hasItem ? <MoreRow testID="answer-not-ready-more">{t('decide.screens.answer.notReady.moreMayFollow')}</MoreRow> : null}
       {canUseEstimates ? (
         <>
-          <Pill variant="primary" label={t('decide.screens.answer.notReady.fromEstimates')} onPress={onFromEstimates} />
+          {/* 08.1-21 (UI-SPEC owner answer 3): "Get a first read" leads, then the import path, then the note. Never disabled by stage. */}
+          <Pill variant="primary" label={t('decide.screens.stage.notReady.firstRead')} onPress={onFromEstimates} />
+          <Pill variant="secondary" label={t('decide.screens.stage.notReady.import')} onPress={onImport} />
+          <Text testID="answer-not-ready-note" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {t('decide.screens.stage.notReady.note')}
+          </Text>
           <Pressable testID="answer-not-ready-finish" accessibilityRole="link" onPress={onFinishSetup} style={styles.link}>
             <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.notReady.finishSetup')}</Text>
           </Pressable>
@@ -133,7 +158,7 @@ export function NotReadyExits({ onNotBuying, onDelete }: { onNotBuying: () => vo
 }
 
 /** 06.1-66 (FQ8, CC-2, DS-5): a decided check says what happened, with a link to its Past decisions entry, in place of the action bar. */
-export function OutcomeLine({ text, onOpenPast }: { text: string; onOpenPast: () => void }) {
+export function OutcomeLine({ text, onOpenPast, onRecordBought }: { text: string; onOpenPast: () => void; onRecordBought?: () => void }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const insets = useScreenInsets();
@@ -141,6 +166,12 @@ export function OutcomeLine({ text, onOpenPast }: { text: string; onOpenPast: ()
   return (
     <View testID="answer-outcome" style={[styles.outcome, { backgroundColor: colors.surface, paddingBottom: insets.bottom + space.gapSm }]}>
       <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{text}</Text>
+      {/* 08.1-10 (owner 2026-11-20): one quiet button, only for a check saved for later; it opens the Bought screen. */}
+      {onRecordBought === undefined ? null : (
+        <Pressable testID="answer-outcome-bought" accessibilityRole="button" onPress={onRecordBought} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.outcome.recordBought')}</Text>
+        </Pressable>
+      )}
       <Pressable testID="answer-outcome-past" accessibilityRole="link" onPress={onOpenPast} hitSlop={LINK_HIT_SLOP} android_ripple={press.android_ripple} style={({ pressed }) => [styles.link, press.pressedStyle(pressed)]}>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('decide.screens.answer.outcome.pastLink')}</Text>
       </Pressable>

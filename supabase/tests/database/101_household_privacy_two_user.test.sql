@@ -42,6 +42,9 @@
 -- settlement_lines (108)
 -- household_former_members (109)
 -- member_departures (109)
+-- decide_partner_optins (111)
+-- safety_net_shares (111)
+-- household_spend_rules (114)
 -- user_setup (111)
 -- feature_switches (111)
 -- end-export-tables

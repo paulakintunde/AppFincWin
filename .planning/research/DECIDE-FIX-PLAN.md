@@ -135,6 +135,8 @@ The phase list is the architect's (ARC section 1.4). Sizes and contents merge in
 
 **Order:** 05.3 (stopped, branch parked) → 05.4 → 05.5 → 6 Grow → 06.1 (optional) → 8 Household → 08.1 → 08.2 → 7 Insights → 9 → 10 → 11
 
+> **Amended 22 November 2026 (owner, quick 261122-m82):** 08.2 is an audit, not a build, so it is merged into Phase 11 (Compliance & Release) and runs once, on the finished app. Insights (7) and System (10) run in parallel after 08.1; the health score (ARC-21) is signed off by that final audit. The 08.2 text below and in section 9 is kept as the audit's content; read "08.2" as "Phase 11's final audit". Its scope now also covers Insights and System.
+
 **Standing exit lines for every phase** (compliance gate S1 to S6): the shared copy guard is green over every screen's text; no hard-typed text in screens; analytics carry no amounts or price ranges; database rules tests are green; every new table with user data has a data-map entry, a deletion path and a database rule; and a short written "compliance note" is in the merge request.
 
 ### Timeline
@@ -270,8 +272,9 @@ The "running total" counts only the extra work this plan adds. Theme N makes 08.
 
 - **Goal:** charts of money over time, and a health score that agrees with Decide.
 - **What it fixes:** ARC-21 (the health score works out nothing of its own).
+- **Amended 22 November 2026 (owner, quick 261122-fd3):** 08.1 merged into main (PR #180), so ARC-21 is built in Phase 7 now. It holds whether or not Decide ships in v1: the engine stays in the app (Home's "left this month" figure uses it), and the score only reads the engine's month figures and computes nothing of its own. Sign-off stays in Phase 11's final audit (criterion 12).
 - **Exit gate:** a month Decide calls short cannot score in the top band. **Compliance gate:** no grade words ("healthy", "poor"); the wording is "Score 72 out of 100, from these figures"; the guard covers Insights copy.
-- **Depends on:** 08.2.
+- **Depends on:** 08.1 (merged 22 November 2026, PR #180).
 
 ### Phases 9, 10 and 11: Tiers, System, Compliance and Release
 
@@ -1115,6 +1118,8 @@ Test both in reading-test round 1. The expectation, to be tested and not assumed
 
 ## 9. The re-audit after Household
 
+> **Amended 22 November 2026:** this re-audit now runs inside Phase 11 (Compliance & Release), after Insights and System are built, and its scope adds Insights and System (see ROADMAP.md, Phase 11 criteria 9-13).
+
 The architect's plan, run as phase 08.2, on the commit that closes 08.1, on a clean, normal-speed machine.
 
 **Scope:** Decide, Activity, Home, Grow and Household, and every connection between them. Insights is out of scope because it is built afterwards. Devices: Pixel 9 and Pixel 6, plus the iPhone XR if Apple enrolment has landed; if not, iOS is recorded as "not checked" and becomes a Phase 11 gate.
@@ -1452,7 +1457,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
-| ARC-21 | Health score computes nothing of its own | K | 7 | S | 08.2 |
+| ARC-21 | Health score computes nothing of its own | K | 7 | S | 08.1 (done) |
 
 ### Release (Phases 9 to 11)
 

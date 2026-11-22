@@ -44,7 +44,6 @@ import { registerDismissalMutations } from './dismissals';
 import { registerIncomeTagMutations } from './incomeTags';
 import { registerRefundLinkMutations } from './refundLinks';
 import { registerDecideAnswerMutations } from './decideAnswers';
-import { registerRecordBoughtMutations } from './boughtWrite';
 import { registerGrowGoalMutations } from './growGoals';
 import { registerGrowDebtMutations } from './growDebts';
 import { registerGrowHoldingMutations } from './growHoldings';
@@ -124,7 +123,6 @@ function registerAll(qc: QueryClient): void {
   registerRefundLinkMutations(qc);
   registerDecideAnswerMutations(qc);
   // 05.3-13: Record as bought (v3 write path).
-  registerRecordBoughtMutations(qc);
   // 06-12: Grow goals and the safety net.
   registerGrowGoalMutations(qc);
   // 06-14: Grow debts, the payoff plan and the sale.

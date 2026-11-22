@@ -67,6 +67,7 @@ const deps: SayDeps = {
     debt: () => 'Visa card',
     envelope: () => 'Holiday',
     figure: () => 'your everyday spending',
+    member: (k) => ({ sam: 'Sam', lee: 'Lee', kim: 'Kim' } as Record<string, string>)[k] ?? 'Sam',
   },
 };
 
@@ -99,6 +100,7 @@ function sampleValue(code: string, key: string): string | number {
   if (key === 'country') return 'GB';
   if (key === 'gap' && code === 'pay_gap') return '6.2';
   if (key === 'zero') return 0;
+  if (key === 'rule' && code === 'share_zero_by_rule') return 'bring'; // 08.1-25: the rule's code; the screen names it
   if (DATE_KEYS.has(key)) return '2026-12-15';
   if (MONTH_KEYS.has(key)) return '2026-11';
   if (TEXT_KEYS.has(key)) return SAMPLE_VALUES[key] as string;
@@ -210,9 +212,13 @@ describe('sayResult: every engine code reads as one filled sentence (D-18, UX-19
 
   it.each(CAVEAT_SAMPLES.map((c) => [c.code, c] as const))('caveat %s', (_c, c) => {
     const s = sayResult(result({ caveats: [c] }), deps);
-    expect(s.caveat?.key).toBe(CAVEAT_KEYS[c.code]);
-    expect(s.caveat?.text).not.toContain('{{');
-    expect(s.caveat?.text).not.toMatch(UUID);
+    // 08.1-25: share_zero_by_rule never takes the slot under the answer (ZeroShareLine says it); the About sheet says it.
+    const line = c.code === 'share_zero_by_rule' ? sayCaveats(result({ caveats: [c] }), deps)[0] : s.caveat;
+    if (c.code === 'share_zero_by_rule') expect(s.caveat).toBeNull();
+    // 08.1-10: the household caveat is said by the screen's own copy (names through the resolver, one verb per count).
+    expect(line?.key).toBe(c.code === 'household_not_shared' ? 'decide.screens.answer.caveat.notShared' : CAVEAT_KEYS[c.code]);
+    expect(line?.text).not.toContain('{{');
+    expect(line?.text).not.toMatch(UUID);
   });
 
   it('every FACT_VALUE_KEYS, NOTICE_VALUE_KEYS and CAVEAT_VALUE_KEYS code is sampled', () => {
@@ -309,11 +315,30 @@ describe('sayResult: the Result in reading order', () => {
 
   it('basis reads every kind; records_with_reason reads its reason', () => {
     const basis = (b: Result['confidence']['basis']): Line | null => sayResult(result({ confidence: { reasons: [], basis: b, nextStep: null } }), deps).basis;
-    expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on 6 months of your records, up to <2026-11-09>.' });
-    expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on 2 of the 3 months of records Decide looks for.');
+    expect(basis({ kind: 'records', months: 6, upTo: '2026-11-09' })).toEqual({ key: BASIS_KEYS.records, code: 'records', text: 'Based on your last 6 months of records, through <2026-11-09>.' });
+    expect(basis({ kind: 'partial', used: 2, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your last 2 months of records, through <2026-11-09>.');
+    expect(basis({ kind: 'partial', used: 1, lookedFor: 3, upTo: '2026-11-09' })?.text).toBe('Based on your one full month of records, through <2026-11-09>.');
+    expect(basis({ kind: 'quick_estimates' })?.text).toBe('Based on the numbers you typed in, not your account records.');
     expect(basis({ kind: 'quick_estimates' })?.key).toBe(BASIS_KEYS.quick_estimates);
     expect(basis({ kind: 'records_with_reason', months: 6, upTo: '2026-11-09', reason: 'close_to_line' })?.key).toBe(BASIS_REASON_KEYS.close_to_line);
     expect(() => basis({ kind: 'records_with_reason', months: 6, upTo: '2026-11-09', reason: 'few_months' })).toThrow(MissingCopyError);
+  });
+
+  it('08.1-20: the pay window row shows only when the caller passes a pay window', () => {
+    expect(sayResult(result(), deps, { payMonths: 9 }).payWindow?.text).toBe('Income is averaged over your last 9 months.');
+    expect(sayResult(result(), deps, { payMonths: null }).payWindow).toBeNull();
+    expect(sayResult(result(), deps).payWindow).toBeNull();
+  });
+
+  it('08.1-20: below the deeper stage the first caveat skips quick_estimates and few_months; About keeps them', () => {
+    const r = result({ caveats: [{ code: 'quick_estimates', values: {} }, { code: 'no_debts_recorded', values: {} }] as Caveat[] });
+    expect(sayResult(r, deps, { stage: 'first_read' }).caveat?.code).toBe('no_debts_recorded');
+    expect(sayResult(r, deps).caveat?.code).toBe('quick_estimates');
+    expect(sayResult(r, deps, { stage: 'deeper' }).caveat?.code).toBe('quick_estimates');
+    expect(sayCaveats(r, deps).map((l) => l.code)).toEqual(['quick_estimates', 'no_debts_recorded']);
+    const few = result({ caveats: [{ code: 'few_months', values: { months: 2, lookedFor: 3 } }] as Caveat[] });
+    expect(sayResult(few, deps, { stage: 'full' }).caveat).toBeNull();
+    expect(sayCaveats(few, deps)).toHaveLength(1);
   });
 
   it('next step, missing and readiness lines', () => {
@@ -467,6 +492,39 @@ describe('sayResult: a gap is an error, never a printed code (T-06.1-06-01)', ()
 
 // ------------------------------------------------------------------ Test 4: no household words outside household codes (D-03, UX-21)
 
+describe('sayResult: household_not_shared names the partners through the resolver (08.1-10, D-03, D-32)', () => {
+  const said = (names: string, d: SayDeps = deps) => sayResult(result({ caveats: [{ code: 'household_not_shared', values: { names } }] }), d);
+  const withMember = (member?: (k: string) => string): SayDeps => ({ ...deps, names: { ...deps.names, member } });
+
+  it('one partner: a singular verb', () => {
+    expect(said('sam').caveat?.text).toBe('Only your money is counted. Sam hasn’t shared theirs.');
+  });
+
+  it('two partners: "A and B", a plural verb', () => {
+    const line = said('sam,lee').caveat;
+    expect(line?.key).toBe('decide.screens.answer.caveat.notSharedMany');
+    expect(line?.text).toBe('Only your money is counted. Sam and Lee haven’t shared theirs.');
+  });
+
+  it('three partners: a list ending in "and"', () => {
+    expect(said('sam,lee,kim').caveat?.text).toBe('Only your money is counted. Sam, Lee and Kim haven’t shared theirs.');
+  });
+
+  it('the About list says it the same way', () => {
+    expect(sayCaveats(result({ caveats: [{ code: 'household_not_shared', values: { names: 'sam,lee' } }] }), deps).map((l) => l.text)).toEqual(['Only your money is counted. Sam and Lee haven’t shared theirs.']);
+  });
+
+  it('a name the resolver cannot give, an empty list or no resolver at all drops the line (never a key)', () => {
+    const seen: string[] = [];
+    const d = { ...withMember(() => ''), onMissing: (e: { code: string }) => void seen.push(e.code) };
+    expect(said('sam', d).caveat).toBeNull();
+    expect(said('', d).caveat).toBeNull();
+    expect(sayResult(result({ caveats: [{ code: 'household_not_shared', values: {} } as never] }), d).caveat).toBeNull();
+    expect(said('sam', { ...withMember(undefined), onMissing: () => undefined }).caveat).toBeNull();
+    expect(seen).toEqual(['household_not_shared', 'household_not_shared', 'household_not_shared']);
+  });
+});
+
 describe('sayResult: no household branch (D-03 / UX-21)', () => {
   it('Test 4: no non-household line says household, partner or shared', () => {
     const facts = FACT_SAMPLES;
@@ -474,7 +532,7 @@ describe('sayResult: no household branch (D-03 / UX-21)', () => {
     const out = [
       ...facts.map((f) => sayCode('fact', f, deps).text),
       ...notices.map((n) => sayCode('notice', n, deps).text),
-      ...CAVEAT_SAMPLES.filter((c) => c.code !== 'shared_money').flatMap((c) => allTexts(result({ caveats: [c] }))),
+      ...CAVEAT_SAMPLES.filter((c) => c.code !== 'shared_money' && c.code !== 'household_not_shared').flatMap((c) => allTexts(result({ caveats: [c] }))),
     ];
     expect(out.filter((s) => /household|partner|shared/i.test(s))).toEqual([]);
   });
@@ -533,5 +591,27 @@ describe('sayCaveats (CO-D-64 3)', () => {
     const lines = sayCaveats(result({ caveats: [{ code: 'your_word', values: {} }, { code: 'large_for_month', values: { moneyIn: 280000, costs: 235000, used: 50000, price: 90000 } }] }), deps);
     expect(lines.map((l) => l.key)).toEqual([CAVEAT_KEYS.your_word, CAVEAT_KEYS.large_for_month]);
     expect(sayCaveats(result({ caveats: undefined }), deps)).toEqual([]);
+  });
+});
+
+describe('08.1-25 share_zero_by_rule (owner one-earner fix 2026-11-21)', () => {
+  const zero = (rule: string): Caveat => ({ code: 'share_zero_by_rule', values: { rule } });
+  it('is never the caveat under the answer: the next caveat takes the slot', () => {
+    expect(sayResult(result({ caveats: [zero('bring')] }), deps).caveat).toBeNull();
+    expect(sayResult(result({ caveats: [zero('bring'), { code: 'tax_not_included', values: {} }] }), deps).caveat?.code).toBe('tax_not_included');
+    expect(sayResult(result({ caveats: [zero('bring')] }), deps, { stage: 'first_read' }).caveat).toBeNull();
+  });
+  it('the About sheet lists it with the rule named as on "How spending is split" and the currency zero', () => {
+    expect(sayCaveats(result({ caveats: [{ code: 'shared_money', values: { account: ID } }, zero('bring')] }), deps).map((l) => l.text)).toEqual([
+      'Money in Everyday may be planned by someone else too.',
+      'Under What each person brings, your share of the joint money is $0.00 this month.',
+    ]);
+    expect(sayCaveats(result({ caveats: [zero('bill')] }), deps)[0]?.text).toBe('Under Same as the bill split, your share of the joint money is $0.00 this month.');
+  });
+  it('an unknown rule has no name: the line is missing, never a code', () => {
+    const seen: string[] = [];
+    expect(sayCaveats(result({ caveats: [zero('custom')] }), { ...deps, onMissing: (e) => seen.push(e.code) })).toEqual([]);
+    expect(seen).toEqual(['share_zero_by_rule']);
+    expect(() => sayCaveats(result({ caveats: [zero('custom')] }), deps)).toThrow(MissingCopyError);
   });
 });

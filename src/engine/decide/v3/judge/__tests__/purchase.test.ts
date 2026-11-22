@@ -233,6 +233,39 @@ describe('buildPurchase', () => {
       expect(b.facts.some((f) => f.code === 'deferred_interest_term')).toBe(true);
       expect(b.purchase).toEqual(a.purchase);
     });
+
+    // 08.1-11 FIN-12: the end date and the rate after it make the flag a costed plan.
+    describe('0% if paid in full, costed (FIN-12)', () => {
+      const zero = { count: 16, apr: percent('0'), firstPayment: { kind: 'one_period' } as const, deferredInterestTerm: true };
+      it('asks for the end date and for the rate after it, and never assumes 0%', () => {
+        expect(build(checkPlan(120000, { ...zero, promoEnd: null, rateAfter: percent('24.99') })).missing).toEqual(['promo_end_missing']);
+        expect(build(checkPlan(120000, { ...zero, promoEnd: '2027-10-03', rateAfter: null })).missing).toEqual(['plan_rate_missing']);
+        expect(build(checkPlan(120000, { ...zero, promoEnd: null, rateAfter: null })).missing).toEqual(['promo_end_missing', 'plan_rate_missing']);
+        // only the end date was ever asked for: the rate after it is missing too
+        expect(build(checkPlan(120000, { ...zero, promoEnd: '2027-10-03' })).missing).toEqual(['plan_rate_missing']);
+      });
+      it('an end date before today asks for a new one', () => {
+        expect(build(checkPlan(120000, { ...zero, promoEnd: '2026-09-01', rateAfter: percent('24.99') })).missing).toEqual(['promo_end_missing']);
+      });
+      it('no rate on the plan itself is one plan_rate_missing, not two', () => {
+        const b = build(checkPlan(120000, { ...zero, apr: null, promoEnd: null, rateAfter: null }));
+        expect(b.missing.filter((m) => m === 'plan_rate_missing')).toHaveLength(1);
+      });
+      it('cleared in time: the end date is a fact and the cost is the price', () => {
+        const b = must(checkPlan(120000, { ...zero, count: 10, promoEnd: '2027-10-03', rateAfter: percent('24.99') }));
+        expect(b.facts.find((f) => f.code === 'promo_cleared')?.values).toEqual({ date: '2027-10-03' });
+        expect(b.facts.some((f) => f.code === 'back_charge_cost' || f.code === 'deferred_interest_term')).toBe(false);
+        expect(Number(b.purchase.schedule?.totalInterest)).toBe(0);
+      });
+      it('not cleared in time: the back-charge is a fact and the schedule carries the interest', () => {
+        const b = must(checkPlan(120000, { ...zero, promoEnd: '2027-10-03', rateAfter: percent('24.99') }));
+        const f = b.facts.find((x) => x.code === 'back_charge_cost');
+        expect(f?.values).toMatchObject({ date: '2027-10-03' });
+        expect(Number(f?.values.amount)).toBeGreaterThan(0);
+        expect(Number(b.purchase.schedule?.totalInterest)).toBeGreaterThan(Number(f?.values.amount));
+        expect(b.facts.some((x) => x.code === 'deferred_interest_term')).toBe(false);
+      });
+    });
   });
 
   it('a household of zero members cannot resolve; an unknown scope kind is a bug, not a reason', () => {

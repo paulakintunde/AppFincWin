@@ -30,6 +30,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { supabase } from '@/services/supabase';
 import { MemberAvatar } from './components/MemberAvatar';
 import { MemberName } from './components/MemberName';
+import { PartnerOptInRow } from './decide/PartnerOptInRow';
 import { householdIcons } from './glyphs';
 import { useMemberLabel, useMemberSeen } from './useMemberLabel';
 import { WeightsSheet } from './WeightsSheet';
@@ -290,6 +291,8 @@ function MemberBody({
           chevron
           onPress={() => setWeightsOpen(true)}
         />
+
+        {!isSelf ? <PartnerOptInRow householdId={householdId} partnerId={row.user_id} /> : null}
 
         {conflict ? (
           <WarningCard

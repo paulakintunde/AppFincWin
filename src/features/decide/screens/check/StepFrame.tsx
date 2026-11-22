@@ -51,6 +51,10 @@ export interface StepFrameProps {
  * this frame kept the frame at its mount size while the content grew (the car's pre-filled running costs arrive after mount), so
  * every tap below that size, "See the answer" included, was dropped until something re-laid the step out.
  */
+/** 08.1-15: the entrance's resting value (on screen, opaque), which the frame mounts at, and the value the slide or fade starts from. */
+export const ENTRANCE_REST = 1;
+export const ENTRANCE_START = 0;
+
 export function stepEntrance(direction: 'fwd' | 'back', reduced: boolean): { kind: 'fade' | 'slide'; duration: number; from: -1 | 1 } {
   if (reduced) return { kind: 'fade', duration: DURATION.searchFade, from: 1 };
   return { kind: 'slide', duration: DURATION.entrance, from: direction === 'back' ? -1 : 1 };
@@ -96,9 +100,14 @@ export function StepFrame({ step, title, why, meta, direction = 'fwd', kindLabel
   const entrance = stepEntrance(direction, reduced);
   const fade = entrance.kind === 'fade';
   const offset = entrance.from * width;
-  const shown = useSharedValue(0);
+  // 08.1-15 (Pixel 9 smoke run): the frame mounts at rest (shown = 1, on screen and opaque) and only then is moved to its start and
+  // animated back, as TabSlideIn and FadeSwap do. Mounting at 0 parked the frame one screen width off to the side (or at opacity 0
+  // under Reduce Motion) whenever Android dropped the animation's updates while the step's screen was being attached: a blank step
+  // with no buttons. Now the worst case is a step with no slide.
+  const shown = useSharedValue(ENTRANCE_REST);
   useEffect(() => {
-    shown.value = withTiming(1, { duration: entrance.duration });
+    shown.value = ENTRANCE_START;
+    shown.value = withTiming(ENTRANCE_REST, { duration: entrance.duration });
   }, [shown, entrance.duration]);
   const enterStyle = useAnimatedStyle(() => (fade ? { opacity: shown.value } : { transform: [{ translateX: (1 - shown.value) * offset }] }));
   const kindDone = step > 1 && kindLabel !== null;

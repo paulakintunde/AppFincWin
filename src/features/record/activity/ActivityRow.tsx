@@ -20,7 +20,7 @@ import { formatStatementMoney } from './statementMoney';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { PRESSED_OPACITY, radii, space, tile } from '@/theme/layout';
+import { PRESSED_OPACITY, radii, rowHeight, space, tile } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { shadows, type CategorySwatchKey, type colors as ThemeColours } from '@/theme/tokens';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
@@ -116,6 +116,8 @@ export interface ActivityRowProps {
   onRefundTagPress?: (purchaseId: string) => void;
   /** 06.2 L02: how far past its category's monthly cap this row took the month (minor units, home currency), from overCapRows. */
   overCapBy?: number | null;
+  /** 08.1-04 (D-04): the viewer's share of a shared line (home currency, signed like the line) in a household of 2+; null shows no share line. */
+  yourShare?: number | null;
 }
 
 function letterOf(name: string): string {
@@ -159,6 +161,7 @@ export function ActivityRow({
   refundTag = null,
   onRefundTagPress,
   overCapBy = null,
+  yourShare = null,
 }: ActivityRowProps) {
   const t = useT();
   const { v3 } = useDecideAccess();
@@ -237,7 +240,15 @@ export function ActivityRow({
     notCounted ? t('activity.balance.notCountedA11y') : null,
   ];
   const stmtSpoken = stmtText === null ? null : t('activity.row.foreignA11y', { amount: stmtText });
-  const spoken = [name, amountText, stmtSpoken, homeText, ...tagTexts].filter((p): p is string => p !== null && p !== '').join(', ');
+  // 08.1-04 (D-04): the full amount stays; a shared line in a household of 2+ adds the viewer's share under the title.
+  const shareText =
+    yourShare === null || isTransfer
+      ? null
+      : (yourShare > 0 ? '+' : '') + formatter.formatMoney(money(yourShare, homeCurrency));
+  const shareSpoken = shareText === null ? null : t('activity.row.yourShareA11y', { amount: shareText });
+  const spoken = [name, amountText, stmtSpoken, homeText, ...tagTexts, shareSpoken]
+    .filter((p): p is string => p !== null && p !== '')
+    .join(', ');
 
   const onRowPress = () => (selectable ? onToggleSelect?.(row) : onPress(row));
 
@@ -315,6 +326,11 @@ export function ActivityRow({
             <Text style={{ color: colors.accent }}>{` · ${t('activity.tag.refund')}`}</Text>
           ) : null}
         </Text>
+        {shareText !== null ? (
+          <Text testID={`activity-share-${row.id}`} numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {t('activity.row.yourShare', { amount: shareText })}
+          </Text>
+        ) : null}
         <View style={styles.tags}>
           {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
           {showTag ? <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} /> : null}
@@ -325,7 +341,7 @@ export function ActivityRow({
   );
 
   const card = (
-    <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors)]}>
+    <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors), shareText !== null ? { minHeight: rowHeight.two } : null]}>
       {/* 06.2 L02: inside a NewRowWash the fits tint sits under the content and clears; elsewhere nothing. */}
       <WashUnderlay style={cardCorners(cardPosition)} />
       {extras === null ? (
