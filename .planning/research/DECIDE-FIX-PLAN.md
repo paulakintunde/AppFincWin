@@ -272,9 +272,8 @@ The "running total" counts only the extra work this plan adds. Theme N makes 08.
 
 - **Goal:** charts of money over time, and a health score that agrees with Decide.
 - **What it fixes:** ARC-21 (the health score works out nothing of its own).
-- **Amended 22 November 2026 (owner, quick 261122-fd3):** 08.1 merged into main (PR #180), so ARC-21 is built in Phase 7 now. It holds whether or not Decide ships in v1: the engine stays in the app (Home's "left this month" figure uses it), and the score only reads the engine's month figures and computes nothing of its own. Sign-off stays in Phase 11's final audit (criterion 12).
 - **Exit gate:** a month Decide calls short cannot score in the top band. **Compliance gate:** no grade words ("healthy", "poor"); the wording is "Score 72 out of 100, from these figures"; the guard covers Insights copy.
-- **Depends on:** 08.1 (merged 22 November 2026, PR #180).
+- **Depends on:** 08.2.
 
 ### Phases 9, 10 and 11: Tiers, System, Compliance and Release
 
@@ -1457,7 +1456,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 
 | ID | Short title | Theme | Phase | Size | Depends on |
 |---|---|---|---|---|---|
-| ARC-21 | Health score computes nothing of its own | K | 7 | S | 08.1 (done) |
+| ARC-21 | Health score computes nothing of its own | K | 7 | S | 08.2 |
 
 ### Release (Phases 9 to 11)
 

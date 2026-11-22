@@ -1409,8 +1409,7 @@ Plans:
 ### Phase 7: Insights
 **Goal**: A user can see the shape of their finances over time.
 **Depends on**: Phase 6, and Phase 08.1 (so charts include the household view and the health score reads Decide's own figures; ARC-21)
-**Amended 2026-11-22 (owner, quick 261122-m82):** Insights no longer waits for the Decide re-audit; former Phase 08.2 is merged into Phase 11. Insights may run in parallel with Phase 10. The health score (INS-06) is built here and signed off by Phase 11's final audit (criterion 12): a month Decide calls short cannot score in the top band, and no grade words ("healthy", "poor").
-**Ready to plan (2026-11-22, quick 261122-fd3):** 08.1 merged into main (PR #180, 36028c69). ARC-21 is built in this phase: the score reads the Decide engine's month figures and computes nothing of its own. This holds whether or not Decide ships in v1, because the engine stays (Home uses it).
+**Amended 2026-11-22 (owner, quick 261122-m82):** Insights no longer waits for the Decide re-audit; former Phase 08.2 is merged into Phase 11. Insights may run in parallel with Phase 10. The health score (INS-04) is built here and signed off by Phase 11's final audit (criterion 12): a month Decide calls short cannot score in the top band, and no grade words ("healthy", "poor").
 **Requirements**: INS-01, INS-02, INS-03, INS-04, INS-05, INS-06
 **Success Criteria** (what must be TRUE):
   1. A user can see net worth over time with a selectable range.
@@ -1640,7 +1639,49 @@ Plans:
   4. A user can enable alerts for bills due, over cap, goal reached, large transactions and low balance, with a threshold per kind, instant or digest delivery, quiet hours, and a log of alerts already raised.
   5. A user can archive a month and restore it, export their data as CSV, import goals/debts/investments/accounts from CSV, and delete their account in-app in a way that actually purges their data from Supabase, with a clear choice about any locally cached data.
   6. A household member's large expense arrives on another member's phone as a push notification; balances are hidden in the app switcher; a backup has been restored into a non-production project and verified; and a store reviewer can sign in through an allow-listed account.
-**Plans**: TBD
+**Plans**: 30 plans in 6 waves
+Plans:
+**Wave 1**
+- [ ] 10-01-PLAN.md — Owner setup runbook and one owner sitting (R2, age key, GitHub secrets, Firebase/FCM, Expo token, wallet files, reviewer credentials)
+- [ ] 10-02-PLAN.md — System tables migration (devices, push tokens, alert settings/prefs/log, archived months) + RLS pgTAP
+- [ ] 10-03-PLAN.md — Client data layer: db modules, keys, queued mutations, cache bump, export manifest entries
+- [ ] 10-04-PLAN.md — Phase 10 copy catalogue (system.*), status keys, You row icons
+- [ ] 10-05-PLAN.md — engine/alerts default amounts (D-10), TDD
+- [ ] 10-06-PLAN.md — engine/archive view rules, TDD
+- [ ] 10-07-PLAN.md — engine/dataCsv import parsing, TDD
+- [ ] 10-08-PLAN.md — Wallet readers (PayPal, Wise, Revolut) on synthetic layouts, TDD
+- [ ] 10-09-PLAN.md — Per-user rate limits (ACC-13)
+- [ ] 10-10-PLAN.md — Deletion log (atomic trigger) and deletion completeness proof
+- [ ] 10-11-PLAN.md — expo-local-authentication + lock services (PIN, ladder, timing, D-29)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 10-12-PLAN.md — Device list and revoke (RPCs, heartbeat, Devices section, remote sign-out wipe)
+- [ ] 10-13-PLAN.md — Write-queue cap (400/500) and SYN-03/04 re-verification
+- [ ] 10-15-PLAN.md — Server-side alert evaluation (SQL triggers, outbox, partner privacy)
+- [ ] 10-16-PLAN.md — Archive feature registry, month-switcher filtering, Decide-unchanged proof
+- [ ] 10-17-PLAN.md — Export coverage (migration-aware guard, server records) + diagnostic export
+- [ ] 10-19-PLAN.md — Reviewer sign-in server side (allow-list, sign-up hook, Edge Function)
+- [ ] 10-20-PLAN.md — Daily encrypted backups to R2, keep-alive, monthly restore check, runbook
+- [ ] 10-21-PLAN.md — Phone lock screens, setup, Home offer, app-switcher cover
+- [ ] 10-22-PLAN.md — Alerts settings, permission flow, push registration, alert log
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 10-14-PLAN.md — Delete account: save a copy, forget Google, backup wording
+- [ ] 10-18-PLAN.md — Import goals/debts/investments/accounts from CSV
+- [ ] 10-23-PLAN.md — alerts-deliver function (quiet hours, digest, Expo push, receipts)
+- [ ] 10-24-PLAN.md — Archive list and read-only archived month with restore
+- [ ] 10-25-PLAN.md — Reviewer visible link, sample life and nightly reset, operator script
+- [ ] 10-26-PLAN.md — Wallet import preview and commit (per-currency accounts, fees, conversions)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 10-27-PLAN.md — Wiring: Security screen, You rows, boot hosts, FCM config, CI Deno tests
+- [ ] 10-28-PLAN.md — Wallet readers finalised on the owner's stripped real exports
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 10-29-PLAN.md — [BLOCKING] Production rollout (schema push, functions, secrets, hook, reviewer accounts, first backup + rehearsal)
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 10-30-PLAN.md — Phase gate: full suite, new builds, owner device session, validation sign-off
 **UI hint**: no (not in the flagged UI-heavy set; ships mostly settings/security surfaces on top of existing shell patterns)
 
 ### Phase 11: Compliance & Release
