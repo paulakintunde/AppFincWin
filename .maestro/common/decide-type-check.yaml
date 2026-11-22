@@ -35,7 +35,18 @@ appId: com.fincwin.app
     text: "[0-9][0-9.,]*"
     below: "Price"
 - inputText: ${PRICE}
-- tapOn: "When\\?"
+# 08.1-15: when the Decide setup card shows above the check card, "When?" sits under the keyboard; the "Price" label is
+# then pressed instead (06.1-51 found that pressing it closes the keyboard).
+- runFlow:
+    when:
+      visible: "When\\?"
+    commands:
+      - tapOn: "When\\?"
+- runFlow:
+    when:
+      notVisible: "When\\?"
+    commands:
+      - tapOn: "Price"
 - runFlow:
     file: scroll-to.yaml
     env:

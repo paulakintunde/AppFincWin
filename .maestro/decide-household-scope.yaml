@@ -31,7 +31,10 @@ name: Decide household scope
             TARGET: "Next"
       - tapOn: "Next"
       - waitForAnimationToEnd
-- assertVisible: "Step 2 of 3.*"
+# The step change can leave a blank frame for a moment, so wait rather than assert at once
+- extendedWaitUntil:
+    visible: "Step 2 of 3.*"
+    timeout: 15000
 # Who pays sits directly under the price. Every new check starts on Just me (D-02).
 - runFlow:
     file: common/scroll-to.yaml
@@ -40,10 +43,10 @@ name: Decide household scope
 - assertVisible:
     id: "who-pays"
 # The segmented choice reads "Household"; with large text on a narrow screen it is a stacked pill read "Who pays, Household"
+# (childOf matches direct children only; the pill is a grandchild of who-pays, so it is found below the "Who pays" label)
 - tapOn:
     text: "(Who pays, )?Household"
-    childOf:
-      id: "who-pays"
+    below: "Who pays"
 - extendedWaitUntil:
     visible:
       id: "who-pays-helper"
