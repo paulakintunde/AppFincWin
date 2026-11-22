@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "08.1 at 21/22 on feat/08.1-build: plan 14 wording signed 2026-11-21; plan 15 (production push + tester build) in progress; main merged in 2026-11-21"
-last_updated: "2026-11-20T15:00:00.000Z"
-last_activity: 2026-11-21 -- main (Phase 9) merged into feat/08.1-build for plan 15
+stopped_at: "08.1 at 22/22 on feat/08.1-build: plan 15 done 2026-11-22 (8 migrations live, tester build 3c50fbb2 + OTA ee872d87, smoke flows pass on the Pixel 9); phase review and verification next"
+last_updated: "2026-11-22T09:00:00.000Z"
+last_activity: 2026-11-22 -- 08.1-15 complete; blank-step fix shipped as preview OTA; Decide setup audit written
 progress:
   total_phases: 30
   completed_phases: 18
   total_plans: 809
-  completed_plans: 789
+  completed_plans: 790
   percent: 97
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 08.1 on branch `feat/08.1-build` (21/22; plan 15 left: production push and tester build). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
+**Current focus:** Phase 08.1 on branch `feat/08.1-build` (22/22 plans done; phase review, verification and the PR next). Decide setup gate audit: `08.1-DECIDE-SETUP-AUDIT.md` (follow-up phase to be decided). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
 
 ## Current Position
 
 Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 with summaries; the 08.1 branch adds 15 more summaries).
 
-Phase: 08.1 (decide-rebuild-on-real-data) — IN PROGRESS on branch `feat/08.1-build`, 21/22 (plans 01-14 and 19-25 built; 16-18 moved to 08.2). Plan 14 wording signed 2026-11-21. Left: 15 (production push of 20261125000100..000800, tester build). main merged in 2026-11-21.
+Phase: 08.1 (decide-rebuild-on-real-data) — PLANS DONE on branch `feat/08.1-build`, 22/22 (plans 01-15 and 19-25; 16-18 moved to 08.2). 20261125000100..000800 live in production 2026-11-21. Tester build 3c50fbb2 + preview OTA ee872d87 (blank-step fix 8c272c6c); three Maestro smoke flows pass on the Pixel 9. Next: phase review and verification gates, then the PR.
 Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
 Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
 Phase: 08.2, 7, 10 — not planned. 11 — not started.

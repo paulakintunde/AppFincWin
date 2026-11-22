@@ -1539,7 +1539,7 @@ Plans:
 - [x] 08.1-24-PLAN.md — Caution sign on "Fits" answers that dip below $0 later in the 12 months: the app's own caution icon (plus an info icon for the tips), amber tight colours with words, breathes 2-3 times then stays still, no motion when reduce motion is on (owner 2026-11-21)
 - [x] 08.1-25-PLAN.md — One-earner fix: when one member brings no money, the app suggests an equal set split and the group chooses (it never switches on its own) (owner 2026-11-21; free access arrives in 08.12)
 - [x] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
-- [ ] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, tester preview APK, Maestro smoke, new tester ids (last plan)
+- [x] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, tester preview APK, Maestro smoke, new tester ids (last plan)
 - [x] 08.1-19-PLAN.md — Visible Decide stages, engine: 3-month check (08.1-STAGE-CHECK.md) and the pure stage read-model stageOf / firstShownCaveat (DCU-10)
 - [x] 08.1-20-PLAN.md — Visible Decide stages, answer: basis-window sentences, pay-window row, caveat-order rule, StageLine, StageTag, About rows (DCU-10, CMP-F12)
 - [x] 08.1-21-PLAN.md — Visible Decide stages, home and setup: StageCard (no chip at 3+ months), import prompt, Not ready actions, Records setup prompt, import return to Decide (DCU-10)
@@ -1736,7 +1736,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 21/22 | In progress | - |
+| 08.1 Decide rebuild on real data | 22/22 | Plans done; review and verification next | - |
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
