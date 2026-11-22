@@ -975,7 +975,9 @@ export function judge(j: JudgeInput): Result {
         readyBy = null;
         beyondYear = true;
       } else if (found !== null && found.date > readyKey(readyBy)) {
-        readyBy = { kind: 'month', month: yearMonthOf(found.date) };
+        // 08.1 review A-WR-01: keep the exact safe day. A month reads as its 1st (readyKey), which can fall before the safe day found
+        // and even before the date as judged; the date given is never earlier than the safe day.
+        readyBy = { kind: 'date', date: found.date };
       }
     }
   }

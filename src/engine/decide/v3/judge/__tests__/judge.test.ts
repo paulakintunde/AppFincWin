@@ -1440,12 +1440,31 @@ describe('judge: D-05 ready-by search, D-06 beyond a year, D-07 below $0 without
     expect(waits().readyBy).toEqual({ kind: 'month', month: '2027-01' });
   });
 
-  it('the search starts from the date as judged and a later first safe day gives that day’s month', () => {
+  it('the search starts from the date as judged and a later first safe day gives that exact day', () => {
     const seen: string[] = [];
     const r = waits({ safeStart: (notBefore) => (seen.push(notBefore), { date: '2027-03-01' }) });
     expect(seen).toEqual(['2027-01-01']);
-    expect(r.readyBy).toEqual({ kind: 'month', month: '2027-03' });
+    expect(r.readyBy).toEqual({ kind: 'date', date: '2027-03-01' });
     expect(r.facts.map((f) => f.code)).not.toContain('not_within_year');
+  });
+
+  // 08.1 review A-WR-01: a mid-month safe day (a payday) was cut to its month, which reads as the 1st: earlier than the safe day.
+  it('a later safe day in the middle of a month is kept exactly, never read back to the 1st (A-WR-01)', () => {
+    const r = waits({ safeStart: () => ({ date: '2027-01-28' }) });
+    expect(r.readyBy).toEqual({ kind: 'date', date: '2027-01-28' });
+  });
+
+  it('property: the ready-by given is never earlier than the safe day found, nor than the date as judged (A-WR-01)', () => {
+    const readKey = (b: ReadyBy | null): string => (b === null ? '9999-99-99' : b.kind === 'date' ? b.date : `${b.month}-01`);
+    const judged = readKey(waits().readyBy);
+    fc.assert(
+      fc.property(fc.integer({ min: 0, max: 400 }), (offset) => {
+        const d = new Date(Date.UTC(2027, 0, 1 + offset)).toISOString().slice(0, 10);
+        const r = waits({ safeStart: () => ({ date: d }) });
+        const shown = readKey(r.readyBy);
+        return shown >= d && shown >= judged;
+      }),
+    );
   });
 
   it('the first safe day being the date as judged changes nothing', () => {
