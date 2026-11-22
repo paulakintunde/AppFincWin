@@ -26,16 +26,22 @@ export interface SafetyNetShareRow {
   updated_at: string;
 }
 
-/** Opt-ins the signed-in person owns or is named in (RLS limits the read to those two). */
-export async function fetchOptins(client: DbClient): Promise<PartnerOptinRow[]> {
-  const { data, error, status } = await client.from('decide_partner_optins').select(OPTIN_COLUMNS);
+/**
+ * Opt-ins the signed-in person owns or is named in (RLS limits the read to those two), in their current household only. 08.1 review
+ * C-WR-01: the server ends opt-ins when a member leaves (20261125000900); the filter keeps a row from another household out regardless.
+ */
+export async function fetchOptins(client: DbClient, householdId: string): Promise<PartnerOptinRow[]> {
+  const { data, error, status } = await client.from('decide_partner_optins').select(OPTIN_COLUMNS).eq('household_id', householdId);
   if (error) throw toDbError(error, status);
   return (data as PartnerOptinRow[] | null) ?? [];
 }
 
-/** Net shares the signed-in person owns. */
-export async function fetchOwnNetShares(client: DbClient): Promise<SafetyNetShareRow[]> {
-  const { data, error, status } = await client.from('safety_net_shares').select(NET_SHARE_COLUMNS);
+/**
+ * Net shares the signed-in person owns in their current household. 08.1 review C-CR-01: a share left in a household the person has
+ * left must never drive the hourly publish (the server also refuses it and ends the share on leave, 20261125000900).
+ */
+export async function fetchOwnNetShares(client: DbClient, householdId: string): Promise<SafetyNetShareRow[]> {
+  const { data, error, status } = await client.from('safety_net_shares').select(NET_SHARE_COLUMNS).eq('household_id', householdId);
   if (error) throw toDbError(error, status);
   return (data as SafetyNetShareRow[] | null) ?? [];
 }

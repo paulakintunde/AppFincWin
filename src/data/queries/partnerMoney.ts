@@ -16,7 +16,7 @@ import { queryKeys } from '../keys';
 export function usePartnerOptins(userId?: string, householdId?: string | null) {
   return useQuery({
     queryKey: queryKeys.partnerOptins(userId ?? '', householdId ?? ''),
-    queryFn: () => fetchOptins(supabase),
+    queryFn: () => fetchOptins(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
   });
 }
@@ -60,7 +60,7 @@ export function usePartnerMoneyTotals(userId: string | undefined, partnerIds: re
 export function useOwnNetShares(userId?: string, householdId?: string | null) {
   return useQuery({
     queryKey: queryKeys.safetyNetShares(userId ?? '', householdId ?? ''),
-    queryFn: () => fetchOwnNetShares(supabase),
+    queryFn: () => fetchOwnNetShares(supabase, householdId as string),
     enabled: Boolean(userId) && Boolean(householdId),
   });
 }
