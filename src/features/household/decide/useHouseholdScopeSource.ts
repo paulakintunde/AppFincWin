@@ -7,7 +7,7 @@ import { useHouseholdId, useHouseholdMembers } from '@/data/queries/household';
 import { useHouseholdBalances, useSettlements, useSplitDefaults } from '@/data/queries/householdBalances';
 import { useHouseholdSpendRule } from '@/data/queries/householdSpendRule';
 import { useJointAccountFacts } from '@/data/queries/jointAccounts';
-import { usePartnerMoneyTotals } from '@/data/queries/partnerMoney';
+import { freshPartnerTotal, usePartnerMoneyTotals } from '@/data/queries/partnerMoney';
 import type { ShareScope } from '@/engine/decide/v3';
 import { localDateIn } from '@/engine/time';
 import type { HouseholdScopeSource } from '@/features/decide/snapshot/v3/householdScope';
@@ -70,10 +70,13 @@ export function useHouseholdScopeSource(on: boolean): HouseholdScopeRead {
   const jointRead = useJointAccountFacts(householdId, localDateIn(new Date(now), Intl.DateTimeFormat().resolvedOptions().timeZone));
   const hasJoint = (jointRead.data?.purposes.length ?? 0) > 0;
   const active = on || hasJoint;
-  const totalsKey = totals.map((q) => `${q.dataUpdatedAt}:${q.status}`).join(',');
-  // the answer waits for the rule and the joint facts too, so there is no flash of a different answer
+  const totalsKey = totals.map((q) => `${q.dataUpdatedAt}:${q.status}:${q.fetchStatus}`).join(',');
+  // the answer waits for the rule and the joint facts too, so there is no flash of a different answer.
+  // C-WR-02: it also waits while a partner figure is being read again (each check refetches it), so a figure the partner has since
+  // stopped sharing is never counted while the fresh read is on its way.
   const waiting =
-    householdId !== undefined && (members === undefined || rule.isPending || jointRead.isPending || (on && (userId === undefined || totals.some((q) => q.isPending))));
+    householdId !== undefined &&
+    (members === undefined || rule.isPending || jointRead.isPending || (on && (userId === undefined || totals.some((q) => q.isPending || q.fetchStatus === 'fetching'))));
   const source = useMemo(() => {
     if (!active || userId === undefined || members === undefined || rule.isPending || jointRead.isPending) return undefined;
     const settleUp = on ? settleUpOf(settlements ?? [], balances?.pairs ?? [], userId, now) : null;
@@ -81,7 +84,9 @@ export function useHouseholdScopeSource(on: boolean): HouseholdScopeRead {
       scopeSourceOf({
         viewerId: userId,
         members,
-        totals: on ? totals.map((q) => q.data) : others.map(() => undefined),
+        // C-WR-02 (fail closed): a figure the server has not confirmed within PARTNER_MONEY_FRESH_MS of the check (offline, a failed
+        // refetch, an old cached copy) is read as not shared. `now` is when the check opened.
+        totals: on ? totals.map((q) => freshPartnerTotal(q, now)) : others.map(() => undefined),
         settleUp,
         scope: on ? 'household' : 'me',
         spendRule: rule.data ?? null,

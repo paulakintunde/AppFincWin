@@ -7,9 +7,11 @@ jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id:
 const mockMembers = [{ user_id: 'me', weight: 50 }, { user_id: 'sam', weight: 50 }];
 jest.mock('@/data/queries/household', () => ({ useHouseholdId: () => ({ data: 'h1' }), useHouseholdMembers: () => ({ data: mockMembersNow }) }));
 let mockMembersNow: typeof mockMembers | undefined = mockMembers;
-let mockTotals: { data: unknown; status: string; dataUpdatedAt: number; isPending: boolean }[] = [];
+let mockTotals: { data: unknown; status: string; dataUpdatedAt: number; isPending: boolean; fetchStatus?: string }[] = [];
 const mockTotalsCall = jest.fn();
 jest.mock('@/data/queries/partnerMoney', () => ({
+  // C-WR-02: the real freshness rule (pure), with the reads mocked
+  freshPartnerTotal: jest.requireActual('@/data/queries/partnerMoney').freshPartnerTotal,
   usePartnerMoneyTotals: (...a: unknown[]) => {
     mockTotalsCall(...a);
     return mockTotals;
@@ -58,7 +60,7 @@ describe('useHouseholdScopeSource', () => {
   });
 
   it('Household: hands the builder the viewer, the weights, the shared figure and what is owed', async () => {
-    mockTotals = [{ data: { ok: true, rounded_left: 200000, currency: 'USD', as_of: 'd' }, status: 'success', dataUpdatedAt: 5, isPending: false }];
+    mockTotals = [{ data: { ok: true, rounded_left: 200000, currency: 'USD', as_of: 'd' }, status: 'success', dataUpdatedAt: Date.now(), isPending: false }];
     const { result } = await renderHook(() => useHouseholdScopeSource(true));
     expect(result.current.pending).toBe(false);
     expect(result.current.source).toEqual({
@@ -123,6 +125,26 @@ describe('useHouseholdScopeSource', () => {
     const { result } = await renderHook(() => useHouseholdScopeSource(true));
     expect(result.current.failed?.read).toBe('spendRule');
     expect(result.current.source).toBeUndefined();
+  });
+
+  it('08.1 review C-WR-02: a cached figure the server has not confirmed lately (sharing may be off) counts as not shared', async () => {
+    const old = Date.now() - 29 * 24 * 60 * 60 * 1000;
+    mockTotals = [{ data: { ok: true, rounded_left: 200000, currency: 'USD', as_of: 'd' }, status: 'success', dataUpdatedAt: old, isPending: false, fetchStatus: 'paused' }];
+    const { result } = await renderHook(() => useHouseholdScopeSource(true));
+    expect(result.current.pending).toBe(false);
+    expect(result.current.source?.partners).toEqual([{ key: 'sam', weight: 50, sharing: false, roundedLeft: null, currency: '' }]);
+  });
+
+  it('08.1 review C-WR-02: a failed refetch over an old figure counts as not shared', async () => {
+    mockTotals = [{ data: { ok: true, rounded_left: 200000, currency: 'USD', as_of: 'd' }, status: 'error', dataUpdatedAt: Date.now(), isPending: false, fetchStatus: 'idle' }];
+    const { result } = await renderHook(() => useHouseholdScopeSource(true));
+    expect(result.current.source?.partners).toEqual([{ key: 'sam', weight: 50, sharing: false, roundedLeft: null, currency: '' }]);
+  });
+
+  it('08.1 review C-WR-02: waits while the partner figure is being read again, rather than count the cached one', async () => {
+    mockTotals = [{ data: { ok: true, rounded_left: 200000, currency: 'USD', as_of: 'd' }, status: 'success', dataUpdatedAt: Date.now(), isPending: false, fetchStatus: 'fetching' }];
+    const { result } = await renderHook(() => useHouseholdScopeSource(true));
+    expect(result.current.pending).toBe(true);
   });
 
   it('a partner who has not shared is still handed over, as not sharing (the caveat names them)', async () => {

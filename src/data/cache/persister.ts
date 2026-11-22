@@ -104,7 +104,12 @@ export const WRITES_OVERFLOW_PREFIX = `${QUERY_CACHE_KEY}:writes:`;
 // Large reads that refetch on the next open: not worth the bytes (F-11).
 const NEVER_PERSIST = new Set(['offer-history', 'search', 'refund-links', 'refund-purchases']);
 
+// 08.1 review C-WR-02: another member's shared figure is never written to disk. Switching sharing off is immediate on the server;
+// a copy on the viewer's phone would keep counting for as long as the cache lives (CACHE_MAX_AGE_MS).
+const NEVER_PERSIST_ROOTS = new Set(['partner-money']);
+
 export function isNeverPersisted(queryKey: readonly unknown[]): boolean {
+  if (NEVER_PERSIST_ROOTS.has(String(queryKey[0]))) return true;
   return queryKey[0] === 'transactions' && NEVER_PERSIST.has(String(queryKey[2]));
 }
 
