@@ -105,7 +105,7 @@ Plans:
 - [x] 00-19-PLAN.md — Android acceptance, register consolidation, approved prod push (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 00-20-PLAN.md — iOS: Sign in with Apple config, first EAS iOS build on iPhone XR (W8, waits on enrolment)
+- [ ] 00-20-PLAN.md — iOS: Sign in with Apple config, first EAS iOS build on iPhone XR (W8, waits on enrolment); also runs the iOS checks carried from `02-HUMAN-UAT.md` (statement file picker) and `02.1-HUMAN-UAT.md` (PDF import walkthrough) (2026-11-22)
 **Research flag**: EAS provisioning and credentials from Windows are unproven for this project. Trigger the first iOS EAS Build on day one — provisioning surprises are cheaper in week one than week ten.
 
 **Dependency provisioning — what blocks on what:**
