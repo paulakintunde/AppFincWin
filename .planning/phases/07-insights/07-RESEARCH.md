@@ -439,24 +439,26 @@ function GatedTabBar(props: BottomTabBarProps) {
 | A10 | Three feature rows (`insights`, `netWorthTrend`, `healthScore`) instead of two | Findings 5 | Counts in LEVEL-MAP differ (5/20/31/34 vs 5/20/30/33); trivial to switch |
 | A11 | `StatTileRow`, `SegmentedControl`, `Row` need small additions | Findings 6 | UI-SPEC deviations if skipped |
 
-## Open Questions (owner questions, genuinely blocking; plain English)
+## Open Questions (RESOLVED)
 
-1. **"Bills paid on time" or "bills still to pay"?**
+All four answered by the owner on 2026-11-22; recorded in 07-CONTEXT.md as D-20..D-23.
+
+1. **"Bills paid on time" or "bills still to pay"?** RESOLVED: D-20 (keep Decide's figure; part named "Bills still to pay this month").
    - What we know: Decide's figure is the share of this month's money out that is still unpaid bills, including bills not yet due. Early in the month it is high for everyone.
    - What's unclear: the owner chose the label "Bills paid on time" (UI-SPEC owner decision 1), which means overdue bills only.
    - Recommendation: keep the figure from Decide and rename the part "Bills still to pay" (no engine change). The alternative (overdue only) needs a new Decide month figure and tests in a 100% folder. Ask as a popup with these two options.
 
-2. **How far back should "All" go for the bars and categories?**
+2. **How far back should "All" go for the bars and categories?** RESOLVED: D-21 (12 past months plus this one, said plainly).
    - What we know: Decide reads 12 months back (13 with this month). Net worth can go further because it reads balances by date.
    - What's unclear: whether "All" for bars and categories may stop at those 13 months.
    - Recommendation: stop at what Decide holds and say so in the label ("Last 12 months and this one"), with the net-worth line going all the way back. A longer history needs a separate read path later (a migration or a second client fetch) and risks disagreeing with Decide.
 
-3. **A holding with no dated value before a month: leave it out or hold it flat?**
+3. **A holding with no dated value before a month: leave it out or hold it flat?** RESOLVED: D-22 (counts from its first dated value).
    - What we know: D-07 says holdings with a date on or before the month-end count; holdings without dated history are held at today's figure.
    - What's unclear: a holding added this month with one value. Held flat, it appears in every earlier point and inflates old net worth.
    - Recommendation: it appears from its first dated value; "held flat" is only for debts and for holdings with no date at all.
 
-4. **Just me net worth with a joint account.**
+4. **Just me net worth with a joint account.** RESOLVED: D-23 (Just me = own accounts; joint only in Household).
    - What we know: Decide counts only the viewer's slice of joint money today; slices are not defined for past month-ends.
    - What's unclear: whether Just me net worth counts a joint account whole, by slice, or not at all.
    - Recommendation: Just me counts personal accounts whole and joint accounts not at all; Household counts joint accounts once; the net-worth card says which. Confirm with the owner because it changes the headline number for couples.
