@@ -1,7 +1,12 @@
-# 06.1-32 APP-13 (N19 / D63, N19S): an answer -> I bought it -> Add to records -> Added to records -> the first running-cost
-# offer is passed over ("Not this one": the plan's draft said "Skip"; the real key is answerActions.runningCost.skip), then
-# Undo takes the purchase back out, so the test account keeps no record. A used car brings running costs (insurance, fuel),
-# so at least one offer shows. Run signed in as a test account with an everyday account.
+# 06.1-32 APP-13 (N19 / D63, N19S): an answer -> I bought it -> record it -> Undo, so the test account keeps no record.
+# 08.1-15: rewritten for the 08.1-09 Record as bought screen (BoughtScreen.tsx, BoughtSaveRows.tsx). The old 06.1 steps ("Add to
+# your records", "Add to records", "Added to records", the running-cost offer with "Not this one") are gone. Now "I bought it"
+# opens one screen (title "Mark as bought", the no-money-moves line, Date / Amount / Paid from, then tick rows for what else the
+# save can write), "Record purchase" saves it all as one step, and a "Saved" result offers Undo and Back to Decide.
+# Words are decide.screens.answerActions.bought.* / .added.* (owner-signed 2026-11-21) and decide.screens.common.*; ids are the
+# testIDs in BoughtScreen.tsx / BoughtSaveRows.tsx.
+# Run signed in as a test account with an everyday account (bought.noAccount shows otherwise and Record purchase stays off).
+# The check itself ("used car") stays open on Decide home after the Undo, as before.
 appId: com.fincwin.app
 name: Decide I bought it
 # 06.1 pre-device check: the price can be set with `-e PRICE=9000` (a 9,000 cash car asks to confirm spare money first; since
@@ -21,25 +26,58 @@ name: Decide I bought it
     env:
       TARGET: "I bought it"
 - tapOn: "I bought it"
+# The screen's frame title is also "I bought it"; its heading is bought.title
 - extendedWaitUntil:
-    visible: "Add to your records"
+    visible:
+      id: "bought"
     timeout: 15000
+- assertVisible: "Mark as bought"
+- assertVisible:
+    id: "no-money-moves"
 - assertVisible: "This updates FincWin\\. No payment is made and no money moves\\."
+# New ongoing costs (bought.groupCosts): the stepper pre-fills a car's running costs, switched on, only where a table exists
+# (runningCostTemplates.ts: US, GB, CA in their own currency) or a recorded bill matches. Elsewhere the lines are 0 and off, so
+# no row shows and the tick is skipped. Every cost row starts unticked (D-09); its spoken label is
+# "<name>, <amount> a month, not ticked" (bought.rowFixed + bought.stateOff). Insurance is a fixed cost, so it becomes a bill.
+- runFlow:
+    when:
+      visible: "Insurance, .+ a month, not ticked"
+    commands:
+      - evalScript: "${console.log('BOUGHT ticking the Insurance running cost')}"
+      - assertVisible: "New ongoing costs"
+      - tapOn: "Insurance, .+ a month, not ticked"
+      - assertVisible: "Insurance, .+ a month, ticked"
+# Your goal (bought.groupGoal): the "Close the “<goal>” goal" row shows only when THIS check made a goal through Save for it and
+# it is still open (BoughtScreen prop goal). A check made fresh above has none, so the row is optional: when it shows it must
+# start ticked (D-11, the only row that does) and it is left ticked; the Undo below reopens the goal.
+- runFlow:
+    when:
+      visible:
+        id: "bought-group-goal"
+    commands:
+      - evalScript: "${console.log('BOUGHT goal close row present')}"
+      - assertVisible: "Close the “.*” goal, It can stay open\\., ticked"
 - runFlow:
     file: common/scroll-to.yaml
     env:
-      TARGET: "Add to records"
-- tapOn: "Add to records"
+      TARGET: "Record purchase"
+- tapOn: "Record purchase"
 - extendedWaitUntil:
-    visible: "Added to records"
+    visible:
+      id: "bought-added"
     timeout: 20000
+- assertVisible: "Saved"
 - assertVisible: ".* is in your records, bought .*"
-# The first running-cost offer: pass over it
-- assertVisible: ".*Add it as a bill\\?"
-- tapOn: "Not this one"
-# Clean up: Undo takes the purchase back out
-- tapOn: "Undo"
+# Clean up: Undo takes the purchase (and every ticked part) back out as one step. The toast "Saved: used car." has its own Undo,
+# so the tap is held to the result's own button.
+- tapOn:
+    text: "Undo"
+    childOf:
+      id: "bought-added"
 - extendedWaitUntil:
     visible: "Undone\\. Nothing was added\\."
     timeout: 20000
 - tapOn: "Back to Decide"
+- extendedWaitUntil:
+    visible: "Can I afford it\\?"
+    timeout: 20000

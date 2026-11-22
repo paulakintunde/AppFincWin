@@ -194,7 +194,9 @@ name: Decide first answer (UX-11)
       - runFlow:
           file: common/scroll-to.yaml
           env:
-            TARGET: "Based on your quick estimates, not your records\\.|.*and your quick estimates\\."
+            # 08.1-15: both sentences were reworded since 06.1 (decide.v3.basis.quickEstimates and
+            # recordsWithReason.quick_estimates in en.ts); the matcher follows them.
+            TARGET: "Based on the numbers you typed in, not your account records\\.|.*plus your quick estimates\\."
 - runFlow:
     file: common/scroll-to.yaml
     env:

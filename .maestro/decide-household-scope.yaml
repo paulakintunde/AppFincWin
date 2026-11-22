@@ -1,0 +1,92 @@
+# 08.1-15 (08.1-10 D-01..D-03, 08.1-23 Q6/Q12): a Household-scoped check. On the stepper's price step (Step 2 of 3) "Who pays"
+# (WhoPays.tsx, testID who-pays) offers Just me | Household; Household is picked and its helper line shows. The answer then names
+# the household in the top-bar sub-line ("Household · <name>", decide.screens.answer.scope.household) and shows the household
+# note (AnswerFrame prop householdNote -> HouseholdAnswerNote.tsx): the spending-rule line "Counted: …"
+# (decide.screens.answer.household.*, testID household-rule-<key>).
+# Run signed in as a member of a 2-person household (Who pays renders nothing for a household of one, and the rule line needs at
+# least two members). The account needs whatever the shared gate handles (common/decide-gate.yaml).
+# Clean up: the check is deleted from Decide home (common/delete-open-check.yaml; an undoable soft delete). Nothing is bought.
+appId: com.fincwin.app
+name: Decide household scope
+---
+- runFlow: common/to-tabs.yaml
+- tapOn: "Decide, tab, .*"
+- assertVisible: "Can I afford it\\?"
+# A car is a big buy (bigBuy.ts), so Check it opens the stepper; "car" is read from the name (kindWords.ts)
+- runFlow:
+    file: common/decide-type-check.yaml
+    env:
+      ITEM: "Maestro shared car"
+      PRICE: "2500"
+- extendedWaitUntil:
+    visible: "Step [123] of 3.*"
+    timeout: 20000
+- runFlow:
+    when:
+      visible: "Step 1 of 3.*"
+    commands:
+      - runFlow:
+          file: common/scroll-to.yaml
+          env:
+            TARGET: "Next"
+      - tapOn: "Next"
+      - waitForAnimationToEnd
+- assertVisible: "Step 2 of 3.*"
+# Who pays sits directly under the price. Every new check starts on Just me (D-02).
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Who pays"
+- assertVisible:
+    id: "who-pays"
+# The segmented choice reads "Household"; with large text on a narrow screen it is a stacked pill read "Who pays, Household"
+- tapOn:
+    text: "(Who pays, )?Household"
+    childOf:
+      id: "who-pays"
+- extendedWaitUntil:
+    visible:
+      id: "who-pays-helper"
+    timeout: 15000
+# The helper names the rule counted (whoPaysLineOf), or the plain helper while the rule is still loading
+- assertVisible: "Counts your own money plus your share of any joint account\\.|Counts your [0-9]+% share of all shared money\\.|Uses shared money plus anything a partner agreed to share\\."
+# On to the answer: Next to Step 3 (running costs, kept at their defaults), then See the answer
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Next"
+- tapOn: "Next"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Step 3 of 3.*"
+    timeout: 15000
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "See the answer"
+- tapOn: "See the answer"
+- runFlow: common/decide-gate.yaml
+# The top bar names the scope: "<stage> · Household · <household>" below three full months, "Household · <household>" from three.
+# The visible line and the top bar's spoken label ("<name>, <price>. <sub>") both match.
+- extendedWaitUntil:
+    visible: ".*Household · .+"
+    timeout: 20000
+# The household note sits under the answer's detail, above the legal block: the rule line is always there for 2+ members once
+# the group's rule has loaded. The shared-bills caveat (testID shared-bills-caveat) shows only when another member's last shared
+# line is more than 30 days old, so it is not asserted.
+- runFlow:
+    file: common/scroll-to.yaml
+    env:
+      TARGET: "Counted: .*"
+- assertVisible:
+    id: "household-rule-rule(Bring|Bill|Shares)"
+- assertVisible: "Counted: what you bring\\.|Counted: your [0-9]+% of shared money\\.|Counted: your [0-9]+% of shared money, matching the bill split\\."
+# Clean up: delete the check from Decide home
+- runFlow:
+    file: common/delete-open-check.yaml
+    env:
+      NAME: "Maestro shared car"
+- extendedWaitUntil:
+    visible: "Deleted: Maestro shared car\\..*"
+    timeout: 15000
+    optional: true
