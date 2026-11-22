@@ -9,6 +9,8 @@ const ROOT = process.cwd();
 const TARGETS = [
   'src/engine/decide/v3',
   'src/engine/month',
+  'src/engine/health',
+  'src/engine/insights',
   'src/engine/decide/bisectCore.ts',
   'src/engine/decide/cardRule.ts',
   'src/engine/decide/lineDefaults.ts',
