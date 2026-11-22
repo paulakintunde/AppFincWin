@@ -1,6 +1,6 @@
 # Naming round 2: replacing Kint (2026-11-19 to 2026-11-20)
 
-**Status:** on hold (owner, 2026-11-21). No name chosen. 130 names screened and 8 deep-checked. **Jubila** is the cleanest so far. Tavva is next, then Kint. See section 9.
+**Status:** open. No name chosen. About 300 names screened across 7 rounds; 16 deep-checked or register-checked. **Jubila and Nidara** are joint leads (a full deep check of Nidara is running). See section 14.
 
 **This is not legal advice.** It is a first-pass screen before a trademark lawyer. The owner, or a lawyer, makes the final call.
 
@@ -102,15 +102,81 @@ Gaps: TMview reset every connection, so EUIPO and EU national offices were cover
 
 Lesson: 4 of the 8 names that passed the quick screen failed the deep check (Plenny, Hommi, Marram, Okalo). The quick screen is only a filter.
 
-## 9. Where this stands
+## 9. Round 4: "dollar" plays (2026-11-21, 36 names)
 
-- **Owner decision 2026-11-21: hold.** No name is adopted yet.
-- If the owner picks up again, the shortlist is **Jubila (lead), Tavva (backup), Kint (fallback; rebrand work done, UK risk)**.
+The owner asked for prefixes, suffixes and respellings of "dollar" (example: Torllar). The check, which the owner set: 5 trademark registers (EUIPO, CIPO, UK via WIPO, USPTO, WIPO) and 5 domains (.com, .app, .eu, .ca, .co.uk). The UK IPO blocks bots with Cloudflare, so the UK was covered via WIPO.
+
+- **Clean on registers:** Torllar (all 5 domains free), Homollar (reads "homo"; dropped), Nollar (Swedish "resets to zero"), Dollary, Mollar ("molar"), Tolara, Dalar, Dollen (Dutch "to fool around").
+- **Out:** Kindollar (Chinese owner registered it in class 9 in the US, EU and UK in 2025); Vollar (EVOLLAR EU class 36); Dollaroo (AU 9/28); Hollar (US dollar-store mark, "holler"); Tala (live lending mark); Taler (GNU Taler 9/42); Thaler; Daler (live AI finance app); Dolla (finance app); Tolar (EU marks); Wedollar (cash-loan app); Dollaro and Dollari (Italian for dollar); Lollar, Sollar, Kollar (live marks and sound-alikes); Dolr, Dollo, Ollar, Dollarly, Daalder.
+- **Lesson:** the DOLLAR family is crowded (108 live or pending DOLLAR marks in 9/36/42 at CIPO alone). It also signals US dollars in the UK and EU.
+
+## 10. Deep check 3 (2026-11-21): Torllar, Dollary, Tolara
+
+| Name | Verdict | Key findings |
+|---|---|---|
+| **Torllar** | Proceed with caution | **Lowest register risk of any name (Low).** Only TORLAR MX class 42, tollar IN class 9, and Shenzhen Tollar Security's A-ZONE cameras. No apps or companies. Every domain is free (.com, .app, .ca, .money). **Fails the radio test:** people will write Torlar, Tolar, Toller; the "dollar" pun is lost. A strong mark but a weak brand |
+| **Dollary** | Proceed with caution | No one owns it. **Risk of a descriptiveness refusal** ("dollar-ish"), Medium in class 36 and in the EU (Polish and Czech "dolary" = dollars). Thin protection against DOLLARWISE (US 99975520, a budgeting app, 9/41/42) and others. **dollary.com is for sale at $120,000.** Signals US dollars in the UK and EU |
+| **Tolara** | Drop | **Tolar EUTM 017677717 and UK00917677717, class 42** (Tolar HashNET, an active blockchain company); TOLAR Spain class 36. **A UK SaaS "Tōlara" launched on tolara.app on 2026-11-15.** Portuguese "tola" = foolish |
+
+## 11. Round 5 (2026-11-21, 44 names) and deep check 4: Wextra
+
+Themes: money words twisted, friendly human names, calm or joyful words, home and together words, plus the owner's own **Wextra**. Quick screen only (owner's choice).
+
+- **All human names Out** (Lenny is a lending app, ELSIE is a LendingClub software mark, JUNO is a banking mark; Wilma, Rosa, Ivo, Nora, Archie too). Otto (German retailer) and Ada (Cardano) were dropped before the screen.
+- **Most twisted money words Out:** Budgi, Pennio, Centa, Pursa and Shillo ("Shareable Budgets") are live finance apps.
+- **Clean:** Wextra, Groato (all 5 domains free; fails radio test), Hogara (Spanish *hogar*; "hog"), Kotio, Felize, Kotti.
+
+**Wextra deep check: Drop (Medium-High).**
+- **WEX Inc.** (NYSE payments fintech) holds WEX marks in 9/35/36/42 in the US, Canada, Australia, New Zealand and the EU, plus a "WEX + word" family: WEX CAPITAL, WEX FLEXCARD and **WEXONLINE** (US 75664674, 35/36). "Wextra" reads as "WEX + extra".
+- **wextro**, a French-language budget app, has been on the App Store since 2026-05-08.
+- wextra.com has been used by a Finnish company since 2000 and is not for sale. A Czech agency, Wextra Communications, uses wextra.eu.
+- German and Polish speakers hear "Vextra" ("vex").
+- **Owner's prior use:** the owner holds wextraonline.com and ran it as a shopping-links page (2014–15) and an "AI integration platform / SaaS" page (2024–25). Tell the lawyer.
+
+## 12. Round 6 (2026-11-21, 45 names) and deep check 5: Jubelle, Pacela
+
+Themes: soft made-up words, Greek and Latin roots, Jubila-like joy words, nature words. **Every one of the 45 .com domains was registered.** Every clean name failed or was borderline on the radio test; every name that passed the radio test was taken (Prudo, Sedge, Aequo, Oikora and Paxora are money apps; Concora is a credit-card company; Jovia is a credit union). No nature word came out clean.
+
+| Name | Verdict | Key findings |
+|---|---|---|
+| **Jubelle** | Proceed with caution (Medium-Low, level with Jubila) | No JUBELLE mark in our classes or markets. Friction is the JUBILEE family (US 86570131 class 42; US 90382073 and CA TMA171798 class 36; AU 1617630/2282665) and JUBEL.AI (EU 018313750, 35/42). German *Jubel* = jubilation. Reads feminine (existing JUBELLE marks are fashion and beauty). **jubelle.com is for sale at $649 on Sedo**; .app, .eu, .ca, .co.uk and .money are free. Partial radio pass (Jubell, Jubel). UK JUBELLE LTD (furniture retail, 2026) is not a conflict |
+| **Pacela** | Leaning drop (Medium) | **PACERA**, a CFO finance-software brand, is registered in the EU and UK (019259260, UK00004276240) in 9/42, one letter off. "Parcela – Buy Now, Pay Later" is EU 018736118 (9/42). **Portuguese "parcela" = an instalment payment**, a lending word. Romanian echo of "păcăli" (to con). Fails the radio test. pacela.com is $5,295 |
+
+## 13. Round 7 (2026-11-21): names from an outside agent
+
+The owner had another agent propose names in Jubila's pattern. Each was checked in the 5 registers and 6 domains (.com, .app, .eu, .ca, .co.uk, .money).
+
+| Name | Verdict | Key findings |
+|---|---|---|
+| **Nidara** (*nido*, nest) | **Proceed (Low to Medium-Low)** | Clear in 9/36/42 in the EU, CA, UK (via WIPO), US and WIPO. Other hits: Nidara Online SL (EU class 24), a dead US class 11 mark, and a pending Mexican class 36 filing. No app. Sounds near NIDRA (yoga and sleep; NIDRA class 9 marks are sleep devices). Hindi "nidar" = fearless. Passes the radio test. **nidara.com is for sale at $7,995**; .app is taken; .ca, .co.uk, .eu and .money are free. UK NIDARA GROUP LIMITED formed in September 2026 (business unknown). **Full deep check in progress** |
+| **Lomara** | Proceed with caution (Medium-Low) | The exact name is clear (BASF LOMARA is in agrochemicals). **LUMERA** (Lumera AB, life-insurance and pension software) is registered in 9/35/36/38/42 in the EU, and is filed or pending in the US and CA. lomara.com is for sale (make an offer) |
+| **Vemora** | Caution (Medium) | A live "Vemora – Connect & Chat" app is on Play (10K+ downloads). VENORA is an EU class 9 mark. Only .money is free |
+| **Solena** | Drop (High) | SOLENA US 50158830 (class 42, pending); SOLANA (crypto) 9/36/41/42; SOLERA 9/36/42; French SOLENA in 36/42 |
+| **Corava** | Drop (High) | **An identical CORAVA mark was filed in 2026 for 9/42** in the EU (registered), UK, US and CA (Madrid IR 1928439). corava.com is a live Mexican store |
+
+**The outside agent's claim that Jubila has a "live event-app collision" is wrong.** There is no app or platform named Jubila. The nearest are JubilQ (a Nigerian party finder, 10+ downloads) and Jublia (a B2B trade-show platform). New for the lawyer: **"JubilaClaro: Calcula Pensión"** (a Spanish pension calculator on Play, 10+ downloads).
+
+## 14. Where this stands
+
+**Risk order of every name that was deep-checked or register-checked (lowest first):**
+1. Torllar: Low, but fails the radio test
+2. Nidara: Low to Medium-Low (full deep check pending)
+3. Jubila: Medium-Low
+4. Jubelle and Lomara: Medium-Low
+5. Tavva, Dollary and Pacela: Medium
+6. Gladdi and Wextra: Medium-High
+7. Kint, Marram and Tolara: High
+8. Okalo, Corava and Solena: Drop
+9. FincWin: highest risk
+
+- **Joint leads: Jubila and Nidara.** Both are low risk, pass the radio test and have a warm meaning: Jubila is debts cancelled and joy; Nidara is nest and home.
+- **Backups:** Jubelle (its .com is cheap at $649) and Torllar (strongest mark, weakest brand).
+- **2026-11-21 (earlier the same day):** the owner put the name on hold after deep check 2, then resumed with rounds 4 to 7.
 - Before any public use, a trademark lawyer should review: Jubilé (France, reverse mortgages), the US JUBILEE marks in 36 and 42, and the TMview and IPONZ gaps.
 - Free domains to consider buying quietly if Jubila is chosen: jubila.app, getjubila.app, jubila.money, jubilaapp.com. jubila.com is parked for sale.
 - **Rule from this round:** no name is chosen without the deep check, and no name is used publicly before a lawyer's opinion.
 
-## 10. Effect on Phase 08.25 (Kint rebrand)
+## 15. Effect on Phase 08.25 (Kint rebrand)
 
 - The trademark gate (08.25-01) has **failed** on the owner's decision: Kint has been dropped.
 - The rebrand work on `phase/08.25-kint-rebrand` was never made public. The icon, copy and plans need the new name once it is chosen. The K icon (option 2) will be replaced.
