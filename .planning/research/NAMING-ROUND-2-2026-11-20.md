@@ -1,6 +1,6 @@
 # Naming round 2: replacing Kint (2026-11-19 to 2026-11-20)
 
-**Status:** open. No name chosen. About 300 names screened across 7 rounds; 16 deep-checked or register-checked. **Jubila and Nidara** are joint leads (a full deep check of Nidara is running). See section 14.
+**Status:** on hold (owner, 2026-11-21, after the Nidara deep check). No name chosen. About 300 names screened across 7 rounds; 16 deep-checked or register-checked. **Recommended if resumed: Jubila lead, Nidara backup.** See section 14.
 
 **This is not legal advice.** It is a first-pass screen before a trademark lawyer. The owner, or a lawyer, makes the final call.
 
@@ -156,6 +156,21 @@ The owner had another agent propose names in Jubila's pattern. Each was checked 
 
 **The outside agent's claim that Jubila has a "live event-app collision" is wrong.** There is no app or platform named Jubila. The nearest are JubilQ (a Nigerian party finder, 10+ downloads) and Jublia (a B2B trade-show platform). New for the lawyer: **"JubilaClaro: Calcula Pensión"** (a Spanish pension calculator on Play, 10+ downloads).
 
+**Nidara full deep check (2026-11-21): Proceed with caution (Medium-Low).**
+- Still no exact NIDARA mark in 9/36/42 in any of the six markets, including direct searches of IP Australia and IPONZ (0 hits).
+- New findings:
+  - **nidara.app is live:** a "disciplined rest" (Yoga Nidra / NSDR) web app run by Velvethy & Mikes Corporation s.r.o. (Czech Republic), live since about September 2026. getnidara.com redirects to it.
+  - **NIDARA GROUP LIMITED** (UK 17444795, formed 2026-09-07) lists software-development and IT-consultancy SIC codes.
+- **The NIDAR family is the nearest register threat:**
+  - EOS Pty Ltd, AU 2714585, filed 2026-11-12, classes 9/38/42/45 including plain software and SaaS. Foreign filings claiming it as priority are possible until May 2027.
+  - MARSS, EU 018224966 (9/42).
+  - NoTraffic, US 50149018 (pending).
+  - NADARA (renewable energy) marks in 9/42 in the US, EU, UK and AU are Low-Medium.
+- **Outside our markets:** NIDARA is registered in Mexico for real estate (class 36), and NIDARA CAPITAL (an asset manager) is pending in Brazil (36).
+- **Domains:** nidara.com is now on Afternic at **$4,995**. jubila.com is on Sedo as "make an offer", with no price shown.
+- **Radio test:** passes, but people may write Nidarra, Nadara or Nedara.
+- **Head-to-head:** Jubila and Nidara carry the same register risk. Jubila is unused by others and its .app and .money are free. Nidara is now being used by others.
+
 ## 14. Where this stands
 
 **Risk order of every name that was deep-checked or register-checked (lowest first):**
@@ -169,7 +184,8 @@ The owner had another agent propose names in Jubila's pattern. Each was checked 
 8. Okalo, Corava and Solena: Drop
 9. FincWin: highest risk
 
-- **Joint leads: Jubila and Nidara.** Both are low risk, pass the radio test and have a warm meaning: Jubila is debts cancelled and joy; Nidara is nest and home.
+- **Owner decision 2026-11-21 (final for the day): hold.**
+- **Recommended if resumed: Jubila lead, Nidara backup.** Both are Medium-Low risk with warm meanings. Jubila is unused by others; Nidara has a live Czech wellness product and a new UK software company using the name.
 - **Backups:** Jubelle (its .com is cheap at $649) and Torllar (strongest mark, weakest brand).
 - **2026-11-21 (earlier the same day):** the owner put the name on hold after deep check 2, then resumed with rounds 4 to 7.
 - Before any public use, a trademark lawyer should review: Jubilé (France, reverse mortgages), the US JUBILEE marks in 36 and 42, and the TMview and IPONZ gaps.
