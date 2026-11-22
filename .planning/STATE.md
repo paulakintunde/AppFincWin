@@ -4,13 +4,13 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-11-22T20:54:00.756Z"
-last_activity: "2026-11-22 -- Phase 10 UI-SPEC approved (2 checker passes)"
+last_updated: "2026-11-22T22:12:50.244Z"
+last_activity: 2026-11-22 -- Phase 10 planning complete
 progress:
-  total_phases: 29
-  completed_phases: 18
-  total_plans: 809
-  completed_plans: 790
+  total_phases: 31
+  completed_phases: 19
+  total_plans: 843
+  completed_plans: 819
   percent: 97
 ---
 
@@ -39,8 +39,8 @@ Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple
 Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted, Play verification pending (PR #174). 00-20: first iOS build on the iPhone XR, waits on enrolment; needed before 2026-12-02.
 Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
 Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
-Status: Executing (one phase branch: 08.1)
-Last activity: 2026-11-22 - Completed quick task 261122-m82: Phase 08.2 merged into Phase 11
+Status: Ready to execute
+Last activity: 2026-11-22 -- Phase 10 planning complete
 
 ## Performance Metrics
 
