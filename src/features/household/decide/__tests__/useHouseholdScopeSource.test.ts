@@ -22,8 +22,8 @@ jest.mock('@/data/queries/householdBalances', () => ({
 }));
 
 // 08.1-22: the spending rule and the joint facts (never a live client)
-let mockRule: { data: unknown; isPending: boolean } = { data: null, isPending: false };
-let mockJoint: { data: unknown; isPending: boolean } = { data: { purposes: [], balances: [], month: [] }, isPending: false };
+let mockRule: { data: unknown; isPending: boolean; isError?: boolean; error?: unknown } = { data: null, isPending: false };
+let mockJoint: { data: unknown; isPending: boolean; isError?: boolean; error?: unknown; refetch?: jest.Mock } = { data: { purposes: [], balances: [], month: [] }, isPending: false };
 jest.mock('@/data/queries/householdSpendRule', () => ({ useHouseholdSpendRule: () => mockRule }));
 jest.mock('@/data/queries/jointAccounts', () => ({ useJointAccountFacts: () => mockJoint }));
 // 08.1-23: useHouseholdShare also reads the spending rule line (its own tests are in HouseholdAnswerNote.test).
@@ -104,6 +104,25 @@ describe('useHouseholdScopeSource', () => {
     expect((await renderHook(() => useHouseholdScopeSource(false))).result.current).toEqual({ source: undefined, pending: true });
     mockTotals = [{ data: { ok: false, reason: 'x' }, status: 'success', dataUpdatedAt: 1, isPending: false }];
     expect((await renderHook(() => useHouseholdScopeSource(true))).result.current).toEqual({ source: undefined, pending: true });
+  });
+
+  it('A-CR-01: a failed joint read is reported as failed, never as "no joint account" (NOT_ON) and never as waiting', async () => {
+    const refetch = jest.fn();
+    const error = new TypeError('Network request failed');
+    mockJoint = { data: undefined, isPending: false, isError: true, error, refetch };
+    const { result } = await renderHook(() => useHouseholdScopeSource(false));
+    expect(result.current.source).toBeUndefined();
+    expect(result.current.pending).toBe(false);
+    expect(result.current.failed).toMatchObject({ read: 'jointAccounts', error });
+    result.current.failed?.retry();
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it('A-CR-01: a failed spending-rule read is reported as failed too (the default rule is never guessed)', async () => {
+    mockRule = { data: undefined, isPending: false, isError: true, error: new Error('500') };
+    const { result } = await renderHook(() => useHouseholdScopeSource(true));
+    expect(result.current.failed?.read).toBe('spendRule');
+    expect(result.current.source).toBeUndefined();
   });
 
   it('a partner who has not shared is still handed over, as not sharing (the caveat names them)', async () => {

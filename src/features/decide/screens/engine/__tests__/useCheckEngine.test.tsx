@@ -33,12 +33,15 @@ jest.mock('@/data/queries/decideAnswers', () => ({ useDecideAnswers: () => mockS
 jest.mock('@/data/queries/recurringDismissals', () => ({ useRecurringDismissals: () => mockState.dismissals }));
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => ({ userId: 'u1', householdId: 'h1' }) }));
 // 08.1-10: the household side is its own hook; here it is a switch (the reads behind it are tested with it).
-let mockHousehold: { source: unknown; pending: boolean } = { source: undefined, pending: false };
+type MockRead = { source: unknown; pending: boolean; failed?: { read: string; error: unknown; retry: () => void } };
+let mockHousehold: MockRead = { source: undefined, pending: false };
+// A-CR-01: what the Just me side (the shared build) reads; off by default.
+let mockMeHousehold: MockRead = { source: undefined, pending: false };
 const mockHouseholdOn = jest.fn();
 jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({
   useHouseholdScopeSource: (on: boolean) => {
     mockHouseholdOn(on);
-    return on ? mockHousehold : { source: undefined, pending: false };
+    return on ? mockHousehold : mockMeHousehold;
   },
 }));
 
@@ -62,6 +65,7 @@ const timelineMock = engine.cashTimeline as jest.Mock;
 
 beforeEach(() => {
   mockHousehold = { source: undefined, pending: false };
+  mockMeHousehold = { source: undefined, pending: false };
   ready();
   jest.clearAllMocks();
 });
@@ -104,6 +108,44 @@ describe('useCheckEngine: Household scope (08.1-10, D-02, D-03)', () => {
     const { result } = await renderHook(() => useCheckEngine(householdCheck()));
     expect(result.current.status).toBe('loading');
     expect(result.current.evaluation).toBeNull();
+  });
+
+  // A-CR-01 (fail closed): a failed joint read is never "no joint account".
+  const jointFailed = () => ({ read: 'jointAccounts', error: new TypeError('Network request failed'), retry: jest.fn() });
+  const withJoint = (): SnapshotSource => ({ ...SOURCE, accounts: SOURCE.accounts.map((a, i) => (i === 0 ? { ...a, is_shared: true } : a)) });
+
+  it('A-CR-01: a Household check whose household reads failed is an error with no evaluation, never the Just me answer', async () => {
+    mockHousehold = { source: undefined, pending: false, failed: jointFailed() };
+    const { result } = await renderHook(() => useCheckEngine(householdCheck()));
+    expect(result.current.status).toBe('error');
+    expect(result.current.errorKind).toBe('network');
+    expect(result.current.missingReads).toContain('jointAccounts');
+    expect(result.current.evaluation).toBeNull();
+  });
+
+  it('A-CR-01: a Just me check with a joint account in the records is an error when the joint facts could not be read', async () => {
+    mockState.snapshot = { ...mockState.snapshot, source: withJoint() };
+    mockMeHousehold = { source: undefined, pending: false, failed: jointFailed() };
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('error');
+    expect(result.current.errorKind).toBe('network');
+    expect(result.current.missingReads).toContain('jointAccounts');
+    expect(result.current.evaluation).toBeNull();
+  });
+
+  it('A-CR-01: a Just me check waits (loading, no evaluation) while the joint facts are on their way', async () => {
+    mockState.snapshot = { ...mockState.snapshot, source: withJoint() };
+    mockMeHousehold = { source: undefined, pending: true };
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('loading');
+    expect(result.current.evaluation).toBeNull();
+  });
+
+  it('A-CR-01: a failed household read does not block a Just me check that holds no joint account', async () => {
+    mockMeHousehold = { source: undefined, pending: false, failed: jointFailed() };
+    const { result } = await renderHook(() => useCheckEngine(checkOnce(20000)));
+    expect(result.current.status).toBe('ready');
+    expect(result.current.evaluation).not.toBeNull();
   });
 });
 

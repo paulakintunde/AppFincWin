@@ -115,6 +115,11 @@ export function withHouseholdSource(source: SnapshotSource, household: Household
   return out;
 }
 
+/** A-CR-01: the viewer's records hold a live joint account (one in both names), so its balance must be sliced before it is counted. */
+export function holdsJointAccount(source: Pick<SnapshotSource, 'accounts'> | null): boolean {
+  return source !== null && source.accounts.some((a) => a.is_shared === true && a.archived_at === null && a.deleted_at === null);
+}
+
 const NO_CHECKS: readonly { id: string }[] = [];
 const READ_NAMES = ['settings', 'answers', 'dismissals', 'checks', 'links'] as const;
 
@@ -156,22 +161,28 @@ function useDecideV3Live(): DecideV3State {
   const checkIds = useMemo(() => (checks.data ?? NO_CHECKS).map((c) => c.id).sort(), [checks.data]);
   const links = useDecideLinks(userId, householdId, checkIds);
 
+  // 08.1-23 (Q11): Just me with a joint account gets a household source (only my slice of joint money); anyone else gets none.
+  // A-CR-01 (fail closed): while the household facts are on their way the build waits ('loading'), and when the viewer holds a joint
+  // account whose facts could not be read the build is an error. It never falls back to the whole joint balance.
+  const household = useHouseholdScopeSource(false);
+  const jointUnknown = household.failed !== undefined && holdsJointAccount(snapshot.source);
+  const householdWaiting = household.pending;
+
   const reads = [settings, answers, dismissals, checks, links];
   // 'error' only when a required read failed with nothing cached; a cached copy (offline) is 'ready'.
-  const failed = snapshot.status === 'error' || reads.some((q) => q.data === undefined && q.isError);
+  const ownFailed = snapshot.status === 'error' || reads.some((q) => q.data === undefined && q.isError);
+  const failed = ownFailed || jointUnknown;
   const missing = reads.some((q) => q.data === undefined);
   const ownMissing = READ_NAMES.filter((_, i) => reads[i]?.data === undefined);
-  const missingReads = [...(snapshot.missingReads ?? []), ...ownMissing];
+  const missingReads = [...(snapshot.missingReads ?? []), ...ownMissing, ...(jointUnknown && household.failed !== undefined ? [household.failed.read] : [])];
   const ownFailure = reads.find((q) => q.data === undefined && q.isError);
   const errorKind: DbErrorKind | null = !failed
     ? null
     : snapshot.status === 'error'
       ? (snapshot.errorKind ?? 'server')
-      : classifyReadError(ownFailure?.error);
+      : classifyReadError(ownFailure !== undefined ? ownFailure.error : household.failed?.error);
 
-  // 08.1-23 (Q11): Just me with a joint account gets a household source (only my slice of joint money); anyone else gets none.
-  const householdSource = useHouseholdScopeSource(false).source;
-  const source = snapshot.source === null ? null : withHouseholdSource(snapshot.source, householdSource);
+  const source = snapshot.source === null || householdWaiting || jointUnknown ? null : withHouseholdSource(snapshot.source, household.source);
   const settingsRow = settings.data;
   const answerRows = answers.data;
   const dismissalRows = dismissals.data;
@@ -196,12 +207,14 @@ function useDecideV3Live(): DecideV3State {
 
   const retrySnapshot = snapshot.retry;
   const refetchers = reads.map((q) => q.refetch);
+  const retryHousehold = household.failed?.retry;
   const refetch = useCallback(() => {
     retrySnapshot();
     refetchers.forEach((r) => void r());
+    retryHousehold?.();
     // the query refetch functions are stable per query.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [retrySnapshot]);
+  }, [retrySnapshot, retryHousehold]);
 
   const status: DecideV3State['status'] = failed ? 'error' : judged === null ? 'loading' : 'ready';
   // 06.1-72: the same object while nothing in it changed, so a scope's consumers (and memos keyed on the state) skip a render.

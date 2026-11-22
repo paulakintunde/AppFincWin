@@ -20,6 +20,35 @@ export interface HouseholdScopeRead {
   readonly source: HouseholdScopeSource | undefined;
   /** True while the household's figures are still on their way: the answer waits rather than say a partner has not shared. */
   readonly pending: boolean;
+  /**
+   * 08.1 review A-CR-01: a household read (the household, its members, the spending rule or the joint facts) failed with nothing cached.
+   * Absent when every read came back. A failed read is never taken as "no joint account": the caller fails closed (an error state)
+   * instead of counting a joint balance it could not slice. `read` names the read for missingReads.
+   */
+  readonly failed?: HouseholdReadFailure;
+}
+
+export interface HouseholdReadFailure {
+  readonly read: 'household' | 'householdMembers' | 'spendRule' | 'jointAccounts';
+  readonly error: unknown;
+  retry(): void;
+}
+
+interface ReadLike {
+  readonly data: unknown;
+  readonly isError?: boolean;
+  readonly error?: unknown;
+  refetch?: () => unknown;
+}
+
+/** The first of the household reads that failed with nothing cached, or undefined. */
+export function householdReadFailure(reads: readonly (readonly [HouseholdReadFailure['read'], ReadLike])[]): HouseholdReadFailure | undefined {
+  for (const [read, q] of reads) {
+    if (q.data !== undefined || q.isError !== true) continue;
+    const refetch = q.refetch;
+    return { read, error: q.error, retry: () => void refetch?.() };
+  }
+  return undefined;
 }
 
 const NOT_ON: HouseholdScopeRead = { source: undefined, pending: false };
@@ -27,8 +56,10 @@ const NOT_ON: HouseholdScopeRead = { source: undefined, pending: false };
 export function useHouseholdScopeSource(on: boolean): HouseholdScopeRead {
   const { user } = useAuth();
   const userId = user?.id;
-  const householdId = useHouseholdId(userId).data ?? undefined;
-  const members = useHouseholdMembers(householdId).data;
+  const householdRead = useHouseholdId(userId);
+  const householdId = householdRead.data ?? undefined;
+  const membersRead = useHouseholdMembers(householdId);
+  const members = membersRead.data;
   const others = useMemo(() => (members ?? []).filter((m) => m.user_id !== userId), [members, userId]);
   const totals = usePartnerMoneyTotals(userId, on ? others.map((m) => m.user_id) : [], on);
   const settlements = useSettlements(on ? householdId : undefined).data;
@@ -61,6 +92,18 @@ export function useHouseholdScopeSource(on: boolean): HouseholdScopeRead {
     // totals is rebuilt each render; totalsKey stands for its data.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, on, userId, members, settlements, balances, totalsKey, now, rule.data, rule.isPending, defaults, jointRead.data, jointRead.isPending, others]);
+  // A-CR-01: a failed read (nothing cached) is reported as failed, never as "no joint account" and never as still waiting.
+  const failed = householdReadFailure([
+    ['household', householdRead],
+    ...(householdId === undefined
+      ? []
+      : ([
+          ['householdMembers', membersRead],
+          ['spendRule', rule],
+          ['jointAccounts', jointRead],
+        ] as const)),
+  ]);
+  if (failed !== undefined) return { source: undefined, pending: false, failed };
   if (!active && !waiting) return NOT_ON;
   return { source, pending: waiting };
 }
