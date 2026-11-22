@@ -16,6 +16,8 @@ import { GrowHome } from '../GrowHome';
 jest.setTimeout(30000);
 
 const mockPush = jest.fn();
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPush(h) }));
 let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({ useLocalSearchParams: () => mockParams }));
@@ -108,9 +110,10 @@ jest.mock('@/data/queries/growHoldings', () => ({
 }));
 jest.mock('@/data/mutations/growHoldings', () => ({ useEditHolding: () => ({ edit: jest.fn(), remove: jest.fn() }) }));
 let mockFlags: Record<string, boolean> | null = null;
-jest.mock('@/features/grow/growFeatureFlags', () => {
+// 09-13: GrowHome asks useGrowFeatureFlags(); level 4 means every flag on, a test overrides some.
+jest.mock('@/features/grow/useGrowFeatureFlags', () => {
   const actual = jest.requireActual('@/features/grow/growFeatureFlags');
-  return { ...actual, growFeatureFlags: () => ({ ...actual.growFeatureFlags(), ...(mockFlags ?? {}) }) };
+  return { useGrowFeatureFlags: () => actual.growFeatureFlags(mockFlags ?? {}) };
 });
 
 const LEDGER: GoalsRead = {

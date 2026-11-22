@@ -1,6 +1,6 @@
 // 06-09: the single level-gating seam for Grow (06-CONTEXT discretion). Pure: no React or I/O import.
-// Until Phase 9 gating lands every feature is on; Phase 9 swaps the default for the level-derived value.
-// A screen asks growFeatureFlags() and never reads a level itself.
+// Phase 9 (09-13): the default now comes from useGrowFeatureFlags(); this function stays the pure merge.
+// A screen asks useGrowFeatureFlags() and never reads a level itself.
 
 export interface GrowFeatureFlags {
   goals: boolean;

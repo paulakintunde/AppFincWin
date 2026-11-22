@@ -39,6 +39,8 @@ let mockBars: readonly unknown[] = [];
 let mockRow: { id: string; name: string; inputs: unknown; furthest_step: number } | null = null;
 const mockNetRows = [{ id: 'net', name: 'Safety net', household_id: 'h1', is_safety_net: true, deleted_at: null, version: 3 }];
 
+// 09-17: DecideHome's write gate reads the plan state; a writable home here.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('react-native/Libraries/Utilities/useWindowDimensions', () => ({
   __esModule: true,
   default: () => ({ width: mockWidth, height: 874, scale: 2, fontScale: mockScale }),

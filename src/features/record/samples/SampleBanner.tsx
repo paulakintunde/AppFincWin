@@ -8,6 +8,7 @@ import { useT } from '@/i18n';
 import { useSampleData } from '@/data/mutations/sampleData';
 import { showToast } from '@/state/undoToast';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { usePlanState } from '@/features/plans/usePlanState';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
@@ -25,7 +26,10 @@ export function SampleBanner() {
     today: ctx.today,
   });
 
-  if (!ctx.hasSamples) return null;
+  const plan = usePlanState();
+
+  // 09-24 (UI-SPEC 4): in the pre-trial look-around the pinned Sample bar is the one sample marker.
+  if (!ctx.hasSamples || plan.status === 'sample') return null;
 
   const confirm = (): void => {
     setConfirming(false);

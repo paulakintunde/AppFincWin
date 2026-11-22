@@ -155,3 +155,16 @@ describe('request timeouts (D-88)', () => {
     expect(shouldRetryWrite(0, new DbError('TypeError: Network request failed', '', 0))).toBe(true);
   });
 });
+
+describe('09 D-40: locked writes', () => {
+  it('classifies PT402 and HTTP 402 as locked, never retried', () => {
+    expect(classifyWriteError(new DbError('plan locked', 'PT402', 402))).toBe('locked');
+    expect(classifyWriteError(new DbError('plan locked', '', 402))).toBe('locked');
+    expect(shouldRetryWrite(0, new DbError('plan locked', 'PT402', 402))).toBe(false);
+    expect(classifySettledWriteError(new DbError('plan locked', 'PT402', 402))).toBe('locked');
+  });
+
+  it('leaves RLS denial as rejected', () => {
+    expect(classifyWriteError(new DbError('x', '42501', 403))).toBe('rejected');
+  });
+});

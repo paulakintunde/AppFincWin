@@ -37,7 +37,8 @@ jest.mock('@/state/activityFocus', () => ({ setSelectedMonth: (m: string) => moc
 jest.mock('@/data/mutations/decideChecks', () => ({ useRemoveDecision: () => ({ remove: jest.fn(() => 'step-1') }) }));
 jest.mock('@/features/decide/notifications/waitReminder', () => ({ cancelCheckReminders: () => Promise.resolve() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
-jest.mock('@/features/decide/entitlements', () => ({ canUse: () => true }));
+let mockPlan = { writable: true, loading: false };
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
 
 const mockAttach = jest.fn(() => 'link-1');
 const mockUnlink = jest.fn();
@@ -316,6 +317,18 @@ describe('Decision detail', () => {
     expect(result.current.confirmCopy(d, 3, { amount: '$12', withPayments: true }).body).toBe(fill(P.remove.recordStaysPlan, { amount: '$12' }));
     expect(result.current.confirmCopy(d, 1).body).toBe(en.decide.delete.boughtBody_one);
     expect(result.current.confirmCopy(decision('c2', { status: 'passed' }), 0, { amount: '$12', withPayments: false }).body).toBe(en.decide.delete.passedBody);
+  });
+
+  it('09-17 (D-02): a read-only plan keeps the journal open and says the saved answer is not recalculated', async () => {
+    mockDecisions = [decision('c1', { status: 'passed' })];
+    mockHistory = [historyRow('h1', '2026-08-01', storedResult())];
+    mockPlan = { writable: false, loading: false };
+    await wrap(<DecisionDetailScreen id="c1" />);
+    expect(screen.getByText('Saved answer. Not recalculated while read-only.')).toBeTruthy();
+    await fireEvent.press(screen.getByText(P.detail.asItWas));
+    expect(screen.getByTestId('answer-verdict')).toBeTruthy();
+    expect(screen.getByTestId('answer-footer')).toBeTruthy();
+    mockPlan = { writable: true, loading: false };
   });
 
   it('reads an unknown id as not here', async () => {

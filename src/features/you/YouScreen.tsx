@@ -46,6 +46,8 @@ import { YOU_ROW_ICON, type YouRowId } from './components/youRowIcons';
 import { Chip } from '@/ui/Chip';
 import { useHouseholdEvents } from '@/data/queries/household';
 import { useHouseholdScope } from '@/features/household/useHouseholdScope';
+import { EXPORT_HREF, FEATURES_HREF, FREE_HELP_HREF, SUBSCRIPTION_HREF } from '@/features/plans/routes';
+import { ExportYouRow, FeaturesYouRow, FreeHelpYouRow, SubscriptionYouRow } from './components/PlanYouRows';
 
 // Owner 2026-11-11: the old Pots screen is gone; the row opens the Grow goals segment.
 const GOALS_HREF = '/grow?segment=goals' as Href;
@@ -255,6 +257,8 @@ export function YouScreen() {
             />
           ),
         )}
+        {/* 09-15 (UI-SPEC section 11): Features, with its live level sublabel. */}
+        <FeaturesYouRow tile={tileFor('features')} onPress={() => pushOnce(FEATURES_HREF)} />
         {tiled('weekStart', <WeekStartRow />)}
         {tiled('homeCurrency', <HomeCurrencyRow rowRef={currencyRowRef} onRowLayout={onCurrencyRowLayout} />)}
         {tiled('region', <RegionRow rowRef={regionRowRef} onRowLayout={onRegionRowLayout} />)}
@@ -299,9 +303,14 @@ export function YouScreen() {
             <SyncStatusLine detail />
           </View>
         )}
+        {/* 09-15 (D-03): Export stays open in every plan state; the screen is built by 09-18. */}
+        <ExportYouRow tile={tileFor('export')} onPress={() => pushOnce(EXPORT_HREF)} />
       </SettingsGroup>
 
       <SettingsGroup title={t('appLife.you.groups.account')}>
+        {/* 09-15: Subscription leads the group; Free help is always open and never reads plan state (D-03). */}
+        <SubscriptionYouRow tile={tileFor('subscription')} onPress={() => pushOnce(SUBSCRIPTION_HREF)} />
+        <FreeHelpYouRow tile={tileFor('freeHelp')} onPress={() => pushOnce(FREE_HELP_HREF)} />
         <Row
           label={t('you.signOut')}
           leading={tileFor('signOut')}

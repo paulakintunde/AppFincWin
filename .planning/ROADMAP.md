@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.2: Decide re-audit** (INSERTED) - Every auditor scores 10/10 against the fix plan, then a fresh audit of Decide with Activity, Grow and Household
-- [ ] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements
+- [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
 
@@ -1570,45 +1570,46 @@ Plans:
   3. A user is offered a specific hidden feature in context, at the moment it would have helped, and is told which specific feature a paywall is gating and why.
   4. Household features are governed by whether the user shares money, independently of level.
   5. A user can purchase a subscription recognised across their devices, restore a previous purchase, and cancel through a path no harder to find than account deletion.
-**Plans**: 25 plans in 6 waves (planned 2026-11-18 against 09-CONTEXT revision 3 D-01..D-45 and the owner answers in 09-RESEARCH). Owner gates: 09-01 (signed level map, wording file, planner defaults P1-P8) before 09-11/09-12; 09-08 production push. Open human items that do not block close: real Google purchase tests (Play account), iOS products/purchase/DeviceCheck (Apple enrolment, D-24).
+**Plans**: 26 plans in 6 waves (09-26 added 2026-11-19 as a gap fix; planned 2026-11-18 against 09-CONTEXT revision 3 D-01..D-45 and the owner answers in 09-RESEARCH). Owner gates: 09-01 (signed level map, wording file, planner defaults P1-P8) before 09-11/09-12; 09-08 production push. Open human items that do not block close: real Google purchase tests (Play account), iOS products/purchase/DeviceCheck (Apple enrolment, D-24).
 
 Plans:
 **Wave 1**
-- [ ] 09-01-PLAN.md — Owner documents: level-to-feature map, wording file, planner questions (sign-off gate)
-- [ ] 09-02-PLAN.md — Plan data model: household_plans, trial ledger, seats/state/writable functions, plan_state(), launch switch
-- [ ] 09-09-PLAN.md — Client 'locked' write class, kept-on-phone writes and replay (D-40)
-- [ ] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
+- [x] 09-01-PLAN.md — Owner documents: level-to-feature map, wording file, planner questions (sign-off gate)
+- [x] 09-02-PLAN.md — Plan data model: household_plans, trial ledger, seats/state/writable functions, plan_state(), launch switch
+- [x] 09-09-PLAN.md — Client 'locked' write class, kept-on-phone writes and replay (D-40)
+- [x] 09-10-PLAN.md — usePlanState, react-native-purchases 10.16.0 seam, catalog/change rules, PlanHost, routes
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
-- [ ] 09-04-PLAN.md — Seat caps from the plan, payer approval requests, D-39 switch rule, departure plan moves
-- [ ] 09-06-PLAN.md — RevenueCat webhook Edge Function (HMAC, dedupe, re-fetch) and shared snapshot module
-- [ ] 09-11-PLAN.md — Feature registry from the signed map, levelFor, applyOnb (TDD)
-- [ ] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
+- [x] 09-03-PLAN.md — Server read-only lock (PT402 trigger on every records table) with the tester backfill in the same migration
+- [x] 09-04-PLAN.md — Seat caps from the plan, payer approval requests, D-39 switch rule, departure plan moves
+- [x] 09-06-PLAN.md — RevenueCat webhook Edge Function (HMAC, dedupe, re-fetch) and shared snapshot module
+- [x] 09-11-PLAN.md — Feature registry from the signed map, levelFor, applyOnb (TDD)
+- [x] 09-12-PLAN.md — Signed copy namespaces, plan status words, typed analytics events
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
-- [ ] 09-07-PLAN.md — plan-refresh (caller + sweep) and plan-grant (tester/owner promotional grants)
-- [ ] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
-- [ ] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
-- [ ] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
+- [x] 09-05-PLAN.md — plan_apply(): grace, takeover, double cover, trial ledger; daily sweep and cron
+- [x] 09-07-PLAN.md — plan-refresh (caller + sweep) and plan-grant (tester/owner promotional grants)
+- [x] 09-13-PLAN.md — Feature access seam (plan > household > level), private level/switches, Grow and household seams
+- [x] 09-14-PLAN.md — Plans screen (paywall) with disclosures, trial rules, change timing, purchase flow
+- [x] 09-16-PLAN.md — Lock UI core: NoticeCard, banner, LockedSheet/write gate, lock explainer, replay host
+- [x] 09-26-PLAN.md — Extended (12): 12 member colours (owner exception, reused token hexes), leave/remove while locked
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
-- [ ] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
-- [ ] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
-- [ ] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
-- [ ] 09-20-PLAN.md — Household flows: Solo invite confirm, approvals, waiting, switch-rule refusal, leave/Solo moves
-- [ ] 09-21-PLAN.md — Onboarding questions, analytics step, summary, partner and re-run modes
-- [ ] 09-22-PLAN.md — You > Features and in-context feature offers
+- [x] 09-08-PLAN.md — [BLOCKING] production push, function deploys, secrets, ENV-12 store/RevenueCat checklist
+- [x] 09-15-PLAN.md — You > Subscription, Free help, You rows, Delete account billing warning
+- [x] 09-17-PLAN.md — Write gate wiring on entry points; D-04 Decide entitlements
+- [x] 09-18-PLAN.md — Simple CSV export (works when locked) and offline-saves notice
+- [x] 09-20-PLAN.md — Household flows: Solo invite confirm, approvals, waiting, switch-rule refusal, leave/Solo moves
+- [x] 09-21-PLAN.md — Onboarding questions, analytics step, summary, partner and re-run modes
+- [x] 09-22-PLAN.md — You > Features and in-context feature offers
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
-- [ ] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
-- [ ] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read)
+- [x] 09-19-PLAN.md — Plan notices and reminders (Home, Subscription, Household), local trial reminder
+- [x] 09-23-PLAN.md — First-run routing, consent exemption, partner hand-off, setup records once covered
+- [x] 09-24-PLAN.md — Sample-data look-around and Sample bar (needs 08.1 First read) — *the First read tag itself waits for 08.1-20 (`TODO(08.1-20)` in SampleAnswerIntro.tsx)*
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
+- [x] 09-25-PLAN.md — Phase gate, preview build, owner device pass, open human items
 **UI hint**: yes
 **Research flag**: Two blocking decisions, both currently open in PROJECT.md, must be resolved before gating is implemented — not during: (1) which of the ~50 features are Free versus Pro, since the paywall's original five-item pitch lost cloud sync and tax export to the architecture decision; (2) whether the Coach ships as a real LLM and on what terms, including a server-side post-filter against prescriptive language before implementation. Everything built before these decisions stays tier-agnostic behind a single entitlement check.
 
@@ -1683,13 +1684,14 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 18/20 | In Progress | - |
+| 0. Foundation | 18/20 | In Progress: 00-07 Apple enrolment submitted and D-U-N-S issued, Play verification approved 2026-11-21 (package name still to register); 00-20 iOS build on the iPhone XR waits on enrolment (due before 2026-12-02) | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 50/50 | Complete | 2026-10-09 |
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
 | 2.2 Record polish | 35/35 | Complete (Android verified; iOS pending enrolment) | 2026-10-10 |
 | 2.3 Record follow-ups | 20/20 | Complete (Android verified; iOS pending enrolment) | 2026-10-13 |
-| 3. Shell | 38/38 | Complete    | 2026-10-14 |
+| 3. Shell | 38/38 | Complete | 2026-10-14 |
+| 03.1 Activity header redesign | 15/15 | Complete (PR #76) | 2026-10-15 |
 | 4. Decide Engine | 22/22 | Complete | 2026-10-16 |
 | 5. Decide UI | 145/145 | Complete (screens rebuilt in 06.1; Decide open to every tester since 2026-11-06) | 2026-10-25 |
 | 05.1 Decide engine v3 | 50/50 | Complete   | 2026-10-27 |
@@ -1702,8 +1704,8 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 6/18 | In progress on branch `feat/08.1-build` (wave 1 built: 01-05, 07; wave 2 plan 06 next) | - |
+| 08.1 Decide rebuild on real data | 15/18 | In progress on branch `feat/08.1-build` (built: 01-12, 19-21; left: 13 changed-answers review, 14 wording sign-off, 15 production push); not merged | - |
 | 08.2 Decide re-audit | 0/TBD | Not started | - |
-| 9. Tiers & Onboarding | 26/26 | Complete on branch `phase/09-tiers-onboarding`, not merged (PR #170): device pass passed 2026-11-19; open: RevenueCat setup (ENV-12), owner review list, Kint rename, First read tag (08.1-20); its migrations and Edge Functions are live in production ahead of main | 2026-11-19 |
+| 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |

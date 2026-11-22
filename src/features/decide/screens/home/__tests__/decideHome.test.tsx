@@ -27,6 +27,8 @@ const mockHideFab = jest.fn();
 const mockScrollTo = jest.fn();
 let mockTabProps: Record<string, unknown> = {};
 
+// 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush, setParams: jest.fn() }), useLocalSearchParams: () => ({}), useIsFocused: () => mockFocused }));

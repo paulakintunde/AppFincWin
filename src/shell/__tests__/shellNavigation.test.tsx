@@ -20,12 +20,28 @@ import IndexRoute from '../../../app/index';
 let mockAccounts: { data?: { archived_at: string | null }[]; isLoading: boolean; isError: boolean };
 // 08-23: the (app) layout opens the household live channel; wiring only here.
 jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
+jest.mock('@/features/plans/PlanHost', () => ({ PlanHost: () => null }));
+// 09: the plan shell (lock host, lock banner, write gate) reads plan_state through React Query; these suites test the shell
+// layout, so the plan is a writable tester household and the plan hosts render nothing (like PlanHost).
+jest.mock('@/features/plans/LockHost', () => ({ LockHost: () => null }));
+jest.mock('@/features/plans/LockBanner', () => ({ LockBanner: () => null, lockBannerShown: () => false }));
+jest.mock('@/features/plans/usePlanState', () => ({
+  // 09-24: a loaded, non-sample plan, so the tabs layout's first-account gate behaves as before (no Sample bar).
+  usePlanState: () => ({ status: 'tester', kind: 'tester', writable: true, prelaunch: true, loading: false, isError: false, members: 1, leftGrace: false, householdId: null, payerName: null, graceUntil: null, coveredUntil: null }),
+}));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
 jest.mock('@/features/auth/AuthProvider', () => ({
   useAuth: () => ({ status: 'signedIn', user: { id: 'u1' } }),
 }));
 jest.mock('@/features/consent/useConsent', () => ({
   useConsent: () => ({ loading: false, needsPrompt: false }),
+}));
+// 09-23: the layout skips its consent redirect for a first run; a finished setup here.
+jest.mock('@/features/onboarding/useFirstRunPending', () => ({ useFirstRunPending: () => false }));
+// 09-23: the root entry reads the setup row before landing; a finished setup lands on Home.
+jest.mock('@/data/queries/userSetup', () => ({
+  useUserSetupQuery: () => ({ data: { completedAt: '2026-11-01T00:00:00Z', level: 4, partnerVersion: false }, isError: false }),
+  useFeatureSwitches: () => ({ data: {} }),
 }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1', userId: 'u1', today: '2026-10-14' }),

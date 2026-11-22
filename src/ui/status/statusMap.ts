@@ -37,6 +37,15 @@ export const STATUS = {
   draft: { tone: 'neutral', icon: 'firstEntry', wordKey: 'appLife.status.draft' },
   up: { tone: 'neutral', icon: 'stateUp', wordKey: 'appLife.status.up' },
   down: { tone: 'neutral', icon: 'stateDown', wordKey: 'appLife.status.down' },
+  // 09 UI-SPEC: plan status words. Existing tones and icons only; red (the short tone) is not used in Phase 9.
+  trial: { tone: 'neutral', icon: 'calendar', wordKey: 'appLife.status.trial' },
+  planActive: { tone: 'fits', icon: 'stateFits', wordKey: 'appLife.status.planActive' },
+  trialEnding: { tone: 'tight', icon: 'stateDue', wordKey: 'appLife.status.trialEnding' },
+  paymentFailed: { tone: 'tight', icon: 'stateTight', wordKey: 'appLife.status.paymentFailed' },
+  readOnly: { tone: 'notYet', icon: 'pinLock', wordKey: 'appLife.status.readOnly' },
+  waitingApproval: { tone: 'notYet', icon: 'stateDue', wordKey: 'appLife.status.waitingApproval' },
+  coveredBy: { tone: 'neutral', icon: 'household', wordKey: 'appLife.status.coveredBy' },
+  freeAccess: { tone: 'fits', icon: 'stateFits', wordKey: 'appLife.status.freeAccess' },
 } as const satisfies Record<string, StatusDef>;
 
 export type StatusKey = keyof typeof STATUS;

@@ -126,6 +126,9 @@ describe('DSG-02: no raw colour literals outside the token set', () => {
     '#F1F3F7',
     '#F7F2EE',
     '#F1F4F5',
+    // 09-26, owner exception 2026-11-19: the two new member colours (memberColors keys 7 and 9, Magenta and Orange)
+    '#A62D8C',
+    '#A65600',
   ]);
 
   it('keeps every hex used in tokens.ts and accents.ts inside the deliberate allow-list', () => {

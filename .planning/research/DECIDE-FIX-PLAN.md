@@ -574,7 +574,7 @@ Each theme gives the problem in plain words, then the agreed fixes. Where expert
 - **Store listing, review notes, demo account and in-app-purchase hygiene** (CMP-F22). *Release. M.*
 - **Account deletion purges every new table** (CMP-F23). *With Grow, With Household, Release. M.*
 - **No investment forecasts in Grow** unless the user typed a rate, always labelled "a projection, not a forecast" (CMP-F17). *With Grow. S.*
-- **Paywall switches ready, with safety kept free** (APP-18). The safety net and the confidence sentence are never paid features. *Now. S.*
+- **Paywall switches ready, with safety kept free** (APP-18). The safety net and the confidence sentence are never paid features. *Now. S.* Updated 2026-11-18 by Phase 9 D-04: no free tier after the trial; everything is available in the trial or a paid plan; when locked Decide does not run, so safety parts are never separated from an answer. Crisis links stay free via You > Free help (D-03).
 
 ### Theme G: The safety net (new)
 
@@ -1372,7 +1372,7 @@ Every fix ID from the six expert plans: 26 financial (FIN), 28 engine (ENG), 22 
 | APP-13 | Maestro robot flows for Decide | J | 05.5 (+08.1) | L | 05.3 |
 | APP-14 | Device matrix and screen readers | J | 05.5 Android (+11 iOS) | M | Apple for iOS |
 | APP-17 | Delete the old v2 Decide | D | 05.5 | M | APP-03 |
-| APP-18 | Paywall switches; safety stays free | F | 05.5 | S | your feature list |
+| APP-18 | Paywall switches; safety stays free | F | 05.5 | S | your feature list (updated 2026-11-18 by Phase 9 D-04: no free tier after the trial; safety parts always travel with an answer) |
 | UX-31 | Re-sync and re-approve design spec | E | 05.5 | S | UX-01, UX-09, UX-10, UX-13 |
 | CMP-F09 | Word guard in code, signed off | F | 05.5 (+11) | M | none |
 | CMP-F10 | Delete retired screens | F | 05.5 (+11) | S | none (the 05.3 gate test was not merged) |
