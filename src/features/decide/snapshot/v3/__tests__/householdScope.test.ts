@@ -99,6 +99,25 @@ describe('08.1-08 household scope in the builder', () => {
     expect(buildInputs(src(hh({ scope: 'me' })), null).household?.jointBack).toBeUndefined();
   });
 
+  it('08.1-25: a member who paid nothing into the joint account under "What each person brings" gets the zero-share fact', () => {
+    const joint: JointAccountSource = { id: 'chk', currency: 'USD', purpose: 'everyday', spendable: false, balance: 100_000, monthIn: 100_000, monthOut: 0, billsDueBeforeNextIn: 0, paidInBy: { noa: 100_000 } };
+    const accountsJoint = [account({ id: 'chk', name: 'Checking', currency: 'USD', use: 'everyday', is_shared: true })];
+    const s = src(hh({ scope: 'me', joint: [joint], setting: { rule: 'bring', setup: null, shares: null } }), { accounts: accountsJoint, balances: { chk: 100_000 } });
+    expect(buildInputs(s, null).household?.zeroShare).toEqual({ rule: 'bring' });
+  });
+
+  it('bill weights: a member with no weight counts 0, and weights that add to 0 split equally', () => {
+    const inputs = buildInputs(src(), null);
+    const zed = hh({ memberKeys: ['ali', 'noa', 'zed'] }); // zed has no weight of their own
+    expect(withHouseholdScope(inputs, zed).household?.scope).toBe('household');
+    const noViewer = hh({ billWeights: { noa: 10 }, setting: { rule: 'bill', setup: null, shares: null } }); // the viewer has no bill weight
+    expect(withHouseholdScope(inputs, noViewer).household?.scope).toBe('household');
+    const allZero = hh({ billWeights: { ali: 0, noa: 0 }, setting: { rule: 'bill', setup: null, shares: null } });
+    expect(withHouseholdScope(inputs, allZero).household?.scope).toBe('household');
+    // inputs with no account list read as none
+    expect(withHouseholdScope({ ...inputs, accounts: undefined }, hh({ scope: 'me' })).household?.scope).toBe('me');
+  });
+
   it('withHouseholdScope returns the same inputs when there is no source', () => {
     const inputs = buildInputs(src(), null);
     expect(withHouseholdScope(inputs, undefined)).toBe(inputs);
@@ -153,6 +172,9 @@ describe('08.1-22 jointToHome / jointWithPending', () => {
   it('an account no rate converts is left out; a member with no pay-in has none', () => {
     expect(jointToHome([{ ...j, currency: 'JPY' }], ['a'], x2)).toEqual([]);
     expect(jointToHome([{ ...j, paidInBy: {} }], ['a'], x2)[0]?.paidInBy).toEqual([0]);
+    // a pay-in no rate converts counts 0 for that member; the account itself still counts
+    const noPayIn = (n: number, c: string): number | null => (n === 40 ? null : x2(n, c));
+    expect(jointToHome([j], ['a', 'b'], noPayIn)[0]?.paidInBy).toEqual([0, 40]);
   });
   it('the pending lines on the account add to the bills due before the next pay-in and to this month\'s money out', () => {
     const rows = [
