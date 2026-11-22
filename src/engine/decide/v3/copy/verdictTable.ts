@@ -177,6 +177,8 @@ export const FACT_KEYS = Object.freeze({
   quoted_differs: 'decide.v3.fact.quoted_differs',
   implied_rate: 'decide.v3.fact.implied_rate',
   deferred_interest_term: 'decide.v3.fact.deferred_interest_term',
+  back_charge_cost: 'decide.v3.fact.back_charge_cost', // 08.1-11 FIN-12
+  promo_cleared: 'decide.v3.fact.promo_cleared', // 08.1-11 FIN-12
   at_todays_rate: 'decide.v3.fact.at_todays_rate',
   low_month: 'decide.v3.fact.low_month',
   lean_bridge: 'decide.v3.fact.lean_bridge',
@@ -191,6 +193,10 @@ export const FACT_KEYS = Object.freeze({
   overdraft_not_cleared: 'decide.v3.fact.overdraft_not_cleared',
   overdraft_cost_90d: 'decide.v3.fact.overdraft_cost_90d',
   wait_clears: 'decide.v3.fact.wait_clears',
+  not_within_year: 'decide.v3.fact.not_within_year', // 08.1 D-06
+  below_zero_without: 'decide.v3.fact.below_zero_without', // 08.1 D-07
+  below_zero_later_without: 'decide.v3.fact.below_zero_later_without', // 08.1-13
+  below_zero_later_with: 'decide.v3.fact.below_zero_later_with', // 08.1-13
   overdraft_repeat: 'decide.v3.fact.overdraft_repeat',
   other_account_overdrawn: 'decide.v3.fact.other_account_overdrawn',
   no_overdraft_limit: 'decide.v3.fact.no_overdraft_limit',
@@ -298,6 +304,7 @@ export const MISSING_KEYS = Object.freeze({
   first_payment_not_chosen: 'decide.v3.missing.first_payment_not_chosen',
   pause_interest_not_answered: 'decide.v3.missing.pause_interest_not_answered',
   plan_rate_missing: 'decide.v3.missing.plan_rate_missing',
+  promo_end_missing: 'decide.v3.missing.promo_end_missing', // 08.1-11 FIN-12
   everyday_unknown: 'decide.v3.missing.everyday_unknown',
   legacy_invest_check: 'decide.v3.missing.legacy_invest_check',
   share_invalid: 'decide.v3.missing.share_invalid',
@@ -314,8 +321,12 @@ export const MISSING_KEYS = Object.freeze({
 export const BASIS_KEYS = Object.freeze({
   quick_estimates: 'decide.v3.basis.quickEstimates',
   partial: 'decide.v3.basis.partial',
+  /** 08.1-20: one full month of records reads "your one full month". */
+  partialOne: 'decide.v3.basis.partialOne',
   records: 'decide.v3.basis.records',
-} as const satisfies Record<Exclude<Basis['kind'], 'records_with_reason'>, string>);
+  /** 08.1-20: the pay-window row under the basis, for pay judged over more than 6 months. */
+  payWindow: 'decide.v3.basis.payWindow',
+} as const satisfies Record<Exclude<Basis['kind'], 'records_with_reason'> | 'partialOne' | 'payWindow', string>);
 
 /**
  * The 'answer' reasons that can lead a records basis. few_months never does: under 3 months the basis is partial first
@@ -331,7 +342,7 @@ export const BASIS_REASON_KEYS = Object.freeze({
 /** The placeholders in each basis sentence: date is basis.upTo; quick_estimates has none. */
 export const BASIS_VALUE_KEYS: Readonly<Record<Basis['kind'], readonly string[]>> = Object.freeze({
   quick_estimates: [],
-  partial: ['used', 'lookedFor'],
+  partial: ['used', 'date'],
   records: ['months', 'date'],
   records_with_reason: ['months', 'date'],
 });
@@ -365,6 +376,8 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   quoted_differs: ['quoted', 'computed'],
   implied_rate: ['rate'], // readable decimal string, e.g. "22.9"
   deferred_interest_term: [],
+  back_charge_cost: ['amount', 'date'], // 08.1-11 FIN-12
+  promo_cleared: ['date'], // 08.1-11 FIN-12
   at_todays_rate: ['currency'],
   low_month: ['month', 'left', 'monthly'],
   // 05.4 FIN-08 (05.4-23): source 'savings' | 'net' picks the variant; times low months over the term's payments (QE-04).
@@ -382,6 +395,10 @@ export const FACT_VALUE_KEYS: Readonly<Record<FactCode, readonly string[]>> = Ob
   overdraft_not_cleared: ['accountId', 'date', 'below', 'zero'],
   overdraft_cost_90d: ['rate', 'cost', 'zero'],
   wait_clears: ['month', 'zero'],
+  not_within_year: [], // 08.1 D-06
+  below_zero_later_without: ['date', 'zero'], // 08.1-13: the first day after the first 90 days that the account is below 0 even with no purchase
+  below_zero_later_with: ['date', 'zero'], // 08.1-13: the first such day when only the purchase causes it
+  below_zero_without: ['date', 'zero'], // 08.1 D-07: the first day inside the 90 days the account is below 0 without the purchase; zero is the currency's zero
   overdraft_repeat: ['accountId', 'count', 'of', 'rate', 'cost', 'zero'],
   other_account_overdrawn: ['accountId', 'below', 'rate', 'monthlyCost', 'zero'],
   no_overdraft_limit: ['accountId', 'below', 'zero'],
@@ -563,7 +580,9 @@ export const CAVEAT_KEYS = Object.freeze({
   irregular_income: 'decide.v3.caveat.irregular_income',
   close_to_line: 'decide.v3.caveat.close_to_line',
   expected_bills: 'decide.v3.caveat.expected_bills',
+  household_not_shared: 'decide.v3.caveat.household_not_shared',
   shared_money: 'decide.v3.caveat.shared_money',
+  share_zero_by_rule: 'decide.v3.caveat.share_zero_by_rule',
   rate_estimated: 'decide.v3.caveat.rate_estimated',
   tax_not_included: 'decide.v3.notice.tax_not_included',
   long_plan: 'decide.v3.caveat.long_plan',
@@ -580,7 +599,9 @@ export const CAVEAT_VALUE_KEYS: Readonly<Record<CaveatCode, readonly string[]>> 
   irregular_income: [],
   close_to_line: [],
   expected_bills: [],
+  household_not_shared: ['names'],
   shared_money: ['account'],
+  share_zero_by_rule: ['rule', 'zero'], // 08.1-25: rule = 'bring' | 'bill' (the screen names it); zero = the currency's zero, filled by the screen
   rate_estimated: [],
   tax_not_included: [],
   long_plan: ['months'],

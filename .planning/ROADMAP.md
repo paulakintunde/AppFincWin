@@ -32,7 +32,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
 - [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
-- [ ] **Phase 08.1: Decide rebuild on real data** (INSERTED) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
+- [x] **Phase 08.1: Decide rebuild on real data** (INSERTED, completed 2026-11-22) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
+- [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
+- [ ] **Phase 08.13: Private rooms in a household** (INSERTED) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
@@ -1521,24 +1523,54 @@ Plans:
 **Plans:** 18 plans in 10 waves (trimmed 2026-11-19 from 21 plans in 13 waves: 16, 17 and 18 removed, see the amendment above). Was: 21 plans in 13 waves (planned 2026-11-18; revised the same day after the full UI design run: new plan 19 for the visible Decide stages, plans 04, 05, 07, 09, 10, 11, 12, 14 and 17 edited to match `08.1-UI-SPEC.md`; checker round 1 the same day split the stage work into 19 engine (wave 4), 20 answer side (wave 5) and 21 home and setup (wave 7)). Engine plans (06 onward) wait for the post-05.5 test audit (06 Task 0 gate); waves 1-2 non-engine plans do not. Open owner questions, planned on defaults: `08.1-OWNER-QUESTIONS.md`. Phase 9's sample-data answer uses the First read treatment from plans 19-20.
 
 Plans:
-- [ ] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
-- [ ] 08.1-02-PLAN.md — Record as bought server: expected lines, sale, payoff and goal close in one save, one undo (ARC-24; migration 20261123000100, pgTAP 112)
-- [ ] 08.1-03-PLAN.md — Partner opt-ins, rounded partner figure, shared safety net, sharedMoneyFor (carry-over 08-28; migration 20261123000200, pgTAP 111)
-- [ ] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
-- [ ] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261123000300)
-- [ ] 08.1-06-PLAN.md — Engine: ready-by means stays above $0, no dates past 12 months, below-$0-without line (D-05..D-07; audit gate)
-- [ ] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
-- [ ] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
-- [ ] 08.1-09-PLAN.md — Record as bought client: one writer, fixed vs varying costs, tick rows, stops wiring, contract todos (ARC-24, D-09..D-11)
-- [ ] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
-- [ ] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
-- [ ] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
-- [ ] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
-- [ ] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
-- [ ] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, tester preview APK, Maestro smoke, new tester ids (last plan)
-- [ ] 08.1-19-PLAN.md — Visible Decide stages, engine: 3-month check (08.1-STAGE-CHECK.md) and the pure stage read-model stageOf / firstShownCaveat (DCU-10)
-- [ ] 08.1-20-PLAN.md — Visible Decide stages, answer: basis-window sentences, pay-window row, caveat-order rule, StageLine, StageTag, About rows (DCU-10, CMP-F12)
-- [ ] 08.1-21-PLAN.md — Visible Decide stages, home and setup: StageCard (no chip at 3+ months), import prompt, Not ready actions, Records setup prompt, import return to Decide (DCU-10)
+- [x] 08.1-01-PLAN.md — Right answers first for D-05..D-07 (SN-28..SN-31), owner approval (QA-02)
+- [x] 08.1-02-PLAN.md — Record as bought server: expected lines, sale, payoff and goal close in one save, one undo (ARC-24; migration 20261125000100, pgTAP 112)
+- [x] 08.1-03-PLAN.md — Partner opt-ins, rounded partner figure, shared safety net, sharedMoneyFor (carry-over 08-28; migration 20261125000200, pgTAP 111)
+- [x] 08.1-04-PLAN.md — Activity month total counts the viewer's share, "Your share" label (D-04)
+- [x] 08.1-05-PLAN.md — Server switch: Decide off fast, on slowly; tester build line (APP-21, SC8; migration 20261125000300)
+- [x] 08.1-06-PLAN.md — Engine: ready-by means stays above $0, no dates past 12 months, below-$0-without line (D-05..D-07; audit gate)
+- [x] 08.1-07-PLAN.md — Household screens: partner opt-in row, shared net, publish hook, caveat, couples note (carry-over 08-28)
+- [x] 08.1-08-PLAN.md — Household in the builder and engine: scope, D-03 caveat, shared_money, settle-up free help, household cases (CMP-F19, UX-21, QA-02/03)
+- [x] 08.1-09-PLAN.md — Record as bought client: one writer, fixed vs varying costs, tick rows, stops wiring, contract todos (ARC-24, D-09..D-11)
+- [x] 08.1-10-PLAN.md — Decide screens: Who pays on the price step, household answer lines, Household setup row (D-01..D-03)
+- [x] 08.1-11-PLAN.md — FIN-12 "0% if paid in full" back-charge, or move to v1.1 (owner choice)
+- [x] 08.1-12-PLAN.md — Household purchases saved as shared lines (D-12)
+- [x] 08.1-13-PLAN.md — Changed-answers review, revision 07.0, cross-check covers running costs, loans and household (QA-02/03)
+- [x] 08.1-22-PLAN.md — Household money engine: spending rule per group, setup type, joint money counted once and split by the rule (account purposes), double-count fix; migrations 20261125000600-000700, revision 07.1 (owner 2026-11-20)
+- [x] 08.1-23-PLAN.md — Household money screens: spending setup and rule, custom shares, joint account purpose (bills / savings / everyday), rule lines; copy for plan 14 (owner 2026-11-20)
+- [x] 08.1-24-PLAN.md — Caution sign on "Fits" answers that dip below $0 later in the 12 months: the app's own caution icon (plus an info icon for the tips), amber tight colours with words, breathes 2-3 times then stays still, no motion when reduce motion is on (owner 2026-11-21)
+- [x] 08.1-25-PLAN.md — One-earner fix: when one member brings no money, the app suggests an equal set split and the group chooses (it never switches on its own) (owner 2026-11-21; free access arrives in 08.12)
+- [x] 08.1-14-PLAN.md — DS-4 and new answer lines, wording sign-off (D-06..D-08); carry-over audit and Create from Decide check moved to 08.2
+- [x] 08.1-15-PLAN.md — [BLOCKING] production push of the 3 migrations, tester preview APK, Maestro smoke, new tester ids (last plan)
+- [x] 08.1-19-PLAN.md — Visible Decide stages, engine: 3-month check (08.1-STAGE-CHECK.md) and the pure stage read-model stageOf / firstShownCaveat (DCU-10)
+- [x] 08.1-20-PLAN.md — Visible Decide stages, answer: basis-window sentences, pay-window row, caveat-order rule, StageLine, StageTag, About rows (DCU-10, CMP-F12)
+- [x] 08.1-21-PLAN.md — Visible Decide stages, home and setup: StageCard (no chip at 3+ months), import prompt, Not ready actions, Records setup prompt, import return to Decide (DCU-10)
+
+### Phase 08.12: Joint spending agreements (INSERTED)
+
+**Goal:** Groups can agree how shared money is spent, and Decide shows the agreement in its answers. On an equal-access joint account, the group can set a spend limit: spends over it need another member's OK, or the group can choose "no approval needed". The phase also covers one-earner households, where one person is the main earner and the other partner is at home or not working. That partner may be paid an allowance by the main earner, be given a set sum, spend from the same account, or a mix of these. FincWin only records what the group agreed. It holds no money and cannot block a card payment.
+**Requirements**: TBD (from research and the owner's questions)
+**Depends on:** Phase 08.1 (the spending rule, joint account purposes and joint money counted once, from plans 22 and 23)
+**Source:** owner 2026-11-21. Research into how real one-earner and shared-money households work comes first: `.planning/phases/08.12-joint-spending-agreements/08.12-RESEARCH-ARRANGEMENTS.md`.
+**Success Criteria** (draft, to be confirmed with the owner):
+  1. A group can set an approval limit, or "no approval needed", on a joint everyday account. A Decide check over the limit says who needs to OK it, and the other member can answer OK or Not now.
+  2. One-earner setups (allowance paid by the earner, a set sum, a shared account, or a mix) each give the non-earning partner a correct and fair "Just me" answer, with each dollar counted once. Every setup has right-answer cases.
+  3. Approval and allowance wording is declarative, never "advice" or "you should", and it never suggests that FincWin controls the money.
+  4. The non-earning partner's own money and privacy are respected: nothing they keep private is shown to the earner.
+**Plans:** 0 plans (questions before build)
+
+### Phase 08.13: Private rooms in a household (INSERTED)
+
+**Goal:** A household can hold private rooms, such as the parents' own arrangement, a whole-family pot, or two roommates' joint account. Only a room's members know it exists. Every account, line and series sits in exactly one room, and today's household becomes the "everyone" room. Each room has its own spending rule, limit, personal money, settle-up and Decide choice, and money is counted once across overlapping rooms.
+**Requirements**: TBD (from 08.12-RESEARCH-ROOMS.md and the owner's answers in 08.12-OWNER-ANSWERS.md, round 5)
+**Depends on:** Phase 08.12 (its new tables are keyed by room from the start)
+**Size:** L. It touches every shared-table RLS policy, every RPC, the audience of every notice, the two-user privacy test (which becomes multi-room) and the export manifest.
+**Success Criteria** (draft):
+  1. Members outside a room see nothing of it, and the multi-room privacy test proves it.
+  2. The cases RM-01..RM-12 pass, and money is counted once across overlapping rooms in Just me and in each room's Decide answer.
+  3. Each room's removal policy is chosen when the room is made and shown to everyone invited. A removed member keeps their own money and sees settle-up until it is cleared.
+  4. Kids get their own login from age 16, with adult privacy. Under 16, they appear only as names.
+**Plans:** 0 plans (questions before build)
 
 ### Phase 9: Tiers & Onboarding
 **Goal**: The app reveals its depth gradually and converts to a paid subscription cleanly.
@@ -1634,6 +1666,8 @@ Plans:
 - The round-2 fix pass, then the QA-01 design freeze signed by the owner (former 08.1-17 Tasks 1, 2 and 4; 08.1 SC7).
 - The compliance gate: CMP-F12, F14, F15 and F19 render tests, the three stage-gate tests (DCU-10), and the 08.1 SC1-SC3 checks (first answer under 60 s / 8 taps, Decide's own setup count, running-cost and borrowing checks) (former 08.1-17 Task 3; 08.1 SC5).
 - The row-by-row check of `08.1-CARRY-OVER-FROM-05.4.md` against the 06.1 and 08.1 summaries, and the Create-from-Decide end-to-end check (former 08.1-14 Task 2); this feeds criterion 9.
+- The 08.1 device checks (owner 2026-11-22, `08.1-HUMAN-UAT.md`): the caution sign on the Pixel 9 with Reduce Motion and TalkBack, and the household screens on two real accounts (Who pays, spending rule, joint account purpose, zero-share line).
+- The 08.1 review warnings and info left open (`08.1-REVIEW.md`, B-WR-03 and the rest) and the Decide setup gate follow-up (`08.1-DECIDE-SETUP-AUDIT.md`, starting with the missing "Did your pay arrive?" answer screen), unless the owner places them elsewhere.
 **Plans**: TBD
 **UI hint**: no (store assets and copy audit; no new app screens)
 **Research flag**: Guideline 3.2.1(viii) must be re-read against live text; its wording changed since the brief was written. Separately, correct the brief's mis-citation — the 36% APR / 60-day loan cap is 3.2.2(ix), not 3.2.1(viii), and does not apply here regardless.
@@ -1697,7 +1731,9 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
 | 7. Insights | 0/TBD | Not started | - |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
-| 08.1 Decide rebuild on real data | 15/18 | In progress on branch `feat/08.1-build` (built: 01-12, 19-21; left: 13 changed-answers review, 14 wording sign-off, 15 production push); not merged | - |
+| 08.1 Decide rebuild on real data | 22/22 | Complete (review fixed, verification passed; OTA 7f1776a0) | 2026-11-22 |
+| 08.12 Joint spending agreements | 0/TBD | Not started | - |
+| 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |

@@ -19,15 +19,20 @@ export interface TemplateLine {
   readonly everyMonths: 1 | 12;
   readonly amount: MinorUnits;
   readonly on: boolean;
+  /** 08.1-09 (D-09): the amount varies from month to month (fuel, maintenance): Record as bought writes expected spending, not a bill. */
+  readonly varies: boolean;
 }
 
 const m = (n: number): MinorUnits => minorUnits(n);
+// 08.1-09 (D-09): fuel and maintenance vary month to month; insurance and registration are fixed bills.
+const VARIES: ReadonlySet<TemplateKey> = new Set<TemplateKey>(['fuel', 'maintenance']);
 const line = (key: TemplateKey, labelKey: TemplateLine['labelKey'], everyMonths: 1 | 12, amount: number, on: boolean): TemplateLine => ({
   key,
   labelKey,
   everyMonths,
   amount: m(amount),
   on,
+  varies: VARIES.has(key),
 });
 
 const carLines = (insurance: number, fuel: number, maintenance: number, registration: number): readonly TemplateLine[] =>
@@ -121,8 +126,8 @@ export function prefillRunningCosts(input: PrefillInput): PrefilledLine[] {
     const hit = matchingBill(tpl.key, input.bills);
     const id = `rc:${tpl.key}`;
     if (hit !== null) {
-      return { key: tpl.key, labelKey: tpl.labelKey, source: 'records', billId: hit.bill.id, line: { id, amount: m(hit.bill.amount), everyMonths: hit.every, start: input.start, end: null, on: true } };
+      return { key: tpl.key, labelKey: tpl.labelKey, source: 'records', billId: hit.bill.id, line: { id, amount: m(hit.bill.amount), everyMonths: hit.every, start: input.start, end: null, on: true, ...(tpl.varies ? { varies: true } : {}) } };
     }
-    return { key: tpl.key, labelKey: tpl.labelKey, source: 'quick_estimate', billId: null, line: { id, amount: tpl.amount, everyMonths: tpl.everyMonths, start: input.start, end: null, on: tpl.on } };
+    return { key: tpl.key, labelKey: tpl.labelKey, source: 'quick_estimate', billId: null, line: { id, amount: tpl.amount, everyMonths: tpl.everyMonths, start: input.start, end: null, on: tpl.on, ...(tpl.varies ? { varies: true } : {}) } };
   });
 }

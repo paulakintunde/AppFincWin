@@ -98,6 +98,8 @@ export interface OpenCashPathInput {
   readonly payCaps?: ReadonlyMap<string, MinorUnits> | null;
   /** 05.3-64 (D-27, D-31): bill and debt dues that no longer count (paid by someone else, always paid by someone else, skipped). Absent = none. */
   readonly drops?: DueDrops;
+  /** 08.1-09 (D-09): what this month's expected-line dues count (month/model/expected.ts), by 'seriesId|date'; a due not in the map counts whole. */
+  readonly expected?: ReadonlyMap<string, bigint>;
   /** 05.4 D-52: pay expected from history (historyPay) for an irregular earner with no pay series. Never in paidThisMonth. Absent = none. */
   readonly extraPays?: readonly { readonly date: string; readonly amount: MinorUnits }[];
   /** 05.4 D-67: the regular saving / investing transfers still to leave the everyday account, on their dates (06.1: with their series id when known). Absent = none. */
@@ -180,7 +182,8 @@ export function openCashFlows(input: OpenCashPathInput): { readonly flows: reado
       for (const d of seriesOccurrences(s, asOf, end)) {
         if (input.paidThisMonth.has(`${s.id}|${d}`)) continue; // a recorded payment wins: settled before any drop
         if ((input.drops?.has(s.id, d) ?? null) !== null) continue; // D-27, D-31, skips: one rule (month/dueDrops.ts)
-        flows.push(label(d, -BigInt(s.amount), role === 'bill' ? 'bill' : 'debt', s.id, null));
+        const counted = role === 'bill' ? input.expected?.get(`${s.id}|${d}`) : undefined;
+        flows.push(label(d, counted === undefined ? -BigInt(s.amount) : -counted, role === 'bill' ? 'bill' : 'debt', s.id, null));
       }
     }
   }

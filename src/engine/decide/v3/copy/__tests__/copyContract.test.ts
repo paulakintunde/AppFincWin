@@ -76,8 +76,8 @@ function collect(into: Emitted[], inputs: V3Inputs, check: CheckV2): void {
 
 /** 05.4-37 D-64 (4): the caveats the same corpus emits. */
 const CAVEATS: { code: CaveatCode; values: Readonly<Record<string, number | string | null>> }[] = [];
-/** Caveats no input can raise yet: expected_bills waits for the D-45 planner (05.5), shared_money for the household (Phase 8). */
-const CAVEATS_NOT_YET: readonly CaveatCode[] = ['expected_bills', 'shared_money'];
+/** Caveats no input can raise yet: expected_bills waits for the D-45 planner (05.5). household_not_shared and shared_money: 08.1-08. */
+const CAVEATS_NOT_YET: readonly CaveatCode[] = ['expected_bills'];
 
 function withOctLines(base: V3Inputs, lines: ReturnType<typeof v3Line>[]): V3Inputs {
   return { ...base, months: base.months.map((m): V3Month => (m.month === '2026-10' ? { ...m, lines: [...m.lines, ...lines] } : m)) };
@@ -110,6 +110,10 @@ function buildCorpus(): Emitted[] {
   const sam = toV3Inputs(personById('sam'));
   const own = (id: string, spec: LimitLine['spec']): LimitLine => ({ id, on: true, source: 'own', spec });
   const lines = (...l: LimitLine[]): V3Inputs => ({ ...sam, limits: { lines: l } });
+  // 08.1-25: share_zero_by_rule (the viewer's share of the joint money is $0 because of the rule)
+  collect(out, { ...sam, household: { scope: 'me', notShared: [], zeroShare: { rule: 'bring' } } }, checkOnce(15_000, { taxIncluded: true }));
+  // 08.1-08: household_not_shared (D-03) and shared_money (UX-21)
+  collect(out, { ...sam, household: { scope: 'household', notShared: ['noa'] }, accounts: (sam.accounts ?? []).map((a, i) => (i === 0 ? { ...a, joint: true } : a)) }, checkOnce(15_000, { taxIncluded: true }));
   // line_crossed, one line of each unit
   collect(out, lines(own('cap', { kind: 'single_purchase_cap', cap: mu(1) })), checkOnce(50_000));
   collect(out, lines(own('floor', { kind: 'unspent_floor', floor: mu(99_999_999) })), checkOnce(50_000));
@@ -137,6 +141,10 @@ function buildCorpus(): Emitted[] {
       deferredInterestTerm: true,
     })
   );
+  // back_charge_cost, promo_cleared (08.1-11 FIN-12)
+  for (const count of [16, 10]) {
+    collect(out, sam, checkPlan(120_000, { count, apr: percent('0'), firstPayment: { kind: 'one_period' }, deferredInterestTerm: true, promoEnd: '2027-10-03', rateAfter: percent('24.99') }));
+  }
   collect(out, sam, checkOnce(10_000, { foreign: { currency: 'EUR' as never, atTodaysRate: true } }));
   // typical_short, month_heading_short with and without a category
   const short = toV3Inputs(personById('sam'), { everydayOverride: mu(900_000) });

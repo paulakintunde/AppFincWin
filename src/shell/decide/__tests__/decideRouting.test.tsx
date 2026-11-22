@@ -20,24 +20,32 @@ jest.mock('expo-router', () => ({
 // 06.1-63: the Bought and Save for it route binders. Their data hooks are mocked at the edge; the screens are stand-ins that show
 // which callbacks the route hands them.
 type MockChecks = { data: unknown[] | undefined; isLoading: boolean; isError: boolean };
-const mockData: { checks: MockChecks; engine: { status: 'loading' | 'error' | 'ready'; evaluation: unknown }; accounts: { data: unknown[] | undefined; isError: boolean } } = {
+type MockRead = { data: unknown[] | undefined };
+const mockData: { checks: MockChecks; engine: { status: 'loading' | 'error' | 'ready'; evaluation: unknown }; accounts: { data: unknown[] | undefined; isError: boolean }; debts: MockRead; series: MockRead; goals: MockRead } = {
   checks: { data: [], isLoading: false, isError: false },
   engine: { status: 'ready', evaluation: {} },
   accounts: { data: [], isError: false },
+  debts: { data: [] },
+  series: { data: [] },
+  goals: { data: [] },
 };
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, today: '2026-11-12', timeZone: 'UTC' }),
 }));
-jest.mock('@/data/queries/decide', () => ({ useDecideChecks: () => mockData.checks }));
+jest.mock('@/data/queries/decide', () => ({ useDecideChecks: () => mockData.checks, useDebts: () => mockData.debts }));
+jest.mock('@/data/queries/household', () => ({ useHouseholdMembers: () => ({ data: undefined }) }));
+jest.mock('@/data/queries/householdBalances', () => ({ useSplitDefaults: () => ({ data: undefined }) }));
+jest.mock('@/data/queries/recurringSeries', () => ({ useRecurringSeries: () => mockData.series }));
+jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => mockData.goals }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockData.accounts }));
 jest.mock('@/features/decide/screens/engine/useCheckEngine', () => ({
   useCheckEngine: () => ({ status: mockData.engine.status, evaluation: mockData.engine.evaluation, readyDate: () => null }),
 }));
 jest.mock('@/engine/decide/v3', () => ({ ...jest.requireActual('@/engine/decide/v3'), readStoredCheck: (inputs: unknown) => ({ check: inputs }) }));
 jest.mock('@/ui/money/useMoneyFormatter', () => ({ useMoneyFormatter: () => ({ formatMoney: () => '$1', formatDate: (d: string) => d }) }));
-jest.mock('@/data/mutations/decideGoAhead', () => ({ useGoAheadV3: () => ({ goAhead: jest.fn() }) }));
-jest.mock('@/data/mutations/runningCostBills', () => ({ useAddRunningCostBill: () => ({ add: jest.fn() }) }));
+const mockGoAhead = jest.fn();
+jest.mock('@/data/mutations/decideGoAhead', () => ({ ...jest.requireActual('@/data/mutations/decideGoAhead'), useGoAheadV3: () => ({ goAhead: mockGoAhead }) }));
 jest.mock('@/shell/screen/DetailScreen', () => ({
   DetailScreen: ({ title, children }: { title: string; children: React.ReactNode }) => {
     const { Text, View } = jest.requireActual('react-native');
@@ -129,10 +137,13 @@ beforeEach(() => {
   mockData.checks = { data: [{ id: ID, name: 'Laptop', inputs: { v: 2 }, deleted_at: null }], isLoading: false, isError: false };
   mockData.engine = { status: 'ready', evaluation: {} };
   mockData.accounts = { data: [], isError: false };
+  mockData.debts = { data: [] };
+  mockData.series = { data: [] };
+  mockData.goals = { data: [] };
 });
 
 describe('06.1-28 routes are inside the Decide gate', () => {
-  const gated = protectedNames('DECIDE_OPEN');
+  const gated = protectedNames('DECIDE_OPEN && !decideOff');
   it.each(NEW_ROUTES)('%s is registered inside DECIDE_OPEN and has a file', (name) => {
     expect(gated).toContain(name);
     expect(fs.existsSync(path.join(APP, `${name}.tsx`))).toBe(true);
@@ -149,9 +160,9 @@ describe('06.1-28 routes are inside the Decide gate', () => {
     expect(fs.existsSync(path.join(APP, 'decide/setup.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(APP, 'decide/setup/index.tsx'))).toBe(true);
   });
-  it('the Decide tab renders DecideHome behind DECIDE_OPEN', () => {
+  it('the Decide tab renders DecideHome behind DECIDE_OPEN and not off', () => {
     const tab = fs.readFileSync(path.join(APP, '(tabs)/decide.tsx'), 'utf8');
-    expect(tab).toContain('DECIDE_OPEN ? <DecideHome />');
+    expect(tab).toContain('DECIDE_OPEN && !off ? <DecideHome />');
   });
   it('no route file under app/(app)/decide imports an old Decide folder', () => {
     const old = /features\/decide\/(check|home|quick|setup|settings|pots|ui|judgeOn|onboarding|copy|past)\//;

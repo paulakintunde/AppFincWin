@@ -205,6 +205,13 @@ describe('buildInputs: series', () => {
     expect(all.flex!.savingMode).toBe('flexible');
     for (const gone of ['past', 'gone', 'covered', 'zero', 'eur']) expect(all[gone]).toBeUndefined();
   });
+
+  it('an expected (varying) bill series carries amountKind expected; a fixed one does not (08.1-09 D-09)', () => {
+    const s = src([bill('fuel', { amount_kind: 'expected' } as Partial<SnapshotSource['series'][number]>), bill('rent')]);
+    const all = byId(s, v3s());
+    expect(all.fuel).toMatchObject({ role: 'bill', amountKind: 'expected' });
+    expect(all.rent!.amountKind).toBeUndefined();
+  });
 });
 
 describe('buildInputs: v3 settings', () => {

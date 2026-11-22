@@ -17,6 +17,7 @@ import { perfMark, usePerfMount } from '@/features/decide/perf/perfMarks';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { backToCaller, goDecideHome, isFromAnswer, withFromAnswer } from '../logic/decideNav';
 import { readKind } from '../logic/kindWords';
+import { KEY_NAMES, lineNamesOf } from './lineNames';
 import { prefillRunningCosts, type PrefillBill, type PrefilledLine } from '../logic/runningCostTemplates';
 import type { SaleDebt } from '../sheets/SaleSheet';
 
@@ -39,8 +40,8 @@ export const KEY_VISITED = 'L0.visited_steps';
 export const KEY_SKIPPED = 'L0.skipped_steps';
 export const KEY_PREFILL = 'L0.prefill_sources';
 export const KEY_ONE_OFFS = 'L0.one_offs';
-/** Names of the lines the user added (a RunningCostLine and a StoppedCost carry no name), by line id. */
-export const KEY_NAMES = 'L0.line_names';
+// Names of the lines the user added live in ./lineNames (pure; 08.1-09); re-exported so the stepper keeps one import.
+export { KEY_NAMES, lineNamesOf };
 
 export interface OneOffCost {
   id: string;
@@ -103,14 +104,6 @@ export function ownKindsOf(check: CheckV2): OwnKind[] {
   const raw = check.layerAnswers[KEY_OWN_KINDS];
   if (!Array.isArray(raw)) return [];
   return raw.filter((k): k is OwnKind => isRecord(k) && typeof k.id === 'string' && typeof k.name === 'string' && typeof k.countsLike === 'string');
-}
-
-export function lineNamesOf(check: CheckV2): Record<string, string> {
-  const raw = check.layerAnswers[KEY_NAMES];
-  if (!isRecord(raw)) return {};
-  const out: Record<string, string> = {};
-  for (const [k, v] of Object.entries(raw)) if (typeof v === 'string') out[k] = v;
-  return out;
 }
 
 export function oneOffsOf(check: CheckV2): OneOffCost[] {

@@ -39,6 +39,7 @@ const IMPERATIVE_LEAD = /^(Spend|Save|Try|Keep|Buy|Borrow|Skip|Put|Cut|Pay|Inves
 // Controls and field labels name an action the user takes in the app (a button, a dialog choice, a field caption); they
 // are not a prescription about money. Each one is listed by key so a new descriptive string cannot slip through.
 const ACTION_LABELS = new Set([
+  'decide.screens.answerActions.bought.rowPayoff', // tick row on Record as bought: names paying off the old loan the sale pays (08.1-09, UI-SPEC section 5), not advice
   'income.pay.defaultName', // the noun "Pay": the name a new pay series gets (05.2-49), not an instruction
   'decide.delete.keep', // dialog choice: keep the record instead of deleting it
   // 05.2 (plan 20): setup controls and UI-SPEC titles that open with a verb. Each names an action in the app, not advice about money.
@@ -91,6 +92,8 @@ const ACTION_LABELS = new Set([
 // app are listed by key; any other string that opens with an instruction verb fails.
 const INSTRUCTION_LEAD = /^(Add|Type|Choose|Pick|Enter|Switch|Move|Tap|Change (it|any|the))\b/;
 const CONTROL_LABELS = new Set([
+  'decide.screens.stage.line.addLink', // 08.1-20: text link under the StageLine (UI-SPEC section 1), names an action in the app
+  'decide.screens.stage.import.moreTitle', // 08.1-20: title of the import prompt on home (UI-SPEC section 1), names an action in the app
   'decide.hint.foldTap', // reveal hint named in UI-SPEC as a control
   // 05-110 (R17.6): UI controls on the keyed list; none is a prescription about money
   'decide.v3.factAction.addLimit', // 05.4 FIN-03 (D-38): answer button to "Does Main have an overdraft?"
@@ -115,9 +118,6 @@ const CONTROL_LABELS = new Set([
   'decide.screens.answerDetail.stops.add', // button
   'decide.screens.answerActions.goal.changeAmount', // link
   'decide.screens.answerActions.bought.title', // sheet title
-  'decide.screens.answerActions.bought.add', // button
-  'decide.screens.answerActions.bought.addBill', // button
-  'decide.screens.answerActions.runningCost.add', // button
   'decide.screens.setupPayBills.otherIncome.title', // sheet title
   'decide.screens.setupPayBills.otherIncome.add', // button
   'decide.screens.setupPayBills.billAdd.title', // sheet title
@@ -331,6 +331,8 @@ describe('decide v3 verdict copy (05.1-23, I22, I26)', () => {
       // Variants chosen by the UI (05.1-40)
       // 05.4 FIN-02: the wait line names a month when no payday clears the dip
       'decide.v3.fact.wait_keeps_net_month',
+      // 08.1-14 D-05 guard: VerdictCard shows this short body when the 90-day check did not run (readyByUntested)
+      'decide.v3.verdict.notYetNotCovered.bodyUntested',
       'decide.v3.fact.line_crossed_percent',
       'decide.v3.fact.line_crossed_money',
       'decide.v3.fact.line_crossed_tenths',
@@ -467,13 +469,17 @@ describe('decide.screens copy (06.1, D-18, D-19)', () => {
     /\bhousehold\b|\bshared costs\b/i, // D-03: no household copy in 06.1
   ];
 
+  // 08.1-10 (D-01, D-03, APP-22): Household is on the price step and in the answer's scope line; the 06.1 ban on household words stands everywhere else.
+  const HOUSEHOLD_KEYS = /^decide\.screens\.(stepper\.whoPays\.|answer\.scope\.)/;
+  const household08x = (path: string, re: RegExp): boolean => re.source.includes('household') && HOUSEHOLD_KEYS.test(path);
+
   it('has the screen leaves', () => {
     expect(screens.length).toBeGreaterThan(500);
   });
 
   it('no screen string uses a banned word', () => {
     const bad: string[] = [];
-    for (const l of screens) for (const re of SCREENS_BANNED) if (re.test(l.value)) bad.push(`${l.path}: ${re.source}`);
+    for (const l of screens) for (const re of SCREENS_BANNED) if (re.test(l.value) && !household08x(l.path, re)) bad.push(`${l.path}: ${re.source}`);
     expect(bad).toEqual([]);
   });
 

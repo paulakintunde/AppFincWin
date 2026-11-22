@@ -21,8 +21,8 @@ const name = fc.string({ maxLength: 80 }).map((s) => s.trim());
 const every = fc.constantFrom(1 as const, 3 as const, 12 as const);
 
 const runningCost: fc.Arbitrary<RunningCostLine> = fc
-  .record({ id, amount: money, everyMonths: every, start: date, end: fc.option(date, { nil: null }), on: fc.boolean() })
-  .map((l) => ({ ...l, end: l.end !== null && l.end < l.start ? null : l.end }));
+  .record({ id, amount: money, everyMonths: every, start: date, end: fc.option(date, { nil: null }), on: fc.boolean(), varies: fc.option(fc.constant(true as const), { nil: undefined }) })
+  .map(({ varies, ...l }) => ({ ...l, end: l.end !== null && l.end < l.start ? null : l.end, ...(varies === true ? { varies } : {}) }));
 
 const stop: fc.Arbitrary<StoppedCost> = fc.record({
   id, amount: money, everyMonths: every, stopDate: date,
@@ -131,6 +131,13 @@ describe('06.1-02 runningCosts', () => {
     expect(parse({ runningCosts: [{ ...RC, end: '2026-11-30' }] }).runningCosts![0]!.end).toBeNull();
     expect(parse({ runningCosts: [{ ...RC, end: 'soon' }] }).runningCosts![0]!.end).toBeNull();
     expect(parse({ runningCosts: [{ ...RC, end: '2026-12-01' }] }).runningCosts![0]!.end).toBe('2026-12-01');
+  });
+
+  it('08.1-09: varies survives only when it is exactly true; anything else reads as a fixed cost', () => {
+    expect(parse({ runningCosts: [{ ...RC, varies: true }] }).runningCosts![0]!.varies).toBe(true);
+    expect(parse({ runningCosts: [{ ...RC, varies: 'yes' }] }).runningCosts![0]).not.toHaveProperty('varies');
+    expect(parse({ runningCosts: [{ ...RC, varies: false }] }).runningCosts![0]).not.toHaveProperty('varies');
+    expect(parse({ runningCosts: [RC] }).runningCosts![0]).not.toHaveProperty('varies');
   });
 
   it('on defaults to true; only false switches a line off', () => {

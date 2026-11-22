@@ -7,6 +7,7 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 let mockParams: Record<string, string | undefined> = {};
 
+jest.mock('@/features/decide/screens/answer/TesterBuildProvider', () => ({ TesterBuildProvider: ({ children }: { children: unknown }) => children })); // 08.1-05: keeps the profile query (and the Supabase client) out of the shell test
 jest.mock('expo-router', () => {
   const R = require('react');
   function Stack({ children }: { children?: React.ReactNode }) {
@@ -70,6 +71,7 @@ jest.mock('@/features/plans/usePlanState', () => ({
   usePlanState: () => ({ status: 'tester', writable: true, prelaunch: true, loading: false, isError: false }),
 }));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
+jest.mock('@/features/household/decide/PartnerFigurePublisher', () => ({ AppPartnerFigurePublisher: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ ready: true, householdId: 'h1' }),

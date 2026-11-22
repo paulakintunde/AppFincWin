@@ -50,6 +50,11 @@ export const common = {
     retry: 'Retry',
     waiting: 'Changes wait until you are back online.',
   },
+  // 08.1-05 (APP-21, UI-SPEC section 8): the card shown while Decide is switched off for everyone (app_config decide_off).
+  paused: {
+    title: 'Decide is paused',
+    body: 'Your data is still here. Results will be back soon.',
+  },
   error: {
     title: 'Couldn’t work this out',
     message: 'Couldn’t work this out right now. Your records are safe. Try the check again.',

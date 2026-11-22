@@ -129,6 +129,13 @@ describe('F-11 persisted cache budget', () => {
     expect(f(fakeQuery(['transactions', 'h', 'decide-history', 'a', 'b']))).toBe(true);
   });
 
+  it('08.1 review C-WR-02: a partner’s shared figure is never written to disk (sharing off must take effect at once)', () => {
+    const f = persistOptions.dehydrateOptions!.shouldDehydrateQuery!;
+    expect(f(fakeQuery(['partner-money', 'me', 'sam']))).toBe(false);
+    expect(isNeverPersisted(['partner-money', 'me', 'sam'])).toBe(true);
+    expect(f(fakeQuery(['partner-optins', 'me', 'h']))).toBe(true);
+  });
+
   it('fitToBudget leaves a small client unchanged', () => {
     const c = client([query(['a'], [1, 2, 3])], [mutation(1)]);
     expect(fitToBudget(c, 100_000)).toBe(c);

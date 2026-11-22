@@ -6,14 +6,17 @@ import type { NavStateLike } from '@/shell/backHistory/navLocation';
 import { hasTabsInStack } from '@/shell/navigation/returnToTab';
 import { ACTIVITY_HREF, APP_HOME_HREF } from '@/features/auth/appHome';
 
-export type ImportReturn = 'home' | 'activity';
+const DECIDE_HREF = '/decide' as Href;
 
-/** T-02-29-01 pattern: the route param is untrusted; only 'home' is honoured. */
+export type ImportReturn = 'home' | 'activity' | 'decide';
+
+/** T-02-29-01 pattern: the route param is untrusted; only 'home' and 'decide' are honoured (08.1-21, T-08.1-49). */
 export function parseImportReturn(raw: string | undefined): ImportReturn {
-  return raw === 'home' ? 'home' : 'activity';
+  return raw === 'home' || raw === 'decide' ? raw : 'activity';
 }
 
 export function importReturnHref(r: ImportReturn): Href {
+  if (r === 'decide') return DECIDE_HREF;
   return r === 'home' ? APP_HOME_HREF : ACTIVITY_HREF;
 }
 

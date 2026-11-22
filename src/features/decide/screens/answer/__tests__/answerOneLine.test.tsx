@@ -66,7 +66,7 @@ async function frame(r: Run, evaluation: Evaluation = r.evaluation) {
       said={{ currency: r.inputs.currency, today: r.inputs.asOf }}
       onAction={(a) => actions.push(a)}
       onOption={noop}
-      onCantSee={noop}
+      onCantSee={noop} onImport={noop}
     />,
   );
   await screen.findByTestId('answer-verdict');
@@ -215,7 +215,7 @@ describe('free help lives only in its More detail row (CS-4)', () => {
   it('a US answer (a service is listed) keeps the free-help sentence out of the facts', async () => {
     const r = ledgerRun('N04');
     await wrap(
-      <AnswerFrame check={{ ...viewOf(r), country: 'US' }} evaluation={helpFact(r)} said={{ currency: r.inputs.currency, today: r.inputs.asOf }} onAction={noop} onOption={noop} onCantSee={noop} />,
+      <AnswerFrame check={{ ...viewOf(r), country: 'US' }} evaluation={helpFact(r)} said={{ currency: r.inputs.currency, today: r.inputs.asOf }} onAction={noop} onOption={noop} onCantSee={noop} onImport={noop} />,
     );
     await fireEvent.press(await screen.findByTestId('answer-facts-why'));
     expect(screen.queryByText(/gives money help at no cost/)).toBeNull();
@@ -224,7 +224,7 @@ describe('free help lives only in its More detail row (CS-4)', () => {
   it('with no service listed for the country, the sentence stays a fact', async () => {
     const r = ledgerRun('N04');
     await wrap(
-      <AnswerFrame check={{ ...viewOf(r), country: 'ZZ' }} evaluation={helpFact(r)} said={{ currency: r.inputs.currency, today: r.inputs.asOf }} onAction={noop} onOption={noop} onCantSee={noop} />,
+      <AnswerFrame check={{ ...viewOf(r), country: 'ZZ' }} evaluation={helpFact(r)} said={{ currency: r.inputs.currency, today: r.inputs.asOf }} onAction={noop} onOption={noop} onCantSee={noop} onImport={noop} />,
     );
     await fireEvent.press(await screen.findByTestId('answer-facts-why'));
     expect(screen.getByText('NFCC gives money help at no cost.')).toBeTruthy();

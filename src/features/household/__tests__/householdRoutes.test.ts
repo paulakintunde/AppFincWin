@@ -11,6 +11,8 @@ const ROUTES = [
   'household/split-default',
   'household/category-defaults',
   'household/shared-accounts',
+  // 08.1-23: How spending is shared
+  'household/spending',
   // 08-24: leaving and removing
   'household/leave',
   'household/remove',

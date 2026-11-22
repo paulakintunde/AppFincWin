@@ -18,6 +18,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
   buildSchedule,
+  deferredInterest,
   planCard,
   salesTaxOf,
   type Cadence,
@@ -26,13 +27,16 @@ import {
   type LocalDate,
   type PayV2,
 } from '@/engine/decide/v3';
-import { percent, type Percent } from '@/engine/payoff';
+import { percent, ZERO_PERCENT, type Percent } from '@/engine/payoff';
 import { minorUnits } from '@/engine/money';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Chip } from '@/ui/Chip';
+import { Glyph } from '@/ui/icons/Glyph';
+import { ToggleRow } from '@/ui/ToggleRow';
+import { stateColors, stateMuted } from '@/theme/tokens';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { Pill } from '@/ui/Pill';
 import { RadioDot } from '@/ui/RadioDot';
@@ -110,6 +114,10 @@ interface Draft {
   picked: LocalDate | null;
   pause: boolean | null;
   quoted: number | null;
+  /** 08.1-11 FIN-12: the "0% if paid in full" switch, the promotion's end date and the rate charged back if it is not paid in full by then */
+  deferred: boolean;
+  promoEnd: LocalDate | null;
+  rateAfterText: string;
 }
 
 function cadenceKeyOf(c: Cadence): CadenceKey {
@@ -146,6 +154,9 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
       picked: fp?.kind === 'deferred' ? fp.firstDate : null,
       pause: fp?.kind === 'deferred' ? fp.interestDuringPause : false,
       quoted: saved?.quotedPayment ?? null,
+      deferred: saved?.deferredInterestTerm ?? false,
+      promoEnd: saved?.promoEnd ?? null,
+      rateAfterText: saved?.rateAfter != null ? percentText(saved.rateAfter) : '',
     };
   });
   const [d, setD] = useState<Draft>(initial);
@@ -169,6 +180,13 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
     return Number(d.rateText) <= MAX_RATE ? percent(d.rateText) : null;
   }, [d.rateText]);
   const rateBad = d.rateText !== '' && typedRate === null && !d.rateText.endsWith('.');
+  // 08.1-11 FIN-12: the rate charged back, read the same way as the plan's own rate.
+  const typedAfter: Percent | null = useMemo(() => {
+    if (d.rateAfterText === '' || !RATE_TEXT.test(d.rateAfterText) || d.rateAfterText.endsWith('.')) return null;
+    return Number(d.rateAfterText) <= MAX_RATE ? percent(d.rateAfterText) : null;
+  }, [d.rateAfterText]);
+  const afterBad = d.rateAfterText !== '' && typedAfter === null && !d.rateAfterText.endsWith('.');
+  const [deferredAsked, setDeferredAsked] = useState(false);
 
   const firstPayment: FirstPayment | null = useMemo(() => {
     if (d.first === 'month') return { kind: 'one_period' };
@@ -182,16 +200,28 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
   const [rateTyped, setRateTyped] = useState(initial.rateText !== '');
   const showExample = !rateTyped && d.rateText === '';
 
-  const card = useMemo(() => {
+  const built = useMemo(() => {
     if (periods === null || borrowed <= 0 || firstPayment === null) return null;
     try {
-      const out = buildSchedule({ asOf: today, financed: minorUnits(borrowed), apr: typedRate ?? EXAMPLE_APR, cadence: CADENCES[d.cadence].cadence, count: periods, firstPayment, fees });
+      const out = buildSchedule({ asOf: today, financed: minorUnits(borrowed), apr: d.deferred ? ZERO_PERCENT : (typedRate ?? EXAMPLE_APR), cadence: CADENCES[d.cadence].cadence, count: periods, firstPayment, fees });
       if (!out.ok) return null;
-      return planCard({ price: minorUnits(price), tax: minorUnits(tax), oneOffFees: minorUnits(fees1), schedule: out.schedule, runningMonthly: minorUnits(0) });
+      let schedule = out.schedule;
+      let back: { amount: number; endDate: LocalDate } | null = null;
+      // 08.1-11 FIN-12: with the end date and the rate after it given, a plan the payments cannot clear in time carries its back-charge.
+      if (d.deferred && d.promoEnd !== null && d.promoEnd >= today && typedAfter !== null) {
+        const r = deferredInterest({ asOf: today, schedule, promoEnd: d.promoEnd, rateAfter: typedAfter });
+        if (r.kind === 'back_charge') {
+          schedule = r.schedule;
+          back = { amount: Number(r.backCharge), endDate: r.endDate };
+        }
+      }
+      return { card: planCard({ price: minorUnits(price), tax: minorUnits(tax), oneOffFees: minorUnits(fees1), schedule, runningMonthly: minorUnits(0) }), back };
     } catch {
       return null;
     }
-  }, [periods, borrowed, firstPayment, today, typedRate, d.cadence, fees, price, tax, fees1]);
+  }, [periods, borrowed, firstPayment, today, typedRate, d.cadence, d.deferred, d.promoEnd, typedAfter, fees, price, tax, fees1]);
+  const card = built?.card ?? null;
+  const backCharge = built?.back ?? null;
 
   const resultLine =
     card === null || months === null ? '' : t('decide.screens.sheetsInput.plan.result', { count: months, monthly: formatMoney(card.monthlyEquivalent) });
@@ -200,7 +230,7 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
   // C-13: the cash down covers price, tax and fees, so there is nothing to borrow and no plan to use.
   const covered = cashDown > 0 && borrowed <= 0;
   // C-12: firstPayment is null when the chosen date is missing or before today (plain LocalDate string compare above).
-  const canUse = !rateBad && !covered && firstPayment !== null;
+  const canUse = !rateBad && !(d.deferred && afterBad) && !covered && firstPayment !== null;
   const need = covered ? t('decide.screens.sheetsInput.plan.coveredByCash') : firstPayment === null ? t('decide.screens.sheetsInput.plan.need.firstPayment') : null;
   const title = t('decide.screens.sheetsInput.plan.title');
   const small = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
@@ -211,18 +241,25 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
       setLengthAsked(true);
       return;
     }
+    // 08.1-11 FIN-12: a "0% if paid in full" plan needs its end date and the rate after it; the errors show inline and Use waits.
+    if (d.deferred && (d.promoEnd === null || d.promoEnd < today || typedAfter === null)) {
+      setDeferredAsked(true);
+      return;
+    }
     onUse({
       mode: 'plan',
       cadence: CADENCES[d.cadence].cadence,
       count: periods,
       termMonths: months,
-      apr: typedRate, // ARC-25: null unless the user typed a rate; the example is never stored
+      apr: d.deferred ? percent('0') : typedRate, // ARC-25: null unless the user typed a rate; the example is never stored. A "0% if paid in full" plan is 0% until its end date
       fees,
       deposit: minorUnits(cashDown),
       tradeIn: saved?.tradeIn ?? minorUnits(0),
       quotedPayment: d.quoted === null ? null : minorUnits(d.quoted),
       firstPayment,
-      deferredInterestTerm: saved?.deferredInterestTerm ?? false,
+      deferredInterestTerm: d.deferred,
+      // 08.1-11 FIN-12: asked for (even if empty) only while the switch is on; off = no fields, a plain plan.
+      ...(d.deferred ? { promoEnd: d.promoEnd, rateAfter: typedAfter } : {}),
     }, d.name.trim() === '' ? null : d.name.trim());
   };
 
@@ -302,8 +339,38 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
           ))}
         </View>
 
-        <FieldLabel>{t('decide.screens.sheetsInput.plan.rate')}</FieldLabel>
-        <View style={styles.rateRow}>
+        <ToggleRow label={t('decide.screens.stepper.deferred.switch')} value={d.deferred} onChange={(deferred) => set({ deferred })} />
+        {d.deferred ? (
+          <View testID="deferred-fields" style={styles.column}>
+            <FieldLabel>{t('decide.screens.stepper.deferred.endsLabel')}</FieldLabel>
+            <Pressable
+              testID="promo-end"
+              accessibilityRole="button"
+              accessibilityLabel={`${t('decide.screens.stepper.deferred.endsLabel')}, ${d.promoEnd === null ? t('decide.screens.common.pickDate') : formatDate(d.promoEnd)}`}
+              onPress={() => onPickDate(d.promoEnd, (promoEnd) => set({ promoEnd }))}
+              style={[styles.dateBox, { backgroundColor: colors.fill6 }]}
+            >
+              <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{d.promoEnd === null ? t('decide.screens.common.pickDate') : formatDate(d.promoEnd)}</Text>
+            </Pressable>
+            {deferredAsked && (d.promoEnd === null || d.promoEnd < today) ? <Note tone="warn">{t('decide.screens.stepper.deferred.endMissing')}</Note> : null}
+            <FieldLabel>{t('decide.screens.stepper.deferred.rateLabel')}</FieldLabel>
+            <Field
+              value={d.rateAfterText}
+              onChangeText={(rateAfterText) => set({ rateAfterText })}
+              accessibilityLabel={t('decide.screens.stepper.deferred.rateLabel')}
+              suffix="%"
+              decimal
+              maxLength={5}
+            />
+            {afterBad ? <Note tone="warn">{t('decide.screens.common.fieldError.rateRange')}</Note> : null}
+            {deferredAsked && typedAfter === null && !afterBad ? <Note tone="warn">{t('decide.screens.stepper.deferred.rateMissing')}</Note> : null}
+            <Text style={small}>{t('decide.screens.stepper.deferred.helper')}</Text>
+            {d.rateAfterText === '' ? <Text testID="deferred-rate-example" style={small}>{t('decide.v3.tax.exampleRate')}</Text> : null}
+          </View>
+        ) : null}
+
+        {d.deferred ? null : <FieldLabel>{t('decide.screens.sheetsInput.plan.rate')}</FieldLabel>}
+        {d.deferred ? null : <View style={styles.rateRow}>
           <View style={styles.rateField}>
             <Field
               value={showExample ? percentText(EXAMPLE_APR) : d.rateText}
@@ -323,9 +390,9 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
               {t('decide.screens.sheetsInput.plan.exampleTag')}
             </Text>
           ) : null}
-        </View>
-        {rateBad ? <Note tone="warn">{t('decide.screens.common.fieldError.rateRange')}</Note> : null}
-        {usingExample ? <WhyLine testID="plan-rate-why">{t('decide.v3.tax.exampleRate')}</WhyLine> : null}
+        </View>}
+        {rateBad && !d.deferred ? <Note tone="warn">{t('decide.screens.common.fieldError.rateRange')}</Note> : null}
+        {usingExample && !d.deferred ? <WhyLine testID="plan-rate-why">{t('decide.v3.tax.exampleRate')}</WhyLine> : null}
 
         <FieldLabel>{t('decide.screens.sheetsInput.plan.fees')}</FieldLabel>
         <WhyLine testID="plan-fees-why">{t('decide.v3.plan.feesVary')}</WhyLine>
@@ -384,6 +451,17 @@ function PlanForm({ check, currency, today, nextPayday = null, itemKind = 'other
             <Text style={small}>
               {t('decide.screens.sheetsInput.plan.resultSub', { interest: formatMoney(card.interest), date: formatDate(card.firstDate), until: formatDate(card.endDate) })}
             </Text>
+            {backCharge === null ? null : (
+              <View testID="back-charge-row" accessible accessibilityRole="text" style={[styles.backRow, { backgroundColor: stateColors.tight.tint }]}>
+                <View style={styles.badge}>
+                  <Glyph name="stateTight" size={16} color={stateColors.tight.color} />
+                  <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: stateColors.tight.color }}>{t('decide.screens.stepper.deferred.warning')}</Text>
+                </View>
+                <Text style={{ ...textRole(pairing, 'body'), color: stateMuted }}>
+                  {t('decide.v3.fact.back_charge_cost', { amount: formatMoney(backCharge.amount), date: formatDate(backCharge.endDate) })}
+                </Text>
+              </View>
+            )}
             {/* 06.1-60 (G-10): the interest sentence and the APR line open under More, under the result. */}
             {Number(card.interest) > 0 || usingExample ? (
               <MoreRow testID="plan-result-more">
@@ -422,4 +500,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: space.cardPad, padding: space.cardPad, gap: space.gapSm },
   rateRow: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
   rateField: { flex: 1 },
+  dateBox: { minHeight: 52, borderRadius: space.cardPad, paddingHorizontal: space.cardPad, justifyContent: 'center' },
+  backRow: { padding: space.gapMd, borderRadius: space.gapMd, gap: space.gapSm },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: space.gapSm },
 });

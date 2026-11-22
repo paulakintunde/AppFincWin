@@ -40,6 +40,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'interest_rate',
     // 08 (D-13): a joint account
     'is_shared', 'tombstone_of',
+    // 08.1-22/23: what a joint account is for, and whether its savings can be spent or are the shared safety net
+    'joint_purpose', 'joint_savings_spendable', 'joint_safety_net',
   ],
   categories: ['id', 'owner_id', 'builtin_key', 'name', 'color_key', 'is_system', 'archived_at', 'monthly_cap', 'icon_key', 'created_at', 'updated_at'],
   category_rules: [
@@ -73,6 +75,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   transaction_splits: ['id', 'transaction_id', 'household_id', 'member_id', 'former_member_key', 'position', 'share', 'weight_snapshot', 'created_at'],
   transaction_member_categories: ['transaction_id', 'user_id', 'household_id', 'category_id'],
   household_split_defaults: ['id', 'household_id', 'category_ref', 'rule', 'created_at', 'updated_at'],
+  // 08.1-22: the group's spending rule, setup and set shares (version is internal and not exported)
+  household_spend_rules: ['household_id', 'rule', 'setup', 'shares', 'updated_by', 'created_at', 'updated_at'],
   settlements: [
     'id', 'household_id', 'kind', 'payer_id', 'receiver_id', 'payer_former_key', 'receiver_former_key', 'amount', 'currency', 'status',
     'created_by', 'payer_account_id', 'receiver_account_id', 'payer_tx_id', 'receiver_tx_id', 'payer_fx_rate', 'receiver_fx_rate',
@@ -154,6 +158,9 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   decide_answers: [
     'id', 'household_id', 'created_by', 'kind', 'key', 'amount', 'bool_value', 'on_date', 'check_id', 'deleted_at', 'created_at', 'updated_at',
   ],
+  // 08.1-03/07 (CMP-F19): who counts whose money in their own checks, and which of my safety nets I share
+  decide_partner_optins: ['household_id', 'owner_id', 'partner_id', 'enabled', 'updated_at'],
+  safety_net_shares: ['household_id', 'goal_id', 'owner_id', 'enabled', 'rounded_saved', 'updated_at'],
 };
 
 /** Tables src/db reads that hold no user data of their own, each with the reason. */
@@ -161,6 +168,7 @@ export const NOT_USER_DATA: readonly string[] = [
   'transactions_active', // a view over transactions (not-deleted rows); exported through transactions
   'statement_periods_live', // a view over statement_periods; exported through statement_periods
   'household_event_reads', // 08-13: one last-opened time per user for the notices badge; no content, erased by FK cascade
+  'partner_figures', // 08.1-03: a derived, rounded "left so far" the owner's device publishes; no client read grant (RPC only); erased with the opt-in and by FK cascade
   'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
   // 09: plan and billing bookkeeping. Server-held, written by edge functions, no client read in src/db; the person's plan
   // facts reach the server export in Phase 10 (09-18 builds the CSV from this manifest).

@@ -50,7 +50,13 @@ export const home = {
     howSplit: 'How new shared lines are split',
     categoryDefaults: 'Category defaults',
     sharedAccounts: 'Shared accounts',
+    // 08.1-23 (Q1): draft copy, wording sign-off in plan 14.
+    spending: 'How spending is split',
   },
+  // 08.1-23 (Q9): joint accounts with no purpose yet. Draft copy, wording sign-off in plan 14.
+  purposeMissing_one: '{{count}} joint account doesn’t have a purpose set yet. Until then, it counts as everyday spending.',
+  purposeMissing_other: '{{count}} joint accounts don’t have a purpose set yet. Until then, they count as everyday spending.',
+  purposeMissingAction: 'Go to Shared accounts',
   scope: {
     /** 08-25: the switch's group name for screen readers. */
     a11y: 'Whose figures to show',

@@ -6,7 +6,7 @@
 import { minorUnits, type MinorUnits } from '../../../money/types';
 import { bisectLargest, type BisectResult } from '../../bisectCore';
 import type { MonthModel } from '../types';
-import { buyLater } from './futures';
+import { alignBuyLater, buyLater } from './futures';
 
 export interface ExplorerLevers {
   readonly everydayCut: MinorUnits;
@@ -24,6 +24,11 @@ export function explore(input: {
    * unspent money; set this when the answer is "not yet" so a covered price still waits a month, as the answer does.
    */
   readonly answerWaits?: boolean;
+  /**
+   * 08.1 D-05: the answer's own ready-by month (null: no date inside a year). Buy it later follows it, moved by what the levers
+   * save, so at lever 0 it is exactly the answer's month. Absent: the usual-month figure, as before.
+   */
+  readonly answerReadyBy?: string | null;
 }): { readonly typicalLeft: MinorUnits | null; readonly buyLater: ReturnType<typeof buyLater>; readonly clamped: boolean } {
   const { levers } = input;
   if (levers.everydayCut < 0 || levers.flexibleSavingCut < 0 || input.flexibleSaving < 0) {
@@ -35,19 +40,25 @@ export function explore(input: {
   const clamped = savingCut < levers.flexibleSavingCut || everydayCut < levers.everydayCut;
   const typicalLeft =
     input.month.typicalLeft === null ? null : minorUnits(input.month.typicalLeft + everydayCut + savingCut);
-  return {
-    typicalLeft,
-    buyLater: buyLater({
+  const later = (left: MinorUnits | null, lift: MinorUnits): ReturnType<typeof buyLater> =>
+    buyLater({
       price: input.price,
       unspent: input.unspent,
-      typicalLeft,
+      typicalLeft: left,
       month: input.month.month,
       // D-12: the season follows the slider; the lever lifts every month of the seasonal walk (saved = max(0, left + lift))
       // Stryker disable next-line ConditionalExpression: an absent picture or a picture key holding undefined reads the same in buyLater
       ...(input.month.incomePicture === undefined ? {} : { picture: input.month.incomePicture }),
-      lift: minorUnits(everydayCut + savingCut),
+      lift,
       ...(input.answerWaits === true ? { waitsAtLeastAMonth: true } : {}),
-    }),
+    });
+  const usual = later(typicalLeft, minorUnits(everydayCut + savingCut));
+  return {
+    typicalLeft,
+    buyLater:
+      input.answerReadyBy === undefined
+        ? usual
+        : alignBuyLater(usual, later(input.month.typicalLeft, minorUnits(0)), input.month.month, input.answerReadyBy),
     clamped,
   };
 }

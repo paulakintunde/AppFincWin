@@ -10,6 +10,8 @@ import { SwipeBack } from '@/features/navigation/SwipeBack';
 import { isSwipeBackRoute } from '@/features/navigation/swipeBackGesture';
 import { useReduceMotion } from '@/theme/motion';
 import { DECIDE_OPEN } from '@/features/decide/availability';
+import { TesterBuildProvider } from '@/features/decide/screens/answer/TesterBuildProvider';
+import { useDecideServerSwitch } from '@/features/decide/useDecideServerSwitch';
 import { harnessEnabled } from '@/features/devHarness/harnessEnabled';
 import { useNotificationObserver } from '@/features/decide/notifications/useNotificationObserver';
 import { useConsent } from '@/features/consent/useConsent';
@@ -31,6 +33,7 @@ import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
 import { HouseholdRealtimeHost } from '@/data/realtime/HouseholdRealtimeHost';
 import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost';
+import { AppPartnerFigurePublisher } from '@/features/household/decide/PartnerFigurePublisher';
 import { PlanHost } from '@/features/plans/PlanHost';
 import { LockHost } from '@/features/plans/LockHost';
 import { LockedSheetProvider } from '@/features/plans/useWriteGate';
@@ -49,6 +52,8 @@ export default function AppLayout() {
   const pathname = usePathname();
   const firstRunPending = useFirstRunPending();
   const reduceMotion = useReduceMotion();
+  // 08.1-05 (APP-21): Decide switched off for everyone from the server; the routes close and the notification tap does not route.
+  const { off: decideOff } = useDecideServerSwitch();
   const animation = Platform.OS === 'android' ? (reduceMotion ? 'none' : 'slide_from_right') : 'default';
 
   if (loading) {
@@ -74,6 +79,7 @@ export default function AppLayout() {
           <AndroidBackHandler />
           {/* One FAB registry for the tabs and the outer stack: You > Add runs the quick actions the tabs register (05-98). */}
           <FabProvider>
+            <TesterBuildProvider>
             <LockedSheetProvider>
             <View style={{ flex: 1 }}>
               <Stack
@@ -123,11 +129,13 @@ export default function AppLayout() {
                 <Stack.Screen name="household/split-default" />
                 <Stack.Screen name="household/category-defaults" />
                 <Stack.Screen name="household/shared-accounts" />
+                {/* 08.1-23: How spending is shared */}
+                <Stack.Screen name="household/spending" />
                 {/* 08-24 (HH-13): leaving and removing, from Household home and the member sheet; outside the Decide gate. */}
                 <Stack.Screen name="household/leave" />
                 <Stack.Screen name="household/remove" />
                 {/* quick-261025-f46: today's Decide screens stay unreachable, deep links included, while DECIDE_OPEN is false. */}
-                <Stack.Protected guard={DECIDE_OPEN}>
+                <Stack.Protected guard={DECIDE_OPEN && !decideOff}>
                   {/* 06.1-28 (D-05): the one Decide. Old paths (check/[id], settings, open, changes, lines, pots, setup/rough, setup/first-check) are redirect files. */}
                   <Stack.Screen name="setup/rough" />
                   <Stack.Screen name="setup/first-check" />
@@ -174,7 +182,7 @@ export default function AppLayout() {
               <UndoToastHost />
               {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent.
                   quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id] (a redirect to the answer). */}
-              <DecideNotificationObserver enabled={DECIDE_OPEN && consentAnswered({ loading, consent })} />
+              <DecideNotificationObserver enabled={DECIDE_OPEN && !decideOff && consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
               <HouseholdRealtimeHost />
               {/* 09-10: store identity, plan Realtime and foreground refresh. */}
@@ -182,9 +190,12 @@ export default function AppLayout() {
               <LockHost />
               {/* 08-24 (D-28): "You're no longer in ..." once, for a person the owner removed. */}
               <RemovedNoticeHost />
+              {/* 08.1-10: a partner's figure and the shared net's saved amount refresh from anywhere in the app, not only Household home. */}
+              <AppPartnerFigurePublisher />
               <DeviceHomeCurrencyDefault />
             </View>
             </LockedSheetProvider>
+            </TesterBuildProvider>
           </FabProvider>
         </SheetOverlayProvider>
       </ShellLayoutProvider>

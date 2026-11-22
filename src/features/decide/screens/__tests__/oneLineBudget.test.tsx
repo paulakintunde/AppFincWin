@@ -37,6 +37,7 @@ let mockBars: ReturnType<typeof pastMonthBars> = [];
 let mockInputs: unknown = null;
 const mockPush = jest.fn();
 
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }), useHouseholdScopeSource: () => ({ source: undefined, pending: false }) })); // 08.1-10: WhoPays reads the household; keep the Supabase client out
 // 09-17: DecideHome's write gate reads the plan state; a writable home here.
 jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/ui/haptics', () => ({ hapticTick: jest.fn(), hapticTap: jest.fn(), hapticWarn: jest.fn() }));
@@ -294,7 +295,7 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
     await renderHome();
     expect(sentences('home-footer')).toEqual([]);
     expect(within(screen.getByTestId('home-footer')).getByText(LEGAL)).toBeTruthy();
-    expect(screen.queryByText(/^Answers use /)).toBeNull();
+    expect(within(screen.getByTestId('home-footer')).queryByText(/^Answers use /)).toBeNull(); // 08.1-21: the stage card elsewhere on home says "Answers use your last N months..."
     await fireEvent.press(screen.getByTestId('home-footer-worked'));
     const note = await screen.findByTestId('worked-note');
     expect(note).toHaveTextContent(`${home.footerRecords} ${home.footerUpdates}`);
@@ -320,6 +321,7 @@ describe('one short line per card on Decide home (06.1-59, G-10)', () => {
         onChoice={jest.fn()}
         onFinishSetup={jest.fn()}
         onFromEstimates={jest.fn()}
+        onImport={jest.fn()}
       />,
     );
     await screen.findByTestId('answer-not-ready');

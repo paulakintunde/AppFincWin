@@ -9,6 +9,7 @@ import {
   homeThresholds,
   legacyLimits,
   cadenceOfFreq,
+  nextPayDate,
   type AccountKind,
   type AccountUse,
   type Envelope,
@@ -63,6 +64,7 @@ import {
   type InputsRow,
   type InputsSource,
 } from './buildInputsParts';
+import { jointToHome, jointWithPending, viewerRows, withHouseholdScope } from './householdScope';
 import type { V3SeriesExtra, V3SettingsSource } from './types';
 
 const NO_EXTRA: V3SeriesExtra = { pay_group: null, counts_as: null, income_kind: null, saving_mode: null, typical_choice: null, status: null };
@@ -80,7 +82,9 @@ const ACCOUNT_KIND: Readonly<Record<string, AccountKind>> = { checking: 'checkin
 
 const cashLike = (kind: string | undefined): boolean => kind === 'cash' || kind === 'checking' || kind === 'savings';
 
-export function buildInputs(source: InputsSource, settings: V3SettingsSource | null): V3Inputs {
+export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource | null): V3Inputs {
+  // 08.1-08 (T-08.1-26): with a household source, only the viewer's own and shared lines are ever read, in either scope.
+  const source: InputsSource = rawSource.household === undefined ? rawSource : { ...rawSource, rows: viewerRows(rawSource.rows, rawSource.household.viewerId), upcomingRows: viewerRows(rawSource.upcomingRows, rawSource.household.viewerId) };
   const { today, homeCurrency: home } = source;
   const st = source.settings;
   const moneyUsable = settingsMoneyUsable(st, home);
@@ -230,6 +234,7 @@ export function buildInputs(source: InputsSource, settings: V3SettingsSource | n
       categoryId,
       isHousing: categoryKey(categoryId) === 'Housing',
       savingMode: saving ? (x.saving_mode ?? 'fixed') : null,
+      ...((seriesRow.get(id) as InputsSource['series'][number]).amount_kind === 'expected' ? { amountKind: 'expected' as const } : {}), // 08.1-09 D-09; every id passed to make() comes from source.series
     };
   };
 
@@ -430,6 +435,7 @@ export function buildInputs(source: InputsSource, settings: V3SettingsSource | n
         kind: ACCOUNT_KIND[a.kind] ?? 'other',
         overdraftLimit: converted === null ? null : minorUnits(converted.amount),
         overdraftRate: rateOf(a.overdraft_rate),
+        ...(a.is_shared === true ? { joint: true } : {}), // 08.1-08 UX-21: an account in both names
       },
     ];
   });
@@ -499,7 +505,7 @@ export function buildInputs(source: InputsSource, settings: V3SettingsSource | n
   const subdivision = source.regionSubdivision;
   const thresholds: HomeThresholds = homeThresholds(home, usdRateOf(source, home));
 
-  return {
+  const built: V3Inputs = {
     asOf: today,
     currency: currencyCode(home),
     region: source.region,
@@ -534,4 +540,14 @@ export function buildInputs(source: InputsSource, settings: V3SettingsSource | n
     // D-142: the stored state or province passes with whatever country `region` resolved to; no country -> null.
     regionSubdivision: source.region !== null && typeof subdivision === 'string' && SUBDIVISION_PATTERN.test(subdivision) ? subdivision : null,
   };
+  // 08.1-08: the household's pooled money (Household scope only), its caveat facts and the settle-up facts; untouched with no source.
+  // 08.1-22: and the viewer's slice of each joint account (both scopes): the joint figures come in the account's own currency with what is
+  // still to come out of them, are converted here, and replace what the viewer's own records hold for those accounts.
+  const hh = source.household;
+  const jointKeys = hh === undefined ? [] : (hh.memberKeys ?? [hh.viewerId, ...hh.partners.map((p) => p.key)]);
+  const joint =
+    hh?.joint === undefined || hh.joint.length === 0
+      ? []
+      : jointToHome(jointWithPending(hh.joint, [...source.rows, ...source.upcomingRows], today, nextPayDate(built.series, today)), jointKeys, toHome);
+  return withHouseholdScope(built, hh, joint);
 }

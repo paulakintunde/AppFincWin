@@ -875,6 +875,8 @@ const en = {
     },
     row: {
       foreignA11y: 'originally {{amount}}',
+      yourShare: 'Your share {{amount}}',
+      yourShareA11y: 'your share {{amount}}',
     },
     detail: {
       status: 'Status',
@@ -944,6 +946,7 @@ const en = {
       a11y: '{{figure}} left after everything, {{entries}}. In {{in}}. Out {{out}}.',
       a11yBalance: '{{figure}} left after everything, {{entries}}. {{note}}.',
       a11yStillToCome: '{{amount}} still to come.',
+      shareNote: 'Your share of shared expenses.',
     },
     display: {
       title: 'Display',
@@ -2059,7 +2062,11 @@ const en = {
         notYetNotCovered: {
           chip: 'Not yet',
           title: 'Not yet. Your spare money and extra savings don’t cover this.',
-          body: 'Based on your typical pace, it could be covered by {{readyMonth}}.', // 06.1-83: no count (owner, 2026-11-14)
+          // 08.1-14 (D-05): the ready date is the first start that keeps the account at or above {{zero}} for its own 90 days (08.1-06).
+          body: 'Affordable by {{readyMonth}}. Based on your records, buying then keeps your balance above {{zero}} for at least 90 days.',
+          // 08.1-14 (owner answer 5): the short line where the D-05 search did not read the date (a sale or replace, pay from history,
+          // capped or seasonal pay; Result.readyByUntested). The 90-day sentence is not said there.
+          bodyUntested: 'Affordable by {{readyMonth}}.',
         },
         monthlyShort: {
           chip: 'Short each month',
@@ -2304,6 +2311,8 @@ const en = {
         quoted_differs: 'The quoted payment of {{quoted}} differs from the {{computed}} worked out here.',
         implied_rate: 'The figures given imply about {{rate}}%\u00A0a year.',
         deferred_interest_term: 'If the balance isn’t cleared by the end of the pause, interest back to the start could apply.',
+        back_charge_cost: 'If you don’t pay it off by {{date}}, you’ll be charged about {{amount}} in back interest.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
+        promo_cleared: 'The promotion ends on {{date}}. Paid off by then, no interest is charged.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
         at_todays_rate: 'Converted from {{currency}} at today’s rate.',
         low_month: 'In {{month}}, a low month, about {{left}} remains against {{monthly}} a month.',
         // 05.4 FIN-08 (05.4-23, QE-04 / QE-14): savings are tried first; the safety net only ever by name.
@@ -2336,6 +2345,10 @@ const en = {
         overdraft_not_cleared_no_pay: 'No pay is due in the next 90 days, so {{account}} would still be {{below}} below {{zero}}.',
         overdraft_cost_90d: 'At {{rate}}%, the days below {{zero}} cost about {{cost}}. That counts the next 90 days. This is an estimate.',
         wait_clears: 'Waiting until {{month}} keeps the account above {{zero}}.',
+        not_within_year: 'Not within a year at your current spending, income, and saving pace.', // 08.1 D-06 (draft: goes to the wording sign-off)
+        below_zero_without: 'Your account goes below {{zero}} on or before {{date}} even without this.', // 08.1 D-07, shown as the BelowZeroLine (08.1-14; draft: wording sign-off)
+        below_zero_later_without: 'Even without this, your balance drops below {{zero}} on or before {{date}}.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
+        below_zero_later_with: 'This puts your account balance below {{zero}} on or before {{date}}.', // 08.1-13; 'on' per owner Q2 A (08.1-14; draft: wording sign-off)
         overdraft_repeat: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays. At {{rate}}%, that costs about {{cost}} over the next 90 days.',
         overdraft_repeat_no_rate: 'Without this purchase, {{account}} still goes below {{zero}} before {{count}} of your next {{of}} paydays.',
         other_account_overdrawn: 'Your {{account}} account is {{below}} below {{zero}}. At {{rate}}%, that costs about {{monthlyCost}} a month.',
@@ -2372,14 +2385,16 @@ const en = {
       },
       // 05.4 UX-04 / CMP-F12: the one plain sentence under every answer, never more confident than the answer.
       basis: {
-        partial: 'Based on {{used}} of the {{lookedFor}} months of records Decide looks for.',
-        records: 'Based on {{months}} months of your records, up to {{date}}.',
-        quickEstimates: 'Based on your quick estimates, not your records.',
+        partialOne: 'Based on your one full month of records, through {{date}}.',
+        partial: 'Based on your last {{used}} months of records, through {{date}}.',
+        records: 'Based on your last {{months}} months of records, through {{date}}.',
+        quickEstimates: 'Based on the numbers you typed in, not your account records.',
+        payWindow: 'Income is averaged over your last {{months}} months.',
         recordsWithReason: {
-          user_said_cover: 'Based on {{months}} months of your records, up to {{date}}, and on what you said about covering it.',
-          quick_estimates: 'Based on {{months}} months of your records, up to {{date}}, and your quick estimates.',
-          pay_missed: 'Based on {{months}} months of your records, up to {{date}}, leaving out pay that hasn’t arrived.',
-          close_to_line: 'Based on {{months}} months of your records, up to {{date}}. This is close to your limit.',
+          user_said_cover: 'Based on your last {{months}} months of records, through {{date}}, and on what you said about how you’ll pay for it.',
+          quick_estimates: 'Based on your last {{months}} months of records, through {{date}}, plus your quick estimates.',
+          pay_missed: 'Based on your last {{months}} months of records, through {{date}}, not counting pay that hasn’t come in yet.',
+          close_to_line: 'Based on your last {{months}} months of records, through {{date}}. This is close to your limit.',
         },
       },
       // 05.4 FIN-25: at most one next step, stated as a fact.
@@ -2400,6 +2415,7 @@ const en = {
         first_payment_not_chosen: 'The first payment date isn’t chosen yet.',
         pause_interest_not_answered: 'Whether interest builds during a pause isn’t answered yet.',
         plan_rate_missing: 'The plan’s rate isn’t entered yet.',
+        promo_end_missing: 'The promotion’s end date isn’t entered yet.', // 08.1-11 FIN-12 (draft: goes to the wording sign-off)
         everyday_unknown: 'Everyday spending isn’t known yet.',
         legacy_invest_check: 'This older investing check needs its figures entered again.',
         share_invalid: 'The share given isn’t a valid amount.',
@@ -2430,7 +2446,9 @@ const en = {
         irregular_income: 'Your income changes from month to month. This counts your lower months.',
         close_to_line: 'This is close to your limit. A small change in any figure can change the answer.',
         expected_bills: 'Some bills this month are expected, not yet confirmed paid.',
-        shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21 interim couples note; emitted from Phase 8
+        household_not_shared: 'Only your money is counted. {{names}} hasn’t shared theirs.', // D-03 (08.1-08), wording sign-off pending
+        shared_money: 'Money in {{account}} may be planned by someone else too.', // UX-21, emitted from 08.1-08
+        share_zero_by_rule: 'Under {{rule}}, your share of the joint money is {{zero}} this month.', // 08.1-25 one-earner fix (Q2 A), wording sign-off pending (plan 14)
         rate_estimated: 'This rate is FincWin’s estimate from the payment, not the rate on your agreement.',
         long_plan: 'Over {{months}} months, a change in income or costs matters more than it does today.',
         // D-64 (5): the figures a big purchase rests on, then the one line under them.

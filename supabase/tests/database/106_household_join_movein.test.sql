@@ -186,7 +186,9 @@ select extensions.is(
         'household_former_members', 'member_departures', 'decide_partner_optins', 'partner_figures', 'safety_net_shares',
         -- Phase 9 plan records stay with the household: its plan, the one-trial-per-household ledger, the join requests
         -- waiting on it, and the leave history the switch rule reads (the household that was left).
-        'household_plans', 'trial_ledger', 'plan_join_requests', 'household_leave_log')),
+        'household_plans', 'trial_ledger', 'plan_join_requests', 'household_leave_log',
+        -- 08.1-22: the household's spending rule.
+        'household_spend_rules')),
   null, 'every household_id table either moves with a person (hh_move_tables) or is a listed household table');
 select extensions.is((select count(*)::int from pg_constraint
    where conname in ('transactions_account_same_household', 'recurring_series_account_same_household', 'statement_periods_account_same_household')

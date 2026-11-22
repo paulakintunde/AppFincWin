@@ -57,5 +57,112 @@ export const rules = {
     loadFailed: 'The balances couldn’t be loaded. Try again when you’re back online.',
     hasMemberLines: 'Other members have lines on this account, so it stays joint.',
     notCreator: 'Only the person who made this account can change whether it is joint.',
+    // 08.1-23 (Q9): a joint account nobody has given a purpose yet. Draft copy, wording sign-off in plan 14.
+    purposeNotSet: 'Purpose not set',
+    purposeLine: '{{purpose}} · {{madeBy}}',
+  },
+  // 08.1-23 (CMP-F19, owner 2026-11-21 Q1-Q6): "How spending is shared". Draft copy, wording sign-off in plan 14.
+  spending: {
+    title: 'How spending is split',
+    intro: 'This sets how much money each person’s checks count. Bills are split separately.',
+    setup: {
+      label: 'How your accounts are set up',
+      separate: {
+        label: 'Separate accounts',
+        helper: 'Each person keeps their own separate accounts.',
+        tip: 'Checks start with each person’s own money. The usual rule for this setup is “What each person brings.”',
+      },
+      joint: {
+        label: 'One joint account',
+        helper: 'All money goes in and out of one shared account.',
+        tip: 'Checks split the joint money. The usual rule for this setup is “Same as the bill split.”',
+      },
+      mixed: {
+        label: 'Mixed',
+        helper: 'A shared account for shared costs, and each person’s own accounts for everything else.',
+        tip: 'Personal money stays personal. Joint money is split using the rule below.',
+      },
+      inferred: 'Based on your accounts',
+    },
+    ruleLabel: 'How each check counts money',
+    defaultTag: 'Default for this setup',
+    bring: {
+      label: 'What each person brings',
+      helper: 'Each person’s checks count their own money plus their share of any joint account, never someone else’s personal money.',
+      tip: 'A check only counts your own money and your share of joint money, never another person’s income.',
+    },
+    custom: {
+      label: 'Custom spending split',
+      helper: 'The group chooses each person’s share of the money.',
+      tip: 'Each check counts the share of everyone’s money set by the group for that person.',
+    },
+    bill: {
+      label: 'Same as the bill split',
+      helper: 'Each person’s share matches the bill split ({{rule}}).',
+      tip: 'Each check counts each person’s share of everyone’s money using the bill split.',
+    },
+    shares: {
+      title: 'Each person’s share',
+      tip: 'These shares set how much of everyone’s money each check counts, and must add up to 100%.',
+      total: 'Total {{total}}%',
+      notHundred: 'Shares add up to {{total}}%. Spending shares need to total 100%.',
+      // owner 2026-11-21 (Q5): the percent in money, for people who find percentages hard.
+      money: '{{percent}}% · about {{amount}} of {{total}} shared',
+    },
+    outOfDate: 'Update spending shares because someone joined or left. Until you do, each check counts what each person brings in.',
+    outOfDateTip: 'The old shares don’t match the current group. Until you update them, checks count what each person brings in.',
+    update: 'Update shares',
+    needsUpdating: 'Needs updating',
+    save: 'Save',
+    saved: 'Spending rule saved',
+    conflict: '{{name}} just changed this. You’re seeing the latest version.',
+    conflictNoName: 'Someone just changed this. You’re seeing the latest version.',
+  },
+  // 08.1-25 (owner one-earner fix 2026-11-21, Q2 A, Q3 A, Q4 A): a member's share of the joint money is {{zero}} because of the rule.
+  // The app suggests equal shares; the group picks. Draft copy, wording sign-off in plan 14.
+  zeroShare: {
+    line: 'Under “{{rule}},” your share of joint money is {{zero}} this month. With equal shares, everyone counts the same amount.',
+    settings: 'With this rule, {{name}}’s share of joint money is {{zero}} this month. With equal shares, everyone counts the same amount.',
+    settingsMany: 'With this rule, {{names}} have a {{zero}} share of joint money this month. With equal shares, everyone counts the same amount.',
+    settingsYou: 'With this rule, your share of joint money is {{zero}} this month. With equal shares, everyone counts the same amount.',
+    action: 'See equal shares',
+    notNow: 'Not now',
+  },
+  // 08.1-23 (owner 2026-11-21): the tap-to-explain line under a setting. Draft copy, wording sign-off in plan 14.
+  explain: {
+    button: 'What this means',
+    a11y: 'What “{{name}}” means',
+    less: 'Less',
+  },
+  // 08.1-23 (CMP-F19, owner 2026-11-21 Q8-Q10): what a joint account is for. Draft copy, wording sign-off in plan 14.
+  jointPurpose: {
+    title: 'What is {{account}} used for?',
+    intro: 'This controls how this money is counted in everyone’s checks.',
+    rowLabel: 'What it is for',
+    bills: {
+      label: 'Joint household bills',
+      helper: 'Money set aside for shared bills. Only money left over after upcoming bills before your next payday counts as spare.',
+      tip: 'Checks only count money left after bills due before your next payday.',
+    },
+    savings: {
+      label: 'Joint savings',
+      helper: 'Money saved together. Checks ignore it unless the group marks it as available to spend.',
+      tip: 'Checks leave this out unless it’s marked as available to spend.',
+    },
+    everyday: {
+      label: 'Joint everyday spending',
+      helper: 'Money for everyday expenses. Each person’s checks count their share of it.',
+      tip: 'Checks count this money, split across the group using the spending rule.',
+    },
+    spendable: 'Can be spent',
+    spendableTip: 'When turned on, checks count this savings split by the spending rule.',
+    safetyNet: 'This is our safety net',
+    safetyNetTip: 'When turned on, this is the group’s safety net. It’s counted once for everyone and checks never spend it.',
+    save: 'Save',
+    saved: 'Saved',
+    notJoint: 'This account is no longer a joint account.',
+    notMember: 'This account is not in your household any more.',
+    conflict: 'Someone just changed this. You’re seeing the latest version.',
+    waiting: 'Saving the account first…',
   },
 } as const;

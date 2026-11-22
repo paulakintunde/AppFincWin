@@ -64,6 +64,12 @@ describe('status colours meet WCAG AA (4.5:1) text contrast (02-polish item 5)',
   }
 });
 
+describe('08.1-21 stage chip', () => {
+  it('stage chip: ink on fill1 meets AA', () => {
+    expect(contrastRatio(colors.ink, colors.fill1)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
 describe('06.1 D-16 state colours', () => {
   const tones = Object.entries(stateColors);
   const grounds = { surface: colors.surface, canvas: colors.canvas, fill1: colors.fill1 } as const;

@@ -2,7 +2,7 @@
 // nowhere else; a line with no copy is dropped and reported through onMissing, never printed as a code.
 import { useMemo } from 'react';
 import { i18n, useT } from '@/i18n';
-import type { Result } from '@/engine/decide/v3';
+import type { Result, StageReading } from '@/engine/decide/v3';
 import { money as makeMoney } from '@/engine/money';
 import { useMoneyFormatter } from '@/ui/money/useMoneyFormatter';
 import { MissingCopyError, sayCaveats, sayResult, type Line, type SayDeps, type SayNames, type SaidResult } from '../logic/sayResult';
@@ -29,6 +29,7 @@ export const EMPTY_SAID: Said = Object.freeze({
   notices: [],
   facts: [],
   basis: null,
+  payWindow: null,
   caveat: null,
   caveatFigures: [],
   nextStep: null,
@@ -63,6 +64,7 @@ function useSayDeps(opts: UseSaidOptions): SayDeps {
         debt: names?.debt ?? FALLBACK_NAME,
         envelope: names?.envelope ?? FALLBACK_NAME,
         figure: names?.figure ?? FALLBACK_NAME,
+        member: names?.member ?? FALLBACK_NAME,
       },
       onMissing: onMissing ?? ((): void => undefined),
     }),
@@ -70,13 +72,15 @@ function useSayDeps(opts: UseSaidOptions): SayDeps {
   );
 }
 
-export function useSaid(result: Result | null, opts: UseSaidOptions): Said {
+export function useSaid(result: Result | null, opts: UseSaidOptions, reading?: StageReading | null): Said {
   const deps = useSayDeps(opts);
   const monthly = opts.monthly ?? null;
+  const stage = reading?.stage;
+  const payMonths = reading?.windowUsed.payWindowLonger === true ? reading.windowUsed.payMonths : null;
   return useMemo(() => {
     if (result === null) return EMPTY_SAID;
-    return { ...sayResult(result, deps), verdictValues: verdictValues(result, deps, { monthly }) };
-  }, [result, deps, monthly]);
+    return { ...sayResult(result, deps, { stage, payMonths }), verdictValues: verdictValues(result, deps, { monthly }) };
+  }, [result, deps, monthly, stage, payMonths]);
 }
 
 /** CO-D-64 (3): every caveat of the result as a sentence, for the About sheet. */

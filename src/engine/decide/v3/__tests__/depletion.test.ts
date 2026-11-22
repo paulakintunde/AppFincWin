@@ -3,7 +3,7 @@
  * corpus, golden/gen126-depletion.json) and the Riley and Leo plans, locked and unlocked, plus every branch of depletion.ts.
  */
 import { minorUnits } from '../../../money/types';
-import { depletionFacts, monthAlreadyShort, type DepletionInput } from '../depletion';
+import { belowZeroLaterFacts, belowZeroWithoutFacts, depletionFacts, monthAlreadyShort, placeBelowZeroWithout, type DepletionInput } from '../depletion';
 import { evaluate } from '../evaluate';
 import { NO_NET, type ResolvedNet } from '../safetyNet';
 import type { CheckV2, Fact, Result, Schedule, V3Inputs } from '../types';
@@ -196,5 +196,37 @@ describe('depletion.ts mutation kills (05.4-58)', () => {
     // shortfall 2,000 + 10,000 = 12,000 a month; (100,000 - 40,000) / 12,000 = 5 months
     expect(facts.find((f) => f.code === 'net_lasts')?.values).toEqual({ shortfall: 12_000, months: 5 });
     expect(facts.find((f) => f.code === 'net_lasts_without')?.values).toEqual({ months: 10 });
+  });
+});
+
+// 08.1 D-07 (08.1-06): the first day below 0 with no purchase
+describe('belowZeroWithoutFacts (D-07)', () => {
+  it('is one fact naming the first day below 0, and nothing when the account never goes below 0', () => {
+    expect(belowZeroWithoutFacts('2027-01-26')).toEqual([{ code: 'below_zero_without', values: { date: '2027-01-26', zero: 0 } }]);
+    expect(belowZeroWithoutFacts(null)).toEqual([]);
+  });
+});
+
+describe('belowZeroLaterFacts (08.1-13)', () => {
+  it('is one fact per kind with the date and the currency zero, and nothing for null', () => {
+    expect(belowZeroLaterFacts({ kind: 'without', date: '2027-02-28' })).toEqual([{ code: 'below_zero_later_without', values: { date: '2027-02-28', zero: 0 } }]);
+    expect(belowZeroLaterFacts({ kind: 'with', date: '2027-08-31' })).toEqual([{ code: 'below_zero_later_with', values: { date: '2027-08-31', zero: 0 } }]);
+    expect(belowZeroLaterFacts(null)).toEqual([]);
+  });
+});
+
+describe('placeBelowZeroWithout (CO-D-36 order)', () => {
+  const bz = belowZeroWithoutFacts('2027-01-26');
+  const notCleared = { code: 'overdraft_not_cleared', values: {} } as unknown as Fact;
+  const other = { code: 'month_left_after', values: {} } as unknown as Fact;
+  it('leads when there is no not-cleared warning', () => {
+    expect(placeBelowZeroWithout(bz, [other]).map((f) => f.code)).toEqual(['below_zero_without', 'month_left_after']);
+    expect(placeBelowZeroWithout(bz, []).map((f) => f.code)).toEqual(['below_zero_without']);
+  });
+  it('follows the not-cleared warning when that leads', () => {
+    expect(placeBelowZeroWithout(bz, [notCleared, other]).map((f) => f.code)).toEqual(['overdraft_not_cleared', 'below_zero_without', 'month_left_after']);
+  });
+  it('changes nothing when there is no below-zero fact', () => {
+    expect(placeBelowZeroWithout([], [notCleared, other])).toEqual([notCleared, other]);
   });
 });

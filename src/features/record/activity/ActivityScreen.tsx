@@ -167,7 +167,8 @@ export function ActivityScreen({
   const categories = useCategoryLookup(rc.userId ?? undefined);
   // 06.2 D-12 / L02: the over-cap cue, worked out once per month view from the whole month (not the filtered or
   // searched subset), so narrowing the list never moves the badge.
-  const monthRows = vm.monthView.rows;
+  // 08.1-04 (OWNER-Q4 default): category caps compare against the viewer's share in a household.
+  const monthRows = vm.monthFigures.rows;
   const overCap = useMemo(() => overCapRows(monthRows, categories.all), [monthRows, categories.all]);
   const { remove: bulkRemove } = useBulkDelete();
   const { markPaid: bulkMarkPaid } = useBulkMarkPaid();
@@ -333,6 +334,7 @@ export function ActivityScreen({
       onSwipeDelete={() => flow.requestDelete(row)}
       cardPosition={cardPosition}
       overCapBy={overCap.get(row.id) ?? null}
+      yourShare={vm.sharing && row.is_shared === true ? (vm.shareById.get(row.id) ?? null) : null}
       balanceNote={vm.balanceNotes.get(row.id)}
       incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey, seriesById) : null}
       onIncomeChipPress={(r) => setIncomeSheet({ row: r, newPayer: incomeChipState(r, rulesByKey, seriesById).state === 'new' })}
@@ -425,7 +427,8 @@ export function ActivityScreen({
           loading={vm.monthLoading}
           card={{
             position: vm.position,
-            unconvertedCount: vm.monthView.totals.unconvertedCount,
+            unconvertedCount: vm.monthFigures.totals.unconvertedCount,
+            shareNote: vm.sharing,
             entryCount: vm.entryCount,
             balanceNote: vm.balanceHeader,
             unavailable: vm.monthUnavailable,

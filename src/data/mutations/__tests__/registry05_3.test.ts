@@ -4,19 +4,21 @@ jest.mock('@/services/supabase', () => ({ supabase: {} }));
 
 import { QueryClient } from '@tanstack/react-query';
 import { registerMutationDefaults } from '../index';
-import { registerRecordBoughtMutations } from '../boughtWrite';
+import { registerDecideGoAheadMutations } from '../decideGoAhead';
 import { mutationKeys } from '@/data/keys';
 
+// 08.1-09: Record as bought has one writer (the Go ahead mutation); the old recordBought key is gone.
 describe('05.3 mutation registry', () => {
-  it('registerMutationDefaults does not throw and defines recordBought', () => {
+  it('registerMutationDefaults does not throw and defines the Go ahead write', () => {
     const qc = new QueryClient();
     expect(() => registerMutationDefaults(qc)).not.toThrow();
-    expect(qc.getMutationDefaults(mutationKeys.recordBought)?.mutationFn).toBeDefined();
+    expect(qc.getMutationDefaults(mutationKeys.decideGoAhead)?.mutationFn).toBeDefined();
+    expect('recordBought' in mutationKeys).toBe(false);
   });
 
-  it('registerRecordBoughtMutations registers on its own', () => {
+  it('registerDecideGoAheadMutations registers on its own', () => {
     const qc = new QueryClient();
-    registerRecordBoughtMutations(qc);
-    expect(qc.getMutationDefaults(mutationKeys.recordBought)?.mutationFn).toBeDefined();
+    registerDecideGoAheadMutations(qc);
+    expect(qc.getMutationDefaults(mutationKeys.decideGoAhead)?.mutationFn).toBeDefined();
   });
 });

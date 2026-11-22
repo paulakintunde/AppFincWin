@@ -12,7 +12,6 @@ import { showToast } from '@/state/undoToast';
 import { wrap } from '@/test/stepProps';
 import { ledgerRun } from '../../answer/__tests__/fixtures';
 import { BoughtScreen } from '../BoughtScreen';
-import { RunningCostOffers } from '../RunningCostOffers';
 import { SaveForItScreen } from '../SaveForItScreen';
 
 jest.setTimeout(30000);
@@ -35,7 +34,6 @@ jest.mock('@/shell/screen/DetailScreen', () => ({
 const mockSave = jest.fn();
 const mockUndo = jest.fn();
 const mockGoAhead = jest.fn();
-const mockAddBill = jest.fn();
 jest.mock('@/data/mutations/decideOutcome', () => ({
   ...jest.requireActual('@/data/mutations/decideOutcome'),
   useSaveForIt: () => ({ save: mockSave }),
@@ -46,6 +44,7 @@ const a = en.decide.screens.answerActions;
 const TODAY = '2026-11-11';
 const fmt = (n: number) => `$${n / 100}`;
 const fmtDate = (d: string) => `on ${d}`;
+const boughtOn = (d: string) => a.bought.boughtOn.replace('{{date}}', fmtDate(d));
 const checkRef = { id: 'c1', created_by: 'u1', household_id: 'h1', name: 'Item', inputs: {} } as never;
 
 const line = (id: string, on: boolean, amount = 5000): RunningCostLine => ({ id, amount: minorUnits(amount), everyMonths: 1, start: TODAY, end: null, on });
@@ -54,7 +53,6 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockSave.mockResolvedValue({ reminder: 'none', stepId: 'step-1', goalId: 'goal-1' });
   mockGoAhead.mockReturnValue('step-go');
-  mockAddBill.mockReturnValue('step-bill');
 });
 
 describe('SaveForItScreen', () => {
@@ -232,7 +230,6 @@ describe('BoughtScreen', () => {
   const r = ledgerRun('N02');
   const withCosts = (lines: RunningCostLine[]): CheckV2 => ({ ...r.check, runningCosts: lines });
   const props = (v3: CheckV2 = r.check): React.ComponentProps<typeof BoughtScreen> => ({
-    addBill: mockAddBill,
     goAhead: mockGoAhead,
     checkId: 'c1',
     ownerId: 'u1',
@@ -257,35 +254,19 @@ describe('BoughtScreen', () => {
     expect(a.bought.sub).toContain('No payment is made and no money moves');
   });
 
-  it('writes once on Add to records and never adds a bill before a tap', async () => {
+  it('writes once on Record purchase and sends no running cost, sale, payoff or stop that was not ticked', async () => {
     await wrap(<BoughtScreen {...props(withCosts([line('r1', true)]))} />);
-    await fireEvent.press(screen.getByText(a.bought.add));
+    await fireEvent.press(screen.getByText(a.bought.save));
     expect(mockGoAhead).toHaveBeenCalledTimes(1);
     expect(mockGoAhead.mock.calls[0][0]).toMatchObject({ checkId: 'c1', accountId: 'acc-1', homeCurrency: 'USD' });
+    expect(mockGoAhead.mock.calls[0][0].extras).toEqual({ runningCosts: [], stops: [], sale: null, payoff: null, goalId: null });
     expect(await screen.findByText(a.added.title)).toBeTruthy();
-    expect(mockAddBill).not.toHaveBeenCalled();
-  });
-
-  it('Skip adds nothing, Add as a bill adds one series, and off lines are never offered', async () => {
-    await wrap(<BoughtScreen {...props(withCosts([line('r1', true, 5000), line('r2', false, 7000), line('r3', true, 9000)]))} />);
-    await fireEvent.press(screen.getByText(a.bought.add));
-    // First offer: skip.
-    expect(await screen.findByText(/running cost, \$50 a month/)).toBeTruthy();
-    await fireEvent.press(screen.getByText(a.runningCost.skip));
-    expect(mockAddBill).not.toHaveBeenCalled();
-    // Second offer is r3 (r2 is off): add it.
-    expect(await screen.findByText(/running cost, \$90 a month/)).toBeTruthy();
-    expect(screen.queryByText(/\$70/)).toBeNull();
-    await fireEvent.press(screen.getByText(a.runningCost.add));
-    expect(mockAddBill).toHaveBeenCalledTimes(1);
-    expect(mockAddBill.mock.calls[0][0].line.id).toBe('r3');
-    expect(await screen.findByText(a.runningCost.done)).toBeTruthy();
   });
 
   it('06.1-63 (CB-4, CN-8): sits in the "I bought it" frame, before and after adding', async () => {
     await wrap(<BoughtScreen {...props()} />);
     expect(screen.getByTestId('detail-title').props.children).toBe(a.bar.bought);
-    await fireEvent.press(screen.getByText(a.bought.add));
+    await fireEvent.press(screen.getByText(a.bought.save));
     expect(await screen.findByText(a.added.title)).toBeTruthy();
     expect(screen.getByTestId('detail-title').props.children).toBe(a.bar.bought);
   });
@@ -294,12 +275,12 @@ describe('BoughtScreen', () => {
     const view = await wrap(<BoughtScreen {...props()} accounts={[]} accountsLoading />);
     expect(screen.getByText(a.bought.loadingAccounts)).toBeTruthy();
     expect(screen.queryByText(a.bought.noAccount)).toBeNull();
-    await fireEvent.press(screen.getByText(a.bought.add));
+    await fireEvent.press(screen.getByText(a.bought.save));
     expect(mockGoAhead).not.toHaveBeenCalled();
     await view.rerender(<BoughtScreen {...props()} accounts={[{ id: 'acc-2', name: 'Late' }, { id: 'acc-3', name: 'Other' }]} />);
     expect(screen.queryByText(a.bought.loadingAccounts)).toBeNull();
     expect(screen.getByRole('radio', { name: 'Late' }).props.accessibilityState).toMatchObject({ selected: true });
-    await fireEvent.press(screen.getByText(a.bought.add));
+    await fireEvent.press(screen.getByText(a.bought.save));
     expect(mockGoAhead.mock.calls[0][0]).toMatchObject({ accountId: 'acc-2' });
   });
 
@@ -326,16 +307,16 @@ describe('BoughtScreen', () => {
   it('06.1-77 (OQ-77-2 A): the Date row shows today, even for a check planned for later, and today is what is written', async () => {
     const planned = { ...r.evaluation, result: { ...r.evaluation.result, purchaseDate: '2026-12-01' } };
     await wrap(<BoughtScreen {...props()} evaluation={planned} />);
-    expect(screen.getByText(fmtDate(TODAY))).toBeTruthy();
-    await fireEvent.press(screen.getByText(a.bought.add));
+    expect(screen.getByText(boughtOn(TODAY))).toBeTruthy();
+    await fireEvent.press(screen.getByText(a.bought.save));
     expect(mockGoAhead.mock.calls[0][0].ctx).toMatchObject({ today: TODAY, date: TODAY });
   });
 
   it('06.1-77 (OQ-77-2 A): a picked earlier day is shown and written, and the Added line says it', async () => {
     await wrap(<BoughtScreen {...props()} />);
     await pickDay(2026, 11, 5);
-    expect(screen.getByText(fmtDate('2026-11-05'))).toBeTruthy();
-    await fireEvent.press(screen.getByText(a.bought.add));
+    expect(screen.getByText(boughtOn('2026-11-05'))).toBeTruthy();
+    await fireEvent.press(screen.getByText(a.bought.save));
     expect(mockGoAhead.mock.calls[0][0].ctx).toMatchObject({ today: TODAY, date: '2026-11-05' });
     expect(await screen.findByText(new RegExp('on 2026-11-05'))).toBeTruthy();
   });
@@ -343,26 +324,17 @@ describe('BoughtScreen', () => {
   it('06.1-77 (DC-3): a picked day after today is held at today', async () => {
     await wrap(<BoughtScreen {...props()} />);
     await pickDay(2026, 11, 20);
-    expect(screen.getByText(fmtDate(TODAY))).toBeTruthy();
-    await fireEvent.press(screen.getByText(a.bought.add));
+    expect(screen.getByText(boughtOn(TODAY))).toBeTruthy();
+    await fireEvent.press(screen.getByText(a.bought.save));
     expect(mockGoAhead.mock.calls[0][0].ctx).toMatchObject({ date: TODAY });
   });
 
   it('Undo after adding calls one undo and says nothing was added', async () => {
     await wrap(<BoughtScreen {...props()} />);
-    await fireEvent.press(screen.getByText(a.bought.add));
+    await fireEvent.press(screen.getByText(a.bought.save));
     await fireEvent.press(await screen.findByText(en.decide.screens.common.undo));
     expect(mockUndo).toHaveBeenCalledTimes(1);
     expect(mockUndo.mock.calls[0][0]).toMatchObject({ stepId: 'step-go' });
     expect(screen.getByText(a.added.undone)).toBeTruthy();
-  });
-});
-
-describe('RunningCostOffers', () => {
-  it('offers nothing when every line is off', async () => {
-    await wrap(
-      <RunningCostOffers addBill={mockAddBill} lines={[line('r1', false)]} itemName="Item" categoryId={null} ownerId="u1" householdId="h1" accountId="acc-1" currency="USD" timeZone="UTC" formatMoney={fmt} onDone={jest.fn()} />,
-    );
-    expect(screen.queryByTestId('running-cost-offer')).toBeNull();
   });
 });

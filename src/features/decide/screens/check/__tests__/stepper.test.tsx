@@ -13,7 +13,7 @@ import { withFromAnswer } from '../../logic/decideNav';
 import { CostsStep } from '../CostsStep';
 import { KindStep } from '../KindStep';
 import { PriceStep } from '../PriceStep';
-import { StepFrame, stepEntrance } from '../StepFrame';
+import { ENTRANCE_REST, ENTRANCE_START, StepFrame, stepEntrance } from '../StepFrame';
 import { KEY_DEALER_FEES } from '../oneOffPresets';
 import { KEY_PLAN_NAME } from '../planName';
 import { KEY_KIND, KEY_SKIPPED, stepHref } from '../useStepCheck';
@@ -64,6 +64,8 @@ jest.mock('@/data/mutations/decideChecks', () => ({
 let mockEvaluation: unknown = null;
 jest.mock('../../engine/useCheckEngine', () => ({ useCheckEngine: () => ({ evaluation: mockEvaluation, readyDate: () => null }) }));
 jest.mock('@/state/undoToast', () => ({ showToast: jest.fn() }));
+// 08.1-10: Who pays reads the household; here a household of one, so it renders nothing (whoPays.test covers it).
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }) }));
 
 const baseInputs = (over: Record<string, unknown> = {}) => ({ currency: 'USD', region: 'US', regionSubdivision: 'CA', series: [], debts: [], ...over });
 
@@ -248,6 +250,25 @@ describe('StepFrame motion and progress', () => {
 
   it('cross-fades 150 ms under Reduce Motion', () => {
     expect(stepEntrance('fwd', true)).toEqual({ kind: 'fade', duration: 150, from: 1 });
+  });
+
+  // 08.1-15 (Pixel 9): mounted at 0, the frame stayed one screen width off to the side whenever Android dropped the animation's
+  // updates, a blank step. It mounts at rest and only then moves to the start, so a dropped animation leaves it in view.
+  it('mounts at rest (on screen, opaque) and starts the slide or fade from the other end', () => {
+    expect(ENTRANCE_REST).toBe(1);
+    expect(ENTRANCE_START).toBe(0);
+  });
+
+  it.each([false, true])('ends on screen and opaque once the entrance has run (reduced motion: %s)', async (reduced) => {
+    seed('Used car');
+    mockReduced = reduced;
+    await wrap(<PriceStep id={ID} />);
+    const frame = await screen.findByTestId('step-frame');
+    await waitFor(() => {
+      const style = StyleSheet.flatten(frame.props.style) as { opacity?: number; transform?: { translateX?: number }[] };
+      expect(style.opacity ?? 1).toBe(1);
+      expect(style.transform?.[0]?.translateX ?? 0).toBe(0);
+    });
   });
 
   // 05.5 device fix (Pixel 6): a layout animation on the frame left it at its mount size on Android, so taps on "See the answer"

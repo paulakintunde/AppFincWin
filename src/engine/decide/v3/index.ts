@@ -5,6 +5,7 @@
  * Named exports only (no `export *` of modules) so the surface is reviewable and pinned by barrel.test.ts.
  */
 export type * from './types';
+export type { ShareScope, SplitRule } from '../share';
 export * from './constants';
 
 export { buildMonthModel } from '../../month/model/model';
@@ -33,6 +34,8 @@ export { buildSchedule } from './plan/schedule';
 export type { ScheduleInput, ScheduleOutcome } from './plan/schedule';
 export { monthlyEquivalentOf } from './plan/cadence';
 export { planCard, salesTaxOf } from './plan/planCard';
+export { deferredInterest } from './plan/deferredInterest';
+export type { DeferredInput, DeferredOutcome } from './plan/deferredInterest';
 export { priceAfterLines } from './plan/priceLines';
 export type { PriceLine } from './plan/priceLines';
 // 05.4 FIN-27 (D-19, ARC-25): the one owner of region tax defaults; the check sheet pre-fills the rate from it (screens in 08.1).
@@ -88,3 +91,10 @@ export type { ShadowAnswer, ShadowRun } from './shadow/run';
 // 06.1 D-21: quick-estimate lines for one check only
 export { withQuickLines, withQuickLinesPrepared, judgeWithQuickLines } from './quick/overlay';
 export type { QuickOverlay } from './quick/overlay';
+// 08.1-08 CMP-F19: the household's pooled money laid into the inputs
+export { nextPayDate } from './cash/path';
+export { applyHouseholdMoney, applyJointMoney, jointBackOf, layHouseholdMoney, HOUSEHOLD_LINE_ID, JOINT_LINE_ID } from './householdMoney';
+export type { HouseholdMoneyPlan } from './householdMoney';
+// 08.1-19 DCU-10: stages by data (read-model only; the screens never compute a stage)
+export { stageOf, firstShownCaveat } from './stage'; // 08.1-19 stages by data
+export type { DecideStage, HeldBackPart, StageReading, StageWindow, StageSource } from './stage';

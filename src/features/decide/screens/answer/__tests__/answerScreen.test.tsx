@@ -97,6 +97,9 @@ const mockState = {
   answers: [] as { kind: string; key?: string; check_id?: string | null; bool_value?: boolean | null; deleted_at?: string | null }[],
 };
 
+// 08.1-10: the household reads behind the scope line and the partner names; a Just me answer here.
+jest.mock('@/features/household/decide/useHouseholdAnswer', () => ({ useHouseholdAnswer: () => ({ scopeLabel: 'Just you', member: (k: string) => k }) }));
+jest.mock('@/features/household/decide/HouseholdAnswerNote', () => ({ HouseholdAnswerNote: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ userId: 'u1', householdId: 'h1', homeCurrency: 'USD', showCents: true, region: 'US', today: '2026-11-05' }),
 }));
@@ -553,7 +556,7 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
 
   // 06.1-85 (G-PD-2): "What is the $X for ...?" had no answer anywhere (its Fix opened the setup checklist). Ask, don't block: the
   // Fix opens a sheet on the answer with the four answers; one tap saves the amount asked and the use, with Undo.
-  describe('What is the $X for? (G-PD-2)', () => {
+  describe('What is the $X used for? (G-PD-2)', () => {
     /** The ask as the engine sends it: the question, and the notice its amount is read from. */
     const asksUnexplained = (run: Run): Evaluation => {
       const e = asks(run, ['unexplained_money_question']);
@@ -634,7 +637,7 @@ describe('missing figures (N21, CO-D-38, CO-D-43)', () => {
     });
   });
 
-  it('06.1-71 (DN-6): Fix next to What is <account> for? opens Setup > Records on that account, from=answer', async () => {
+  it('06.1-71 (DN-6): Fix next to What is <account> used for? opens Setup > Records on that account, from=answer', async () => {
     const run = ledgerRun('N02');
     const ev = asks(run, ['account_use_question']);
     load(run, { evaluation: { ...ev, result: { ...ev.result, notices: [...ev.result.notices, { code: 'account_use_unknown', values: { accountId: 'a1', count: 1 } }] } } });
@@ -812,7 +815,7 @@ describe('the Not ready card on the answer screen (06.1-44, G-1, C-1, C-2)', () 
   it('with no earlier month: quick estimates are the primary and open the quick-estimates setup (A-ANS-3)', async () => {
     load(notReadyRun());
     await open();
-    await press(screen.getByText('Answer from quick estimates'));
+    await press(screen.getByText('Get a first look') /* 08.1-21: the quick-estimates primary is now labelled by the stage copy */);
     expect(mockPush).toHaveBeenCalledWith(`/decide/setup/quick-estimates?returnTo=${encodeURIComponent('/decide/answer/c1')}`);
   });
 

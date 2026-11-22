@@ -28,6 +28,8 @@ import {
   type MissingCode,
   type Notice,
   type Result,
+  type DecideStage,
+  firstShownCaveat,
 } from '@/engine/decide/v3';
 
 /** One sentence: the copy key it was read from, the text, and the engine code behind it. */
@@ -45,6 +47,8 @@ export interface SayNames {
   envelope(id: string): string;
   /** D-79: a missing figure's code (save_vs_borrow 'ask'), named for "add {{figure}}". */
   figure(code: MissingCode): string;
+  /** 08.1-10 (D-03, D-32): a household member key as the words other members see (a hidden name reads as its colour). Absent or '' drops the caveat. */
+  member?(key: string): string;
 }
 
 export interface SayDeps {
@@ -69,6 +73,8 @@ export interface SaidResult {
   readonly notices: readonly Line[];
   readonly facts: readonly Line[];
   readonly basis: Line | null;
+  /** 08.1-20: "Pay is judged over your last {{months}} months." for pay judged over more than 6 months; null otherwise. */
+  readonly payWindow: Line | null;
   readonly caveat: Line | null;
   readonly caveatFigures: readonly Line[];
   readonly nextStep: Line | null;
@@ -97,7 +103,7 @@ const ALL_PLAIN = new Set(['months', 'used', 'lookedFor']);
 const ISO_DATE = /^\d{4}-\d{2}(-\d{2})?$/;
 
 /** COPY_RESOLVERS read the other way: the placeholder, the id key that fills it, and the name lookup. */
-const RESOLVE_BY_PLACEHOLDER: Readonly<Record<string, { readonly id: string; readonly name: keyof SayNames }>> = {
+const RESOLVE_BY_PLACEHOLDER: Readonly<Record<string, { readonly id: string; readonly name: Exclude<keyof SayNames, 'member'> }>> = {
   [COPY_RESOLVERS.categoryId]: { id: 'categoryId', name: 'category' },
   [COPY_RESOLVERS.seriesId]: { id: 'seriesId', name: 'series' },
   [COPY_RESOLVERS.envelopeId]: { id: 'envelopeId', name: 'envelope' },
@@ -209,7 +215,8 @@ function basisLine(r: Result, deps: SayDeps): Line {
     case 'quick_estimates':
       return fill(b.kind, BASIS_KEYS.quick_estimates, {}, deps, ALL_PLAIN);
     case 'partial':
-      return fill(b.kind, BASIS_KEYS.partial, { used: b.used, lookedFor: b.lookedFor }, deps, ALL_PLAIN);
+      // 08.1-20: the sentence names the window the engine used; one month reads "your one full month".
+      return b.used === 1 ? fill(b.kind, BASIS_KEYS.partialOne, { date: b.upTo }, deps, ALL_PLAIN) : fill(b.kind, BASIS_KEYS.partial, { used: b.used, date: b.upTo }, deps, ALL_PLAIN);
     case 'records':
       return fill(b.kind, BASIS_KEYS.records, { months: b.months, date: b.upTo }, deps, ALL_PLAIN);
     case 'records_with_reason':
@@ -228,9 +235,46 @@ function missingLine(code: MissingCode, r: Result, deps: SayDeps): Line {
   return fill(code, fund ? `${base as string}_fund` : base, values, deps);
 }
 
+/** 08.1-10 (D-03): the partners whose money is not counted, named through the member resolver, never by key. One name or many. */
+const NOT_SHARED_ONE = 'decide.screens.answer.caveat.notShared';
+const NOT_SHARED_MANY = 'decide.screens.answer.caveat.notSharedMany';
+const NAME_AND = 'decide.screens.answer.caveat.nameAnd';
+function notSharedLine(caveat: Caveat, deps: SayDeps): Line {
+  const keys = String(caveat.values['names'] ?? '').split(',').filter((k) => k !== '');
+  const names = keys.map((k) => deps.names.member?.(k) ?? '');
+  if (names.length === 0 || names.some((n) => n === '')) throw new MissingCopyError(caveat.code, NOT_SHARED_ONE, 'no name');
+  if (names.length === 1) return fill(caveat.code, NOT_SHARED_ONE, { name: names[0] }, deps);
+  const last = names[names.length - 1] as string;
+  const joined = deps.t(NAME_AND, { a: names.slice(0, -1).join(', '), b: last });
+  return fill(caveat.code, NOT_SHARED_MANY, { names: joined }, deps);
+}
+
+/**
+ * 08.1-25 (owner one-earner fix 2026-11-21): share_zero_by_rule carries the rule's code ('bring' | 'bill'); the line names the rule as
+ * "How spending is shared" does. An unknown rule has no name, so the line is missing rather than showing a code.
+ */
+const ZERO_SHARE_RULE_KEYS: Readonly<Record<string, string>> = {
+  bring: 'household.rules.spending.bring.label',
+  bill: 'household.rules.spending.bill.label',
+};
+function zeroShareLine(caveat: Caveat, deps: SayDeps): Line {
+  const key = ZERO_SHARE_RULE_KEYS[String(caveat.values['rule'])];
+  if (key === undefined || !deps.exists(key)) throw new MissingCopyError(caveat.code, CAVEAT_KEYS.share_zero_by_rule, 'no rule name');
+  return fill(caveat.code, CAVEAT_KEYS.share_zero_by_rule, { ...caveat.values, rule: deps.t(key) }, deps);
+}
+
+/** One caveat as its sentence. */
+function caveatLine(caveat: Caveat, deps: SayDeps): Line {
+  if (caveat.code === 'share_zero_by_rule') return zeroShareLine(caveat, deps);
+  return caveat.code === 'household_not_shared' ? notSharedLine(caveat, deps) : fill(caveat.code, CAVEAT_KEYS[caveat.code], caveat.values, deps);
+}
+
+/** 08.1-25: the slot under the answer skips share_zero_by_rule (ZeroShareLine says it, with its button); the About sheet lists it. */
+const OWN_LINE_CAVEATS: ReadonlySet<string> = new Set(['share_zero_by_rule']);
+
 function caveatLines(caveat: Caveat | undefined, deps: SayDeps): { caveat: Line | null; figures: Line[] } {
   if (caveat === undefined) return { caveat: null, figures: [] };
-  const line = guard(deps, () => fill(caveat.code, CAVEAT_KEYS[caveat.code], caveat.values, deps));
+  const line = guard(deps, () => caveatLine(caveat, deps));
   if (caveat.code !== 'large_for_month' || line === null) return { caveat: line, figures: [] };
   // CO-D-118: one line per figure it carries (costs is absent when the usual month is not known), then the one line under them.
   const figures = (Object.keys(CAVEAT_FIGURE_KEYS) as (keyof typeof CAVEAT_FIGURE_KEYS)[])
@@ -241,7 +285,7 @@ function caveatLines(caveat: Caveat | undefined, deps: SayDeps): { caveat: Line 
 
 /** CO-D-64 (3): every caveat on the result as a sentence (the About sheet's "For this answer"), figures not repeated. */
 export function sayCaveats(r: Result, deps: SayDeps): Line[] {
-  return present((r.caveats ?? []).map((c) => guard(deps, () => fill(c.code, CAVEAT_KEYS[c.code], c.values, deps))));
+  return present((r.caveats ?? []).map((c) => guard(deps, () => caveatLine(c, deps))));
 }
 
 function afterBuyLead(r: Result, deps: SayDeps): Line | null {
@@ -256,7 +300,7 @@ function afterBuyLead(r: Result, deps: SayDeps): Line | null {
 }
 
 /** The whole Result as sentences, in reading order. */
-export function sayResult(r: Result, deps: SayDeps): SaidResult {
+export function sayResult(r: Result, deps: SayDeps, opts?: { readonly stage?: DecideStage; readonly payMonths?: number | null }): SaidResult {
   const g = (make: () => Line): Line | null => guard(deps, make);
   // CO-D-113: unsaved_changes is always the first notice; the rest keep the engine's order.
   const notices = [...r.notices.filter((n) => n.code === 'unsaved_changes'), ...r.notices.filter((n) => n.code !== 'unsaved_changes')];
@@ -265,7 +309,10 @@ export function sayResult(r: Result, deps: SayDeps): SaidResult {
   const factLines = present(r.facts.map((f) => g(() => sayCode('fact', f, deps))));
   const basis = g(() => basisLine(r, deps));
   // CO-D-119: only the first caveat shows under the answer; the About sheet lists them all.
-  const { caveat, figures } = caveatLines(r.caveats?.[0], deps);
+  // 08.1-20: below the deeper stage the StageLine already says quick_estimates / few_months, so the next caveat is the one shown.
+  const { caveat, figures } = caveatLines(firstShownCaveat((r.caveats ?? []).filter((c) => !OWN_LINE_CAVEATS.has(c.code)), opts?.stage ?? 'deeper'), deps);
+  const payMonths = opts?.payMonths ?? null;
+  const payWindow = payMonths === null ? null : g(() => fill('pay_window', BASIS_KEYS.payWindow, { months: payMonths }, deps, ALL_PLAIN));
   const step = r.confidence.nextStep;
   const nextStep = step === null ? null : g(() => fill(step.step, NEXT_STEP_KEYS[step.step], {}, deps));
   const missing = present(r.missing.map((m) => g(() => missingLine(m, r, deps))));
@@ -274,5 +321,5 @@ export function sayResult(r: Result, deps: SayDeps): SaidResult {
   // D-42: when it is to be bought, on every answer.
   const today = r.purchaseDate === deps.today;
   const boughtOn = g(() => fill(today ? 'afterBuy.boughtToday' : 'afterBuy.boughtOn', today ? AFTER_BUY_KEYS.boughtToday : AFTER_BUY_KEYS.boughtOn, { date: r.purchaseDate }, deps));
-  return { notices: noticeLines, facts: factLines, basis, caveat, caveatFigures: figures, nextStep, missing, readiness, afterBuy: { lead, boughtOn } };
+  return { notices: noticeLines, facts: factLines, basis, payWindow, caveat, caveatFigures: figures, nextStep, missing, readiness, afterBuy: { lead, boughtOn } };
 }

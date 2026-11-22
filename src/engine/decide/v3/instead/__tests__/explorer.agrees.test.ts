@@ -42,7 +42,9 @@ describe('explorer at lever 0 agrees with the answer (D-12)', () => {
         price: ev.purchase.dayOne,
         unspent: minorUnits(Math.max(0, unspent)),
         answerWaits: true,
+        answerReadyBy: r.readyBy.month,
       });
+      // 08.1 D-05 (owner 2026-11-20): Buy it later follows the answer's own month, so the two are equal.
       if (out.buyLater.readyBy !== r.readyBy.month) misses.push(`${c.id} ${out.buyLater.readyBy} vs ${r.readyBy.month}`);
       checked += 1;
       if (ev.month.incomePicture?.treated === 'seasonal') seasonal += 1;

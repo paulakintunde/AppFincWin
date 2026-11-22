@@ -34,6 +34,8 @@ jest.mock('@/ui/haptics', () => ({
 
 let mockRows: DebtRow[] | undefined = [];
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// 08.1-23 (Q11): the shared Decide build reads the household source (Just me with a joint account); none here.
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdScopeSource: () => ({ source: undefined, pending: false }), useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }) }));
 jest.mock('@/data/queries/decide', () => ({
   useDebts: () => ({ data: mockRows, isError: false, refetch: jest.fn() }),
   useDecideSettings: () => ({ data: { dsr_line: '36.0000', investing_floor: 20000 } }),

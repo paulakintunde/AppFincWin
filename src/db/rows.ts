@@ -324,6 +324,8 @@ export type CategoryPatch = Partial<{
 export const CATEGORY_COLUMNS =
   'id, owner_id, builtin_key, name, color_key, is_system, archived_at, monthly_cap, is_sample, icon_key, version, updated_by, created_at, updated_at';
 
+export type SeriesAmountKind = 'exact' | 'expected';
+
 export interface RecurringSeriesRow {
   id: string;
   household_id: string;
@@ -351,12 +353,14 @@ export interface RecurringSeriesRow {
   pay_group?: string | null;
   goal_id?: string | null; // 06: the goal a saving series feeds; read-only here (20261106000100)
   end_reason?: 'stopped' | 'paused' | null; // 05.2 D-24: read only while end_date is set; written through apply_patches
+  /** 08.1-02 (20261125000100): 'expected' marks a varying running cost; every older row reads 'exact'. */
+  amount_kind?: SeriesAmountKind;
   version: number;
   created_at: string;
   updated_at: string;
 }
 export const RECURRING_SERIES_COLUMNS =
-  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, counts_as, income_kind, saving_mode, pay_group, goal_id, end_reason, version, created_at, updated_at';
+  'id, household_id, created_by, updated_by, account_id, name, amount, currency, category_id, payment_type, freq, anchor_date, time_zone, end_date, occurrence_count, materialised_through, deleted_at, is_automatic, is_sample, counts_as, income_kind, saving_mode, pay_group, goal_id, end_reason, amount_kind, version, created_at, updated_at';
 
 export interface UndoLogRow {
   id: string;

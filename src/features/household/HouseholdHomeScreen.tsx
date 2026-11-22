@@ -35,6 +35,7 @@ import { plansHref } from '@/features/plans/routes';
 import { usePlanState } from '@/features/plans/usePlanState';
 import { ChangeLine } from './components/ChangeLine';
 import { MemberAvatar } from './components/MemberAvatar';
+import { SharedSafetyNetRow } from './decide/SharedSafetyNetRow';
 import { DepartureCard } from './DepartureCard';
 import { householdIcons } from './glyphs';
 import { HouseholdCurrencySheet } from './HouseholdCurrencySheet';
@@ -43,6 +44,7 @@ import { onReinvite } from './leave/reinviteRequest';
 import { MemberSheet } from './MemberSheet';
 import { useNoticeFormat } from './noticeText';
 import { RenameHouseholdSheet } from './RenameHouseholdSheet';
+import { useSpendRule } from './rules/useSpendRule';
 import { BalancesSection } from './settle/BalancesCard';
 import { DepartedBalancesCard } from './settle/DepartedBalancesCard';
 import { useHouseholdScope } from './useHouseholdScope';
@@ -66,6 +68,16 @@ export function HouseholdHomeScreen() {
   const { events, unreadCount } = useHouseholdEvents(householdId, userId ?? undefined);
   const invites = useOpenInvites(householdId, isOwner).data ?? [];
   const { text, when, day } = useNoticeFormat(householdId, scope.name);
+  // 08.1-23 (Q1, Q6, Q9): the spending rule's row value, and joint accounts with no purpose yet.
+  const spend = useSpendRule(householdId, userId);
+  const purposeOf = new Map((spend.purposes ?? []).map((p) => [p.id, p.joint_purpose]));
+  const purposeMissing = spend.purposes === undefined ? 0 : spend.jointAccounts.filter((a) => (purposeOf.get(a.id) ?? null) === null).length;
+  const spendValue =
+    spend.view === null
+      ? undefined
+      : spend.view.outOfDate
+        ? t('household.rules.spending.needsUpdating')
+        : t(`household.rules.spending.${spend.view.asked}.label`);
   const plan = usePlanState();
 
   const [memberId, setMemberId] = useState<string | null>(null);
@@ -138,9 +150,10 @@ export function HouseholdHomeScreen() {
   };
 
   const card = [styles.card, { backgroundColor: colors.surface }];
-  const ruleRow = (path: string, key: 'howSplit' | 'categoryDefaults' | 'sharedAccounts', icon: IconName) => (
+  const ruleRow = (path: string, key: 'howSplit' | 'categoryDefaults' | 'sharedAccounts' | 'spending', icon: IconName, value?: string) => (
     <Row
       label={t(`household.home.rules.${key}`)}
+      value={value}
       leading={<IconTile icon={icon} color={colors.accent} tint={tint} size={tile.row} />}
       chevron
       onPress={() => pushOnce(href(path))}
@@ -361,9 +374,27 @@ export function HouseholdHomeScreen() {
             {ruleRow('/household/split-default', 'howSplit', householdIcons.swap)}
             {ruleRow('/household/category-defaults', 'categoryDefaults', 'categories')}
             {ruleRow('/household/shared-accounts', 'sharedAccounts', 'accounts')}
+            {ruleRow('/household/spending', 'spending', householdIcons.people, spendValue)}
           </View>
         </FadeIn>
       ) : null}
+
+      {!alone && purposeMissing > 0 ? (
+        <View style={[card, styles.section]} testID="purpose-missing-card">
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('household.home.purposeMissing', { count: purposeMissing })}</Text>
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={LINK_HIT_SLOP}
+            onPress={() => pushOnce(href('/household/shared-accounts'))}
+            style={styles.linkButton}
+            testID="purpose-missing-action"
+          >
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.home.purposeMissingAction')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
+      <SharedSafetyNetRow householdId={householdId} memberCount={members.length} />
 
       <FadeIn once="household-changes" style={styles.section}>
         <View style={card}>

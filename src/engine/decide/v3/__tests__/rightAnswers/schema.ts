@@ -18,15 +18,40 @@ export type FixtureQuickLine =
   | { id: string; kind: 'income'; amount: number; everyMonths: 0|1; date: string };
 export interface FixtureCheck {
   price: number|null; taxPercent: string|null; taxIncluded: boolean|null; oneOffFees: number;
-  pay: { mode: 'once' } | { mode: 'plan'; /** the number of payments */ months: number; apr: string|null; fees: number; deposit: number; firstPaymentDate: string; /** how often a payment falls; absent = month. 'week' added by 06.1-30 (FIN-23 draft AP-05) */ every?: 'month'|'fortnight'|'week'; /** a 0% deal that back-charges interest if not paid in full; absent = false */ deferredInterest?: boolean; /** a mortgage or other home loan: skips the 10%-of-amount interest test, still costed (D-39c); absent = false */ housing?: boolean };
+  pay: { mode: 'once' } | { mode: 'plan'; /** the number of payments */ months: number; apr: string|null; fees: number; deposit: number; firstPaymentDate: string; /** how often a payment falls; absent = month. 'week' added by 06.1-30 (FIN-23 draft AP-05) */ every?: 'month'|'fortnight'|'week'; /** a 0% deal that back-charges interest if not paid in full; absent = false */ deferredInterest?: boolean; /** 08.1-11 FIN-12: the promotion's end date and the rate charged back if the balance is not cleared by then; present (even null) = the plan step asked for them, absent = a flag only */ promoEnds?: string|null; rateAfter?: string|null; /** a mortgage or other home loan: skips the 10%-of-amount interest test, still costed (D-39c); absent = false */ housing?: boolean };
   runningCosts?: FixtureRunningCost[]; closingPercent?: string|null; purchaseDate?: string|null;
   replaces?: { stops: { id: string; amount: number; everyMonths: 1|3|12; stopDate: string; source: 'bill'|'everyday' }[]; sale: { amount: number; arrives: string; paysDebtId: string|null } | null } | null;
   quickLines?: FixtureQuickLine[];
   saveForIt?: boolean; yourAnswer?: 'yes'|'no'|null;
   /** the check's existing `purpose` preset; necessity and for_work read as a need, nice_to_have/treat/luxury as a want (D-41: words and order only) */
   purpose?: 'invest_in_me'|'for_work'|'necessity'|'nice_to_have'|'treat'|'luxury'|null;
+  /** 08.1-22: the price is shared evenly among the household's members (HH-26); absent = the viewer pays all of it */
+  share?: 'household_even';
+}
+/**
+ * 08.1-08 (CMP-F19, UX-21, CMP-F04): the household side of a case. scope: the viewer's choice; weights/myIndex: the agreed split of
+ * the pool; partnerFigure: one partner's rounded money left (bothOn = both opt-ins on, roundedLeft = null when none is published);
+ * jointAccountIds: accounts in both names; settleUp: the viewer's settle-up as the payer. Absent = a one-person check.
+ */
+export interface FixtureHousehold {
+  scope: 'me' | 'household'; viewer?: string; weights?: number[]; myIndex?: number;
+  partnerFigure?: { name: string; bothOn: boolean; roundedLeft: number | null };
+  jointAccountIds?: string[];
+  settleUp?: { role: 'payer'; owed: number; lapsed: boolean };
+  /** 08.1-22: the group's spending rule (absent = the setup's default), a set split's shares in member order, and the setup (absent = inferred from the accounts) */
+  spendRule?: 'bring'|'custom'|'bill'; spendShares?: number[]; setup?: 'separate'|'joint'|'mixed';
+  /** 08.1-22: three or more members: every other member in member order (the viewer excluded); partnerFigure is the one-partner shorthand */
+  partnerFigures?: { name: string; bothOn: boolean; roundedLeft: number | null }[];
+  /**
+   * 08.1-22: each joint account's true figures. balance = the whole joint balance; monthIn/monthOut = this month's money in and out (planned);
+   * billsDueBeforeNextIn; paidInBy = this month's pay-ins per member in member order. The viewer's own records hold: the account's fixture
+   * balance (when its use counts it) and paidInBy[me] less their bill-split share of monthOut. isSafetyNet = the shared net.
+   */
+  jointAccounts?: { id: string; purpose: 'bills'|'savings'|'everyday'|null; spendable?: boolean; isSafetyNet?: boolean; balance: number; monthIn: number; monthOut: number; billsDueBeforeNextIn: number; paidInBy?: number[]; carried?: number; /** the viewer's own net flow this month on this account when it is not paidInBy[me] less their bill share (transfers are not month money) */ ownMonth?: number }[];
 }
 export interface RightAnswerFixture {
+  /** 08.1-08: the household side; absent = a one-person check */
+  household?: FixtureHousehold;
   asOf: string; currency: 'USD'|'CAD'|'GBP'|'EUR'; region: { country: string; subdivision: string|null } | null;
   pay: { amount: number; cadence: 'monthly'|'fortnightly'|'weekly'; nextDate: string; setupAmount: number|null; lastThree: [number,number,number]|null; /** low months stated explicitly ('YYYY-MM', pay that month); absent = none beyond lastThree */ lean?: { month: string; amount: number }[];
     /** D-52: no pay is scheduled (freelance); amounts = full-month income oldest first, one per history month, paid on `day`; absent = scheduled pay */ irregular?: { amounts: number[]; day: number; /** 06.1 FIN-20 (TX-16): false = no steady figure was set (the profile counts what comes in, so a quick income estimate stands in while nothing has come in); absent = pay.amount is the steady figure */ steady?: false };
@@ -51,7 +76,7 @@ export interface RightAnswerFixture {
   taxSetAsideBp?: number|null;
   check: FixtureCheck;
 }
-export interface Expected { code: string; variant: string|null; afterBuy: { month: number|null; usualMonth: number|null }; readyBy: string|null; mustHaveReasons: string[]; mustHaveFacts: string[]; mustNotHaveFacts: string[] }
+export interface Expected { /** 08.1-08: caveat codes the answer must / must not carry; absent = not asserted */ mustHaveCaveats?: string[]; mustNotHaveCaveats?: string[]; code: string; variant: string|null; afterBuy: { month: number|null; usualMonth: number|null }; readyBy: string|null; mustHaveReasons: string[]; mustHaveFacts: string[]; mustNotHaveFacts: string[] }
 export interface RightAnswerCase { id: string; topic: Topic; persona: string; situation: string; fixture: RightAnswerFixture; expected: Expected; why: string; fixIds: string[]; status: CaseStatus; approvedAt: string|null; ownerReason: string|null; expertNote: string|null; changeApproved?: string|null;
   /** round 1b: an "Owner check" note the review page shows, for a pending change the owner sees before it is applied; absent = none */
   reviewNote?: string|null;

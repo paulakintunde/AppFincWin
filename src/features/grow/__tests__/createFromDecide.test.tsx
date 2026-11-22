@@ -21,6 +21,8 @@ jest.mock('@/shell/screen/TabRootScreen', () => {
   return { TabRootScreen: (p: { children?: React.ReactNode; overlay?: React.ReactNode }) => R.createElement(View, null, p.children, p.overlay) };
 });
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
+// 08.1-23 (Q11): the shared Decide build reads the household source (Just me with a joint account); none here.
+jest.mock('@/features/household/decide/useHouseholdScopeSource', () => ({ useHouseholdScopeSource: () => ({ source: undefined, pending: false }), useHouseholdShare: () => ({ shareScope: null, memberCount: 1 }) }));
 // 09-13: GrowHome asks useGrowFeatureFlags(); level 4 means every flag on.
 jest.mock('@/features/grow/useGrowFeatureFlags', () => {
   const actual = jest.requireActual('@/features/grow/growFeatureFlags');

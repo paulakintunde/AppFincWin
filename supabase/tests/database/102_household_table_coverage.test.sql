@@ -26,6 +26,7 @@ insert into classified (table_name, class, parent) values
   ('dismissed_series_offers', 'owner', null), ('holdings', 'owner', null), ('holding_lots', 'owner', null),
   -- owner (later Phase 8 tables)
   ('household_invites', 'owner', null), ('transaction_member_categories', 'owner', null),
+  ('decide_partner_optins', 'owner', null), ('partner_figures', 'owner', null), ('safety_net_shares', 'owner', null),
   -- shared_or_owner
   ('transactions', 'shared_or_owner', null), ('accounts', 'shared_or_owner', null), ('recurring_series', 'shared_or_owner', null),
   -- account_derived, derived, party
@@ -35,7 +36,7 @@ insert into classified (table_name, class, parent) values
   -- household (all members by design)
   ('households', 'household', null), ('household_members', 'household', null), ('household_events', 'household', null),
   ('category_rules', 'household', null), ('household_split_defaults', 'household', null),
-  ('household_former_members', 'household', null), ('member_departures', 'household', null),
+  ('household_former_members', 'household', null), ('member_departures', 'household', null), ('household_spend_rules', 'household', null),
   -- settlement_nudges: no client policy at all (08-11); 'household' only to classify it
   ('settlement_nudges', 'household', null),
   -- 09-02 plan tables
