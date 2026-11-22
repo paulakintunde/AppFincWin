@@ -1,5 +1,5 @@
 // 08.1-14 (D-07, UI-SPEC section 3): the account goes below zero within the 90 days even without this purchase. One row in its own
-// `tight` block (#8A5A1B on #FBEFD6), directly under the verdict card and before the facts: the stateTight glyph, the badge word
+// `tight` block (stateTight on stateTightTint), directly under the verdict card and before the facts: the stateTight glyph, the badge word
 // "Warning", then the engine's below_zero_without sentence. It never changes the verdict or its colour, has no animation of its own
 // (it rises with the verdict card) and no haptic (it is not an event). Never colour alone: the glyph and the word carry it.
 import React from 'react';
