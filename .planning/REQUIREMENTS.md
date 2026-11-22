@@ -291,12 +291,12 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **DSU-23**: One human-gated production step: owner approval, `npm run supabase:preflight`, `npm run supabase:db:push`, then the owner’s flag (05.2 D-14)
 - [x] **DSU-24**: Copy, analytics, accessibility and fit gates for every new surface: declarative copy guard, four `decide_setup_*` events, 320/402 dp at font scale 1.0/2.0, TalkBack
 
-### Decide — Fix plan (Phases 05.4, 05.5, 08.1, 08.2)
+### Decide — Fix plan (Phases 05.4, 05.5, 08.1, and Phase 11's final audit, former 08.2)
 
 The Decide fix plan's IDs (FIN, ENG, APP, UX, CMP-F, ARC, QA, BO, VC) are tracked in the appendix of `.planning/research/DECIDE-FIX-PLAN.md`, not repeated here. Each phase's **Requirements** line in ROADMAP.md names the IDs it delivers.
 
 - Design: Variant C, chosen by the owner on 2026-11-01 (A and B retired). Reading-test round 1 runs on Variant C alone, then the screens are frozen (QA-01).
-- Visibility: Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). From 08.1 only named testers see it, behind the per-account switch and the BO-06 release check; the public gets it after 08.2.
+- Visibility: Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). From 08.1 only named testers see it, behind the per-account switch and the BO-06 release check; the public gets it after Phase 11's final audit (former 08.2, merged 2026-11-22).
 - ARC-26 (05.5) makes the final requirement changes against the frozen screens; the Variant C notes above mark what it will change.
 
 ### Grow

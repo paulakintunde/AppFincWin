@@ -135,6 +135,8 @@ The phase list is the architect's (ARC section 1.4). Sizes and contents merge in
 
 **Order:** 05.3 (stopped, branch parked) → 05.4 → 05.5 → 6 Grow → 06.1 (optional) → 8 Household → 08.1 → 08.2 → 7 Insights → 9 → 10 → 11
 
+> **Amended 22 November 2026 (owner, quick 261122-m82):** 08.2 is an audit, not a build, so it is merged into Phase 11 (Compliance & Release) and runs once, on the finished app. Insights (7) and System (10) run in parallel after 08.1; the health score (ARC-21) is signed off by that final audit. The 08.2 text below and in section 9 is kept as the audit's content; read "08.2" as "Phase 11's final audit". Its scope now also covers Insights and System.
+
 **Standing exit lines for every phase** (compliance gate S1 to S6): the shared copy guard is green over every screen's text; no hard-typed text in screens; analytics carry no amounts or price ranges; database rules tests are green; every new table with user data has a data-map entry, a deletion path and a database rule; and a short written "compliance note" is in the merge request.
 
 ### Timeline
@@ -1114,6 +1116,8 @@ Test both in reading-test round 1. The expectation, to be tested and not assumed
 ---
 
 ## 9. The re-audit after Household
+
+> **Amended 22 November 2026:** this re-audit now runs inside Phase 11 (Compliance & Release), after Insights and System are built, and its scope adds Insights and System (see ROADMAP.md, Phase 11 criteria 9-13).
 
 The architect's plan, run as phase 08.2, on the commit that closes 08.1, on a clean, normal-speed machine.
 
