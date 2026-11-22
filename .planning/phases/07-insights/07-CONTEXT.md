@@ -53,6 +53,12 @@ Not in this phase: Home changes (D-17), a household health score (D-19), Share/B
 ### Chart colour exception (owner, 2026-11-22, after planning)
 - **D-24:** Charts and the lines within charts are an exception to the design-fidelity colour rule (CLAUDE.md amended). They may use vibrant colour: (a) existing theme and Decide state colours at full strength where colour carries meaning (money in vs out, below-zero "left" bars in the short colour, net-worth line in the theme colour); (b) a new bright chart-only palette (`chartPalette`, about 6 colours in `src/theme/tokens.ts`, each tested for contrast against `surface` in `src/theme/contrast.ts`) for series like categories (category row bars). Colour is never the only signal: each bar/point keeps its spoken label and the chart its summary line. Insights uses `SignedBars`' default (state) tone; no neutral tone is needed. Non-chart UI (rows, tiles, cards) keeps the normal rule.
 
+### Owner answers before wave 1 build (2026-11-22)
+- **D-25:** Score inputs follow Decide (07-01 plan default): "money kept" = what is left after planned bills and saving; "months of cover" = savings divided by one month of essential costs. Each of the four parts is rounded on its own so the listed parts add up exactly to the score (plan default, not asked).
+- **D-26a:** "6M" means the same span on every chart: 6 full months plus this month so far. Applies to the in/out bars, the categories and the net-worth line (net worth: 6 month-ends before this month plus today). Other ranges follow the same rule (N full months + current month so far). Overrides the 07-02 / 07-03 plan spans where they differ.
+- **D-27:** "Where it went" gets one plain note line under the list: "Debt payments and saving are not counted here." (new copy key in the 07-04 Insights copy contract; must pass the copy guard). The Out bar keeps counting debt payments and saving.
+- **D-28:** Categories under 1% of spending fold into an "Everything else" row (07-02 plan default).
+
 ### Claude's Discretion
 - The range for the money in/out bars and comparison mode: the same 6M / 1Y / All control, defaulting to 6M.
 - Section order on the Insights screen, empty screens (06.2 empty-state pattern: icon + one line + button), and loading and offline states.
