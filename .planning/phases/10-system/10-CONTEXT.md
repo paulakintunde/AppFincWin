@@ -65,7 +65,14 @@ May run in parallel with Phase 7 (owner, 2026-11-22). 08.1 is merged (PR #180), 
 - **D-27:** The queue holds **500 unsent changes**. At 400 a gentle note appears. At 500, new entries are blocked until the phone is back online.
 - **D-28:** The message is **plain and calm**, for example: "You have 500 changes waiting to send. Connect to the internet to send them, then you can add more. Nothing is lost." It appears on the add screen, and the count shows in the existing "waiting to send" marker. No warning or amber styling.
 
+### Owner answers after research (2026-11-22)
+- **D-29:** **10th wrong PIN keeps the phone copy for the same person.** "Sign in again" means re-authenticating with Apple or Google. If the same user signs back in, the unsent write queue and phone copy stay and they set a new PIN. If a different user signs in, the normal sign-out wipe runs first.
+- **D-30:** **Reviewer sign-in uses a small visible link, not the 7-tap form.** This amends D-25: research found Apple's hidden-features rule is now Guideline 2.5.19 (clarified 2026-10-16) and a hidden 7-tap form is medium risk. The link opens the email-and-password form; the server-side allow-list (D-25) stays, and every non-listed email is refused.
+- **D-31:** **Backups go to Cloudflare R2 on the existing company Cloudflare account**, bucket in the `us` jurisdiction, 30-day lifecycle rule (resolves D-06's storage choice). Owner creates the bucket and an access key.
+- **D-32:** **Push goes through the Expo push service**, with the full alert text (who, how much, category; never note or payee, per D-12). That alert text passes through Expo must be disclosed in the Phase 11 privacy copy.
+
 ### Claude's Discretion
+- Research recommendations taken as defaults: refuse a CSV import that would push the queue past 500 up front, with the calm D-28 message; flat alert defaults for other currencies are the ~200/~100 amounts converted from a EUR-equivalent; Android biometric strength `'strong'`; archive read-only (D-14) enforced in the client only.
 - **Device list (ACC-06, ACC-07):** how to read and revoke Supabase Auth sessions (Edge Function with the service role over `auth.sessions` / `auth.refresh_tokens`, or another approach), and how each device is named: device model and OS, last active, current device marked.
 - **Push delivery:** the provider (the Expo push service, or FCM and APNs directly), where tokens are stored, and how quiet hours and digests are scheduled on the server. APNs waits on Apple enrolment, so Android and FCM land first.
 - **Bills-due lead time** (for example, 1 day before) and the exact digest content.
