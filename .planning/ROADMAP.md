@@ -1417,7 +1417,26 @@ Plans:
   3. A user can see spending broken down by category for a period.
   4. A user can see a financial health score with the figures behind it.
   5. A user can view a month's Activity as a week breakdown, a split view, a balance view and a calendar.
-**Plans**: TBD
+**Plans:** 12 plans in 5 waves (criterion 5 already met by ACT-06 in Phase 2.2; nothing built for it)
+
+Plans:
+**Wave 1**
+- [ ] 07-01-PLAN.md — Engine: health score (recipe, short cap at 74, thin data) reading Decide's figures (INS-06, ARC-21)
+- [ ] 07-02-PLAN.md — Engine: monthBars through this month + engine/insights range, category totals, month against month (INS-02..05)
+- [ ] 07-03-PLAN.md — Engine: netWorthOf moved to engine/grow + month-end net-worth series (INS-01)
+- [ ] 07-04-PLAN.md — Insights copy catalogue, insights copy-guard set, coverage and mutation config
+- [ ] 07-05-PLAN.md — Feature rows insights / netWorthTrend / healthScore in registry and 09-LEVEL-MAP (D-16)
+- [ ] 07-06-PLAN.md — Shared UI: SignedBars neutral tone, SegmentedControl haptic, StatTileRow columns, Row footer
+**Wave 2**
+- [ ] 07-07-PLAN.md — Data: scoped Prepared (Just me / Household), net-worth series hook, scope switch (D-18, D-23)
+- [ ] 07-08-PLAN.md — Charts: RangeControl, InOutBars, NetWorthLine, CategoryRow, ChartSummary
+**Wave 3**
+- [ ] 07-09-PLAN.md — Everyday sections: Money in and out, Where it went, This month against last
+- [ ] 07-10-PLAN.md — Full picture sections: Net worth and Score card
+**Wave 4**
+- [ ] 07-11-PLAN.md — InsightsScreen, route, level-gated tab
+**Wave 5**
+- [ ] 07-12-PLAN.md — Phase gate, validation sign-off, ACT-06 citation, compliance note
 **UI hint**: yes
 
 ### Phase 8: Household

@@ -57,6 +57,38 @@ Filled in by the planner per task. Requirement-level map:
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
+### Per-task map (planner, 2026-11-22)
+
+| Task | Plan | Wave | Requirement | Automated Command | Status |
+|------|------|------|-------------|-------------------|--------|
+| 07-01-T1 | 01 | 1 | INS-06 (D-01, D-03, D-05, D-20) | `npx jest src/engine/health --coverage=false` | ⬜ pending |
+| 07-01-T2 | 01 | 1 | INS-06 (D-02, ARC-21) | `npx jest src/engine/health` with 100% threshold | ⬜ pending |
+| 07-02-T1 | 02 | 1 | INS-02, INS-03 (D-12) | `npx jest src/engine/month --coverage=false` | ⬜ pending |
+| 07-02-T2 | 02 | 1 | INS-04, INS-05 (D-13..D-15, D-21) | `npx jest src/engine/insights src/engine/month --coverage=false` | ⬜ pending |
+| 07-03-T1 | 03 | 1 | INS-01 (D-08) | `npx jest src/engine/grow src/features/grow --coverage=false` | ⬜ pending |
+| 07-03-T2 | 03 | 1 | INS-01 (D-07, D-09, D-10, D-22) | `npx jest src/engine/grow --coverage=false` | ⬜ pending |
+| 07-04-T1 | 04 | 1 | INS-01..06 copy (D-04, S1) | `npx jest src/i18n --coverage=false` | ⬜ pending |
+| 07-04-T2 | 04 | 1 | Gate (coverage + mutation config) | `node scripts/check-stryker-disables.mjs` | ⬜ pending |
+| 07-05-T1 | 05 | 1 | D-16 registry | `npm run typecheck` | ⬜ pending |
+| 07-05-T2 | 05 | 1 | D-16 level map drift | `npx jest src/features/levels src/services/analytics src/i18n --coverage=false` | ⬜ pending |
+| 07-06-T1 | 06 | 1 | INS-03 neutral left bars | `npx jest src/features/decide/screens/answer/detail --coverage=false` | ⬜ pending |
+| 07-06-T2 | 06 | 1 | UI primitives | `npx jest src/ui --coverage=false` | ⬜ pending |
+| 07-07-T1 | 07 | 2 | D-18, D-19, ARC-22 | `npx jest src/data/queries/__tests__/insights.test.ts src/features/insights src/features/home --coverage=false` | ⬜ pending |
+| 07-07-T2 | 07 | 2 | INS-01 (D-11, D-23) | `npx jest src/data/queries/__tests__/insightsNetWorth.test.ts --coverage=false` | ⬜ pending |
+| 07-08-T1 | 08 | 2 | INS-04 rows, range control | `npx jest src/features/insights --coverage=false` | ⬜ pending |
+| 07-08-T2 | 08 | 2 | INS-01, INS-02 charts | `npx jest src/features/insights src/ui --coverage=false` | ⬜ pending |
+| 07-09-T1 | 09 | 3 | INS-02, INS-03 (Decide parity) | `npx jest src/features/insights --coverage=false` | ⬜ pending |
+| 07-09-T2 | 09 | 3 | INS-04, INS-05 | `npx jest src/features/insights --coverage=false` | ⬜ pending |
+| 07-10-T1 | 10 | 3 | INS-01 | `npx jest src/features/insights/sections --coverage=false` | ⬜ pending |
+| 07-10-T2 | 10 | 3 | INS-06 (D-03, D-04, D-05, D-19) | `npx jest src/features/insights/sections --coverage=false` | ⬜ pending |
+| 07-11-T1 | 11 | 4 | INS-01..06 screen | `npx jest src/features/insights --coverage=false` | ⬜ pending |
+| 07-11-T2 | 11 | 4 | D-16 tab gate | `npx jest src/shell/tabBar src/features/levels --coverage=false` | ⬜ pending |
+| 07-12-T1 | 12 | 5 | Phase gate | `npm run typecheck && npm run lint && npm run depcruise && npm run check:icons && npm run check:stryker-disables && npm run test:coverage` | ⬜ pending |
+| 07-12-T2 | 12 | 5 | Sign-off, ACT-06 citation | `grep -c "nyquist_compliant: true" 07-VALIDATION.md` | ⬜ pending |
+
+Criterion 5 (ACT-06) is already met in Phase 2.2 (`.planning/phases/02.2-record-polish/02.2-VERIFICATION.md`); no task builds it.
+
+
 ---
 
 ## Wave 0 Requirements
