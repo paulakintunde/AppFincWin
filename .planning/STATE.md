@@ -5,9 +5,9 @@ milestone_name: milestone
 status: executing
 stopped_at: "Phase 9 merged 2026-11-20 (PR #170); 08.1 at 15/18 on feat/08.1-build (13, 14, 15 left); launch waits on RevenueCat ENV-12, the app name and Apple enrolment"
 last_updated: "2026-11-20T15:00:00.000Z"
-last_activity: 2026-11-20 -- STATE and ROADMAP checked against the code and branches
+last_activity: 2026-11-22 -- Phase 08.2 merged into Phase 11 (owner); Insights and System may run in parallel
 progress:
-  total_phases: 30
+  total_phases: 29
   completed_phases: 18
   total_plans: 809
   completed_plans: 789
@@ -30,7 +30,7 @@ Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 
 Phase: 08.1 (decide-rebuild-on-real-data) — IN PROGRESS on branch `feat/08.1-build`, 15/18 (01-12, 19, 20, 21 built; wave 7 done 2026-11-20). Left: 13 (changed-answers review), 14 (wording sign-off), 15 (production push of migrations 20261123000100..000300, not in production yet). No PR open.
 Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
 Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
-Phase: 08.2, 7, 10 — not planned. 11 — not started.
+Phase: 7, 10 — not planned; may run in parallel after 08.1 (owner 2026-11-22). 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
 Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11); one orphan household with no members and no plan.
 Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026-11-14 (PR #102). 06 (grow) — COMPLETE 2026-11-11 (PR #101).
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
@@ -40,7 +40,7 @@ Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitt
 Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
 Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
 Status: Executing (one phase branch: 08.1)
-Last activity: 2026-11-20 -- Phase 9 merged; STATE and ROADMAP checked against the code
+Last activity: 2026-11-22 - Completed quick task 261122-m82: Phase 08.2 merged into Phase 11
 
 ## Performance Metrics
 
@@ -97,6 +97,7 @@ Last activity: 2026-11-20 -- Phase 9 merged; STATE and ROADMAP checked against t
 - 2026-11-11: Phase 8 plans 08-28 and 08-29 (household parts on Decide) and Grow's "Create from Decide" moved to Phase 08.1 (carry-over files in the 08.1 folder); Phase 8 is now 28 plans in 12 waves with one revision round after 06.1 (PR #102) merges. Gates and checklist: .planning/phases/08-household/08-GATES.md; 05.5 notes: 05.5-NOTES-FROM-08.md.
 - Phase 08.2 inserted after Phase 08.1: Decide re-audit
 - Phases 6 and 8 amended and Phase 7 moved after 08.2 by the same plan
+- 2026-11-22 (owner, quick 261122-m82): Phase 08.2 (Decide re-audit) merged into Phase 11 as its final audit; Insights (7) and System (10) run in parallel after 08.1; audit scope adds Insights and System
 - Phase 06.1 inserted after Phase 6: Decide screens from the prototype (owner 2026-11-06: plan now, build after Grow wave 1; clickable prototype is the design standard)
 
 ### Decisions
@@ -225,6 +226,7 @@ Recent decisions affecting current work:
 | 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
 | 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18 and Phase 9 26/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
 | 261120-nmr | Naming round 2 research saved: Kint dropped, 90 names screened, deep check of Domla/Plenny/Tavva/Hommi | 2026-11-20 | — | [261120-nmr-naming-research](./quick/261120-nmr-naming-research/) |
+| 261122-m82 | Merge Phase 08.2 (Decide re-audit) into Phase 11 as its final audit; Insights and System run in parallel after 08.1 | 2026-11-22 | (this PR) | [261122-m82-merge-08-2-into-phase-11](./quick/261122-m82-merge-08-2-into-phase-11/) |
 
 ## Deferred Items
 
