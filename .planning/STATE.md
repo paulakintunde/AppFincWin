@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "08.1 at 22/22 on feat/08.1-build: plan 15 done 2026-11-22 (8 migrations live, tester build 3c50fbb2 + OTA ee872d87, smoke flows pass on the Pixel 9); phase review and verification next"
+stopped_at: "08.1 complete 2026-11-22 (22/22, review fixed, verification passed, OTA 7f1776a0); PR into main next"
 last_updated: "2026-11-22T09:00:00.000Z"
-last_activity: 2026-11-22 -- 08.1-15 complete; review fixes in; main merged (Phase 08.2 now part of Phase 11)
+last_activity: 2026-11-22 -- 08.1 complete; review fixes shipped as preview OTA 7f1776a0
 progress:
   total_phases: 29
   completed_phases: 18
@@ -21,7 +21,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 08.1 on branch `feat/08.1-build` (22/22 plans done; phase review, verification and the PR next). Decide setup gate audit: `08.1-DECIDE-SETUP-AUDIT.md` (follow-up phase to be decided). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
+**Current focus:** Phase 08.1 COMPLETE on branch `feat/08.1-build` (22/22; review fixed, verification passed); the PR into main is next. Decide setup gate audit: `08.1-DECIDE-SETUP-AUDIT.md` (follow-up phase to be decided). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
 
 ## Current Position
 
