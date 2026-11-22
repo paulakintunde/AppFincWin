@@ -33,14 +33,19 @@ export interface JointMonthRow {
   paid_in_by: Record<string, number>;
 }
 
-/** The household's live joint accounts with their purpose. */
+/**
+ * The household's live joint accounts with their purpose. 08.1 review C-CR-02: a departed member's tombstone account (tombstone_of set)
+ * and an archived joint account are not live joint money, so neither is returned (the household screens hide them too).
+ */
 export async function fetchJointPurposes(client: DbClient, householdId: string): Promise<JointPurposeRow[]> {
   const { data, error, status } = await client
     .from('accounts')
     .select('id, currency, opening_balance, joint_purpose, joint_savings_spendable, joint_safety_net, version')
     .eq('household_id', householdId)
     .eq('is_shared', true)
-    .is('deleted_at', null);
+    .is('deleted_at', null)
+    .is('tombstone_of', null)
+    .is('archived_at', null);
   if (error) throw toDbError(error, status);
   return (data as JointPurposeRow[] | null) ?? [];
 }

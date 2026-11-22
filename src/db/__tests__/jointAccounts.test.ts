@@ -12,6 +12,17 @@ describe('joint accounts db (08.1-22)', () => {
     expect(client.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([['household_id', 'h1'], ['is_shared', true]]);
   });
 
+  it('C-CR-02: leaves out deleted, tombstone (a departed member) and archived joint accounts', async () => {
+    const client = createFakeSupabase();
+    client.respondWith(ok([]));
+    await fetchJointPurposes(client, 'h1');
+    expect(client.calls.filter((c) => c.method === 'is').map((c) => c.args)).toEqual([
+      ['deleted_at', null],
+      ['tombstone_of', null],
+      ['archived_at', null],
+    ]);
+  });
+
   it('treats no rows and a null body as an empty list, and a read error throws', async () => {
     const client = createFakeSupabase();
     client.respondWith(ok(null));

@@ -53,12 +53,13 @@ async function setup() {
 }
 
 describe('jointAccountsOf', () => {
-  it('keeps shared live accounts and drops tombstone homes, personal and deleted accounts', () => {
+  it('keeps shared live accounts and drops tombstone homes, personal, deleted and archived accounts', () => {
     const list = jointAccountsOf([
       acct({ id: 'a1' }),
       acct({ id: 'a2', tombstone_of: 'u9' }),
       acct({ id: 'a3', is_shared: false }),
       acct({ id: 'a4', deleted_at: '2026-11-01T00:00:00Z' }),
+      acct({ id: 'a5', archived_at: '2026-11-01T00:00:00Z' }),
     ] as AccountRow[]);
     expect(list.map((a) => a.id)).toEqual(['a1']);
   });

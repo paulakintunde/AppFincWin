@@ -36,7 +36,7 @@ import { useToday } from './useSpendRule';
 
 /** The joint accounts a list may show: shared, live, and not a departed member's tombstone home. */
 export function jointAccountsOf(accounts: readonly AccountRow[] | undefined): AccountRow[] {
-  return (accounts ?? []).filter((a) => a.is_shared === true && !a.tombstone_of && !a.deleted_at);
+  return (accounts ?? []).filter((a) => a.is_shared === true && !a.tombstone_of && !a.deleted_at && !a.archived_at); // C-CR-02: as Decide reads them
 }
 
 export function SharedAccountsScreen() {

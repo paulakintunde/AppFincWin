@@ -18,7 +18,7 @@ import { spendViewOf, type AccountFacts, type SpendView } from './spendRuleView'
 
 /** The joint accounts a list may show: shared, live, and not a departed member's tombstone home. */
 export function liveJointAccounts(accounts: readonly AccountRow[] | undefined): AccountRow[] {
-  return (accounts ?? []).filter((a) => a.is_shared === true && !a.tombstone_of && !a.deleted_at);
+  return (accounts ?? []).filter((a) => a.is_shared === true && !a.tombstone_of && !a.deleted_at && !a.archived_at); // C-CR-02: as Decide reads them
 }
 
 /** What inferSetup reads, from the viewer's visible accounts and the joint purposes. */
