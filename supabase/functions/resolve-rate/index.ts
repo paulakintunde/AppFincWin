@@ -2,6 +2,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { resolveRate, type ResolveDeps } from './resolve.ts';
 import { notifyOperator, type NotifyDeps } from './notify.ts';
 import type { FxRow } from '../_shared/fx/parse.ts';
+import { hitRateLimit, tooManyRequests } from '../_shared/rateLimit.ts';
+
+const RATE_LIMIT = { limit: 120, windowSeconds: 3600 }; // ACC-13
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -311,6 +314,13 @@ Deno.serve(async (req) => {
       return (data ?? {}) as Record<string, unknown>;
     },
   };
+
+  // Caller id comes from the verified token, never the body.
+  const limitedId = await callerId();
+  if (limitedId) {
+    const rl = await hitRateLimit(admin, 'resolve-rate:' + limitedId, RATE_LIMIT.limit, RATE_LIMIT.windowSeconds);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+  }
 
   let body: unknown;
   try {
