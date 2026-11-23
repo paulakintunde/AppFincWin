@@ -37,7 +37,7 @@ describe('featureRegistry vs signed 09-LEVEL-MAP.md', () => {
   const rows = parseRows();
 
   it('parses the signed table', () => {
-    expect(rows).toHaveLength(32);
+    expect(rows).toHaveLength(33);
   });
 
   it('has the same ids in the same order', () => {
@@ -68,7 +68,6 @@ describe('featureRegistry vs signed 09-LEVEL-MAP.md', () => {
       'licence',
       'coach',
       'alerts',
-      'archive',
     ]) {
       expect(ids).not.toContain(bad);
     }
@@ -99,7 +98,7 @@ describe('featureRegistry vs signed 09-LEVEL-MAP.md', () => {
 
   it('matches the signed count lines', () => {
     const counts = ([1, 2, 3, 4] as const).map((l) => defaultOnAtLevel(l).length);
-    expect(counts).toEqual([5, 19, 29, 32]);
+    expect(counts).toEqual([5, 19, 29, 33]);
     const signed = ['Basics', 'Everyday', 'Full picture', 'Everything'].map((n) => {
       const m = new RegExp(`- ${n}: (\\d+) of (\\d+) on`).exec(MAP);
       return m ? Number(m[1]) : -1;

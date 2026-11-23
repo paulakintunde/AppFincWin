@@ -55,6 +55,7 @@ export type Phase9FeatureId =
   | 'import'
   | 'pdfImport'
   | 'undoHistory'
+  | 'archive'
   | 'hh.weightSplit'
   | 'hh.amountSplit'
   | 'hh.categoryDefaults'
