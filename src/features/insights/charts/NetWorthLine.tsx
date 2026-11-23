@@ -36,6 +36,7 @@ export interface NetWorthLineProps {
 const HEIGHT = 160;
 const DEFAULT_WIDTH = 330;
 const TARGET = 44;
+const LABEL_W = 40;
 
 export function NetWorthLine({ points, currency, selected, onSelect, summary, testID = 'net-worth-line' }: NetWorthLineProps) {
   const t = useT();
@@ -64,13 +65,15 @@ export function NetWorthLine({ points, currency, selected, onSelect, summary, te
   const min = Math.min(...values, 0);
   const max = Math.max(...values);
   const crossesZero = Math.min(...values) < 0 && max > 0;
-  const zeroY = xy.length > 0 ? (() => {
-    // y of value 0 under the same scale as linePoints
-    const span = max - min || 1;
-    return 8 + (HEIGHT - 16) - ((HEIGHT - 16) * (0 - min)) / span;
-  })() : 0;
+  const zeroY = xy.length > 0 ? 8 + (HEIGHT - 16) - ((HEIGHT - 16) * (0 - min)) / (max - min || 1) : 0;
   const lastIndex = points.length - 1;
-  const labelStep = Math.max(1, Math.ceil(points.length / 6));
+  // D-29: every third month once there are more than 24 points, and never closer than one label width, counted back from today.
+  const spacing = points.length > 1 ? (width - 16) / (points.length - 1) : width;
+  const labelStep = Math.max(points.length > 24 ? 3 : 1, Math.ceil(LABEL_W / spacing));
+  // D-29: three value labels (low, middle, high) on the same scale linePoints uses (0 is always inside the range).
+  const span = max - min || 1;
+  const yOf = (v: number): number => 8 + (HEIGHT - 16) - ((HEIGHT - 16) * (v - min)) / span;
+  const ticks = [min, Math.round((min + max) / 2), max].map((v) => ({ v, y: yOf(v) }));
   const metaStyle = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   const sel = selected !== null ? points[selected] : undefined;
 
@@ -120,6 +123,11 @@ export function NetWorthLine({ points, currency, selected, onSelect, summary, te
             )}
           </Svg>
         </View>
+        {ticks.map((tk, i) => (
+          <Text key={`tick-${i}`} testID={`${testID}-tick-${i}`} pointerEvents="none" style={[metaStyle, { position: 'absolute', left: 8, top: Math.min(Math.max(0, tk.y - 16), HEIGHT - 16) }]}>
+            {f.money(tk.v)}
+          </Text>
+        ))}
         {xy.map((p, i) => (
           <Pressable
             key={points[i]!.date}
@@ -134,8 +142,8 @@ export function NetWorthLine({ points, currency, selected, onSelect, summary, te
       </View>
       <View style={styles.axis}>
         {points.map((p, i) =>
-          i % labelStep === 0 || i === lastIndex ? (
-            <Text key={p.date} style={[metaStyle, { position: 'absolute', left: Math.min(Math.max(0, xy[i]!.x - 20), width - 40), width: 40, textAlign: 'center' }]}>
+          (lastIndex - i) % labelStep === 0 ? (
+            <Text key={p.date} style={[metaStyle, { position: 'absolute', left: Math.min(Math.max(0, xy[i]!.x - LABEL_W / 2), width - LABEL_W), width: LABEL_W, textAlign: 'center' }]}>
               {monthShort(p.date.slice(0, 7), locale, false)}
             </Text>
           ) : null,

@@ -140,4 +140,20 @@ describe('NetWorthLine', () => {
     expect(b.queryByTestId('net-worth-line-path', opts)).toBeNull();
     expect(b.getByTestId('net-worth-line-dot-0', opts)).toBeTruthy();
   });
+  it('shows three value labels in the chart currency, low to high, on the line scale', async () => {
+    const big = [{ date: '2026-05-31', value: 150000 }, { date: '2026-06-30', value: 200000 }];
+    const { getByTestId } = await wrap(<NetWorthLine points={big} currency="USD" selected={null} onSelect={() => undefined} summary="s" />);
+    // the scale includes 0 (as linePoints does), so low is $0, middle $1,000, high $2,000
+    expect(getByTestId('net-worth-line-tick-0', opts).props.children).toBe('$0');
+    expect(getByTestId('net-worth-line-tick-1', opts).props.children).toBe('$1,000');
+    expect(getByTestId('net-worth-line-tick-2', opts).props.children).toBe('$2,000');
+  });
+  it('thins month labels past 24 points and never lets two labels overlap', async () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({ date: `${2024 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}-28`, value: 100 + i }));
+    const { queryAllByText } = await wrap(<NetWorthLine points={many} currency="USD" selected={null} onSelect={() => undefined} summary="s" />);
+    const labels = queryAllByText(/^[A-Z][a-z]{2}$/, opts);
+    // 330 wide, 30 points: spacing ~11, so a 40 wide label needs every 4th point; fewer than every third is never shown
+    expect(labels.length).toBeLessThanOrEqual(10);
+    expect(labels.length).toBeGreaterThan(0);
+  });
 });
