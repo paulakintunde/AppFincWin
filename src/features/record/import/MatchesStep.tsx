@@ -13,6 +13,8 @@ import { useAccounts } from '@/data/queries/accounts';
 import { AccountPicker } from '@/features/record/entry/pickers/AccountPicker';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
+import { QueueNote } from '@/features/record/entry/QueueNote';
 import { Pill } from '@/ui/Pill';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
@@ -27,6 +29,7 @@ type TransferRow = ImportState['transferRows'][number];
 
 export function MatchesStep({ state }: { state: ImportState }) {
   const t = useT();
+  const queueGuard = useQueueGuard();
   const fmt = useFormatAmount();
   const rc = useRecordContext();
   const { colors, pairing } = useTheme();
@@ -211,6 +214,7 @@ export function MatchesStep({ state }: { state: ImportState }) {
       {atCap && !overCap ? <T tone="inkMuted">{t('importCsv.suggestionCap', { count: maxAcceptedSuggestions(included) })}</T> : null}
       {noTransfers && state.transferRows.length > 0 ? <T tone="inkMuted">{t('importCsv.transfersUnavailable')}</T> : null}
       {state.commitProblem === 'failed' ? <T tone="inkMuted">{t('importCsv.commitFailed')}</T> : null}
+      {state.commitProblem === 'queueFull' ? <QueueNote queued={queueGuard.queued} state="blocked" testID="import-queue-note" /> : null}
 
       {state.transferRows.map((ts) => {
         if (ts.suggestion.kind === 'pair') return pairCard(ts, ts.suggestion.existingId);

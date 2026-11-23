@@ -129,9 +129,12 @@ async function renderSheet(
   return { ...utils, onClose, onCsv };
 }
 
+const { setMockQueued } = jest.requireMock("@/data/sync/useQueueGuard") as { setMockQueued: (n: number) => void };
+
 beforeEach(() => {
   jest.clearAllMocks();
   mockPersonalRules = [];
+  setMockQueued(0);
 });
 
 afterEach(() => {
@@ -171,6 +174,16 @@ describe("PasteSheet", () => {
     const { onCsv } = await renderSheet();
     await fireEvent.press(screen.getByText("CSV file…"));
     expect(onCsv).toHaveBeenCalled();
+  });
+
+  it("10-13: a paste that would push the queue past 500 is refused up front and writes nothing", async () => {
+    setMockQueued(499);
+    const { onClose } = await renderSheet();
+    await fireEvent.changeText(screen.getByLabelText("Lines to add"), "Studio rent 1450\nCoffee 3");
+    await fireEvent.press(screen.getByText("Add 2 lines"));
+    expect(mockAdd).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText(/waiting to send. Connect to the internet to send them, then you can add more. Nothing is lost./)).toBeTruthy();
   });
 
   it("adds the ready lines once, closes, and queues a skipped toast", async () => {

@@ -7,6 +7,7 @@ import { useAccounts } from '@/data/queries/accounts';
 import { useDebts } from '@/data/queries/decide';
 import { useDebtPayments } from '@/data/queries/growDebts';
 import { useAddMonth } from '@/data/mutations/addMonth';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
 import { useSeriesOffers } from '@/data/queries/offers';
 import {
   useMonthView,
@@ -433,8 +434,14 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   const hasEarlier = useMemo(() => [...counts].some(([m, n]) => m < month && n > 0), [counts, month]);
   const addMonth = addableMonth(rc.today, rc.horizonMonth ?? null);
   const { add: addMonthMutation } = useAddMonth();
+  const guard = useQueueGuard();
   const onAddMonth = () => {
     if (addMonth === null || rc.householdId === null || rc.userId === null) return;
+    // 10-13 (D-28): adding a month is one queued change; at 500 waiting it is refused with the same calm message.
+    if (!guard.canAdd(1)) {
+      showToast({ kind: 'info', text: { key: 'system.queue.fullBody', params: { count: guard.queued } } });
+      return;
+    }
     addMonthMutation({
       householdId: rc.householdId,
       ownerId: rc.userId,

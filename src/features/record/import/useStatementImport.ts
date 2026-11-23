@@ -51,6 +51,7 @@ import { useCustomCurrencies } from '@/data/queries/customCurrencies';
 import { useFxLatest } from '@/data/queries/fxLatest';
 import { latestPerEur } from '@/data/queries/homeAmount';
 import { useImportCommit } from '@/data/mutations/importFinalize';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
 import { useRecordStatementPeriod } from '@/data/mutations/decideLinks';
 import { suggestionToSeries, useCreateSeries } from '@/data/mutations/recurringSeries';
 import { newStepId } from '@/data/mutations/undoCapture';
@@ -190,7 +191,7 @@ const NONE = new Map<never, never>();
  * hold; transfers asked for while the transfer category is unknown; or the write was refused
  * before anything was queued. Each leaves the user's choices in place to adjust and retry.
  */
-export type CommitProblem = 'suggestionCap' | 'transfersUnavailable' | 'failed';
+export type CommitProblem = 'suggestionCap' | 'transfersUnavailable' | 'failed' | 'queueFull';
 
 /** The mapping roles whose cells decide the decimal mark (S-CR-06). */
 const AMOUNT_ROLES = ['amount', 'debit', 'credit', 'balance', 'limit'] as const;
@@ -364,6 +365,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const [commitProblem, setCommitProblem] = useState<CommitProblem | null>(null);
   const run = useRef(0); // bumped on every restart or cancel, so a late read is dropped
   const committing = useRef(false);
+  const queueGuard = useQueueGuard();
   // D-10 / D-16: the picked PDF's bytes and the server's text live only here, never in state, and
   // are dropped as soon as they are read, on any rejection, cancel, commit or unmount.
   const pdfBytes = useRef<Uint8Array | null>(null);
@@ -1398,6 +1400,12 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     );
     // Nothing included and nothing marked paid: there is nothing to write.
     if (built.rows.length === 0 && built.finalize.markPaid.length === 0) return;
+    // 10-13 (D-28): an import that would push the waiting changes past 500 is refused up front, before any write.
+    if (!queueGuard.canAdd(built.rows.length)) {
+      setCommitProblem('queueFull');
+      if (m.stage === 'review') patch({ stage: 'matches' });
+      return;
+    }
 
     // Held until the next start or cancel, so a double tap can never write the batch twice.
     committing.current = true;
@@ -1470,7 +1478,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       committedCount: count,
       committedStepId: stepId,
     });
-  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, recordPeriod, rowsChecked, transfersUnavailable]);
+  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, queueGuard, recordPeriod, rowsChecked, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {

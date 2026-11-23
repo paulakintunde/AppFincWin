@@ -53,6 +53,8 @@ jest.mock('@/data/queries/activity', () => ({
 
 jest.setTimeout(30000);
 
+const { setMockQueued } = jest.requireMock('@/data/sync/useQueueGuard') as { setMockQueued: (n: number) => void };
+
 async function show() {
   const onClose = jest.fn();
   const utils = await render(
@@ -72,6 +74,7 @@ beforeEach(() => {
     row('4', 'Rent', '2026-09-01', -90000, { recurring_series_id: 's1' }),
   ];
   mockCurrentRows = [];
+  setMockQueued(0);
 });
 
 describe('previousMonth', () => {
@@ -113,5 +116,22 @@ describe('CloneMonthSheet', () => {
     const { getByText, getByLabelText } = await show();
     expect(getByText(/^Nothing from September 2026 to clone/)).toBeTruthy();
     expect(getByLabelText('Clone 0 lines').props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('10-13: a clone that would push the queue past 500 is refused up front with the calm message and fires nothing', async () => {
+    setMockQueued(499);
+    const { getByText, queryByTestId, onClose } = await show();
+    expect(queryByTestId('clone-queue-note')).toBeNull();
+    await fireEvent.press(getByText('Clone 3 lines'));
+    expect(mockClone).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+    expect(getByText('You have 499 changes waiting to send. Connect to the internet to send them, then you can add more. Nothing is lost.')).toBeTruthy();
+  });
+
+  it('10-13: a clone that fits under 500 still runs', async () => {
+    setMockQueued(497);
+    const { getByText } = await show();
+    await fireEvent.press(getByText('Clone 3 lines'));
+    expect(mockClone).toHaveBeenCalledTimes(1);
   });
 });

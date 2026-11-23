@@ -70,6 +70,8 @@ import { useGuessContext } from '@/features/record/useGuessContext';
 import { useAddRule } from '@/data/mutations/categoryRules';
 import { hapticTap } from '@/ui/haptics';
 import { useBulkAdd } from '@/data/mutations/bulkAdd';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
+import { QueueNote } from './QueueNote';
 import { saveCount, summarise, type ListItem } from '@/engine/entryList';
 import { EntryList } from './EntryList';
 import { EntryListFooter, listSummaryText } from './EntryListFooter';
@@ -275,6 +277,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const editRow: TransactionRow | null = mode.kind === 'edit' ? mode.row : null;
   const pair = mode.kind === 'edit-transfer' ? mode : null;
   const isNew = mode.kind === 'new';
+  // 10-13 (D-27, D-28): only a new entry is held back at 500 waiting changes; an edit or delete never is.
+  const guard = useQueueGuard();
+  const queueBlocked = isNew && guard.state === 'blocked';
   // 02.3 REC-30: the entry list (new entries only). finishFor holds the form state the
   // finish-current error was raised for, so any later edit to the form clears it.
   const activeAccountIds = useMemo(() => new Set(activeAccounts.map((a) => a.id)), [activeAccounts]);
@@ -559,6 +564,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const requestCancel = () => (isNew && list.items.length > 0 ? setConfirmCancel(true) : onClose());
 
   const save = () => {
+    if (queueBlocked) return;
     if (isNew && list.items.length > 0) {
       saveWithList();
       return;
@@ -847,6 +853,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     <Sheet visible onDismiss={isNew ? onAccidentalDismiss : onClose} dirty={editDirty} accessibilityLabel={titleText}>
       <SheetHeader title={titleText} cancelLabel={t('record.sheet.cancel')} onCancel={requestCancel} />
       <SheetScroll contentContainerStyle={styles.column}>
+        {isNew ? <QueueNote queued={guard.queued} state={guard.state} /> : null}
         {isNew ? (
           <View style={styles.chips}>
             {(['out', 'in', 'transfer'] as Direction[]).map((d) => (
@@ -1118,8 +1125,8 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                 : saveText
             }
             onSave={save}
-            saveDisabled={transferSaveBlocked || (list.items.length > 0 && listHasTransfer && categories.transferCategoryId === null)}
-            saveHint={transferSaveBlocked ? t('record.sheet.transferCategoryLoading') : undefined}
+            saveDisabled={queueBlocked || transferSaveBlocked || (list.items.length > 0 && listHasTransfer && categories.transferCategoryId === null)}
+            saveHint={queueBlocked ? t('system.queue.saveDisabledA11y', { count: guard.queued }) : transferSaveBlocked ? t('record.sheet.transferCategoryLoading') : undefined}
             onAddToList={addToList}
             addDisabled={!list.canAdd(state.direction)}
             capNote={capNote}
