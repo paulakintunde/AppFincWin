@@ -48,3 +48,7 @@ uri = "pg-functions://postgres/public/hook_before_user_created"
 # reviewer-signin (10-19, ACC-11): store review only; allow-list + rate limit in-function; refuses every non-listed email identically.
 [functions.reviewer-signin]
 verify_jwt = false
+
+# alerts-deliver (10-23, ALR-03/04/06, D-32): pg_cron every minute with its own secret ALERTS_DELIVER_SECRET; never callable with a user JWT.
+[functions.alerts-deliver]
+verify_jwt = false
