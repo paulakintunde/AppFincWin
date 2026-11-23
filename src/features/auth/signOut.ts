@@ -79,7 +79,7 @@ export async function performSignOut(deps?: Partial<SignOutDeps>): Promise<void>
 
   // 10-12: tells AuthProvider this SIGNED_OUT is ours, so it does not treat it as a remote sign-out.
   setLocalSignOutInProgress(true);
-  if (lastSignOutReason() !== 'remote') setSignOutReason('local');
+  if (lastSignOutReason() !== 'remote' && lastSignOutReason() !== 'deleted') setSignOutReason('local'); // 10-14: 'deleted' is set by the deletion flow
   try {
     await resolved.analytics.disable();
 
