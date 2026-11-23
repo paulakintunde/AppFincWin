@@ -128,6 +128,12 @@ export const queryKeys = {
   // 09-13: the person's private level, answers and feature switches.
   userSetup: (userId: string) => ['user-setup', userId] as const,
   featureSwitches: (userId: string) => ['feature-switches', userId] as const,
+  // 10-03: alerts, archived months and the signed-in devices list.
+  alertSettings: (userId: string) => ['alert-settings', userId] as const,
+  alertPrefs: (userId: string) => ['alert-prefs', userId] as const,
+  alertLog: (userId: string) => ['alert-log', userId] as const,
+  archivedMonths: (userId: string) => ['archived-months', userId] as const,
+  devices: (userId: string) => ['devices', userId] as const, // never persisted (persister NEVER_PERSIST_ROOTS)
 };
 
 export const mutationKeys = {
@@ -242,6 +248,12 @@ export const mutationKeys = {
   makeLinePrivate: ['household-sharing', 'make-private'] as const,
   setPaidBy: ['household-sharing', 'paid-by'] as const,
   setMyLineCategory: ['household-sharing', 'my-category'] as const,
+  // 10-03: alert switches and delivery preferences, month archive and restore.
+  saveAlertSetting: ['save-alert-setting'] as const,
+  saveAlertPrefs: ['save-alert-prefs'] as const,
+  archiveMonth: ['archive-month'] as const,
+  restoreMonth: ['restore-month'] as const,
+  restoreAllMonths: ['restore-all-months'] as const,
 };
 
 // D-20: one scope means every paused write replays serially in the order it was queued --
