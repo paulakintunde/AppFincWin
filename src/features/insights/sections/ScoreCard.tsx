@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { FigureScope } from '@/data/queries/figureScope';
-import type { Prepared } from '@/engine/decide/v3/prepare';
+import type { Prepared } from '@/engine/decide/v3';
 import { healthInputsOf, healthScore, type HealthMissing, type HealthPart } from '@/engine/health';
 import { useT } from '@/i18n';
 import { step } from '@/theme/layout';
