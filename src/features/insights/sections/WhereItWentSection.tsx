@@ -12,7 +12,6 @@ import { radii, step } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadows, type CategorySwatchKey } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { requestActivityFocus } from '@/state/activityFocus';
 import { Chip } from '@/ui/Chip';
@@ -22,12 +21,13 @@ import { SegmentedToggle } from '@/ui/SegmentedToggle';
 import { Text } from '@/ui/Text';
 import { useDetailFormat } from '@/features/decide/screens/answer/detail/detailKit';
 import { CategoryRow } from '../charts/CategoryRow';
+import { NO_NAMING, filterIdsOf, shownCategory, type CategoryNaming } from '../model/categoryNaming';
 import { categoryModel, recordedMonths } from '../model/everyday';
 
 const SHOWN = 8;
 const PERIOD_KEY = { '6m': 'insights.range.periodSixMonths', '1y': 'insights.range.periodOneYear', all: 'insights.range.periodAll' } as const;
 
-export function WhereItWentSection({ prepared, currency, range }: { prepared: Prepared; currency: string; range: InsightsRange }) {
+export function WhereItWentSection({ prepared, currency, range, naming = NO_NAMING }: { prepared: Prepared; currency: string; range: InsightsRange; naming?: CategoryNaming }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const f = useDetailFormat(currency);
@@ -49,7 +49,8 @@ export function WhereItWentSection({ prepared, currency, range }: { prepared: Pr
   const shownRows = all ? model.rows : model.rows.slice(0, SHOWN);
 
   const open = (categoryId: string | null): void => {
-    requestActivityFocus({ month: focusMonth, filter: { ...EMPTY_FILTER, categoryIds: [categoryId], direction: 'out' } });
+    // 07 D-33: a row that gathers a partner's category on shared lines opens Activity on every stored id behind it.
+    requestActivityFocus({ month: focusMonth, filter: { ...EMPTY_FILTER, categoryIds: filterIdsOf(categoryId, naming), direction: 'out' } });
     router.navigate('/activity' as Href);
   };
 
@@ -95,8 +96,9 @@ export function WhereItWentSection({ prepared, currency, range }: { prepared: Pr
           </Text>
           <View>
             {shownRows.map((r, rank) => {
-              const row = r.categoryId === null ? undefined : byId.get(r.categoryId);
-              const name = r.categoryId === null ? t('insights.categories.uncategorised') : row ? categoryName(row, t as never) || t('insights.categories.uncategorised') : t('insights.categories.uncategorised');
+              const shown = shownCategory(r.categoryId, byId, naming, t as never);
+              const name = shown.name;
+              const row = shown.glyph;
               return (
                 <CategoryRow
                   key={r.categoryId ?? 'none'}
