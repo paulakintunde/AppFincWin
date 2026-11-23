@@ -12,6 +12,11 @@ export default {
     // 05.5 ARC-12: the shared month module
     'src/engine/month/**/*.ts',
     '!src/engine/month/**/__tests__/**',
+    // 07-04: the health score and Insights figures (run deferred to pre-launch, owner rule)
+    'src/engine/health/**/*.ts',
+    '!src/engine/health/**/__tests__/**',
+    'src/engine/insights/**/*.ts',
+    '!src/engine/insights/**/__tests__/**',
     // Shared: old-engine root files that v3 source imports
     'src/engine/decide/bisectCore.ts',
     'src/engine/decide/cardRule.ts',
