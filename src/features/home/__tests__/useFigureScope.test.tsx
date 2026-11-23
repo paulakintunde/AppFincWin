@@ -27,12 +27,11 @@ describe('useFigureScope', () => {
   it('a tap made before the stored read resolves is not overridden by it (IN-05)', async () => {
     await AsyncStorage.setItem('fincwin:figureScope.home', 'household');
     let release: (v: string | null) => void = () => undefined;
-    const spy = jest.spyOn(AsyncStorage, 'getItem').mockReturnValueOnce(new Promise<string | null>((r) => (release = r)));
+    (AsyncStorage.getItem as jest.Mock).mockImplementationOnce(() => new Promise<string | null>((r) => (release = r)));
     const { result } = await renderHook(() => useFigureScope('home'));
     await act(async () => result.current[1]('mine'));
     await act(async () => release('household'));
     expect(result.current[0]).toBe('mine');
-    spy.mockRestore();
   });
 
   it('reads anything else as Mine, and a failed read keeps Mine', async () => {
