@@ -159,6 +159,10 @@ export const insights = {
     emptyHeading: 'Nothing to show yet',
     emptyBody: 'Add a few entries and your months appear here.',
     emptyAction: 'Add an entry',
+    // IN-06: a deep link to Insights at a level below Everyday; adding entries would not open it.
+    lockedHeading: 'Insights opens at Everyday',
+    lockedBody: 'Change your level in Features and Insights appears here.',
+    lockedAction: 'Open Features',
     errorTitle: 'Couldn’t load this right now',
     errorBody: 'Your records are safe. Check your connection and try again.',
     retry: 'Try again',

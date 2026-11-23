@@ -25,7 +25,8 @@ const seen: Record<string, unknown> = {};
 
 jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: (id: string) => ({ visible: mock.access[id] ?? false }) }));
 jest.mock('@/features/record/entry/entryHost', () => ({ openEntry: (m: unknown) => mockOpenEntry(m) }));
-jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+const mockPushOnce = jest.fn();
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPushOnce(h) }));
 jest.mock('@/shell/screen/TabRootScreen', () => ({ TabRootScreen: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('@/ui/SyncStatusLine', () => ({ SyncStatusLine: () => null }));
 jest.mock('../useInsightsScope', () => ({
@@ -201,6 +202,10 @@ describe('InsightsScreen', () => {
     expect(screen.getByTestId('insights-empty')).toBeTruthy();
     expect(screen.queryByTestId('insights-in-out')).toBeNull();
     expect(screen.queryByText('Add an entry')).toBeNull();
+    expect(screen.getByText('Insights opens at Everyday')).toBeTruthy();
+    expect(screen.queryByText('Nothing to show yet')).toBeNull();
+    await fireEvent.press(screen.getByText('Open Features'));
+    expect(mockPushOnce).toHaveBeenCalledWith('/features');
   });
 });
 

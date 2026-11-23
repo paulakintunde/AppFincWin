@@ -10,6 +10,7 @@ import { useInsightsPrepared } from '@/data/queries/insights';
 import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
 import { openEntry } from '@/features/record/entry/entryHost';
 import { useT } from '@/i18n';
+import { FEATURES_HREF } from '@/features/plans/routes';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import { radii, space } from '@/theme/layout';
@@ -42,6 +43,7 @@ export function InsightsScreen() {
   const addOut = useCallback(() => openEntry({ kind: 'new', direction: 'out' }), []);
   const addIn = useCallback(() => openEntry({ kind: 'new', direction: 'in' }), []);
   const addAccount = useCallback(() => pushOnce('/accounts' as Href), []);
+  const openFeatures = useCallback(() => pushOnce(FEATURES_HREF), []);
   const toMine = useCallback(() => s.setScope('mine'), [s]);
   const onGap = useCallback(
     (missing: 'income' | 'spending' | 'balance') => (missing === 'income' ? addIn() : missing === 'spending' ? addOut() : addAccount()),
@@ -57,16 +59,26 @@ export function InsightsScreen() {
     visible && data.status === 'ready' && prepared !== null && recordedMonths(prepared).length === 0 && !(s.scope === 'mine' && hasEntries);
 
   let body: React.ReactNode;
-  if (!visible || empty) {
-    const shared = household && visible;
+  if (!visible) {
+    // IN-06: a deep link below the level that shows Insights. Adding entries would not open it, so point at Features instead.
+    body = (
+      <EmptyState
+        testID="insights-empty"
+        heading={t('insights.states.lockedHeading')}
+        body={t('insights.states.lockedBody')}
+        actionLabel={t('insights.states.lockedAction')}
+        onAction={openFeatures}
+      />
+    );
+  } else if (empty) {
+    const shared = household;
     body = (
       <EmptyState
         testID="insights-empty"
         heading={t(shared ? 'insights.states.householdEmptyHeading' : 'insights.states.emptyHeading')}
         body={t(shared ? 'insights.states.householdEmptyBody' : 'insights.states.emptyBody')}
-        {...(visible
-          ? { actionLabel: t(household ? 'insights.states.householdEmptyAction' : 'insights.states.emptyAction'), onAction: addOut }
-          : {})}
+        actionLabel={t(household ? 'insights.states.householdEmptyAction' : 'insights.states.emptyAction')}
+        onAction={addOut}
       />
     );
   } else if (data.status === 'error') {
