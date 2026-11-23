@@ -18,7 +18,6 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { textRole } from '@/theme/typography';
 import { EmptyState } from '@/ui/EmptyState';
 import { SegmentedControl } from '@/ui/SegmentedControl';
-import { SyncStatusLine } from '@/ui/SyncStatusLine';
 import { Text } from '@/ui/Text';
 import { RangeControl } from './charts/RangeControl';
 import { recordedMonths } from './model/everyday';
@@ -132,7 +131,7 @@ export function InsightsScreen() {
           />
         ) : null}
         {visible ? <RangeControl value={range} onChange={setRange} /> : null}
-        {visible ? <SyncStatusLine /> : null}
+        {/* The sync line shows once, under the tab header (SyncProblemLine in the tab chrome), as on Home. */}
         {body}
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('insights.footer')}</Text>
       </View>

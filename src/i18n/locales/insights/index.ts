@@ -111,6 +111,9 @@ export const insights = {
     emptyHeading: 'No accounts yet',
     emptyBody: 'Add an account and your net worth appears.',
     emptyAction: 'Add an account',
+    // Pixel 9 fix: Household counts joint accounts only, so a member with only personal accounts sees this, with no action.
+    householdEmptyHeading: 'No joint accounts yet',
+    householdEmptyBody: 'Household net worth counts joint accounts only. Personal accounts count in Just me.',
     onePointHeading: 'The line needs a second month',
     onePointBody: 'The figure above is today’s. The line appears after your second month of records.',
   },

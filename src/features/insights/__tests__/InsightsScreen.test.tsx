@@ -28,7 +28,12 @@ jest.mock('@/features/record/entry/entryHost', () => ({ openEntry: (m: unknown) 
 const mockPushOnce = jest.fn();
 jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPushOnce(h) }));
 jest.mock('@/shell/screen/TabRootScreen', () => ({ TabRootScreen: ({ children }: { children: React.ReactNode }) => children }));
-jest.mock('@/ui/SyncStatusLine', () => ({ SyncStatusLine: () => null }));
+jest.mock('@/ui/SyncStatusLine', () => ({
+  SyncStatusLine: () => {
+    const { Text: T } = require('react-native');
+    return <T testID="sync-status-line">sync</T>;
+  },
+}));
 jest.mock('../useInsightsScope', () => ({
   useInsightsScope: () => ({
     scope: mock.scope,
@@ -119,6 +124,11 @@ describe('InsightsScreen', () => {
     expect(screen.queryByTestId('net-worth-section')).toBeNull();
     expect(screen.queryByTestId('score-card')).toBeNull();
     expect(screen.getByText(FOOTER)).toBeTruthy();
+  });
+
+  it('leaves the sync line to the tab header, so it shows once', async () => {
+    await renderScreen();
+    expect(screen.queryAllByTestId('sync-status-line')).toHaveLength(0);
   });
 
   it('level 3: Net worth then Score follow the Everyday sections', async () => {
