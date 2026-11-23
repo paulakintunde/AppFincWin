@@ -48,7 +48,8 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // Merge of 05.5 (05.5-28, 12) into Phase 8 (13): both bumped from 11 with different shapes -- bumped to 14.
 // Phase 9: plan state, user setup, feature switches, holds flags, double-cover state and locked-write records cached -- bumped 14 -> 15.
 // 08.1: decide outcomes, household spend rules, joint accounts, partner opt-ins and recurring series rows changed -- bumped 15 -> 16.
-export const CACHE_SCHEMA_VERSION = '16';
+// Phase 7: shared-line categories, account-balance error state and Insights month-so-far shapes -- bumped 16 -> 17.
+export const CACHE_SCHEMA_VERSION = '17';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's
