@@ -15,7 +15,7 @@ import {
   shouldLockOnActive,
   type LockState,
 } from '../lockStore';
-import { authenticateBiometric, biometricKind, isBiometricPending } from '../biometric';
+import { authenticateBiometric, authenticateDevice, biometricKind, deviceLockAvailable, isBiometricPending } from '../biometric';
 import { wipeDeviceData } from '@/services/storage/wipe';
 
 const mockSecure = new Map<string, string>();
@@ -50,6 +50,7 @@ describe('lockStore', () => {
   it('defaults: off, one minute', async () => {
     expect(DEFAULT_LOCK_SETTINGS.enabled).toBe(false);
     expect(DEFAULT_LOCK_SETTINGS.timing).toBe('oneMinute');
+    expect(DEFAULT_LOCK_SETTINGS.lockMethod).toBe('device');
     const s = await loadLockState();
     expect(s.settings).toEqual(DEFAULT_LOCK_SETTINGS);
     expect(s.hasPin).toBe(false);
@@ -230,6 +231,48 @@ describe('biometric', () => {
     expect(await authenticateBiometric('a', 'b')).toBe('fail');
     LA.authenticateAsync.mockRejectedValueOnce(new Error('boom'));
     expect(await authenticateBiometric('a', 'b')).toBe('fail');
+    expect(isBiometricPending()).toBe(false);
+  });
+});
+
+describe('device lock (D-33)', () => {
+  it('lockMethod defaults to device, round-trips appPin and ignores junk', async () => {
+    expect((await loadLockState()).settings.lockMethod).toBe('device');
+    await saveLockSettings({ lockMethod: 'appPin' });
+    expect((await loadLockState()).settings.lockMethod).toBe('appPin');
+    await AsyncStorage.setItem('fincwin:lock-settings', JSON.stringify({ lockMethod: 'nope' }));
+    expect((await loadLockState()).settings.lockMethod).toBe('device');
+  });
+
+  it('deviceLockAvailable is true only above SecurityLevel.NONE', async () => {
+    LA.getEnrolledLevelAsync.mockResolvedValueOnce(0);
+    expect(await deviceLockAvailable()).toBe(false);
+    LA.getEnrolledLevelAsync.mockResolvedValueOnce(1);
+    expect(await deviceLockAvailable()).toBe(true);
+    LA.getEnrolledLevelAsync.mockRejectedValueOnce(new Error('x'));
+    expect(await deviceLockAvailable()).toBe(false);
+  });
+
+  it('authenticateDevice allows the phone passcode and tracks pending', async () => {
+    let resolve!: (v: { success: true }) => void;
+    LA.authenticateAsync.mockReturnValueOnce(new Promise((r) => (resolve = r as typeof resolve)));
+    const p = authenticateDevice('Open FincWin', 'Cancel');
+    expect(isBiometricPending()).toBe(true);
+    resolve({ success: true });
+    expect(await p).toBe('ok');
+    expect(isBiometricPending()).toBe(false);
+    const arg = LA.authenticateAsync.mock.calls[0]![0]!;
+    expect(arg).toEqual(expect.objectContaining({ promptMessage: 'Open FincWin', cancelLabel: 'Cancel', disableDeviceFallback: false }));
+    expect(arg).not.toHaveProperty('biometricsSecurityLevel');
+  });
+
+  it('authenticateDevice maps cancel and failure', async () => {
+    LA.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'user_cancel' } as never);
+    expect(await authenticateDevice('a', 'b')).toBe('cancel');
+    LA.authenticateAsync.mockResolvedValueOnce({ success: false, error: 'lockout' } as never);
+    expect(await authenticateDevice('a', 'b')).toBe('fail');
+    LA.authenticateAsync.mockRejectedValueOnce(new Error('boom'));
+    expect(await authenticateDevice('a', 'b')).toBe('fail');
     expect(isBiometricPending()).toBe(false);
   });
 });

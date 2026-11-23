@@ -78,6 +78,7 @@ jest.mock('../ComingUpCard', () => ({ ComingUpCard: mockProbe('coming') }));
 jest.mock('../AccountsCard', () => ({ AccountsCard: mockProbe('accounts') }));
 jest.mock('@/features/levels/OfferSlot', () => ({ OfferSlot: mockProbe('offer') })); // 09-22: inline offer between the coming-up and accounts cards
 jest.mock('@/features/plans/notices/PlanNoticeSlot', () => ({ PlanNoticeSlot: mockProbe('planNotice') })); // 09-19: above This month
+jest.mock('@/features/lock/LockOfferCard', () => ({ LockOfferCard: mockProbe('lockOffer') })); // 10-21: one-time lock offer under the plan notice
 jest.mock('../ProjectionDetailSheet', () => ({ ProjectionDetailSheet: mockProbe('projection') }));
 jest.mock('@/features/record/activity/TransactionDetailSheet', () => ({ TransactionDetailSheet: mockProbe('detail') }));
 jest.mock('@/features/record/entry/EditScopePrompt', () => ({ EditScopePrompt: mockProbe('scope') }));
