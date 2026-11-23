@@ -223,3 +223,100 @@ Applied 2026-11-23 per owner decisions D-31..D-34 (07-CONTEXT.md).
 Migration: `supabase/migrations/20261125001000_shared_line_categories.sql` — security-definer `shared_line_categories(p_household uuid)`, `search_path = ''`, execute revoked from public/anon and granted to authenticated. Returns id, owner_id, builtin_key, name, color_key, icon_key for categories (not the caller's) on a live shared line or shared series of a household the caller belongs to. No monthly_cap, archived_at or new select policy. Not yet applied to production.
 
 Notes: owner_id was added to the RPC's columns (D-32 named five) so the label names the category's owner, not the line's creator; member ids are already visible to members. Resolution runs once in useDecideSnapshot, so Decide, Insights Just me and Insights Household read the same resolved lines; everyday.ts needed no aliasing of its own. Decide answers move only for members with shared lines categorised by a partner (Savings lines now saving, own money rules covering matched shared lines, member picks honoured). Engine approved cases, golden and crosscheck fixtures did not move.
+
+## Re-review (fixes)
+
+**Reviewed:** 2026-11-23 · **Scope:** `git diff 49106b3f..68f573d4 -- src app supabase` (fix commits f6d22b79..d8ac5d92) · **Depth:** deep
+**Ran:** `sharedCategories.test.ts`, `queries/__tests__/insights.test.ts` (`--coverage=false`): 23/23 pass.
+
+### Verdict per finding
+
+| Finding | Verdict | Notes |
+|---|---|---|
+| CR-01 | **not fixed (partly)** | The new gate checks the non-month inputs with `isLoading`. Offline it does not fire (NR-01). The tests mock `isLoading: true` directly, so they never hit the paused case. |
+| WR-01 | fixed | Separate counts by kind and separate notes. The test fails without the split. |
+| WR-02 | fixed (Just me) | A first-month user with entries sees the sections. Household keeps the whole-tab empty state, as noted. |
+| WR-03 / D-32 / D-33 | fixed | The RPC is sound (see below). Resolution order is pick, then own builtin match, then partner category. "Pets (Sam)" is named through `useMemberLabel`. An Activity tap gathers every source id. |
+| WR-04 / D-31 | fixed, new issue | Untagged shared line income now counts. A series-level "not money to spend" tag is lost (NR-02). |
+| D-34 | fixed, new issue | Resolution runs in the data layer before the builder, and `src/engine` is untouched apart from IN-01's `capReduction`. A household of one never runs the reads and keeps its arrays. The Retry and deploy-order gaps are NR-03. |
+| IN-01 | fixed | `capReduction` and the cap line. The engine test checks that parts minus the reduction equal the score. |
+| IN-02 | fixed | |
+| IN-03 | fixed | Separate `rowA11yStatic` key. |
+| IN-04 | fixed | The selection is keyed by `range/scope`. |
+| IN-05 | fixed | A `touched` ref. |
+| IN-06 | fixed | Locked copy with an Open Features action. |
+| IN-07 | fixed | Holdings in a joint account are left out of Just me. |
+
+### Migration `20261125001000_shared_line_categories.sql`: safe to apply to production
+
+- It is `security definer` with `set search_path = ''`. Every name is fully qualified (`public.*`, `auth.uid()`).
+- It revokes execute from `public, anon` and grants it to `authenticated` only.
+- It is gated on `p_household in (select public.user_household_ids())`. A non-member gets nothing.
+- It excludes `c.owner_id = auth.uid()`. It returns only categories on a shared line (`is_shared`, `deleted_at is null`) or a shared series (`is_shared`, `deleted_at is null`) in that household.
+- It returns only id, owner_id, builtin_key, name, color_key and icon_key. It never returns `monthly_cap`, `archived_at` or `is_sample`, and it adds no select policy.
+- A member cannot use it to name an arbitrary category. The transaction and series guards (`20260926000200`:79-85, `20261122000500`:285-291, `20260926000300`:86-93) require the category's owner to be the writer or the line's `created_by`. Insert pins `created_by = auth.uid()`, and update applies only to own or shared lines. So a partner's private category only comes back if it already sits on a shared line.
+- It is additive: one new function, no DDL on tables, no data change. `create or replace` plus revoke/grant can be re-run.
+- pgTAP 118 covers shared line, shared series, private line, deleted line, own, other household, non-member, anon and the `search_path` config.
+
+### New findings
+
+#### NR-01 (BLOCKER): CR-01 still shows a net-worth figure as final when debts, holdings, FX or today's balances have no cache and the device is offline
+
+**File:** `src/data/queries/insightsNetWorth.ts:259-265`, `src/data/queries/activity.ts:348`
+**Issue:** The gate uses `q.isLoading`, and `useAccountBalances` returns `query.isLoading`. In TanStack v5, `isLoading = isPending && fetchStatus === 'fetching'` (`query-core/queryObserver.js:375-378`). The app runs queries with `networkMode: 'offlineFirst'` and `retry: 2` (`src/data/queryClient.ts:81-82`). Offline, the first attempt fails, the retryer pauses (`canContinue` is false), and the query sits at `fetchStatus: 'paused'` with `data === undefined` and `isError === false`. Then `isLoading` and `isError` are both false.
+
+This is the exact CR-01 scenario. A user with a $12,000 loan opens Insights offline with no cached debts. `debts = NO_DEBTS`, status is `'ready'`, and net worth shows $12,000 too high with no note. The same happens with `balancesLoading` (opening balances only) and `fx` (accounts in a foreign currency dropped). The per-month `reads` already use the correct `data === undefined && !isError` test. The CR-01 tests pass only because they mock `isLoading: true`.
+**Fix:**
+```ts
+const waiting = (q: { data?: unknown; isError?: boolean; fetchStatus?: string }) =>
+  q.data === undefined && q.isError !== true && q.fetchStatus !== 'idle'; // pending, fetching or paused; not disabled
+const anyLoading = reads.some(...) || monthsRead.isLoading || balancesWaiting || inputReads.some(waiting);
+```
+In `useAccountBalances`, expose `isLoading: query.data === undefined && !query.isError && query.fetchStatus !== 'idle'` (or a separate `isWaiting`). Add a test with a query mocked as `{ data: undefined, isLoading: false, isError: false, fetchStatus: 'paused' }` that expects `'loading'`.
+
+#### NR-02 (WARNING): D-31 counts a shared series occurrence in Household "In" even when its series is marked "not money to spend"
+
+**File:** `src/data/queries/figureScope.ts:139-150` (with `householdSnapshotSource`, `series: []`)
+**Issue:** `householdCountsAs` looks only at the row's own `counts_as` / `income_kind`. Occurrences do not carry their series' tag: the materialiser does not copy `counts_as` (no migration writes it onto occurrences), and the builder reads the series as the fallback (`buildInputs.ts:347-348`). The Household source drops all series, so an occurrence of a shared series tagged `counts_as = 'kept'` is stamped `'available'` and counts in Household "In". The same applies to an occurrence whose series carries a "not money to spend" `income_kind`.
+
+Scenario: a shared monthly "Rent share from lodger, kept for repairs" series marked "not money to spend". Before the fix it counted 0. Now it inflates Household In every month, against D-31's "lines a member marked not money to spend stay out". The D-31 tests set the tag only on the row.
+**Fix:** In `householdSnapshotRows`, pass `source.series`. Treat a row as tagged when its series (`recurring_series_id`) carries `counts_as` or `income_kind`, and copy the series tag onto the row instead of stamping `'available'`:
+```ts
+const s = r.recurring_series_id ? seriesById.get(r.recurring_series_id) : undefined;
+const tag = r.counts_as ?? r.income_kind ?? s?.counts_as ?? s?.income_kind ?? null;
+if (tag !== null) return s && r.counts_as == null && r.income_kind == null ? { counts_as: s.counts_as ?? null, income_kind: s.income_kind ?? null } : null;
+```
+Add a test: a shared series with `counts_as: 'kept'`, an untagged occurrence, Household In = 0.
+
+#### NR-03 (WARNING): Decide's Retry never refetches the two new shared-category reads, so their failure leaves Decide stuck in error (and the app must not ship before the migration)
+
+**File:** `src/data/queries/decide.ts:424-438, 573-582`
+**Issue:** `sharedFailure` makes Decide `'error'` (line 429). But `refetches` and `failedFlags` list only `reads` and `splitsQuery`, so tapping Retry does nothing for `partnerCatsQuery` or `picksQuery`. Decide stays in its error state until a remount or a background refetch.
+
+The worst case is deploy order. If the client (including a preview OTA) reaches a device before `shared_line_categories` is in production, the RPC returns PGRST202 on every call. Then every household member with a shared line in the window gets a permanent Decide error, and Insights shows one in both scopes, since it reads the same snapshot. Decide is the core value.
+**Fix:** Append the two reads to both arrays:
+```ts
+const refetches = [...reads.map((q) => q.refetch), splitsQuery.refetch, partnerCatsQuery.refetch, picksQuery.refetch];
+const failedFlags = [...reads.map((q) => q.isError), splitsFailed,
+  needsShared && partnerCatsQuery.data === undefined && partnerCatsQuery.isError,
+  needsShared && picksQuery.data === undefined && picksQuery.isError].join(',');
+```
+Apply `20261125001000` to production (`npm run supabase:db:push`) before merging or publishing any OTA that carries 5590a223.
+
+---
+
+_Re-reviewed: 2026-11-23 · Reviewer: Claude (gsd-code-reviewer) · Depth: deep_
+
+## Re-review fixes (NR-01..NR-03)
+
+**Fixed:** 2026-11-23 · **Base:** 42030fad (origin/feat/07-build)
+
+| Finding | Commit | Fix | Tests |
+|---|---|---|---|
+| NR-01 | dff42416 | `useNetWorthSeries` no longer reads `isLoading`. An input counts as waiting when it has no data, no error and is not idle (`inputWaiting`), so a query paused offline is never "loaded". When any required input (per-month reads, month list, today's balances, accounts, FX, custom currencies, and in Just me debts, holdings, lots) is paused with no cache, status is the new `'offline'`. The card then shows `insights.states.offlineNoCache` (new `OfflineCard`) and no figure. `useAccountBalances` and `useTransactionMonths` gain `isWaiting` / `isPaused` (additive). | `insightsNetWorth.test.ts`: debts, FX, balances and month list mocked as `{ data: undefined, isLoading: false, isError: false, fetchStatus: 'paused' }` give `'offline'`; a fetching read without `isLoading` gives `'loading'`; a real `QueryClient` offline with `networkMode: 'offlineFirst'` shows the paused/pending state with `isLoading` false, and the predicates catch it. `netWorthSection.test.tsx`: offline shows the line and no figure. |
+| NR-02 | db5d405a | `householdSnapshotRows` now gets the source's live series. An untagged money-in line whose series carries `counts_as` or `income_kind` takes that series tag instead of the `'available'` stamp. Only a line untagged on both line and series is stamped. The series is read only where the data layer has it (the viewer's own or a shared series). An occurrence of a partner's private series that the viewer cannot read counts as untagged, which matches D-31 ("untagged as far as the viewer can see"). | `insights.test.ts`: a shared series with `counts_as: 'kept'` keeps its untagged occurrence out of Household In (0); a series `income_kind` is carried onto the line; an untagged series still counts (300,000); a deleted series' tag no longer applies. |
+| NR-03 | 363830ed | Decide's `refetches` and `failedFlags` include `partnerCatsQuery` and `picksQuery` (flagged only when needed, failed and uncached). Retry now refetches a failed shared-category read, and Decide answers once that read succeeds. | `decide.test.tsx` (the shared reads are now real queries over mocked fetchers): for each read, a shared line plus a failed read gives `'error'`; Retry refetches the read, the second call succeeds, and the status is `'ready'` with a source. Both tests failed before the fix. |
+
+**Checks:** eslint on the changed files is clean. `npx tsc --noEmit` is clean. `npm run depcruise` found no violations (1385 modules). Jest over `src/data/queries src/features/insights src/features/decide` (`--coverage=false`): 167 suites and 2510 tests pass.
+
+**Owner, still open:** NR-03's deploy-order point stands. Apply `20261125001000_shared_line_categories.sql` to production before merging or publishing any OTA that carries the shared-category reads. Until then, Retry recovers only after the RPC exists. No database was touched in this fix pass.
