@@ -13,6 +13,7 @@ export const ownData = {
   // 8 wallet import
   walletImport: {
     readerChip: '{{wallet}} file',
+    and: 'and',
     newAccountsTitle: "This file has {{currencies}} balances. Create {{names}}?",
     createSelected: 'Create selected accounts',
     useExisting: 'Use an existing account',
@@ -22,6 +23,8 @@ export const ownData = {
     feeLine: 'Fee {{amount}} · {{category}}',
     feeMeta: 'Fees are saved as separate expenses in a Fees category. The account balance still matches the file.',
     conversion: 'Converted {{from}} to {{to}}',
+    unlink: 'Keep as separate lines',
+    relink: 'Link as a transfer',
     summary: '{{lines}} lines · {{fees}} fees · {{conversions}} conversions · {{accounts}} new accounts',
     importLines: 'Import {{count}} lines',
     missingColumn: 'This {{wallet}} file is missing a column FincWin reads. Use the generic import instead.',
