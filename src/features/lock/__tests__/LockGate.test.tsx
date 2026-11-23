@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string -- test doubles render fixed words */
 // 10-21 (ACC-08, ACC-09, DSG-08, D-03, D-29, D-33): the gate unmounts the app while locked, device mode shows Unlock with
 // no pad, app-PIN mode keeps the pad, the wait ladder and the re-sign-in, and the cover always shows.
 import React from 'react';

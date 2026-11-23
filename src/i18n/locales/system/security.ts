@@ -14,6 +14,7 @@ export const security = {
   timingGroup: 'Ask for it',
   biometricRow: 'Face ID',
   biometricRowTouchId: 'Touch ID',
+  biometricRowFingerprint: 'Fingerprint',
   changePin: 'Change PIN',
   lockScopeMeta: 'The lock covers this phone only. It does not change who can see your records.',
   devicesGroup: 'Signed-in devices',

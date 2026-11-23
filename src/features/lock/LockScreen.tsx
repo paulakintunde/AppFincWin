@@ -61,7 +61,7 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
   const [digits, setDigits] = useState('');
   const [line, setLine] = useState<Line>(null);
   const [until, setUntil] = useState(0);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [kind, setKind] = useState<BiometricKind>('none');
   const [reauthed, setReauthed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -380,7 +380,7 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
 }
 
 const styles = StyleSheet.create({
-  root: { ...StyleSheet.absoluteFillObject, flex: 1 },
+  root: { ...StyleSheet.absoluteFill },
   content: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: step.edge, gap: step.section },
   column: { alignItems: 'center', gap: step.row },
   full: { alignSelf: 'stretch', gap: step.row },

@@ -3,7 +3,6 @@ import React from 'react';
 import { Image, StyleSheet } from 'react-native';
 import { radii, tile } from '@/theme/layout';
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const MARK = require('../../../assets/splash-icon.png') as number;
 
 export function BrandMark(): React.JSX.Element {

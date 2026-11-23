@@ -73,6 +73,7 @@ export function LockSetupSheet({ visible, onClose, onDone, method = 'auto', rese
 
   useEffect(() => {
     if (!visible) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restarts the flow each time the sheet opens
     setStep('loading');
     setFirst('');
     setDigits('');

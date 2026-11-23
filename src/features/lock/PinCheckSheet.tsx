@@ -38,6 +38,7 @@ export function PinCheckSheet({ visible, onClose, onVerified }: PinCheckSheetPro
 
   useEffect(() => {
     if (visible) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the entry each time the sheet opens
       setDigits('');
       setLine(null);
     }
