@@ -17,6 +17,10 @@ import { requestAccountDeletion } from '@/services/account/deleteAccount';
 import { useHouseholdScope } from '@/features/household/useHouseholdScope';
 import { useMemberLabel } from '@/features/household/useMemberLabel';
 import { WarningCard } from '@/ui/WarningCard';
+import { IconTile } from '@/ui/icons/IconTile';
+import { hapticFailed } from '@/ui/haptics';
+import { exportCsv } from '@/features/export/csvExport';
+import { supabase } from '@/services/supabase';
 import { PlanLink } from '@/features/plans/components/NoticeCard';
 import { usePlanState } from '@/features/plans/usePlanState';
 import { manageSubscription } from '@/features/plans/manageSubscription';
@@ -33,6 +37,8 @@ export function DeleteAccountScreen() {
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  // 10-14 (D-17): the optional copy. Its state never feeds `ready`, so a failed or skipped copy cannot block deletion.
+  const [copy, setCopy] = useState<'idle' | 'preparing' | 'saved' | 'failed'>('idle');
 
   const word = t('household.account.confirmWord');
   const matches = typed.trim().toUpperCase() === word.toUpperCase();
@@ -44,6 +50,18 @@ export function DeleteAccountScreen() {
     plan.payerIsMe && (plan.store === 'APP_STORE' || plan.store === 'PLAY_STORE') && (plan.status === 'trial' || plan.status === 'active' || plan.status === 'grace');
   const othersCovered = billing ? Math.max(0, plan.members - 1) : 0;
   const ready = matches && scope.online && !busy && !preview.isLoading;
+
+  async function onSaveCopy() {
+    if (copy === 'preparing') return;
+    setCopy('preparing');
+    try {
+      const result = await exportCsv(supabase);
+      setCopy(result === 'cancelled' ? 'idle' : 'saved');
+    } catch {
+      hapticFailed();
+      setCopy('failed');
+    }
+  }
 
   async function onDelete() {
     if (!ready) return;
@@ -97,6 +115,35 @@ export function DeleteAccountScreen() {
         ) : null}
       </View>
 
+      <View testID="delete-save-copy" style={[styles.card, { backgroundColor: colors.fill1 }]}>
+        <View style={styles.copyHead}>
+          <IconTile icon="download" color={colors.accent} tint={colors.surface} />
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, flexShrink: 1 }}>{t('system.ownData.saveCopyTitle')}</Text>
+        </View>
+        <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{t('system.ownData.saveCopyBody')}</Text>
+        <Pill
+          label={copy === 'preparing' ? t('system.ownData.preparing') : t('system.ownData.saveCopyButton')}
+          variant="secondary"
+          pending={copy === 'preparing'}
+          onPress={() => {
+            void onSaveCopy();
+          }}
+        />
+        {copy === 'saved' ? (
+          <Text testID="delete-copy-saved" accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {t('system.ownData.saved')}
+          </Text>
+        ) : null}
+        {copy === 'failed' ? (
+          <View testID="delete-copy-failed">
+            <WarningCard tone="soft" title={t('system.ownData.failed')} value="" body={[]} />
+          </View>
+        ) : null}
+      </View>
+      <Text testID="delete-backup-line" style={[{ ...textRole(pairing, 'label'), color: colors.inkMuted }, styles.backup]}>
+        {t('system.ownData.backupLine')}
+      </Text>
+
       <View style={styles.confirm}>
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('household.account.confirmLabel', { word })}</Text>
         <TextInput
@@ -145,6 +192,8 @@ const styles = StyleSheet.create({
   back: { marginBottom: space.gapMd },
   billing: { marginTop: step.section, gap: step.tight, alignItems: 'flex-start' },
   card: { marginTop: step.section, padding: step.card, borderRadius: radii.card, gap: step.tight },
+  copyHead: { flexDirection: 'row', alignItems: 'center', gap: step.row },
+  backup: { marginTop: step.tight },
   confirm: { marginTop: step.section, gap: step.tight },
   input: { minHeight: space.touchMin, paddingHorizontal: step.card, borderRadius: radii.card },
   action: { marginTop: step.section, gap: step.tight, alignItems: 'flex-start' },

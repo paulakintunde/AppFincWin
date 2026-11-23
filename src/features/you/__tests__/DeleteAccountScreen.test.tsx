@@ -30,6 +30,10 @@ jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan
 const mockManage = jest.fn(() => Promise.resolve());
 jest.mock('@/features/plans/store/purchasesClient', () => ({ openManageSubscription: () => mockManage() }));
 jest.mock('@/services/errors', () => ({ captureError: jest.fn() }));
+const mockExport = jest.fn();
+jest.mock('@/features/export/csvExport', () => ({ exportCsv: (...a: unknown[]) => mockExport(...a) }));
+const mockFailed = jest.fn();
+jest.mock('@/ui/haptics', () => ({ ...jest.requireActual('@/ui/haptics'), hapticFailed: () => mockFailed() }));
 const mockRequest = jest.fn();
 jest.mock('@/services/account/deleteAccount', () => ({ requestAccountDeletion: (...a: unknown[]) => mockRequest(...a) }));
 
@@ -51,6 +55,7 @@ beforeEach(() => {
   mockPlan = { status: 'sample', payerIsMe: false, store: null, members: 1 };
   mockPreview = { data: alone, isLoading: false };
   mockRequest.mockResolvedValue({ ok: true });
+  mockExport.mockResolvedValue('saved');
 });
 
 describe('DeleteAccountScreen', () => {
@@ -102,6 +107,53 @@ describe('DeleteAccountScreen', () => {
     expect(screen.getByTestId('delete-offline')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Delete my account' }).props.accessibilityState?.disabled).toBe(true);
     expect(mockRequest).not.toHaveBeenCalled();
+  });
+
+  describe('save a copy (10-14, D-17)', () => {
+    const SAVE = 'Save a copy of my records';
+
+    it('shows the card and the backup line', async () => {
+      await renderScreen();
+      expect(screen.getByText('Save a copy first')).toBeTruthy();
+      expect(screen.getByRole('button', { name: SAVE })).toBeTruthy();
+      expect(screen.getByText('Backup copies are kept for 30 days, then they are gone too.')).toBeTruthy();
+    });
+
+    it('says the copy is saved after a save', async () => {
+      await renderScreen();
+      await fireEvent.press(screen.getByRole('button', { name: SAVE }));
+      await waitFor(() => expect(screen.getByText('Copy saved. You can still delete your account now.')).toBeTruthy());
+      expect(mockFailed).not.toHaveBeenCalled();
+    });
+
+    it('returns to idle on cancel', async () => {
+      mockExport.mockResolvedValue('cancelled');
+      await renderScreen();
+      await fireEvent.press(screen.getByRole('button', { name: SAVE }));
+      await waitFor(() => expect(mockExport).toHaveBeenCalledTimes(1));
+      expect(screen.queryByTestId('delete-copy-saved')).toBeNull();
+      expect(screen.queryByTestId('delete-copy-failed')).toBeNull();
+    });
+
+    it('shows the failure card with one haptic, and deletion is still allowed (never blocks)', async () => {
+      mockExport.mockRejectedValue(new Error('x'));
+      await renderScreen();
+      await fireEvent.press(screen.getByRole('button', { name: SAVE }));
+      await waitFor(() => expect(screen.getByTestId('delete-copy-failed')).toBeTruthy());
+      expect(mockFailed).toHaveBeenCalledTimes(1);
+      await fireEvent.changeText(screen.getByTestId('delete-confirm-input'), 'DELETE');
+      expect(screen.getByRole('button', { name: 'Delete my account' }).props.accessibilityState?.disabled).toBeFalsy();
+      await fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+      await waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+    });
+
+    it('deletes without ever saving a copy', async () => {
+      await renderScreen();
+      await fireEvent.changeText(screen.getByTestId('delete-confirm-input'), 'DELETE');
+      await fireEvent.press(screen.getByRole('button', { name: 'Delete my account' }));
+      await waitFor(() => expect(mockRequest).toHaveBeenCalledTimes(1));
+      expect(mockExport).not.toHaveBeenCalled();
+    });
   });
 
   describe('billing warning (09-15, D-23)', () => {
