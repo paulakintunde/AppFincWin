@@ -17,11 +17,12 @@
  *
  * The card's bars (UX-30, UX-43: one kind of figure per series): the usual month and the low month from the month model, each as
  * comes in / goes out / left where goes out = comes in - left, and pastMonthBars for the back arrows, read from recorded lines only.
+ * 07-02: monthBars adds this month (D-12).
  */
 import type { MinorUnits } from '../money/types';
 import { minorFromBigInt } from '../payoff/types';
 import { homeFigure } from '../decide/v3/afterBuy';
-import { daysInYearMonth, yearMonthOf } from '../decide/v3/dates';
+import { addYearMonths, daysInYearMonth, firstOfMonth, yearMonthOf } from '../decide/v3/dates';
 import { unusedOverdraftOf } from '../decide/v3/overdraft';
 import { openFlowsOf, type Prepared, type Reading } from '../decide/v3/prepare';
 import type { MonthModel, V3Line } from '../decide/v3/types';
@@ -40,10 +41,11 @@ export function homeReading(p: PictureInput): Reading {
 }
 
 /** Each logged month's recorded income (the same eligibility rule as the typical month), whether or not the month is complete. */
-function incomeByMonth(p: PictureInput): ReadonlyMap<string, bigint> {
+function incomeByMonth(p: PictureInput, throughCurrent = false): ReadonlyMap<string, bigint> {
   const { inputs } = p;
   return recordedIncomeByMonth({
-    asOf: inputs.asOf,
+    // reading as of the first of next month makes the current month eligible under the same rule
+    asOf: throughCurrent ? firstOfMonth(addYearMonths(yearMonthOf(inputs.asOf), 1)) : inputs.asOf,
     history: inputs.months.map((m) => (m.full ? m : { ...m, full: true })),
     series: inputs.series,
     profile: inputs.profile,
@@ -90,15 +92,16 @@ export function monthPicture(prepared: PictureInput): MonthPicture {
 }
 
 /**
- * The months before this one, oldest first, from recorded lines only (UX-43: one kind of figure): comes in is the recorded income
- * (the typical month's eligibility rule), goes out is the paid spending, debt payments, saving and other money out less refunds,
- * and left keeps its sign (a month below 0 draws its bar downward, UX-30). Moves between own accounts and envelopes are neither.
+ * 07 D-12: the recorded months oldest first, through this month when asked (this month so far). One rule for Decide's sheet and Insights.
+ * Comes in is the recorded income (the typical month's eligibility rule), goes out is the paid spending, debt payments, saving and
+ * other money out less refunds, and left keeps its sign (a month below 0 draws its bar downward, UX-30). Moves between own accounts
+ * and envelopes are neither.
  */
-export function pastMonthBars(prepared: PictureInput): readonly MonthBar[] {
+export function monthBars(prepared: PictureInput, opts: { readonly throughCurrent: boolean }): readonly MonthBar[] {
   const ym = yearMonthOf(prepared.inputs.asOf);
-  const recorded = incomeByMonth(prepared);
+  const recorded = incomeByMonth(prepared, opts.throughCurrent);
   return prepared.inputs.months
-    .filter((m) => m.month < ym)
+    .filter((m) => (opts.throughCurrent ? m.month <= ym : m.month < ym))
     .sort((a, b) => (a.month < b.month ? -1 : 1))
     .map((m) => {
       let out = 0n;
@@ -108,7 +111,12 @@ export function pastMonthBars(prepared: PictureInput): readonly MonthBar[] {
         if (OUT_ROLES.has(l.role)) out += amount;
         else if (l.role === 'refund') out -= amount;
       }
-      const comesIn = recorded.get(m.month) as bigint; // every month before this one is read
+      const comesIn = recorded.get(m.month) as bigint; // every month up to the read month is read
       return { month: m.month, comesIn: minorFromBigInt(comesIn, FN), goesOut: minorFromBigInt(out, FN), left: minorFromBigInt(comesIn - out, FN) };
     });
+}
+
+/** The months before this one, oldest first, from recorded lines only (UX-43: one kind of figure). */
+export function pastMonthBars(prepared: PictureInput): readonly MonthBar[] {
+  return monthBars(prepared, { throughCurrent: false });
 }
