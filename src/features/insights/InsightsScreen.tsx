@@ -54,7 +54,8 @@ export function InsightsScreen() {
 
   const household = s.scope === 'household';
   const prepared = data.prepared;
-  // WR-02: Decide's inputs hold no months until one full month is logged, so a first-month user has none here. In Just me the whole-tab
+  // WR-02: Decide's inputs hold no months until one full month is logged; 07 D-35 lays this month so far into Insights' own copy, so a
+  // first-month user has one month here (entries no stored rate converts still leave it empty). In Just me the whole-tab
   // empty state is for a user with no entries at all; with entries this month the sections show and each owns its own empty state.
   const hasEntries = entries.months.some((m) => (entries.counts.get(m) ?? 0) > 0);
   const empty =
