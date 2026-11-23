@@ -1,6 +1,10 @@
 import * as fc from 'fast-check';
 import { fcRuns } from '../../decide/v3/__tests__/helpers/fcRuns';
 import { minorUnits as mu } from '../../money/types';
+import { prepare } from '../../decide/v3/prepare';
+import { inputsArb } from '../../decide/v3/__tests__/invariants/arbitraries';
+import { monthPicture } from '../../month/picture';
+import { healthInputsOf } from '../inputs';
 import { healthScore } from '../score';
 import type { HealthInputs } from '../types';
 
@@ -18,6 +22,23 @@ const healthInputsArb: fc.Arbitrary<HealthInputs> = fc.record({
   moneyOut: amt(-1000, 5_000_000),
   hasBalance: fc.boolean(),
   short: fc.boolean(),
+});
+
+describe('health inputs follow Decide (T-07-03)', () => {
+  it('a month Decide calls short is short and never scores above 74', () => {
+    fc.assert(
+      fc.property(inputsArb, (inputs) => {
+        const p = prepare(inputs);
+        const h = healthInputsOf(p);
+        if (monthPicture(p).leftAfterPlans < 0) {
+          expect(h.short).toBe(true);
+          const r = healthScore(h);
+          if (r.kind === 'score') expect(r.score).toBeLessThanOrEqual(74);
+        }
+      }),
+      { numRuns: fcRuns(200), seed: SEED },
+    );
+  });
 });
 
 describe('health score properties (T-07-01, T-07-02)', () => {
