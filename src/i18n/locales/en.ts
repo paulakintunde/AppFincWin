@@ -55,6 +55,7 @@ import { plans } from './plans';
 import { onboarding } from './onboarding';
 import { features } from './features';
 import { lock } from './lock';
+import { system } from './system';
 import { decideScreens } from './decideScreens';
 
 const en = {
@@ -3282,6 +3283,7 @@ const en = {
   onboarding: onboarding,
   features: features,
   lock: lock,
+  system: system,
 } as const;
 
 export default en;

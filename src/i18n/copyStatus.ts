@@ -36,6 +36,20 @@ function leafPaths(prefix: string, node: unknown): string[] {
   return [];
 }
 
+/**
+ * 10-04: owner-exact Phase 10 strings (10-CONTEXT specifics: D-01, D-12, D-17, D-19, D-22, D-28). Not draft; everything else under system.* is.
+ */
+export const EXACT_SYSTEM_KEYS: readonly string[] = [
+  'system.appLock.offerTitleFaceId',
+  'system.push.partnerLarge',
+  'system.queue.fullBody_one',
+  'system.queue.fullBody_other',
+  'system.ownData.walletImport.newAccountsTitle',
+  'system.ownData.backupLine',
+  'system.ownData.saveCopyButton',
+  'system.archive.intro',
+];
+
 export const DRAFT_COPY_KEYS = [
   'consent.heading',
   'consent.body',
@@ -144,6 +158,8 @@ export const DRAFT_COPY_KEYS = [
   ...leafPaths('legal.decideAnswer', en.legal.decideAnswer),
   ...leafPaths('legal.decideAbout', en.legal.decideAbout),
   ...leafPaths('legal.decideIntro', en.legal.decideIntro),
+  // 10-04: Phase 10 copy, drafted from 10-UI-SPEC; owner sign-off before the freeze. Exact keys excluded.
+  ...leafPaths('system', en.system).filter((k) => !EXACT_SYSTEM_KEYS.includes(k)),
   'a11y.toastUndo',
   'a11y.selectRow',
   'a11y.swatch',
