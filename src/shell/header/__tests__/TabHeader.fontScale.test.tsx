@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 import { act, fireEvent, screen } from '@testing-library/react-native';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { renderWithShellProviders } from '@/shell/__tests__/testUtils';
-import { TabHeader } from '../TabHeader';
+import { TabHeader, TITLE_MIN_FONT_SCALE, titleWordCount } from '../TabHeader';
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/features/you/useProfile', () => ({ useProfile: () => ({ profile: null }) }));
@@ -28,9 +28,18 @@ describe('TabHeader font scale (D-19)', () => {
     expect(StyleSheet.flatten(screen.getByText('Overview').props.style).fontSize).toBe(39);
   });
 
-  it('wraps rather than clips', async () => {
+  it('wraps between words but never inside one: one line per word, shrinking a too-wide word to fit', async () => {
     await renderAt(2);
-    expect(screen.getByText('Overview').props.numberOfLines).toBeUndefined();
+    const title = screen.getByText('Overview');
+    expect(title.props.numberOfLines).toBe(1);
+    expect(title.props.adjustsFontSizeToFit).toBe(true);
+    expect(title.props.minimumFontScale).toBe(TITLE_MIN_FONT_SCALE);
+  });
+
+  it('gives a multi-word title one line per word so it can still wrap', () => {
+    expect(titleWordCount('Can I afford it?')).toBe(4);
+    expect(titleWordCount('  Overview ')).toBe(1);
+    expect(titleWordCount('')).toBe(1);
   });
 });
 
