@@ -47,6 +47,7 @@ export const insights = {
     total: '{{amount}} spent',
     share: '{{percent}}% of spending',
     rowA11y: '{{name}}, {{amount}}, {{percent}} percent of spending. Opens Activity.',
+    rowA11yStatic: '{{name}}, {{amount}}, {{percent}} percent of spending.',
     everythingElse: 'Everything else',
     uncategorised: 'No category',
     showAll: 'Show all {{count}}',

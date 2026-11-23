@@ -24,9 +24,8 @@ export interface CategoryRowProps {
 export function CategoryRow({ glyph, name, amount, spokenAmount, shareBp, colorIndex, onPress, testID }: CategoryRowProps) {
   const t = useT();
   const percent = percentText(shareBp);
-  const spoken = t('insights.categories.rowA11y', { name, amount: spokenAmount, percent });
-  // Without onPress there is no "Opens Activity": drop that sentence.
-  const label = onPress ? spoken : spoken.replace(/ Opens Activity\.$/, '');
+  // Without onPress there is no "Opens Activity": a separate string, so no locale depends on English text.
+  const label = t(onPress ? 'insights.categories.rowA11y' : 'insights.categories.rowA11yStatic', { name, amount: spokenAmount, percent });
   const shown = glyph ?? { colorKey: 'slate' as const, letter: name.charAt(0).toUpperCase() };
   return (
     <View testID={testID}>
