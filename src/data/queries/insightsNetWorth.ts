@@ -72,6 +72,8 @@ export function buildNetWorthInputs(args: {
   rates: Rates;
   customs: Customs;
   today: string;
+  /** IN-07: joint (shared) account ids. Household counts such an account's own balance, so Just me leaves a holding in one out. */
+  jointAccountIds?: ReadonlySet<string>;
 }): NetWorthBuild {
   const { currency, rates, customs, today } = args;
   const accounts: SeriesAccount[] = args.accounts.map((a) => ({
@@ -89,6 +91,7 @@ export function buildNetWorthInputs(args: {
   const holdings: SeriesHolding[] = [];
   for (const h of args.holdings) {
     if (h.deleted_at) continue;
+    if (h.account_id !== null && args.jointAccountIds?.has(h.account_id)) continue;
     const raw = [
       ...args.lots.filter((l) => l.holding_id === h.id && l.kind === 'value' && !l.deleted_at).map((l) => ({ date: l.local_date, amount: l.amount })),
       { date: h.value_as_of, amount: h.value },
@@ -217,9 +220,10 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
   const lots = lotsQuery.data ?? NO_LOTS;
   const debts = debtsQuery.data ?? NO_DEBTS;
 
+  const jointAccountIds = useMemo(() => new Set(allAccounts.filter((a) => a.is_shared === true && !a.deleted_at).map((a) => a.id)), [allAccounts]);
   const build = useMemo(
-    () => buildNetWorthInputs({ scope, accounts, holdings, lots, debts, currency, rates, customs, today: rc.today }),
-    [scope, accounts, holdings, lots, debts, currency, rates, customs, rc.today]
+    () => buildNetWorthInputs({ scope, accounts, holdings, lots, debts, currency, rates, customs, today: rc.today, jointAccountIds }),
+    [scope, accounts, holdings, lots, debts, currency, rates, customs, rc.today, jointAccountIds]
   );
 
   const firstMonth = useMemo(() => {

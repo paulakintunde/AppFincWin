@@ -74,6 +74,12 @@ describe('buildNetWorthInputs', () => {
     expect(out.debts[0]).toMatchObject({ balance: 900, startedBalance: 1_000, paidOffOn: null });
     expect(out.unconverted).toBe(0);
   });
+  it('Just me leaves out a holding in a joint account, which Household counts as the account balance (IN-07)', () => {
+    const inJoint = { ...holding, id: 'h3', account_id: 'joint' } as HoldingRow;
+    const out = buildNetWorthInputs({ ...base, scope: 'mine', holdings: [holding, inJoint], jointAccountIds: new Set(['joint']) });
+    expect(out.holdings.map((h) => h.id)).toEqual(['h1']);
+    expect(out.unconverted).toBe(0);
+  });
   it('leaves out what cannot be converted and counts it', () => {
     const odd = { ...holding, id: 'h2', currency: 'ZZZ' } as HoldingRow;
     const oddDebt = { ...debt, currency: 'ZZZ' } as DebtRow;
