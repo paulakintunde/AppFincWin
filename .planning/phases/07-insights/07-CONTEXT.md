@@ -59,6 +59,10 @@ Not in this phase: Home changes (D-17), a household health score (D-19), Share/B
 - **D-27:** "Where it went" gets one plain note line under the list: "Debt payments and saving are not counted here." (new copy key in the 07-04 Insights copy contract; must pass the copy guard). The Out bar keeps counting debt payments and saving.
 - **D-28:** Categories under 1% of spending fold into an "Everything else" row (07-02 plan default).
 
+### Owner answers before wave 3 build (2026-11-23)
+- **D-29:** The net-worth line shows 3 value labels down its side (low, middle, high) in  text, and month labels thin out with the point count (every third label above 24 points; never overlapping), per 07-UI-SPEC. Overrides the 07-08 build, which drew no value labels. Built in 07-10.
+- **D-30:** The D-27 note under "Where it went" shows always, in both the single-month and range views.
+
 ### Claude's Discretion
 - The range for the money in/out bars and comparison mode: the same 6M / 1Y / All control, defaulting to 6M.
 - Section order on the Insights screen, empty screens (06.2 empty-state pattern: icon + one line + button), and loading and offline states.
