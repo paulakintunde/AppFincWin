@@ -1,5 +1,5 @@
 // 07-07 (D-18, ARC-22): the Household prepared holds joint accounts and shared lines only.
-import { account, debt, household, row } from '@/features/decide/snapshot/__tests__/helpers/sourceFixtures';
+import { account, debt, household, row, series } from '@/features/decide/snapshot/__tests__/helpers/sourceFixtures';
 import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { monthBars } from '@/engine/month';
 import { householdSnapshotSource } from '../figureScope';
@@ -81,5 +81,38 @@ describe('Household money in (D-31)', () => {
     expect(inOf(kept, '2026-08')).toBe(0);
     const typed = withPay(fixture(), { income_kind: 'gift' });
     expect(householdSnapshotSource(typed, 'USD').rows.find((r) => r.id === 'shared-pay-2026-08')?.counts_as ?? null).toBeNull();
+  });
+
+  // NR-02: an occurrence carries no tag of its own; a "not money to spend" mark on its series must keep it out of Household "In".
+  const inSharedSeries = (tags: Extra): SnapshotSource => {
+    const src = fixture();
+    return {
+      ...src,
+      series: [...src.series, series({ id: 'shared-rent-in', account_id: 'joint', amount: 300_000, anchor_date: '2026-06-01', category_id: 'c-inc', ...tags })],
+      rows: src.rows.map((r) => (r.id.startsWith('shared-pay-') ? { ...r, recurring_series_id: 'shared-rent-in' } : r)),
+    };
+  };
+
+  it('leaves out an untagged occurrence of a series marked not money to spend (NR-02)', () => {
+    const kept = inSharedSeries({ counts_as: 'kept' });
+    expect(householdSnapshotSource(kept, 'USD').rows.find((r) => r.id === 'shared-pay-2026-08')?.counts_as).toBe('kept');
+    expect(inOf(kept, '2026-08')).toBe(0);
+  });
+
+  it("carries the series' income type onto an untagged occurrence instead of the stamp (NR-02)", () => {
+    const hs = householdSnapshotSource(inSharedSeries({ income_kind: 'gift' }), 'USD');
+    const r = hs.rows.find((x) => x.id === 'shared-pay-2026-08');
+    expect(r?.counts_as ?? null).toBeNull();
+    expect(r?.income_kind).toBe('gift');
+  });
+
+  it('counts an untagged occurrence of an untagged series (NR-02)', () => {
+    const plain = inSharedSeries({});
+    expect(householdSnapshotSource(plain, 'USD').rows.find((r) => r.id === 'shared-pay-2026-08')?.counts_as).toBe('available');
+    expect(inOf(plain, '2026-08')).toBe(300_000);
+  });
+
+  it("a deleted series' tag no longer applies (NR-02)", () => {
+    expect(inOf(inSharedSeries({ counts_as: 'kept', deleted_at: '2026-10-01T00:00:00Z' }), '2026-08')).toBe(300_000);
   });
 });

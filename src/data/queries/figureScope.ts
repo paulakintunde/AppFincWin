@@ -130,24 +130,50 @@ export function mineSnapshotRows<R extends SnapshotRow & ScopeFields>(
   return out;
 }
 
+type SeriesTags = Pick<SnapshotSource['series'][number], 'counts_as' | 'income_kind'>;
+
 /**
  * 07 D-31 (WR-04): the Household scope carries no series and no settings, so an untagged shared money-in line would count for
  * nothing in "In" (the engine counts an untagged line only through a series or an income profile). Such a line is stamped
  * "money to spend" here; a line a member tagged keeps its tag, so one marked "not money to spend" stays out. Only money in is
  * stamped: buildInputs reads counts_as for role income only, so transfers, refunds and settlements are unaffected either way.
+ * NR-02: an occurrence does not carry its series' tag (buildInputs falls back to the series), and the Household source drops
+ * the series, so a tag on the line's series is copied onto the line instead of the stamp. The series is read only where the
+ * data layer has it (the viewer's own or a shared series); a partner's private series the viewer cannot read counts as
+ * untagged, as far as the viewer can see (D-31).
  */
-function householdCountsAs<R extends SnapshotRow>(r: R, amount: number): Pick<SnapshotRow, 'counts_as'> | null {
+function householdCountsAs<R extends SnapshotRow>(
+  r: R,
+  amount: number,
+  seriesById: ReadonlyMap<string, SeriesTags>
+): Partial<Pick<SnapshotRow, 'counts_as' | 'income_kind'>> | null {
   if (amount <= 0) return null;
   if ((r.counts_as ?? null) !== null || (r.income_kind ?? null) !== null) return null;
+  const s = r.recurring_series_id ? seriesById.get(r.recurring_series_id) : undefined;
+  const sCounts = s?.counts_as ?? null;
+  const sKind = s?.income_kind ?? null;
+  if (sCounts !== null || sKind !== null) return { counts_as: sCounts, income_kind: sKind };
   return { counts_as: 'available' };
 }
 
-function householdSnapshotRows<R extends SnapshotRow & ScopeFields>(rows: readonly R[], currency: string): R[] {
+function householdSnapshotRows<R extends SnapshotRow & ScopeFields>(
+  rows: readonly R[],
+  currency: string,
+  seriesById: ReadonlyMap<string, SeriesTags>
+): R[] {
   const out: R[] = [];
   for (const r of rows) {
     const h = householdAmountOf(scopeLineOf(r, null));
     if (h === null || h.amount === null) continue;
-    out.push({ ...r, original_amount: h.amount, original_currency: currency, home_currency: currency, home_amount: h.amount, orig_per_eur: null, ...householdCountsAs(r, h.amount) });
+    out.push({
+      ...r,
+      original_amount: h.amount,
+      original_currency: currency,
+      home_currency: currency,
+      home_amount: h.amount,
+      orig_per_eur: null,
+      ...householdCountsAs(r, h.amount, seriesById),
+    });
   }
   return out;
 }
@@ -167,11 +193,12 @@ export function householdSnapshotSource(source: SnapshotSource, currency: string
   const jointIds = new Set(joint.map((a) => a.id));
   const balances: Record<string, number> = {};
   for (const id of jointIds) if (source.balances[id] !== undefined) balances[id] = source.balances[id] as number;
+  const seriesById = new Map<string, SeriesTags>(source.series.filter((s) => !s.deleted_at).map((s) => [s.id, s]));
   const out: SnapshotSource = {
     ...source,
     homeCurrency: currency,
-    rows: householdSnapshotRows(source.rows as readonly (SnapshotRow & ScopeFields)[], currency),
-    upcomingRows: householdSnapshotRows(source.upcomingRows as readonly (SnapshotRow & ScopeFields)[], currency),
+    rows: householdSnapshotRows(source.rows as readonly (SnapshotRow & ScopeFields)[], currency, seriesById),
+    upcomingRows: householdSnapshotRows(source.upcomingRows as readonly (SnapshotRow & ScopeFields)[], currency, seriesById),
     series: [],
     accounts: joint,
     balances,
