@@ -1,5 +1,5 @@
 // 06-14 (D-26, T-06-14-03): the net-worth rule on the LEDGER and on linked / unlinked investment accounts.
-import { accounts as ledgerAccounts, holdings as ledgerHoldings, netWorth as LEDGER_NET, autoLoan } from '@/engine/grow/__tests__/fixtures/ledger';
+import { accounts as ledgerAccounts, holdings as ledgerHoldings, netWorth as LEDGER_NET, autoLoan } from './fixtures/ledger';
 import { netWorthOf, type NetWorthAccount, type NetWorthDebt, type NetWorthHolding } from '../netWorth';
 
 const ACCOUNTS: NetWorthAccount[] = [
