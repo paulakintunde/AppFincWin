@@ -30,7 +30,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Grow** - Goals, investments with cost-basis lots, debt with payoff strategies (completed 2026-11-11)
 - [x] **Phase 06.1: Decide screens from the prototype** (INSERTED) - The new Decide screens, built from the clickable prototype (the design standard, as for Grow); planned now, built after Grow wave 1 lands the safety net, goal and debt connection points; household parts stay hidden until Phase 8
 - [x] **Phase 06.2: App life** (INSERTED) - Calm, confident life for the whole app: our own icon set on every row, colour + shape + word status cues, tidy spacing and row sizes, quiet motion and haptics by meaning at key moments, a pale theme-tinted background behind white cards; Overview keeps its structure
-- [ ] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11)
+- [x] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11)
+ (completed 2026-11-23)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [x] **Phase 08.1: Decide rebuild on real data** (INSERTED, completed 2026-11-22) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
 - [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
@@ -1418,7 +1419,7 @@ Plans:
   3. A user can see spending broken down by category for a period.
   4. A user can see a financial health score with the figures behind it.
   5. A user can view a month's Activity as a week breakdown, a split view, a balance view and a calendar.
-**Plans:** 11/12 plans executed
+**Plans:** 12/12 plans complete
 
 Plans:
 **Wave 1**
@@ -1437,7 +1438,7 @@ Plans:
 **Wave 4**
 - [x] 07-11-PLAN.md — InsightsScreen, route, level-gated tab
 **Wave 5**
-- [ ] 07-12-PLAN.md — Phase gate, validation sign-off, ACT-06 citation, compliance note
+- [x] 07-12-PLAN.md — Phase gate, validation sign-off, ACT-06 citation, compliance note
 **UI hint**: yes
 
 ### Phase 8: Household
@@ -1749,7 +1750,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.1 Decide screens from the prototype | 82/82 | Complete (PR #102) | 2026-11-14 |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
-| 7. Insights | 11/12 | In Progress|  |
+| 7. Insights | 12/12 | Complete   | 2026-11-23 |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 22/22 | Complete (review fixed, verification passed; OTA 7f1776a0) | 2026-11-22 |
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
