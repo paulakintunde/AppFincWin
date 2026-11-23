@@ -23,6 +23,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { Actions, Heading, SuggestionCard, T, Tag, useDynamicT, useFormatAmount } from './importUi';
 import { DisclosureRow } from './ReconcileChoice';
+import { WalletReview } from './WalletReview';
 import { useExtrasDetail } from './ExtrasDetail';
 import { buildReviewItems, EXTRAS_PAGE, type ReviewItem } from './reconcileView';
 import type { DraftRowIssue } from '@/engine/statement';
@@ -88,7 +89,13 @@ function Reconciliation({ file }: { file: string | null }) {
   }
 }
 
+/** 10-26 (D-21): a recognised wallet file has its own preview; every other file keeps the generic one. */
 export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: () => void }) {
+  if ((state.wallet ?? null) !== null || (state.walletError ?? null) !== null) return <WalletReview state={state} />;
+  return <GenericReviewStep state={state} onClose={onClose} />;
+}
+
+function GenericReviewStep({ state, onClose }: { state: ImportState; onClose?: () => void }) {
   const t = useT();
   const queueGuard = useQueueGuard();
   const tx = useDynamicT();
