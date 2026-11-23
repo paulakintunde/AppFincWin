@@ -1,0 +1,65 @@
+name: Backup (daily)
+# 10-20 (ENV-16, D-05/D-06/D-07): daily encrypted production dump to private R2 (bucket fincwin-backups, daily/),
+# plus a daily keep-alive. Objects expire after 30 days through the bucket lifecycle rule (D-07), not here.
+# Schedules fire only from the default branch (main). Secrets and variable names are fixed by docs/ops/phase-10-owner-setup.md.
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: read
+concurrency:
+  group: backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    name: backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4.4.0 (v4)
+      # Same CLI as package.json's `supabase` devDependency and ci.yml. Bump together.
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v1.7.3 (v1)
+        with: { version: 3.1.0 }
+      # `supabase db dump` shells out to pg_dump in a container, so only psql is needed on the runner (counts.sql).
+      # Plan 10-29 confirms the server major with `select version()`; the CLI picks the matching image.
+      - name: Install age and the Postgres client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age postgresql-client
+      # GitHub-hosted runners are IPv4-only, so DB_URL is the session pooler (port 5432), never the direct host.
+      - name: Dump, check, encrypt
+        run: bash scripts/ops/backup/dump.sh
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL_POOLER }}
+          AGE_PUBLIC_KEY: ${{ vars.AGE_PUBLIC_KEY }}
+          OUT_DIR: backup-out
+      # R2 is S3-compatible: the US-jurisdiction endpoint lives in R2_ENDPOINT, region is always "auto".
+      - name: Upload to R2
+        run: |
+          aws s3 cp backup-out/ s3://fincwin-backups/daily/ --recursive --endpoint-url "$R2_ENDPOINT" --only-show-errors
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+  # Free-plan projects pause after 7 days without activity (STATE.md blocker); the daily dump is database activity too.
+  # Own job with no `needs`, so a failed dump still pings. SUPABASE_ANON_KEY holds the publishable key (sb_publishable_...).
+  keep-alive:
+    name: keep-alive
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # A cheap read of a real, anon-readable table (public.app_config) so Postgres itself is touched.
+      - name: Read through PostgREST
+        run: |
+          curl -fsS --retry 3 -o /dev/null "$SUPABASE_URL/rest/v1/app_config?select=key&limit=1" -H "apikey: $SUPABASE_ANON_KEY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      - name: Auth health
+        run: |
+          curl -fsS --retry 3 -o /dev/null "$SUPABASE_URL/auth/v1/health" -H "apikey: $SUPABASE_ANON_KEY"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
