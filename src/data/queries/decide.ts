@@ -570,8 +570,14 @@ export function useDecideSnapshot(): DecideSnapshotState {
   );
   const sharedSource = shared === null ? null : shared.source;
 
-  const refetches = [...reads.map((q) => q.refetch), splitsQuery.refetch];
-  const failedFlags = [...reads.map((q) => q.isError), splitsFailed].join(',');
+  // NR-03: the shared-category reads are required with any shared line, so Retry refetches them too (else Decide stays in error).
+  const refetches = [...reads.map((q) => q.refetch), splitsQuery.refetch, partnerCatsQuery.refetch, picksQuery.refetch];
+  const failedFlags = [
+    ...reads.map((q) => q.isError),
+    splitsFailed,
+    needsShared && partnerCatsQuery.data === undefined && partnerCatsQuery.isError,
+    needsShared && picksQuery.data === undefined && picksQuery.isError,
+  ].join(',');
   const retry = useCallback(() => {
     const flags = failedFlags.split(',');
     refetches.forEach((refetch, i) => {
