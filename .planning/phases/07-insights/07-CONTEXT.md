@@ -68,6 +68,7 @@ Not in this phase: Home changes (D-17), a household health score (D-19), Share/B
 - **D-32 (WR-03):** A partner's own category on a shared line shows as "<category name> (<partner name>)", e.g. "Pets (Sam)". Read through a security-definer RPC that returns only id, builtin_key, name, color_key, icon_key for categories on lines/series shared into the caller's households (never monthly_cap or archived_at; no new select policy).
 - **D-33 (WR-03):** The viewer's own category pick on a partner's shared line (transaction_member_categories) wins in both Just me and Household. Resolution order: member override, then the viewer's category with the same builtin_key, then the partner category.
 - **D-34:** Decide reads shared lines through the same category resolution now (Phase 7), so a partner's shared Savings line is treated as saving and the viewer's money rules apply to shared lines. Applied in the data layer before the engine; engine untouched. Decide answers for Household members with partner-categorised shared lines may move.
+- **D-35:** A first-month user sees a 'this month so far' bar in Insights, built for Insights only from this month's lines; Decide's builder output and every Decide answer are unchanged.
 
 ### Claude's Discretion
 - The range for the money in/out bars and comparison mode: the same 6M / 1Y / All control, defaulting to 6M.
