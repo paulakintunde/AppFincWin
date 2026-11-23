@@ -24,7 +24,12 @@ jest.mock('expo-constants', () => ({
 const mockRpc = jest.fn().mockResolvedValue({ error: null });
 jest.mock('@/services/supabase', () => ({ supabase: { rpc: (...a: unknown[]) => mockRpc(...a) } }));
 
-const N = Notifications as unknown as Record<string, jest.Mock>;
+const N = Notifications as unknown as {
+  setNotificationChannelAsync: jest.Mock;
+  getPermissionsAsync: jest.Mock;
+  requestPermissionsAsync: jest.Mock;
+  getExpoPushTokenAsync: jest.Mock;
+};
 
 beforeEach(() => {
   jest.clearAllMocks();

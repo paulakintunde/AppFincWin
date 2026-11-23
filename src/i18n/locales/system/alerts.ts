@@ -60,4 +60,8 @@ export const alerts = {
   logTitle: 'Alert log',
   logEmptyTitle: 'No alerts yet',
   logEmptyBody: 'Alerts you get will be listed here.',
+  done: 'Done',
+  leadGroup: 'Remind me',
+  quietFromLabel: 'Quiet hours start',
+  quietToLabel: 'Quiet hours end',
 } as const;
