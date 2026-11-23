@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import {
   checkPin,
   clearLock,
+  clearPin,
   clearTries,
   DEFAULT_LOCK_SETTINGS,
   loadLockState,
@@ -137,6 +138,20 @@ describe('lockStore', () => {
     await clearTries();
     s = await loadLockState();
     expect(s.wrongTries).toBe(0);
+  });
+
+  it('clearPin deletes the hash, salt and try counters but keeps the settings', async () => {
+    await setPin('123456');
+    await saveLockSettings({ enabled: true });
+    for (let i = 0; i < 5; i++) await checkPin('000000', 0);
+    await clearPin();
+    const s = await loadLockState();
+    expect(s.hasPin).toBe(false);
+    expect(s.wrongTries).toBe(0);
+    expect(s.lockUntil).toBeNull();
+    expect(mockSecure.has('fincwin.lock.salt')).toBe(false);
+    expect(s.settings.enabled).toBe(true);
+    expect((await checkPin('123456', 0)).ok).toBe(false);
   });
 
   it('persists backgroundedAt so a killed app can lock', async () => {

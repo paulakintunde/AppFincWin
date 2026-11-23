@@ -19,7 +19,7 @@ import {
   deviceLockAvailable,
   type BiometricKind,
 } from '@/services/lock/biometric';
-import { clearTries, loadLockState, saveLockSettings, type LockState } from '@/services/lock/lockStore';
+import { clearPin, clearTries, loadLockState, saveLockSettings, type LockState } from '@/services/lock/lockStore';
 import type { LockTiming } from '@/services/lock/pin';
 import { showToast } from '@/state/undoToast';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -112,7 +112,10 @@ export function LockSection({ showSwitcherMeta = true }: { showSwitcherMeta?: bo
     const what = pending;
     setPending(null);
     if (what === 'turnOff') await turnOff();
-    else if (what === 'extraOff') await save({ lockMethod: 'device', biometric: false });
+    else if (what === 'extraOff') {
+      await clearPin();
+      await save({ lockMethod: 'device', biometric: false });
+    }
     else if (what === 'changePin') setSetupOpen('resetPin');
   };
 

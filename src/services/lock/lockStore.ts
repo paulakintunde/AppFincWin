@@ -104,6 +104,13 @@ export async function clearTries(): Promise<void> {
   await SecureStore.deleteItemAsync(KEY_UNTIL);
 }
 
+/** 10-27: deletes the stored PIN hash and salt and the try counters, for "Extra FincWin PIN" turned off. Settings are untouched. */
+export async function clearPin(): Promise<void> {
+  await SecureStore.deleteItemAsync(KEY_HASH);
+  await SecureStore.deleteItemAsync(KEY_SALT);
+  await clearTries();
+}
+
 export async function checkPin(
   pin: string,
   now: number
