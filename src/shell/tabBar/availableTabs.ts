@@ -5,15 +5,16 @@ import { TAB_ORDER, type TabId } from './tabs';
 
 /**
  * D-02 build-rollout switch: each feature phase flips its own tab on as it lands
- * (Decide: Phase 5, Grow: Phase 6, Insights: Phase 7). D-03: never derived from a
- * user setting or onboarding answer.
+ * (Decide: Phase 5, Grow: Phase 6, Insights: Phase 7). 07-11 (Phase 7 D-16, newer owner
+ * decision): Insights is declared here and hidden per user below Everyday by GatedTabBar's availability; the route is
+ * always declared so the navigator never remounts.
  */
 export const TAB_AVAILABILITY: Readonly<Record<TabId, boolean>> = {
   home: true,
   activity: true,
   decide: true, // 05-21: Decide lands (Phase 5)
   grow: true, // 06-20: Grow lands (Phase 6)
-  insights: false,
+  insights: true, // 07-11: Insights lands (Phase 7); shown per user through GatedTabBar (D-16)
 };
 
 export function availableTabs(availability: Readonly<Record<TabId, boolean>> = TAB_AVAILABILITY): TabId[] {
