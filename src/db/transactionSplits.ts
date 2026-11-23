@@ -241,3 +241,14 @@ export function applyRuleToUnsettled(client: DbClient, categoryRef: string | nul
 }
 
 export type { RpcResult };
+
+/** 07 D-33: every category the caller picked for themselves on a shared line of the household (their own rows only, RLS). */
+export async function fetchMyHouseholdLineCategories(client: DbClient, userId: string, householdId: string): Promise<MemberLineCategoryRow[]> {
+  const { data, error, status } = await client
+    .from('transaction_member_categories')
+    .select(MEMBER_CATEGORY_COLUMNS)
+    .eq('user_id', userId)
+    .eq('household_id', householdId);
+  if (error) throw toDbError(error, status);
+  return (data as MemberLineCategoryRow[] | null) ?? [];
+}

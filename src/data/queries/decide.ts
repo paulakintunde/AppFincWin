@@ -33,7 +33,8 @@ import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
 import { useAccounts } from './accounts';
 import { useAccountBalances } from './activity';
-import { useCategories } from './categories';
+import { useCategories, useMyLineCategories, useSharedLineCategories } from './categories';
+import { applySharedCategories, sharedCategoryResolution } from '../sharedCategories';
 import { useCustomCurrencies } from './customCurrencies';
 import { useFxLatest } from './fxLatest';
 import { DECIDE_READ_STALE_MS } from './decideStale';
@@ -410,14 +411,32 @@ export function useDecideSnapshot(): DecideSnapshotState {
   const splitsQuery = useSharedSplits(hh, needsSplits);
   const splitsMissing = needsSplits && splitsQuery.data === undefined;
   const splits = needsSplits ? splitsQuery.data : undefined;
+  // 07 D-32..D-34: with any shared line, a fellow member's categories on shared lines and the viewer's own picks on them are
+  // required reads too, so a shared line is read under the viewer's category (a household of one never makes either read).
+  const needsShared = useMemo(
+    () => (historyRows ?? []).some((r) => r.is_shared === true) || (upcomingRowsData ?? []).some((r) => r.is_shared === true),
+    [historyRows, upcomingRowsData]
+  );
+  const partnerCatsQuery = useSharedLineCategories(hhId, needsShared, DECIDE_READ);
+  const picksQuery = useMyLineCategories(hhId, userKey, needsShared, DECIDE_READ);
+  const sharedReads = needsShared ? [partnerCatsQuery, picksQuery] : [];
+  const sharedMissing = sharedReads.some((q) => q.data === undefined);
+  const sharedFailure = sharedReads.find((q) => q.data === undefined && q.isError);
 
-  const missing = reads.some((q) => q.data === undefined) || splitsMissing;
+  const missing = reads.some((q) => q.data === undefined) || splitsMissing || sharedMissing;
   // 'error' only when a required read failed with nothing cached; a cached copy (offline) is 'ready'.
   const splitsFailed = splitsMissing && splitsQuery.isError;
-  const failed = reads.some((q) => q.data === undefined && q.isError) || splitsFailed;
-  const missingReads = [...SNAPSHOT_READ_NAMES.filter((_, i) => reads[i]?.data === undefined), ...(splitsMissing ? ['sharedSplits'] : [])];
+  const failed = reads.some((q) => q.data === undefined && q.isError) || splitsFailed || sharedFailure !== undefined;
+  const missingReads = [
+    ...SNAPSHOT_READ_NAMES.filter((_, i) => reads[i]?.data === undefined),
+    ...(splitsMissing ? ['sharedSplits'] : []),
+    ...(needsShared && partnerCatsQuery.data === undefined ? ['sharedLineCategories'] : []),
+    ...(needsShared && picksQuery.data === undefined ? ['myLineCategories'] : []),
+  ];
   const readFailure = reads.find((q) => q.data === undefined && q.isError);
-  const errorKind: DbErrorKind | null = failed ? classifyReadError(readFailure !== undefined ? readFailure.error : splitsQuery.error) : null;
+  const errorKind: DbErrorKind | null = failed
+    ? classifyReadError(readFailure !== undefined ? readFailure.error : splitsFailed ? splitsQuery.error : sharedFailure?.error)
+    : null;
 
   // 05.4 APP-06 (D-126): "records up to" = the local day of the oldest real server fetch among the record reads used (last
   // month's reads while their placeholder shows); null when any is unknown. dataUpdatedAt keys the memo so a refetch that
@@ -474,21 +493,34 @@ export function useDecideSnapshot(): DecideSnapshotState {
   const region = getDeviceRegion(rc.region) ?? null;
   // 06.1-36: the old Judge-on device choice is gone; the snapshot always judges on the settings basis.
 
+  // 07 D-32..D-34: shared lines under the viewer's category (their own pick, then their own category with the same built-in,
+  // then the partner's). Same arrays back when nothing changes, so a household of one keeps every memo it had.
+  const partnerCats = needsShared ? partnerCatsQuery.data : undefined;
+  const picks = needsShared ? picksQuery.data : undefined;
+  const lineCats = useMemo(() => {
+    if (historyRows === undefined || upcomingRowsData === undefined) return null;
+    const parts = { rows: historyRows, upcomingRows: upcomingRowsData, series: seriesQuery.data ?? [], categories: categoryMap };
+    if (partnerCats === undefined || picks === undefined) return { ...parts, partnerCategories: [], categorySourceIds: {} };
+    return applySharedCategories(parts, sharedCategoryResolution(categoryRows ?? [], partnerCats, picks));
+  }, [historyRows, upcomingRowsData, seriesQuery.data, categoryMap, categoryRows, partnerCats, picks]);
+
   const source = useMemo<SnapshotSource | null>(() => {
-    if (!rc.ready || missing) return null;
+    if (!rc.ready || missing || lineCats === null) return null;
     const scopeOf = { homeCurrency: rc.homeCurrency, rates: fxQuery.data ?? [], customCurrencies: customQuery.data ?? [] };
     return {
       today: rc.today,
       homeCurrency: rc.homeCurrency,
       region,
       // 08-25: Mine scope (my share of shared lines) through the one adapter, then 08-30's settlement flag.
-      rows: withSettlementFlag(mineSnapshotRows(history.data ?? [], splits ?? NO_SPLITS, userId, scopeOf)),
-      upcomingRows: withSettlementFlag(mineSnapshotRows(upcoming.data ?? [], splits ?? NO_SPLITS, userId, scopeOf)),
-      series: seriesQuery.data ?? [],
+      rows: withSettlementFlag(mineSnapshotRows(lineCats.rows, splits ?? NO_SPLITS, userId, scopeOf)),
+      upcomingRows: withSettlementFlag(mineSnapshotRows(lineCats.upcomingRows, splits ?? NO_SPLITS, userId, scopeOf)),
+      series: lineCats.series,
       accounts: allAccounts,
       balances: balanceRecord,
       rates: fxQuery.data ?? [],
-      categories: categoryMap,
+      categories: lineCats.categories,
+      ...(lineCats.partnerCategories.length > 0 ? { partnerCategories: lineCats.partnerCategories } : {}),
+      ...(Object.keys(lineCats.categorySourceIds).length > 0 ? { categorySourceIds: lineCats.categorySourceIds } : {}),
       settings: settingsQuery.data ?? null,
       debts: debtsQuery.data ?? [],
       goals: goalsQuery.data ?? [], // D-101: pots and Wait goals (kind, done_at); the builder keeps the live, not-done ones
@@ -508,15 +540,12 @@ export function useDecideSnapshot(): DecideSnapshotState {
     rc.homeCurrency,
     missing,
     region,
-    history.data,
-    upcoming.data,
+    lineCats,
     splits,
     userId,
-    seriesQuery.data,
     allAccounts,
     balanceRecord,
     fxQuery.data,
-    categoryMap,
     settingsQuery.data,
     debtsQuery.data,
     goalsQuery.data,
@@ -532,7 +561,7 @@ export function useDecideSnapshot(): DecideSnapshotState {
 
   const sourceKey = [hh ?? '', userId ?? '', rc.today, rc.homeCurrency, region ?? ''].join('|');
   // 06.1-46 (B-2): the checks read keys by its (id, kind) signature (see paymentLinks), not by its rows.
-  const sourceDeps = [...reads.map((q) => (q === checksQuery ? checkKindSig : q.data)), recordsAsOf, splits];
+  const sourceDeps = [...reads.map((q) => (q === checksQuery ? checkKindSig : q.data)), recordsAsOf, splits, partnerCats, picks];
   const shared = useMemo(
     () => (source === null ? null : sharedSnapshot(sourceKey, sourceDeps, source)),
     // sourceDeps is rebuilt each render from the same references; `source` and the key say when they changed.

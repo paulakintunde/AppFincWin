@@ -276,8 +276,10 @@ export function registerHouseholdSharingMutations(qc: QueryClient): void {
     onMutate: (vars: SetMyLineCategoryVars) => {
       markSession(vars);
     },
-    onSuccess: (_res: void, vars: SetMyLineCategoryVars) =>
-      void qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) }),
+    onSuccess: (_res: void, vars: SetMyLineCategoryVars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(vars.householdId, vars.month) });
+      void qc.invalidateQueries({ queryKey: queryKeys.myLineCategories(vars.householdId, vars.userId) }); // 07 D-33: Decide and Insights
+    },
     onError: (err: unknown, vars: SetMyLineCategoryVars) =>
       handleFailure(qc, err, vars, vars.transactionId, 'setMyLineCategory'),
   });

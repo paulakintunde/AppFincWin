@@ -5,12 +5,36 @@
 // is not recomputed on every render.
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchCategories } from '@/db/categories';
+import { fetchCategories, fetchSharedLineCategories } from '@/db/categories';
+import { fetchMyHouseholdLineCategories } from '@/db/transactionSplits';
 import { MERGE_LIMIT, MERGE_ROWS_MAX, fetchActiveIdsByCategory } from '@/db/transactions';
 import type { CategoryRow } from '@/db/rows';
 import { BUILTIN_CATEGORY_KEYS, type BuiltinCategoryKey } from '@/engine/categorize';
 import { supabase } from '@/services/supabase';
 import { queryKeys } from '../keys';
+
+/**
+ * 07 D-32 (WR-03): a fellow member's own categories on lines and series shared into the household (display fields only).
+ * `enabled` lets a caller skip the read when no shared line exists (a household of one never makes it).
+ */
+export function useSharedLineCategories(householdId?: string, enabled = true, opts?: { staleTime?: number }) {
+  return useQuery({
+    queryKey: queryKeys.sharedLineCategories(householdId ?? ''),
+    queryFn: () => fetchSharedLineCategories(supabase, householdId as string),
+    enabled: enabled && Boolean(householdId),
+    ...opts,
+  });
+}
+
+/** 07 D-33: the viewer's own category picks on the household's shared lines. */
+export function useMyLineCategories(householdId?: string, userId?: string, enabled = true, opts?: { staleTime?: number }) {
+  return useQuery({
+    queryKey: queryKeys.myLineCategories(householdId ?? '', userId ?? ''),
+    queryFn: () => fetchMyHouseholdLineCategories(supabase, userId as string, householdId as string),
+    enabled: enabled && Boolean(householdId) && Boolean(userId),
+    ...opts,
+  });
+}
 
 /** 06.1-72: a caller may hold the read fresh for longer (Decide's reads use DECIDE_READ_STALE_MS). */
 export function useCategories(userId?: string, opts?: { staleTime?: number }) {

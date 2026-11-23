@@ -95,3 +95,30 @@ export async function updateCategory(
   if (serverRow) throw new VersionConflictError(ENTITY, id, serverRow);
   throw new NotFoundError(ENTITY, id);
 }
+
+/**
+ * 07 D-32 (WR-03): a fellow member's own category on a line or series shared into the household. Display fields only, through
+ * the shared_line_categories RPC (never monthly_cap or archived_at; categories stay owner-only, no select policy). The caller's
+ * own categories are never in it.
+ */
+export interface SharedLineCategoryRow {
+  id: string;
+  owner_id: string;
+  builtin_key: string | null;
+  name: string | null;
+  color_key: string | null;
+  icon_key: string | null;
+}
+
+export async function fetchSharedLineCategories(client: DbClient, householdId: string): Promise<SharedLineCategoryRow[]> {
+  const { data, error, status } = await client.rpc('shared_line_categories', { p_household: householdId });
+  if (error) throw toDbError(error, status);
+  return ((data as SharedLineCategoryRow[] | null) ?? []).map((r) => ({
+    id: r.id,
+    owner_id: r.owner_id,
+    builtin_key: r.builtin_key ?? null,
+    name: r.name ?? null,
+    color_key: r.color_key ?? null,
+    icon_key: r.icon_key ?? null,
+  }));
+}
