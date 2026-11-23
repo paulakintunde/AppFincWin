@@ -67,7 +67,7 @@ describe('healthInputsOf', () => {
 
   it.each(['typical_short', 'month_heading_short'] as const)('short when the month carries the %s notice', (code) => {
     const p = prepare(sam());
-    const r = p.readings[0];
+    const r = p.readings[0]!;
     expect(monthPicture(p).leftAfterPlans).toBeGreaterThanOrEqual(0);
     const withNotice: Pick<Prepared, 'inputs' | 'readings'> = {
       inputs: p.inputs,

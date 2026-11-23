@@ -128,8 +128,8 @@ export function netWorthSeries(args: {
 
 export function seriesChange(points: readonly SeriesPoint[]): { readonly from: number; readonly to: number; readonly change: number } | null {
   if (points.length < 2) return null;
-  const from = points[0].value;
-  const to = points[points.length - 1].value;
+  const from = points[0]!.value;
+  const to = points[points.length - 1]!.value;
   const change = Number(BigInt(to) - BigInt(from));
   if (!Number.isSafeInteger(change)) throw new RangeError('seriesChange: result exceeds the safe integer range');
   return { from, to, change };

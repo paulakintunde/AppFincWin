@@ -94,7 +94,7 @@ describe('netWorthSeries', () => {
   it('today uses the latest lot by date, even a later-dated one', () => {
     const holdings: SeriesHolding[] = [{ id: 'h', account_id: null, lots: [{ date: '2026-12-01', amount: 42 }] }];
     const out = netWorthSeries({ accounts: [], holdings, debts: [], points: [pt('2026-11-22', true, [])] });
-    expect(out[0].value).toBe(42);
+    expect(out[0]!.value).toBe(42);
   });
 
   it('holds unlinked debts flat in past points and flags it', () => {
@@ -112,7 +112,7 @@ describe('netWorthSeries', () => {
       { account_id: 'a', balance: 1, startedBalance: null, paidOffOn: null },
     ];
     const out = netWorthSeries({ accounts: [acct('a', '2026-01-01', 'loan')], holdings: [], debts, points: [pt('2026-09-30', false, [['a', -1]])] });
-    expect(out[0].debtsHeldFlat).toBe(false);
+    expect(out[0]!.debtsHeldFlat).toBe(false);
   });
 
   it('a paid-off debt counts at its starting balance before the date and is gone on and after it', () => {
@@ -128,7 +128,7 @@ describe('netWorthSeries', () => {
   it('a paid-off debt with no starting balance falls back to its current balance', () => {
     const debts: SeriesDebt[] = [{ account_id: null, balance: 120, startedBalance: null, paidOffOn: '2026-09-10' }];
     const out = netWorthSeries({ accounts: [], holdings: [], debts, points: [pt('2026-08-31', false, [])] });
-    expect(out[0].value).toBe(-120);
+    expect(out[0]!.value).toBe(-120);
   });
 });
 

@@ -49,8 +49,8 @@ describe('netWorthSeries property', () => {
               if (d.paidOffOn !== null) return { account_id: d.account_id, balance: d.startedBalance ?? d.balance, paid_off: d.paidOffOn <= p.date };
               return { account_id: d.account_id, balance: d.balance, paid_off: false };
             });
-            expect(out[i].value).toBe(netWorthOf({ accounts: accs, balances, holdings: hs, debts: ds }));
-            expect(out[i].date).toBe(p.date);
+            expect(out[i]!.value).toBe(netWorthOf({ accounts: accs, balances, holdings: hs, debts: ds }));
+            expect(out[i]!.date).toBe(p.date);
           });
         },
       ),
