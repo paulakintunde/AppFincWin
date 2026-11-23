@@ -27,6 +27,7 @@ import { MonthAgainstLastSection } from './sections/MonthAgainstLastSection';
 import { NetWorthSection } from './sections/NetWorthSection';
 import { ScoreCard } from './sections/ScoreCard';
 import { WhereItWentSection } from './sections/WhereItWentSection';
+import { useCategoryNaming } from './useCategoryNaming';
 import { useInsightsScope } from './useInsightsScope';
 
 export function InsightsScreen() {
@@ -36,6 +37,7 @@ export function InsightsScreen() {
   const s = useInsightsScope();
   const data = useInsightsPrepared(s.scope, s.householdCurrency);
   const entries = useTransactionMonths(s.householdId, s.today);
+  const naming = useCategoryNaming(s.householdId, data.partnerCategories, data.categorySourceIds); // 07 D-32, D-33
   const visible = useFeatureAccess('insights').visible;
   const showNetWorth = useFeatureAccess('netWorthTrend').visible;
   const showScore = useFeatureAccess('healthScore').visible;
@@ -103,8 +105,8 @@ export function InsightsScreen() {
     body = (
       <View style={styles.sections}>
         <MoneyInOutSection prepared={prepared} currency={s.currency} range={range} />
-        <WhereItWentSection prepared={prepared} currency={s.currency} range={range} />
-        <MonthAgainstLastSection prepared={prepared} currency={s.currency} onAddEntry={addOut} />
+        <WhereItWentSection prepared={prepared} currency={s.currency} range={range} naming={naming} />
+        <MonthAgainstLastSection prepared={prepared} currency={s.currency} onAddEntry={addOut} naming={naming} />
         {showNetWorth ? <NetWorthSection range={range} scope={s.scope} currency={s.currency} onAddAccount={addAccount} /> : null}
         {showScore ? (
           <ScoreCard scope={s.scope} minePrepared={data.minePrepared} status={data.status} onSwitchToMine={toMine} onGapAction={onGap} onRetry={data.retry} />

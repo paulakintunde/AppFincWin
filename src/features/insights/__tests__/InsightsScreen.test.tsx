@@ -48,6 +48,7 @@ jest.mock('@/data/queries/activity', () => ({
   useTransactionMonths: () => ({ months: ['2026-11'], counts: new Map([['2026-11', mock.entryCount]]), isLoading: false }),
 }));
 jest.mock('../model/everyday', () => ({ recordedMonths: () => mock.months }));
+jest.mock('../useCategoryNaming', () => ({ useCategoryNaming: () => ({ partners: new Map(), sourceIds: undefined, partnerName: () => '' }) }));
 jest.mock('../sections/MoneyInOutSection', () => ({
   MoneyInOutSection: (p: { range: string }) => {
     seen.inOut = p.range;

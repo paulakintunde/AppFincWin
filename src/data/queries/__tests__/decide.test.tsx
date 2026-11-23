@@ -89,7 +89,16 @@ jest.mock('../activity', () => ({
 }));
 jest.mock('../recurringSeries', () => ({ useRecurringSeries: () => mockSeries }));
 jest.mock('../fxLatest', () => ({ useFxLatest: () => mockFx }));
-jest.mock('../categories', () => ({ useCategories: () => mockCategories }));
+// 07 D-32, D-33: the shared-line category reads; `enabled` is recorded so a household with no shared line is seen not to need them.
+const mockSharedReads = { enabled: [] as boolean[] };
+jest.mock('../categories', () => ({
+  useCategories: () => mockCategories,
+  useSharedLineCategories: (_h: unknown, enabled: boolean) => {
+    mockSharedReads.enabled.push(enabled);
+    return { data: enabled ? [] : undefined, isError: false, error: null, refetch: jest.fn() };
+  },
+  useMyLineCategories: (_h: unknown, _u: unknown, enabled: boolean) => ({ data: enabled ? [] : undefined, isError: false, error: null, refetch: jest.fn() }),
+}));
 jest.mock('../customCurrencies', () => ({ useCustomCurrencies: () => mockCustom }));
 
 function wrapper(client: QueryClient) {
@@ -291,6 +300,15 @@ describe('useDecideSnapshot', () => {
     const { result } = await ready();
     expect(result.current.source?.regionSubdivision).toBe('CA');
     expect(mockFetch.subdivision).toHaveBeenCalledWith(expect.anything(), 'u1');
+  });
+
+  it('07 D-32: with no shared line, the shared-line category reads are never made or required', async () => {
+    mockSharedReads.enabled = [];
+    const { result } = await ready();
+    expect(result.current.status).toBe('ready');
+    expect(mockSharedReads.enabled.every((e) => e === false)).toBe(true);
+    expect(result.current.source?.partnerCategories).toBeUndefined();
+    expect(result.current.source?.categorySourceIds).toBeUndefined();
   });
 
   it('05.4-35: no stored state or province reads as null on the source', async () => {

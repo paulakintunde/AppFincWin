@@ -35,6 +35,10 @@ describe('insights copy', () => {
     expect(insights.footer.endsWith('FincWin holds no money and moves none.')).toBe(true);
   });
 
+  it('names a partner category with whose it is (D-32)', () => {
+    expect(insights.categories.partnerCategory).toBe('{{name}} ({{partner}})');
+  });
+
   it('carries the D-27 note under Where it went', () => {
     expect(insights.categories.debtSavingNote).toBe('Debt payments and saving are not counted here.');
   });

@@ -130,12 +130,24 @@ export function mineSnapshotRows<R extends SnapshotRow & ScopeFields>(
   return out;
 }
 
+/**
+ * 07 D-31 (WR-04): the Household scope carries no series and no settings, so an untagged shared money-in line would count for
+ * nothing in "In" (the engine counts an untagged line only through a series or an income profile). Such a line is stamped
+ * "money to spend" here; a line a member tagged keeps its tag, so one marked "not money to spend" stays out. Only money in is
+ * stamped: buildInputs reads counts_as for role income only, so transfers, refunds and settlements are unaffected either way.
+ */
+function householdCountsAs<R extends SnapshotRow>(r: R, amount: number): Pick<SnapshotRow, 'counts_as'> | null {
+  if (amount <= 0) return null;
+  if ((r.counts_as ?? null) !== null || (r.income_kind ?? null) !== null) return null;
+  return { counts_as: 'available' };
+}
+
 function householdSnapshotRows<R extends SnapshotRow & ScopeFields>(rows: readonly R[], currency: string): R[] {
   const out: R[] = [];
   for (const r of rows) {
     const h = householdAmountOf(scopeLineOf(r, null));
     if (h === null || h.amount === null) continue;
-    out.push({ ...r, original_amount: h.amount, original_currency: currency, home_currency: currency, home_amount: h.amount, orig_per_eur: null });
+    out.push({ ...r, original_amount: h.amount, original_currency: currency, home_currency: currency, home_amount: h.amount, orig_per_eur: null, ...householdCountsAs(r, h.amount) });
   }
   return out;
 }

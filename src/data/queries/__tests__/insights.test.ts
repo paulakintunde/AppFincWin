@@ -1,6 +1,8 @@
 // 07-07 (D-18, ARC-22): the Household prepared holds joint accounts and shared lines only.
 import { account, debt, household, row } from '@/features/decide/snapshot/__tests__/helpers/sourceFixtures';
 import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
+import { monthBars } from '@/engine/month';
+import { householdSnapshotSource } from '../figureScope';
 import { householdPreparedOf } from '../insights';
 
 type Extra = Record<string, unknown>;
@@ -48,5 +50,36 @@ describe('householdPreparedOf', () => {
   it('returns the same object for the same source and currency', () => {
     const source = fixture();
     expect(householdPreparedOf(source, 'USD')).toBe(householdPreparedOf(source, 'USD'));
+  });
+});
+
+// 07 D-31 (WR-04): an untagged shared money-in line counts in Household "In"; one a member tagged "not money to spend" stays out.
+describe('Household money in (D-31)', () => {
+  const inOf = (source: SnapshotSource, month: string): number | undefined =>
+    monthBars(householdPreparedOf(source, 'USD'), { throughCurrent: true }).find((b) => b.month === month)?.comesIn;
+  const withPay = (src: SnapshotSource, over: Extra): SnapshotSource => ({
+    ...src,
+    rows: src.rows.map((r) => (r.id === 'shared-pay-2026-08' ? ({ ...r, ...over } as typeof r) : r)),
+  });
+
+  it('counts an untagged shared pay line, even an occurrence of a series not shared with the viewer', () => {
+    const src = fixture();
+    const inSeries: SnapshotSource = { ...src, rows: src.rows.map((r) => (r.id.startsWith('shared-pay-') ? { ...r, recurring_series_id: 'partner-pay' } : r)) };
+    expect(inOf(src, '2026-08')).toBe(300_000);
+    expect(inOf(inSeries, '2026-08')).toBe(300_000);
+  });
+
+  it('stamps only untagged money in; money out keeps no mark', () => {
+    const hs = householdSnapshotSource(fixture(), 'USD');
+    expect(hs.rows.find((r) => r.id === 'shared-pay-2026-08')?.counts_as).toBe('available');
+    expect(hs.rows.find((r) => r.id === 'shared-food-2026-08')?.counts_as ?? null).toBeNull();
+  });
+
+  it('leaves out a shared line a member marked not money to spend, and keeps an income type as it is', () => {
+    const kept = withPay(fixture(), { counts_as: 'kept' });
+    expect(householdSnapshotSource(kept, 'USD').rows.find((r) => r.id === 'shared-pay-2026-08')?.counts_as).toBe('kept');
+    expect(inOf(kept, '2026-08')).toBe(0);
+    const typed = withPay(fixture(), { income_kind: 'gift' });
+    expect(householdSnapshotSource(typed, 'USD').rows.find((r) => r.id === 'shared-pay-2026-08')?.counts_as ?? null).toBeNull();
   });
 });

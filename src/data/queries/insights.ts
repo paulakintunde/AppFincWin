@@ -20,6 +20,10 @@ export interface InsightsPreparedState {
   minePrepared: Prepared | null;
   errorKind: DbErrorKind | null;
   retry(): void;
+  /** 07 D-32: a fellow member's categories left on shared lines (display only). */
+  partnerCategories?: SnapshotSource['partnerCategories'];
+  /** 07 D-33: resolved category id to every stored id counted under it (Activity taps). */
+  categorySourceIds?: SnapshotSource['categorySourceIds'];
 }
 
 export function useInsightsPrepared(scope: FigureScope, householdCurrency: string): InsightsPreparedState {
@@ -36,8 +40,9 @@ export function useInsightsPrepared(scope: FigureScope, householdCurrency: strin
     mine.refetch();
     if (household) snapshot.retry();
   };
+  const naming = { partnerCategories: source?.partnerCategories, categorySourceIds: source?.categorySourceIds };
   if (!household) {
-    return { status: mine.status, prepared: mine.prepared, minePrepared: mine.prepared, errorKind: mine.errorKind, retry };
+    return { status: mine.status, prepared: mine.prepared, minePrepared: mine.prepared, errorKind: mine.errorKind, retry, ...naming };
   }
   const status = snapshot.status === 'error' ? 'error' : snapshot.status === 'loading' || householdPrepared === null ? 'loading' : 'ready';
   return {
@@ -46,5 +51,6 @@ export function useInsightsPrepared(scope: FigureScope, householdCurrency: strin
     minePrepared: mine.prepared,
     errorKind: status === 'error' ? snapshot.errorKind ?? null : null,
     retry,
+    ...naming,
   };
 }

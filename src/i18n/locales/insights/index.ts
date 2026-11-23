@@ -50,6 +50,8 @@ export const insights = {
     rowA11yStatic: '{{name}}, {{amount}}, {{percent}} percent of spending.',
     everythingElse: 'Everything else',
     uncategorised: 'No category',
+    // 07 D-32: a fellow member's own category on a shared line, e.g. "Pets (Sam)".
+    partnerCategory: '{{name}} ({{partner}})',
     showAll: 'Show all {{count}}',
     leftOutNote: 'Moves between your own accounts and settlements are not counted as spending.',
     // D-27: plain note line under "Where it went".

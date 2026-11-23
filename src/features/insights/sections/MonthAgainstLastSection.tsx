@@ -10,7 +10,6 @@ import { radii, step } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
 import { shadows, type CategorySwatchKey } from '@/theme/tokens';
 import { fontSize, textRole } from '@/theme/typography';
-import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
 import { Chip } from '@/ui/Chip';
@@ -20,11 +19,22 @@ import { iconForCategory } from '@/ui/icons/iconFor';
 import { StatTile, StatTileRow } from '@/ui/StatTile';
 import { Text } from '@/ui/Text';
 import { useDetailFormat } from '@/features/decide/screens/answer/detail/detailKit';
+import { NO_NAMING, shownCategory, type CategoryNaming } from '../model/categoryNaming';
 import { compareModel, recordedMonths } from '../model/everyday';
 
 const SHOWN = 6;
 
-export function MonthAgainstLastSection({ prepared, currency, onAddEntry }: { prepared: Prepared; currency: string; onAddEntry: () => void }) {
+export function MonthAgainstLastSection({
+  prepared,
+  currency,
+  onAddEntry,
+  naming = NO_NAMING,
+}: {
+  prepared: Prepared;
+  currency: string;
+  onAddEntry: () => void;
+  naming?: CategoryNaming;
+}) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const f = useDetailFormat(currency);
@@ -101,8 +111,9 @@ export function MonthAgainstLastSection({ prepared, currency, onAddEntry }: { pr
             <>
               <View>
                 {rows.map((c) => {
-                  const row = c.categoryId === null ? undefined : byId.get(c.categoryId);
-                  const name = row ? categoryName(row, t as never) || t('insights.categories.uncategorised') : t('insights.categories.uncategorised');
+                  const shown = shownCategory(c.categoryId, byId, naming, t as never);
+                  const name = shown.name;
+                  const row = shown.glyph ?? undefined;
                   const word = wordOf(c);
                   const arrow = c.kind === 'more' ? 'stateUp' : c.kind === 'less' ? 'stateDown' : null;
                   const abs = c.change < 0 ? -(c.change as number) : (c.change as number);

@@ -182,6 +182,48 @@ describe('WhereItWentSection', () => {
   });
 });
 
+// 07 D-32, D-33 (WR-03): a partner's own category on a shared line is named with whose it is; a merged row opens Activity on
+// every stored id behind it.
+describe('partner categories on shared lines', () => {
+  const naming = {
+    partners: new Map([['p-pets', { id: 'p-pets', owner_id: 'u2', builtin_key: null, name: 'Pets', color_key: 'plum', icon_key: null }]]),
+    sourceIds: { food: ['food', 'p-food'] },
+    partnerName: (id: string) => (id === 'u2' ? 'Sam' : ''),
+  };
+  const withPets = () =>
+    prepare(
+      inputsOf({
+        asOf: '2026-11-15',
+        series: PAY,
+        months: [
+          monthOf('2026-10', [inc('2026-10', 300_000), sp('2026-10', 'a', 100_000, 'food'), sp('2026-10', 'v', 30_000, 'p-pets')]),
+          monthOf('2026-11', [inc('2026-11', 300_000), sp('2026-11', 'a', 90_000, 'food'), sp('2026-11', 'v', 40_000, 'p-pets'), sp('2026-11', 'u', 5_000, 'unknown')], { full: false }),
+        ],
+      }),
+    );
+
+  it('Where it went names a partner category "<name> (<partner>)" and a merged row taps every source id', async () => {
+    const spy = jest.spyOn(focus, 'requestActivityFocus');
+    const { getByText, getByTestId } = await wrap(<WhereItWentSection prepared={withPets()} currency="USD" range="6m" naming={naming} />);
+    expect(getByText('Pets (Sam)', opts)).toBeTruthy();
+    expect(within(getByTestId('insights-cat-unknown', opts)).getByText('No category', opts)).toBeTruthy(); // never another member's private category
+    await fireEvent.press(within(getByTestId('insights-cat-food', opts)).getByRole('button', opts));
+    expect(spy).toHaveBeenLastCalledWith({ month: '2026-11', filter: expect.objectContaining({ categoryIds: ['food', 'p-food'] }) });
+    await fireEvent.press(within(getByTestId('insights-cat-p-pets', opts)).getByRole('button', opts));
+    expect(spy).toHaveBeenLastCalledWith({ month: '2026-11', filter: expect.objectContaining({ categoryIds: ['p-pets'] }) });
+  });
+
+  it('a partner with no name to show leaves the category name alone', async () => {
+    const { getByText } = await wrap(<WhereItWentSection prepared={withPets()} currency="USD" range="6m" naming={{ ...naming, partnerName: () => '' }} />);
+    expect(getByText('Pets', opts)).toBeTruthy();
+  });
+
+  it('This month against last names it the same way', async () => {
+    const { getByText } = await wrap(<MonthAgainstLastSection prepared={withPets()} currency="USD" onAddEntry={() => undefined} naming={naming} />);
+    expect(getByText('Pets (Sam)', opts)).toBeTruthy();
+  });
+});
+
 describe('MonthAgainstLastSection', () => {
   it('shows tiles with the change on last month and neutral change rows', async () => {
     const { getByTestId, getByText, getAllByText } = await wrap(<MonthAgainstLastSection prepared={fixture()} currency="USD" onAddEntry={() => undefined} />);
