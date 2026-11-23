@@ -16,11 +16,15 @@ export interface DataCsvSchema {
   currencyColumn: 'currency';
 }
 
-// Server bookkeeping: accepted in the header so an export imports, but ignored.
-const IGNORED = [
-  'household_id', 'created_by', 'deleted_at', 'created_at', 'updated_at', 'check_id', 'series_id', 'extra_series_id',
-  'tombstone_of',
-] as const;
+// Server bookkeeping: accepted in the header so an export imports, but ignored. Listed per table because the
+// export carries different bookkeeping columns on each (the data-layer guard test checks them against the manifest).
+const IGNORED_COMMON = ['household_id', 'deleted_at', 'created_at', 'updated_at'] as const;
+const IGNORED: Readonly<Record<DataTable, readonly string[]>> = {
+  accounts: [...IGNORED_COMMON, 'created_by', 'tombstone_of'],
+  savings_goals: [...IGNORED_COMMON, 'created_by', 'check_id'],
+  debts: [...IGNORED_COMMON, 'check_id', 'series_id', 'extra_series_id'],
+  holdings: [...IGNORED_COMMON, 'created_by'],
+};
 
 const ACCOUNTS_COLS = [
   'id', 'name', 'kind', 'currency', 'opening_balance', 'archived_at', 'overdraft_limit', 'credit_limit', 'use',
@@ -49,7 +53,7 @@ export const DATA_CSV_SCHEMAS: Readonly<Record<DataTable, DataCsvSchema>> = {
   accounts: {
     table: 'accounts',
     required: ['name', 'kind', 'currency'],
-    allowed: [...ACCOUNTS_COLS, ...IGNORED],
+    allowed: [...ACCOUNTS_COLS, ...IGNORED.accounts],
     money: ['opening_balance', 'overdraft_limit', 'credit_limit'],
     enums: { kind: ['cash', 'checking', 'savings', 'credit', 'investment', 'loan', 'other'] },
     dates: ['archived_at'],
@@ -58,7 +62,7 @@ export const DATA_CSV_SCHEMAS: Readonly<Record<DataTable, DataCsvSchema>> = {
   savings_goals: {
     table: 'savings_goals',
     required: ['name', 'currency', 'target'],
-    allowed: [...GOALS_COLS, ...IGNORED],
+    allowed: [...GOALS_COLS, ...IGNORED.savings_goals],
     money: ['target', 'monthly_amount', 'opening_saved'],
     enums: {
       kind: ['wait', 'pot'],
@@ -70,7 +74,7 @@ export const DATA_CSV_SCHEMAS: Readonly<Record<DataTable, DataCsvSchema>> = {
   debts: {
     table: 'debts',
     required: ['name', 'kind', 'currency', 'balance'],
-    allowed: [...DEBTS_COLS, ...IGNORED],
+    allowed: [...DEBTS_COLS, ...IGNORED.debts],
     money: ['balance', 'minimum_payment', 'min_floor', 'started_balance', 'payoff_extra'],
     enums: { kind: ['loan', 'card', 'other'] },
     dates: ['start_date', 'paid_off_on'],
@@ -79,7 +83,7 @@ export const DATA_CSV_SCHEMAS: Readonly<Record<DataTable, DataCsvSchema>> = {
   holdings: {
     table: 'holdings',
     required: ['name', 'type', 'currency', 'value'],
-    allowed: [...HOLDINGS_COLS, ...IGNORED],
+    allowed: [...HOLDINGS_COLS, ...IGNORED.holdings],
     money: ['value', 'opening_put_in', 'monthly_amount'],
     enums: { type: ['brokerage', 'retirement', 'pension', 'crypto', 'other'] },
     dates: ['value_as_of'],
