@@ -29,6 +29,7 @@ export const archive = {
   a11ySuffix: 'restore to change',
   sharedRow: 'Shared row. Still editable.',
   restoredToast: '{{month}} restored',
+  rowTotals: 'In {{income}} · Out {{spend}}',
   switcherFooter: 'Archived months ({{count}})',
   switcherArchive: 'Archive this month',
   a11yArchiveMonth: 'Archive {{month}}, button',

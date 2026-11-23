@@ -11,4 +11,5 @@ export type LockActionId =
   | 'addDebt'
   | 'addHolding';
 
-export type LockVariant = 'locked' | 'sample';
+// 10-24 (D-14): 'archived' = a write inside an archived month; the restore sheet explains it (archivedMonthGate.tsx).
+export type LockVariant = 'locked' | 'sample' | 'archived';
