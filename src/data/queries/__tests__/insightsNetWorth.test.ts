@@ -5,10 +5,10 @@ import type { DebtRow } from '@/db/debts';
 import type { HoldingRow } from '@/db/holdings';
 import type { HoldingLotRow } from '@/db/holdingLots';
 import { monthEndsFor } from '@/engine/grow';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { onlineManager, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { queryKeys } from '../../keys';
-import { accountsForScope, buildNetWorthInputs, paidBeforeDateOf, pointBalances, useNetWorthSeries } from '../insightsNetWorth';
+import { accountsForScope, buildNetWorthInputs, inputPaused, inputWaiting, paidBeforeDateOf, pointBalances, useNetWorthSeries } from '../insightsNetWorth';
 
 const acct = (o: Partial<AccountRow>): AccountRow =>
   ({
@@ -112,25 +112,26 @@ describe('pointBalances', () => {
 
 const mock = {
   accounts: [acct({ id: 'a', opening_balance: 10_000 })],
-  months: ['2026-11', '2026-09', '2026-08'],
+  monthList: ['2026-11', '2026-09', '2026-08'],
   counts: new Map([['2026-11', 3], ['2026-09', 2], ['2026-08', 0]]),
   paidCalls: [] as string[],
   debts: { data: [] as unknown[] | undefined, isLoading: false, isError: false } as Record<string, unknown>,
-  balances: { isLoading: false, isError: false },
+  balances: { isLoading: false, isError: false, isWaiting: false, isPaused: false },
+  fx: { data: [] } as Record<string, unknown>,
+  months: { isWaiting: false, isPaused: false },
 };
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ householdId: 'hh1', userId: 'me', homeCurrency: 'USD', today: '2026-11-10' }),
 }));
 jest.mock('../accounts', () => ({ useAccounts: () => ({ data: mock.accounts, isLoading: false, isError: false, refetch: jest.fn() }) }));
 jest.mock('../activity', () => ({
-  useTransactionMonths: () => ({ months: mock.months, counts: mock.counts, isLoading: false }),
+  useTransactionMonths: () => ({ months: mock.monthList, counts: mock.counts, isLoading: false, ...mock.months }),
   useAccountBalances: () => ({
     balances: new Map([['a', { balance: 12_000, otherCurrencies: [], overflow: false, pendingSum: 500, standing: null }]]),
-    isLoading: mock.balances.isLoading,
-    isError: mock.balances.isError,
+    ...mock.balances,
   }),
 }));
-jest.mock('../fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
+jest.mock('../fxLatest', () => ({ useFxLatest: () => ({ ...mock.fx, refetch: jest.fn() }) }));
 jest.mock('../customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [] }) }));
 jest.mock('../growHoldings', () => ({ useHoldingRows: () => ({ data: [] }), useHoldingLotRows: () => ({ data: [] }) }));
 jest.mock('../decide', () => ({ useDebts: () => ({ ...mock.debts, refetch: jest.fn() }) }));
@@ -170,7 +171,9 @@ describe('useNetWorthSeries status (CR-01)', () => {
   };
   afterEach(() => {
     mock.debts = { data: [], isLoading: false, isError: false };
-    mock.balances = { isLoading: false, isError: false };
+    mock.balances = { isLoading: false, isError: false, isWaiting: false, isPaused: false };
+    mock.fx = { data: [] };
+    mock.months = { isWaiting: false, isPaused: false };
   });
   it('is loading while debts are still loading', async () => {
     mock.debts = { data: undefined, isLoading: true, isError: false };
@@ -181,10 +184,68 @@ describe('useNetWorthSeries status (CR-01)', () => {
     expect((await run()).status).toBe('error');
   });
   it('is loading while today balances load, and an error when they fail', async () => {
-    mock.balances = { isLoading: true, isError: false };
+    mock.balances = { isLoading: true, isError: false, isWaiting: true, isPaused: false };
     expect((await run()).status).toBe('loading');
-    mock.balances = { isLoading: false, isError: true };
+    mock.balances = { isLoading: false, isError: true, isWaiting: false, isPaused: false };
     expect((await run()).status).toBe('error');
+  });
+  // NR-01: offline with no cache, TanStack leaves a query pending with fetchStatus 'paused': isLoading and isError are both false.
+  it('is offline, never a figure, when debts are paused offline with no cache', async () => {
+    mock.debts = { data: undefined, isLoading: false, isError: false, isPending: true, fetchStatus: 'paused' };
+    expect((await run()).status).toBe('offline');
+  });
+  it('is offline when FX is paused with no cache', async () => {
+    mock.fx = { data: undefined, isLoading: false, isError: false, fetchStatus: 'paused' };
+    expect((await run()).status).toBe('offline');
+  });
+  it('is offline when today balances or the month list are paused with no cache', async () => {
+    mock.balances = { isLoading: false, isError: false, isWaiting: true, isPaused: true };
+    expect((await run()).status).toBe('offline');
+    mock.balances = { isLoading: false, isError: false, isWaiting: false, isPaused: false };
+    mock.months = { isWaiting: true, isPaused: true };
+    expect((await run()).status).toBe('offline');
+  });
+  it('is loading while a read with no data is fetching even if isLoading is unset', async () => {
+    mock.debts = { data: undefined, isError: false, fetchStatus: 'fetching' };
+    expect((await run()).status).toBe('loading');
+  });
+});
+
+describe('inputWaiting / inputPaused (NR-01)', () => {
+  it('waits on fetching and paused reads with no data, not on idle (disabled) ones', () => {
+    expect(inputWaiting({ data: undefined, isError: false, fetchStatus: 'paused' })).toBe(true);
+    expect(inputWaiting({ data: undefined, isError: false, fetchStatus: 'fetching' })).toBe(true);
+    expect(inputWaiting({ data: undefined, isError: false, fetchStatus: 'idle' })).toBe(false);
+    expect(inputWaiting({ data: [], isError: false, fetchStatus: 'paused' })).toBe(false);
+    expect(inputWaiting({ data: undefined, isError: true, fetchStatus: 'idle' })).toBe(false);
+  });
+  it('is paused only with no data, no error and fetchStatus paused', () => {
+    expect(inputPaused({ data: undefined, isError: false, fetchStatus: 'paused' })).toBe(true);
+    expect(inputPaused({ data: [], isError: false, fetchStatus: 'paused' })).toBe(false);
+    expect(inputPaused({ data: undefined, isError: false, fetchStatus: 'fetching' })).toBe(false);
+  });
+});
+
+// NR-01: a real QueryClient, offline, no cache: the hook must not return 'ready' with a debt missing from the figure.
+describe('a real paused query (NR-01)', () => {
+  it('a query paused offline with no cache is pending/paused with isLoading false', async () => {
+    onlineManager.setOnline(false);
+    try {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false, networkMode: 'offlineFirst' } } });
+      const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(QueryClientProvider, { client }, children);
+      const { result } = await renderHook(
+        () => useQuery({ queryKey: ['nr01-debts'], queryFn: () => Promise.reject(new Error('offline')), retry: 1 }),
+        { wrapper }
+      );
+      await waitForReady(() => result.current.fetchStatus === 'paused');
+      expect(result.current.fetchStatus).toBe('paused');
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.isError).toBe(false);
+      expect(inputPaused(result.current)).toBe(true);
+      expect(inputWaiting(result.current)).toBe(true);
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 });
 

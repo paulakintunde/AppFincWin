@@ -1,4 +1,4 @@
-// 07-10: small pieces the net-worth and score cards share: the surface card, a 44 px text button, the placeholder block and the error card.
+// 07-10: small pieces the net-worth and score cards share: the surface card, a 44 px text button, the placeholder block, the error card and the offline card.
 import React from 'react';
 import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { useT } from '@/i18n';
@@ -45,6 +45,20 @@ export function ErrorCard({ onRetry, testID = 'insights-error' }: { onRetry: () 
       </View>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('insights.states.errorBody')}</Text>
       <TextButton label={t('insights.states.retry')} onPress={onRetry} testID={`${testID}-retry`} />
+    </Card>
+  );
+}
+
+/** NR-01: offline with nothing cached; the read resumes on its own when the device is back online, so there is no button. */
+export function OfflineCard({ testID = 'insights-offline' }: { testID?: string }) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  return (
+    <Card testID={testID}>
+      <View style={styles.errorHead}>
+        <Glyph name="info" size={20} color={colors.inkMuted} />
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, flexShrink: 1 }}>{t('insights.states.offlineNoCache')}</Text>
+      </View>
     </Card>
   );
 }

@@ -14,7 +14,7 @@ import { EmptyState } from '@/ui/EmptyState';
 import { Glyph } from '@/ui/icons/Glyph';
 import { Text } from '@/ui/Text';
 import { NetWorthLine } from '../charts/NetWorthLine';
-import { Card, ErrorCard, LoadingBlock } from './cardBits';
+import { Card, ErrorCard, LoadingBlock, OfflineCard } from './cardBits';
 
 export interface NetWorthSectionViewProps {
   state: NetWorthSeriesState;
@@ -36,6 +36,7 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
   const selected = tapped !== null && tapped.setKey === setKey ? tapped.index : null;
 
   if (state.status === 'error') return <ErrorCard onRetry={state.retry} testID="net-worth-error" />;
+  if (state.status === 'offline') return <OfflineCard testID="net-worth-offline" />;
   if (state.status === 'loading') return <LoadingBlock testID="net-worth-loading" height={260} />;
 
   const title = (
