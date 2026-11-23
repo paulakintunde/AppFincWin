@@ -1418,7 +1418,7 @@ Plans:
   3. A user can see spending broken down by category for a period.
   4. A user can see a financial health score with the figures behind it.
   5. A user can view a month's Activity as a week breakdown, a split view, a balance view and a calendar.
-**Plans:** 10/12 plans executed
+**Plans:** 11/12 plans executed
 
 Plans:
 **Wave 1**
@@ -1435,7 +1435,7 @@ Plans:
 - [x] 07-09-PLAN.md — Everyday sections: Money in and out, Where it went, This month against last
 - [x] 07-10-PLAN.md — Full picture sections: Net worth and Score card
 **Wave 4**
-- [ ] 07-11-PLAN.md — InsightsScreen, route, level-gated tab
+- [x] 07-11-PLAN.md — InsightsScreen, route, level-gated tab
 **Wave 5**
 - [ ] 07-12-PLAN.md — Phase gate, validation sign-off, ACT-06 citation, compliance note
 **UI hint**: yes
@@ -1749,7 +1749,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.1 Decide screens from the prototype | 82/82 | Complete (PR #102) | 2026-11-14 |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
-| 7. Insights | 10/12 | In Progress|  |
+| 7. Insights | 11/12 | In Progress|  |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 22/22 | Complete (review fixed, verification passed; OTA 7f1776a0) | 2026-11-22 |
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
