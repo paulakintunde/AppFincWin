@@ -1643,16 +1643,16 @@ Plans:
 Plans:
 **Wave 1**
 - [ ] 10-01-PLAN.md — Owner setup runbook and one owner sitting (R2, age key, GitHub secrets, Firebase/FCM, Expo token, wallet files, reviewer credentials)
-- [ ] 10-02-PLAN.md — System tables migration (devices, push tokens, alert settings/prefs/log, archived months) + RLS pgTAP
-- [ ] 10-03-PLAN.md — Client data layer: db modules, keys, queued mutations, cache bump, export manifest entries
-- [ ] 10-04-PLAN.md — Phase 10 copy catalogue (system.*), status keys, You row icons
-- [ ] 10-05-PLAN.md — engine/alerts default amounts (D-10), TDD
-- [ ] 10-06-PLAN.md — engine/archive view rules, TDD
-- [ ] 10-07-PLAN.md — engine/dataCsv import parsing, TDD
-- [ ] 10-08-PLAN.md — Wallet readers (PayPal, Wise, Revolut) on synthetic layouts, TDD
-- [ ] 10-09-PLAN.md — Per-user rate limits (ACC-13)
-- [ ] 10-10-PLAN.md — Deletion log (atomic trigger) and deletion completeness proof
-- [ ] 10-11-PLAN.md — expo-local-authentication + lock services (PIN, ladder, timing, D-29)
+- [x] 10-02-PLAN.md — System tables migration (devices, push tokens, alert settings/prefs/log, archived months) + RLS pgTAP
+- [x] 10-03-PLAN.md — Client data layer: db modules, keys, queued mutations, cache bump, export manifest entries
+- [x] 10-04-PLAN.md — Phase 10 copy catalogue (system.*), status keys, You row icons
+- [x] 10-05-PLAN.md — engine/alerts default amounts (D-10), TDD
+- [x] 10-06-PLAN.md — engine/archive view rules, TDD
+- [x] 10-07-PLAN.md — engine/dataCsv import parsing, TDD
+- [x] 10-08-PLAN.md — Wallet readers (PayPal, Wise, Revolut) on synthetic layouts, TDD
+- [x] 10-09-PLAN.md — Per-user rate limits (ACC-13)
+- [x] 10-10-PLAN.md — Deletion log (atomic trigger) and deletion completeness proof
+- [x] 10-11-PLAN.md — expo-local-authentication + lock services (PIN, ladder, timing, D-29)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 10-12-PLAN.md — Device list and revoke (RPCs, heartbeat, Devices section, remote sign-out wipe)
@@ -1777,5 +1777,5 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
-| 10. System | 0/TBD | Not started | - |
+| 10. System | 10/30 | In Progress (10-01 waits on owner) |  |
 | 11. Compliance & Release | 0/TBD | Not started | - |
