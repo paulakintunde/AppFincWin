@@ -8,9 +8,13 @@ import { push } from '../locales/system/push';
 function templatesFromText(): Record<string, string> {
   const src = readFileSync(join(__dirname, '..', '..', '..', 'supabase', 'functions', 'alerts-deliver', 'text.ts'), 'utf8');
   const block = /export const TEMPLATES = \{([\s\S]*?)\} as const;/.exec(src);
-  if (!block) throw new Error('TEMPLATES not found in text.ts');
+  const body = block?.[1];
+  if (body === undefined) throw new Error('TEMPLATES not found in text.ts');
   const out: Record<string, string> = {};
-  for (const m of block[1].matchAll(/^\s*(\w+):\s*'((?:[^'\\]|\\.)*)',?\s*$/gm)) out[m[1]] = m[2].replace(/\\'/g, "'");
+  for (const m of body.matchAll(/^\s*(\w+):\s*'((?:[^'\\]|\\.)*)',?\s*$/gm)) {
+    const [, key, text] = m;
+    if (key !== undefined && text !== undefined) out[key] = text.replace(/\\'/g, "'");
+  }
   return out;
 }
 

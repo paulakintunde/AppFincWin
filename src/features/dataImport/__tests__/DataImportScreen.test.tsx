@@ -1,8 +1,9 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
-import { setMockQueued } from '@/data/sync/useQueueGuard';
 import { DataImportScreen } from '../DataImportScreen';
+
+const { setMockQueued } = jest.requireMock('@/data/sync/useQueueGuard') as { setMockQueued: (n: number) => void };
 
 jest.setTimeout(30000);
 
