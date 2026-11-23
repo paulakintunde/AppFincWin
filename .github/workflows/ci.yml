@@ -89,3 +89,5 @@ jobs:
       - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5 (v2)
         with: { deno-version: v2.x }
       - run: deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts
+      # 10-27 (T-10-27-03): every Phase 9 and 10 Deno test (same list as npm run test:deno).
+      - run: deno test --allow-read --node-modules-dir=none supabase/functions/delete-account/delete.test.ts supabase/functions/_shared/revenuecat/subscriber.test.ts supabase/functions/plan-webhook/verify.test.ts supabase/functions/plan-webhook/sync.test.ts supabase/functions/plan-refresh/refresh.test.ts supabase/functions/plan-grant/grant.test.ts supabase/functions/alerts-deliver/schedule.test.ts supabase/functions/alerts-deliver/text.test.ts supabase/functions/alerts-deliver/deliver.test.ts supabase/functions/_shared/rateLimit.test.ts supabase/functions/reviewer-signin/signin.test.ts
