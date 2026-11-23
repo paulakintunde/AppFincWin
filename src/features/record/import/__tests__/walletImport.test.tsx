@@ -54,7 +54,7 @@ jest.mock('@/features/record/useRecordContext', () => ({
 jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({ data: [{ id: 'a-eur', name: 'Everyday', currency: 'EUR', kind: 'checking', archived_at: null }] }),
 }));
-const mockAdd = jest.fn(() => 'new-account-id');
+const mockAdd = jest.fn((..._args: unknown[]) => 'new-account-id');
 jest.mock('@/data/mutations/accounts', () => ({ useAddAccount: () => ({ add: mockAdd }) }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
 

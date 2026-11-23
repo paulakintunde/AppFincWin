@@ -52,7 +52,7 @@ PayPal, Wise and Revolut CSVs now open their own preview: one account per curren
 ## Tests run (quick checks, milestone rule)
 - `walletModel.test.ts` 16 pass; `walletImport.test.tsx` 7 pass; `useStatementImport.wallet.test.tsx` 6 pass; `importFinalize.wallet.test.ts` 5 pass; `importFinalize.test.tsx` 20 pass (unchanged behaviour).
 - `src/features/record/import` whole directory plus `src/i18n`: all suites pass after one fix (see deviations); the four suites that failed on first run (importLife, ImportScreen, ReviewStep.issues, walletImport) were re-run and pass (135 tests).
-- `tsc --noEmit`: clean apart from the known expo-local-authentication error (final re-run recorded below).
+- `tsc --noEmit`: clean apart from the known expo-local-authentication error. Two type slips in the new test files (setMockQueued import, mock arg tuple) were found by tsc and fixed; the two suites were re-run and pass.
 - eslint on touched files: 0 errors; the remaining warnings are pre-existing (`payMatchRows` hook deps).
 
 ## Deviations from Plan

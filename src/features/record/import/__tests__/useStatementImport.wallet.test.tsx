@@ -4,8 +4,9 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react-native';
-import { setMockQueued } from '@/data/sync/useQueueGuard';
 import { useStatementImport } from '../useStatementImport';
+
+const { setMockQueued } = jest.requireMock('@/data/sync/useQueueGuard') as { setMockQueued: (n: number) => void };
 
 const mockCommit = jest.fn();
 const mockAddCategory = jest.fn(() => ({ id: 'fees-new', stepId: 's' }));
