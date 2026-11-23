@@ -47,6 +47,9 @@ describe('insights copy', () => {
   it('describes ranges as full months plus this month so far (D-26a)', () => {
     expect(insights.range.sixMonthsA11y).toContain('this month so far');
     expect(insights.range.oneYearA11y).toContain('this month so far');
+    // IN-02: the visible period phrases say it too, not just the a11y labels.
+    expect(insights.range.periodSixMonths).toBe('the last 6 full months and this month so far');
+    expect(insights.range.periodOneYear).toBe('the last 12 full months and this month so far');
   });
 
   it('the guard insights set flags a grade word under insights.*', () => {

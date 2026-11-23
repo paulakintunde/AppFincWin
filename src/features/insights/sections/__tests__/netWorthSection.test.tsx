@@ -63,7 +63,7 @@ describe('NetWorthSectionView', () => {
     expect(figure.props.children).toBe('$18,400');
     expect(JSON.stringify(figure.props.style)).toContain(String(fontSize.netWorth));
     expect(getByText('as of today', opts)).toBeTruthy();
-    expect(getByTestId('net-worth-change', opts).props.children).toBe('Up $4,200 over last 6 months');
+    expect(getByTestId('net-worth-change', opts).props.children).toBe('Up $4,200 over the last 6 full months and this month so far');
     expect(getByTestId('net-worth-change-glyph', opts)).toBeTruthy();
     expect(getByTestId('net-worth-line', opts)).toBeTruthy();
     expect(getByText('At today’s exchange rates.', opts)).toBeTruthy();
@@ -72,12 +72,12 @@ describe('NetWorthSectionView', () => {
 
   it('words a fall', async () => {
     const { getByTestId } = await view(state({ change: { from: 1840000, to: 1420000, change: -420000 }, current: 1420000 }));
-    expect(getByTestId('net-worth-change', opts).props.children).toBe('Down $4,200 over last 6 months');
+    expect(getByTestId('net-worth-change', opts).props.children).toBe('Down $4,200 over the last 6 full months and this month so far');
   });
 
   it('words a flat range over a year', async () => {
     const { getByTestId } = await view(state({ change: { from: 100, to: 100, change: 0 } }), { range: '1y' });
-    expect(getByTestId('net-worth-change', opts).props.children).toBe('No change over last 12 months');
+    expect(getByTestId('net-worth-change', opts).props.children).toBe('No change over the last 12 full months and this month so far');
   });
 
   it('adds owed-more when the total is negative', async () => {
