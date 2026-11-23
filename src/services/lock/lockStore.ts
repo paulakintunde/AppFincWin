@@ -6,8 +6,12 @@ import * as SecureStore from 'expo-secure-store';
 import { registerWipeHandler, STORAGE_PREFIX } from '@/services/storage/wipe';
 import { backoffFor, constantTimeEqual, hashPin, isValidPin, LOCK_TIMING_MS, type Backoff, type LockTiming } from './pin';
 
+/** D-33: 'device' = the phone's own lock (biometric, passcode fallback); 'appPin' = the optional extra FincWin PIN. */
+export type LockMethod = 'device' | 'appPin';
+
 export interface LockSettings {
   enabled: boolean;
+  lockMethod: LockMethod;
   timing: LockTiming;
   biometric: boolean;
   offerAnswered: boolean;
@@ -16,6 +20,7 @@ export interface LockSettings {
 
 export const DEFAULT_LOCK_SETTINGS: LockSettings = {
   enabled: false,
+  lockMethod: 'device',
   timing: 'oneMinute',
   biometric: false,
   offerAnswered: false,
@@ -56,7 +61,8 @@ async function readSettings(): Promise<LockSettings> {
   try {
     const parsed = JSON.parse(raw) as Partial<LockSettings>;
     const timing = parsed.timing && parsed.timing in LOCK_TIMING_MS ? parsed.timing : DEFAULT_LOCK_SETTINGS.timing;
-    return { ...DEFAULT_LOCK_SETTINGS, ...parsed, timing };
+    const lockMethod: LockMethod = parsed.lockMethod === 'appPin' ? 'appPin' : 'device';
+    return { ...DEFAULT_LOCK_SETTINGS, ...parsed, timing, lockMethod };
   } catch {
     return { ...DEFAULT_LOCK_SETTINGS };
   }

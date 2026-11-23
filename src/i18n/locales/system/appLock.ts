@@ -4,7 +4,8 @@ export const appLock = {
   offerTitleFaceId: 'Lock FincWin with Face ID?',
   offerTitleTouchId: 'Lock FincWin with Touch ID?',
   offerTitlePin: 'Lock FincWin with a PIN?',
-  offerBody: 'FincWin asks for it when you come back to the app. You can change this in You > Security.',
+  offerBody: 'FincWin asks for your phone’s lock when you come back to the app. You can change this in You > Security.',
+  offerBodyPin: 'FincWin asks for it when you come back to the app. You can change this in You > Security.',
   offerTurnOn: 'Turn on',
   offerNotNow: 'Not now',
   // 1b setup sheet
@@ -62,4 +63,16 @@ export const appLock = {
   timingFiveMinutes: 'After 5 minutes',
   timingFifteenMinutes: 'After 15 minutes',
   lockIsOffToast: 'Lock is off',
+  // D-33: the phone's own lock is the default; the FincWin PIN is the optional extra.
+  deviceUnlock: 'Unlock',
+  deviceSetupTitle: 'Use your phone’s lock to open FincWin',
+  deviceSetupBody: 'Face ID, fingerprint or your phone’s passcode will open FincWin.',
+  extraPinTitle: 'Extra FincWin PIN',
+  extraPinSub: 'Ask for a separate 6-digit PIN instead of your phone’s lock',
+  noScreenLock: 'This phone has no screen lock. Set a 6-digit PIN for FincWin instead.',
+  lockedBodyDevice: 'Use your phone’s lock to open it.',
+  promptOpen: 'Open FincWin',
+  promptCancel: 'Cancel',
+  setupDoneBodyDevice: 'FincWin asks for your phone’s lock.',
+  setupDoneBodyPin: 'FincWin asks for your 6-digit PIN.',
 } as const;
