@@ -161,6 +161,11 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   // 08.1-03/07 (CMP-F19): who counts whose money in their own checks, and which of my safety nets I share
   decide_partner_optins: ['household_id', 'owner_id', 'partner_id', 'enabled', 'updated_at'],
   safety_net_shares: ['household_id', 'goal_id', 'owner_id', 'enabled', 'rounded_saved', 'updated_at'],
+  // 10 (DAT-01, ALR-01..05): archived months, alert switches, delivery preferences and the alert history; own rows (120 proves it)
+  archived_months: ['month', 'archived_at'],
+  alert_settings: ['kind', 'enabled', 'threshold_minor', 'threshold_currency', 'lead_days', 'updated_at'],
+  alert_prefs: ['mode', 'quiet_enabled', 'quiet_start', 'quiet_end', 'time_zone', 'partner_alerts', 'updated_at'],
+  alert_log: ['id', 'kind', 'params', 'raised_at', 'delivered_at', 'held_for_quiet', 'delivery'],
 };
 
 /** Tables src/db reads that hold no user data of their own, each with the reason. */
@@ -179,4 +184,6 @@ export const NOT_USER_DATA: readonly string[] = [
   'household_leave_log', // rate-limit record of recent leaves for the switch rule; server-only
   'plan_join_requests', // a transient ask to join a plan; erased on resolve or FK cascade
   'plan_settings', // the plan owner's seat and invite settings; plan bookkeeping, not personal records
+  'devices', // 10: session bookkeeping; shown in Security, rebuilt on sign-in
+  'push_tokens', // 10: the device address for push, not a record; erased by FK cascade
 ];
