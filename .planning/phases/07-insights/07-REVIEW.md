@@ -208,3 +208,18 @@ Applied 2026-11-23 on a fix branch. WR-03 and WR-04 (Household data rules) were 
 | IN-07 | e8e65516 | `insightsNetWorth.test.ts` holding in a joint account left out of Just me |
 
 Notes: WR-02 shows each section's own empty state to a first-month user (the in/out section still says "Nothing to show yet"); building this month's bar needs Decide's builder, which was not changed. IN-07 means a holding linked to a joint account no longer counts in Just me; the account's own balance counts in Household.
+
+## Household fixes (D-31..D-34)
+
+Applied 2026-11-23 per owner decisions D-31..D-34 (07-CONTEXT.md).
+
+| Finding / decision | Commit | Tests |
+|---|---|---|
+| WR-04 (D-31) | d86f0ec4 | `insights.test.ts` "Household money in (D-31)": untagged shared pay (plain and series occurrence) counts in In; a "kept" line stays out; an income-type line keeps its own mark |
+| WR-03 (D-32) migration | f0021377 | `supabase/tests/database/118_shared_line_categories.test.sql` (15 checks): shared-line and shared-series categories only; never private or deleted-line ones, never the caller's own, never another household's; non-member and anon get nothing; categories stay owner-only |
+| WR-03 / D-33 / D-34 data layer | 5590a223 | `src/data/__tests__/sharedCategories.test.ts`: resolution order, partner Savings line is saving, viewer money rule applies to a partner-categorised shared line, member pick wins, household of one unchanged; `decide.test.tsx` no shared line makes no extra read |
+| WR-03 (D-32, D-33) Insights display | d8ac5d92 | `categoryNaming.test.ts`; `everydaySections.test.tsx` "Pets (Sam)" and multi-id taps; `insightsCopy.test.ts` |
+
+Migration: `supabase/migrations/20261125001000_shared_line_categories.sql` — security-definer `shared_line_categories(p_household uuid)`, `search_path = ''`, execute revoked from public/anon and granted to authenticated. Returns id, owner_id, builtin_key, name, color_key, icon_key for categories (not the caller's) on a live shared line or shared series of a household the caller belongs to. No monthly_cap, archived_at or new select policy. Not yet applied to production.
+
+Notes: owner_id was added to the RPC's columns (D-32 named five) so the label names the category's owner, not the line's creator; member ids are already visible to members. Resolution runs once in useDecideSnapshot, so Decide, Insights Just me and Insights Household read the same resolved lines; everyday.ts needed no aliasing of its own. Decide answers move only for members with shared lines categorised by a partner (Savings lines now saving, own money rules covering matched shared lines, member picks honoured). Engine approved cases, golden and crosscheck fixtures did not move.
