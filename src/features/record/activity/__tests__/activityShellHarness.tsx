@@ -27,8 +27,21 @@ jest.mock('@/data/sync/useSyncStatus', () => ({
 }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn' }) }));
 // 10-16: the month switcher reads archive state (feature access, plan, queries); Activity tests are about the list, so archive is off.
+// 10-24: a test that needs archived months calls setArchiveStateForTests (the state is read on every render).
+const mockArchiveState: { enabled: boolean; archived: ReadonlySet<string> } = { enabled: false, archived: new Set<string>() };
+export function setArchiveStateForTests(archived: readonly string[]): void {
+  mockArchiveState.enabled = archived.length > 0;
+  mockArchiveState.archived = new Set(archived);
+}
 jest.mock('@/features/archive/useArchiveState', () => ({
-  useArchiveState: () => ({ enabled: false, archived: new Set<string>(), count: 0, shared: false, archive: jest.fn(), restore: jest.fn() }),
+  useArchiveState: () => ({
+    enabled: mockArchiveState.enabled,
+    archived: mockArchiveState.archived,
+    count: mockArchiveState.archived.size,
+    shared: false,
+    archive: jest.fn(),
+    restore: jest.fn(),
+  }),
 }));
 // A plain map keeps the list deterministic; FlashList's own layout needs a native measure pass.
 // Unlike the old per-file mocks it renders the header, because the screen's controls live there.
