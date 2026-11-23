@@ -16,6 +16,7 @@ const mock = {
   showScope: false,
   status: 'ready' as 'loading' | 'error' | 'ready',
   months: ['2026-11'] as string[],
+  entryCount: 0,
   setScope: jest.fn(),
   retry: jest.fn(),
 };
@@ -24,7 +25,8 @@ const seen: Record<string, unknown> = {};
 
 jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: (id: string) => ({ visible: mock.access[id] ?? false }) }));
 jest.mock('@/features/record/entry/entryHost', () => ({ openEntry: (m: unknown) => mockOpenEntry(m) }));
-jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: jest.fn() }));
+const mockPushOnce = jest.fn();
+jest.mock('@/shell/navigation/pushOnce', () => ({ pushOnce: (h: unknown) => mockPushOnce(h) }));
 jest.mock('@/shell/screen/TabRootScreen', () => ({ TabRootScreen: ({ children }: { children: React.ReactNode }) => children }));
 jest.mock('@/ui/SyncStatusLine', () => ({ SyncStatusLine: () => null }));
 jest.mock('../useInsightsScope', () => ({
@@ -41,6 +43,9 @@ jest.mock('../useInsightsScope', () => ({
 }));
 jest.mock('@/data/queries/insights', () => ({
   useInsightsPrepared: () => ({ status: mock.status, prepared: mock.status === 'ready' ? {} : null, minePrepared: {}, errorKind: null, retry: mock.retry }),
+}));
+jest.mock('@/data/queries/activity', () => ({
+  useTransactionMonths: () => ({ months: ['2026-11'], counts: new Map([['2026-11', mock.entryCount]]), isLoading: false }),
 }));
 jest.mock('../model/everyday', () => ({ recordedMonths: () => mock.months }));
 jest.mock('../sections/MoneyInOutSection', () => ({
@@ -97,6 +102,7 @@ beforeEach(() => {
   mock.showScope = false;
   mock.status = 'ready';
   mock.months = ['2026-11'];
+  mock.entryCount = 0;
   for (const k of Object.keys(seen)) delete seen[k];
 });
 
@@ -156,6 +162,16 @@ describe('InsightsScreen', () => {
     expect(mockOpenEntry).toHaveBeenCalledWith({ kind: 'new', direction: 'out' });
   });
 
+  it('a first-month user with entries this month sees the sections, not the whole-tab empty state (WR-02)', async () => {
+    mock.months = [];
+    mock.entryCount = 4;
+    await renderScreen();
+    expect(screen.queryByText('Nothing to show yet')).toBeNull();
+    expect(screen.getByTestId('insights-in-out')).toBeTruthy();
+    expect(screen.getByTestId('net-worth-section')).toBeTruthy();
+    expect(screen.getByTestId('score-card')).toBeTruthy();
+  });
+
   it('household with nothing shared says so', async () => {
     mock.months = [];
     mock.scope = 'household';
@@ -186,6 +202,10 @@ describe('InsightsScreen', () => {
     expect(screen.getByTestId('insights-empty')).toBeTruthy();
     expect(screen.queryByTestId('insights-in-out')).toBeNull();
     expect(screen.queryByText('Add an entry')).toBeNull();
+    expect(screen.getByText('Insights opens at Everyday')).toBeTruthy();
+    expect(screen.queryByText('Nothing to show yet')).toBeNull();
+    await fireEvent.press(screen.getByText('Open Features'));
+    expect(mockPushOnce).toHaveBeenCalledWith('/features');
   });
 });
 

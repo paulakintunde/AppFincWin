@@ -1,7 +1,7 @@
 // 08-25 (HH-09, UI-SPEC Screen 9): the Mine / Household scope of a screen's figures. Default Mine; the choice is kept per
 // screen on this device. The key starts with `fincwin:` so wipeDeviceData() clears it on sign-out and account deletion.
 // A failed read keeps Mine; a failed write is swallowed (the switch still moves for this session).
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { FigureScope } from '@/data/queries/figureScope';
 import { STORAGE_PREFIX } from '@/services/storage/wipe';
@@ -14,11 +14,13 @@ export function figureScopeKey(screen: FigureScreen): string {
 
 export function useFigureScope(screen: FigureScreen): [FigureScope, (scope: FigureScope) => void] {
   const [scope, setScopeState] = useState<FigureScope>('mine');
+  // IN-05: a tap made before the stored read resolves wins; the late read is ignored once the user has chosen.
+  const touched = useRef(false);
   useEffect(() => {
     let live = true;
     AsyncStorage.getItem(figureScopeKey(screen))
       .then((raw) => {
-        if (live && raw === 'household') setScopeState('household');
+        if (live && !touched.current && raw === 'household') setScopeState('household');
       })
       .catch(() => undefined);
     return () => {
@@ -27,6 +29,7 @@ export function useFigureScope(screen: FigureScreen): [FigureScope, (scope: Figu
   }, [screen]);
   const setScope = useCallback(
     (next: FigureScope) => {
+      touched.current = true;
       setScopeState(next);
       AsyncStorage.setItem(figureScopeKey(screen), next).catch(() => undefined);
     },

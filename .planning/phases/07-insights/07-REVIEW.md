@@ -189,3 +189,22 @@ const anyError =
 _Reviewed: 2026-11-23_
 _Reviewer: Claude (gsd-code-reviewer)_
 _Depth: deep_
+
+## Fixes applied
+
+Applied 2026-11-23 on a fix branch. WR-03 and WR-04 (Household data rules) were not touched; a separate track handles them.
+
+| Finding | Commit | Test |
+|---|---|---|
+| CR-01 | f6d22b79 | `insightsNetWorth.test.ts` "status (CR-01)": loading while debts or today balances load, error when they fail |
+| WR-01 | 23634969 | `netWorthSection.test.tsx` names a debt or holding as such; `insightsNetWorth.test.ts` counts by kind |
+| WR-02 | 32f8ee5c | `InsightsScreen.test.tsx` first-month user with entries sees the sections (Just me only; Household keeps its own empty state) |
+| IN-01 | 3070e21e | `score.test.ts` parts minus `capReduction` equals the score; `scoreCard.test.tsx` shows the cap line |
+| IN-02 | e49e49c6 | `insightsCopy.test.ts` period phrases; `netWorthSection.test.tsx` strings |
+| IN-03 | 2b7491c4 | `charts.test.tsx` separate static key |
+| IN-04 | f3385046, 35e18eea | `netWorthSection.test.tsx` readout cleared on range change |
+| IN-05 | bbede7de | `useFigureScope.test.tsx` late read ignored after a tap |
+| IN-06 | d897e40c | `InsightsScreen.test.tsx` locked state offers Open Features |
+| IN-07 | e8e65516 | `insightsNetWorth.test.ts` holding in a joint account left out of Just me |
+
+Notes: WR-02 shows each section's own empty state to a first-month user (the in/out section still says "Nothing to show yet"); building this month's bar needs Decide's builder, which was not changed. IN-07 means a holding linked to a joint account no longer counts in Just me; the account's own balance counts in Household.

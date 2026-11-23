@@ -56,7 +56,10 @@ export interface NetWorthBuild {
   accounts: SeriesAccount[];
   holdings: SeriesHolding[];
   debts: SeriesDebt[];
+  /** Holdings and debts left out (no rate); their sum is `unconverted`. */
   unconverted: number;
+  unconvertedHoldings: number;
+  unconvertedDebts: number;
 }
 
 export function buildNetWorthInputs(args: {
@@ -69,6 +72,8 @@ export function buildNetWorthInputs(args: {
   rates: Rates;
   customs: Customs;
   today: string;
+  /** IN-07: joint (shared) account ids. Household counts such an account's own balance, so Just me leaves a holding in one out. */
+  jointAccountIds?: ReadonlySet<string>;
 }): NetWorthBuild {
   const { currency, rates, customs, today } = args;
   const accounts: SeriesAccount[] = args.accounts.map((a) => ({
@@ -77,14 +82,16 @@ export function buildNetWorthInputs(args: {
     deleted_at: a.deleted_at,
     createdOn: a.created_at.slice(0, 10),
   }));
-  if (args.scope === 'household') return { accounts, holdings: [], debts: [], unconverted: 0 };
+  if (args.scope === 'household') return { accounts, holdings: [], debts: [], unconverted: 0, unconvertedHoldings: 0, unconvertedDebts: 0 };
 
   const conv = (amount: number, from: string): number | null => convertLatest(amount, from, currency, rates, customs, today)?.amount ?? null;
-  let unconverted = 0;
+  let unconvertedHoldings = 0;
+  let unconvertedDebts = 0;
 
   const holdings: SeriesHolding[] = [];
   for (const h of args.holdings) {
     if (h.deleted_at) continue;
+    if (h.account_id !== null && args.jointAccountIds?.has(h.account_id)) continue;
     const raw = [
       ...args.lots.filter((l) => l.holding_id === h.id && l.kind === 'value' && !l.deleted_at).map((l) => ({ date: l.local_date, amount: l.amount })),
       { date: h.value_as_of, amount: h.value },
@@ -100,7 +107,7 @@ export function buildNetWorthInputs(args: {
       lots.push({ date: l.date, amount });
     }
     if (failed) {
-      unconverted += 1;
+      unconvertedHoldings += 1;
       continue;
     }
     holdings.push({ id: h.id, account_id: h.account_id, deleted_at: h.deleted_at, lots });
@@ -112,12 +119,12 @@ export function buildNetWorthInputs(args: {
     const balance = conv(d.balance, d.currency);
     const started = d.started_balance === null || d.started_balance === undefined ? null : conv(d.started_balance, d.currency);
     if (balance === null || (d.started_balance != null && started === null)) {
-      unconverted += 1;
+      unconvertedDebts += 1;
       continue;
     }
     debts.push({ account_id: d.account_id, balance, startedBalance: started, paidOffOn: d.paid_off_on ?? null, deleted_at: d.deleted_at });
   }
-  return { accounts, holdings, debts, unconverted };
+  return { accounts, holdings, debts, unconverted: unconvertedHoldings + unconvertedDebts, unconvertedHoldings, unconvertedDebts };
 }
 
 /** One account's balance in the target currency from its own-currency balance plus other-currency subtotals; null when any part cannot convert. */
@@ -174,7 +181,11 @@ export interface NetWorthSeriesState {
   points: SeriesPoint[];
   current: number | null;
   change: { from: number; to: number; change: number } | null;
+  /** Total left out, and by kind (WR-01): the note names what was actually dropped. */
   unconverted: number;
+  unconvertedAccounts: number;
+  unconvertedHoldings: number;
+  unconvertedDebts: number;
   debtsHeldFlat: boolean;
   holdingsLeftOut: boolean;
   noAccounts: boolean;
@@ -202,16 +213,17 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
 
   const allAccounts = accountsQuery.data ?? NO_ACCOUNTS;
   const accounts = useMemo(() => accountsForScope(allAccounts, scope, rc.userId), [allAccounts, scope, rc.userId]);
-  const { balances: todayViews } = useAccountBalances(hh, accounts);
+  const { balances: todayViews, isLoading: balancesLoading, isError: balancesError } = useAccountBalances(hh, accounts);
   const rates = fx.data ?? NO_RATES;
   const customs = customsQuery.data ?? NO_CUSTOMS;
   const holdings = holdingsQuery.data ?? NO_HOLDINGS;
   const lots = lotsQuery.data ?? NO_LOTS;
   const debts = debtsQuery.data ?? NO_DEBTS;
 
+  const jointAccountIds = useMemo(() => new Set(allAccounts.filter((a) => a.is_shared === true && !a.deleted_at).map((a) => a.id)), [allAccounts]);
   const build = useMemo(
-    () => buildNetWorthInputs({ scope, accounts, holdings, lots, debts, currency, rates, customs, today: rc.today }),
-    [scope, accounts, holdings, lots, debts, currency, rates, customs, rc.today]
+    () => buildNetWorthInputs({ scope, accounts, holdings, lots, debts, currency, rates, customs, today: rc.today, jointAccountIds }),
+    [scope, accounts, holdings, lots, debts, currency, rates, customs, rc.today, jointAccountIds]
   );
 
   const firstMonth = useMemo(() => {
@@ -241,8 +253,16 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
 
   const accountIds = useMemo(() => new Set(accounts.map((a) => a.id)), [accounts]);
   const dataKey = reads.map((r) => r.dataUpdatedAt).join(',');
-  const anyLoading = reads.some((r) => r.data === undefined && !r.isError) || accountsQuery.isLoading || monthsRead.isLoading;
-  const anyError = reads.some((r) => r.isError && r.data === undefined) || (accountsQuery.isError && accountsQuery.data === undefined);
+  // CR-01: every input the figure depends on gates the status, so a partial figure is never shown as final.
+  // Scope Household uses neither debts nor holdings, so their reads do not hold it back.
+  const inputReads = [accountsQuery, fx, customsQuery, ...(scope === 'mine' ? [debtsQuery, holdingsQuery, lotsQuery] : [])];
+  const anyLoading =
+    reads.some((r) => r.data === undefined && !r.isError) ||
+    monthsRead.isLoading ||
+    balancesLoading ||
+    inputReads.some((q) => q.isLoading === true);
+  const anyError =
+    reads.some((r) => r.isError && r.data === undefined) || balancesError || inputReads.some((q) => q.isError === true && q.data === undefined);
 
   const computed = useMemo(() => {
     const unconvertedIds = new Set<string>();
@@ -263,7 +283,7 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
     }
     sources.push({ date: rc.today, isToday: true, balances: todayBalances, accountsWithLegs: accountIds });
     const points = netWorthSeries({ accounts: build.accounts, holdings: build.holdings, debts: build.debts, points: sources });
-    return { points, unconverted: unconvertedIds.size + build.unconverted };
+    return { points, unconvertedAccounts: unconvertedIds.size };
     // dataKey stands in for the per-query data objects, which useQueries re-creates each render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ends, dataKey, accounts, accountIds, currency, rates, customs, rc.today, todayViews, build]);
@@ -272,14 +292,17 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
   const points = computed.points;
   const retry = (): void => {
     reads.forEach((r) => void r.refetch());
-    void accountsQuery.refetch();
+    for (const q of inputReads) void q.refetch?.();
   };
   return {
     status,
     points,
     current: points.length > 0 ? points[points.length - 1]!.value : null,
     change: seriesChange(points),
-    unconverted: computed.unconverted,
+    unconverted: computed.unconvertedAccounts + build.unconverted,
+    unconvertedAccounts: computed.unconvertedAccounts,
+    unconvertedHoldings: build.unconvertedHoldings,
+    unconvertedDebts: build.unconvertedDebts,
     debtsHeldFlat: points.some((p) => p.debtsHeldFlat),
     holdingsLeftOut: points.some((p) => p.holdingsLeftOut > 0),
     noAccounts: accounts.length === 0,

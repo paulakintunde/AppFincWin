@@ -319,7 +319,7 @@ export function useAccountBalances(
   accounts: readonly AccountRow[],
   /** 06.1-72: a caller may hold the read fresh for longer (Decide's reads use DECIDE_READ_STALE_MS). */
   opts?: { staleTime?: number }
-): { balances: Map<string, AccountBalanceView>; isLoading: boolean } {
+): { balances: Map<string, AccountBalanceView>; isLoading: boolean; isError: boolean } {
   const query = useQuery({
     queryKey: queryKeys.accountBalances(householdId ?? ''),
     queryFn: () => fetchAccountBalances(supabase, householdId as string),
@@ -345,7 +345,7 @@ export function useAccountBalances(
     return result;
   }, [accounts, legsByAccount]);
 
-  return { balances, isLoading: query.isLoading };
+  return { balances, isLoading: query.isLoading, isError: query.isError && query.data === undefined };
 }
 
 /** Household member labels (D-32: a hidden name is its colour name), for Activity/Accounts and undo-refusal copy. */

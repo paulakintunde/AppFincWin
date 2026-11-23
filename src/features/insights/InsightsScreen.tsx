@@ -5,10 +5,12 @@ import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import type { InsightsRange } from '@/engine/insights';
+import { useTransactionMonths } from '@/data/queries/activity';
 import { useInsightsPrepared } from '@/data/queries/insights';
 import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
 import { openEntry } from '@/features/record/entry/entryHost';
 import { useT } from '@/i18n';
+import { FEATURES_HREF } from '@/features/plans/routes';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { TabRootScreen } from '@/shell/screen/TabRootScreen';
 import { radii, space } from '@/theme/layout';
@@ -33,6 +35,7 @@ export function InsightsScreen() {
   const [range, setRange] = useState<InsightsRange>('6m');
   const s = useInsightsScope();
   const data = useInsightsPrepared(s.scope, s.householdCurrency);
+  const entries = useTransactionMonths(s.householdId, s.today);
   const visible = useFeatureAccess('insights').visible;
   const showNetWorth = useFeatureAccess('netWorthTrend').visible;
   const showScore = useFeatureAccess('healthScore').visible;
@@ -40,6 +43,7 @@ export function InsightsScreen() {
   const addOut = useCallback(() => openEntry({ kind: 'new', direction: 'out' }), []);
   const addIn = useCallback(() => openEntry({ kind: 'new', direction: 'in' }), []);
   const addAccount = useCallback(() => pushOnce('/accounts' as Href), []);
+  const openFeatures = useCallback(() => pushOnce(FEATURES_HREF), []);
   const toMine = useCallback(() => s.setScope('mine'), [s]);
   const onGap = useCallback(
     (missing: 'income' | 'spending' | 'balance') => (missing === 'income' ? addIn() : missing === 'spending' ? addOut() : addAccount()),
@@ -48,19 +52,33 @@ export function InsightsScreen() {
 
   const household = s.scope === 'household';
   const prepared = data.prepared;
-  const empty = visible && data.status === 'ready' && prepared !== null && recordedMonths(prepared).length === 0;
+  // WR-02: Decide's inputs hold no months until one full month is logged, so a first-month user has none here. In Just me the whole-tab
+  // empty state is for a user with no entries at all; with entries this month the sections show and each owns its own empty state.
+  const hasEntries = entries.months.some((m) => (entries.counts.get(m) ?? 0) > 0);
+  const empty =
+    visible && data.status === 'ready' && prepared !== null && recordedMonths(prepared).length === 0 && !(s.scope === 'mine' && hasEntries);
 
   let body: React.ReactNode;
-  if (!visible || empty) {
-    const shared = household && visible;
+  if (!visible) {
+    // IN-06: a deep link below the level that shows Insights. Adding entries would not open it, so point at Features instead.
+    body = (
+      <EmptyState
+        testID="insights-empty"
+        heading={t('insights.states.lockedHeading')}
+        body={t('insights.states.lockedBody')}
+        actionLabel={t('insights.states.lockedAction')}
+        onAction={openFeatures}
+      />
+    );
+  } else if (empty) {
+    const shared = household;
     body = (
       <EmptyState
         testID="insights-empty"
         heading={t(shared ? 'insights.states.householdEmptyHeading' : 'insights.states.emptyHeading')}
         body={t(shared ? 'insights.states.householdEmptyBody' : 'insights.states.emptyBody')}
-        {...(visible
-          ? { actionLabel: t(household ? 'insights.states.householdEmptyAction' : 'insights.states.emptyAction'), onAction: addOut }
-          : {})}
+        actionLabel={t(household ? 'insights.states.householdEmptyAction' : 'insights.states.emptyAction')}
+        onAction={addOut}
       />
     );
   } else if (data.status === 'error') {

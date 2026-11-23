@@ -39,6 +39,9 @@ function state(over: Partial<NetWorthSeriesState> = {}): NetWorthSeriesState {
     current: 1840000,
     change: { from: 1420000, to: 1840000, change: 420000 },
     unconverted: 0,
+    unconvertedAccounts: 0,
+    unconvertedHoldings: 0,
+    unconvertedDebts: 0,
     debtsHeldFlat: false,
     holdingsLeftOut: false,
     noAccounts: false,
@@ -60,7 +63,7 @@ describe('NetWorthSectionView', () => {
     expect(figure.props.children).toBe('$18,400');
     expect(JSON.stringify(figure.props.style)).toContain(String(fontSize.netWorth));
     expect(getByText('as of today', opts)).toBeTruthy();
-    expect(getByTestId('net-worth-change', opts).props.children).toBe('Up $4,200 over last 6 months');
+    expect(getByTestId('net-worth-change', opts).props.children).toBe('Up $4,200 over the last 6 full months and this month so far');
     expect(getByTestId('net-worth-change-glyph', opts)).toBeTruthy();
     expect(getByTestId('net-worth-line', opts)).toBeTruthy();
     expect(getByText('At today’s exchange rates.', opts)).toBeTruthy();
@@ -69,12 +72,12 @@ describe('NetWorthSectionView', () => {
 
   it('words a fall', async () => {
     const { getByTestId } = await view(state({ change: { from: 1840000, to: 1420000, change: -420000 }, current: 1420000 }));
-    expect(getByTestId('net-worth-change', opts).props.children).toBe('Down $4,200 over last 6 months');
+    expect(getByTestId('net-worth-change', opts).props.children).toBe('Down $4,200 over the last 6 full months and this month so far');
   });
 
   it('words a flat range over a year', async () => {
     const { getByTestId } = await view(state({ change: { from: 100, to: 100, change: 0 } }), { range: '1y' });
-    expect(getByTestId('net-worth-change', opts).props.children).toBe('No change over last 12 months');
+    expect(getByTestId('net-worth-change', opts).props.children).toBe('No change over the last 12 full months and this month so far');
   });
 
   it('adds owed-more when the total is negative', async () => {
@@ -83,15 +86,22 @@ describe('NetWorthSectionView', () => {
   });
 
   it('adds the held-flat, holdings and plural unconverted notes', async () => {
-    const a = await view(state({ debtsHeldFlat: true, holdingsLeftOut: true, unconverted: 2 }));
+    const a = await view(state({ debtsHeldFlat: true, holdingsLeftOut: true, unconverted: 2, unconvertedAccounts: 2 }));
     expect(a.getByTestId('net-worth-note-debts', opts)).toBeTruthy();
     expect(a.getByTestId('net-worth-note-holdings', opts)).toBeTruthy();
     expect(a.getByText('2 accounts could not be converted and are left out.', opts)).toBeTruthy();
   });
 
   it('adds the singular unconverted note', async () => {
-    const b = await view(state({ unconverted: 1 }));
+    const b = await view(state({ unconverted: 1, unconvertedAccounts: 1 }));
     expect(b.getByText('1 account could not be converted and is left out.', opts)).toBeTruthy();
+  });
+
+  it('names a left-out debt or holding as such, not as an account (WR-01)', async () => {
+    const v = await view(state({ unconverted: 3, unconvertedDebts: 1, unconvertedHoldings: 2 }));
+    expect(v.getByText('1 debt could not be converted and is left out.', opts)).toBeTruthy();
+    expect(v.getByText('2 holdings could not be converted and are left out.', opts)).toBeTruthy();
+    expect(v.queryByText(/accounts? could not be converted/, opts)).toBeNull();
   });
 
   it('names what the card counts in Just me', async () => {
@@ -137,5 +147,22 @@ describe('NetWorthSectionView', () => {
     expect(queryByTestId('net-worth-line-readout', opts)).toBeNull();
     fireEvent.press(getByTestId('net-worth-line-point-1', opts));
     expect(await findByTestId('net-worth-line-readout', opts)).toBeTruthy();
+  });
+
+  it('drops the tapped point when the range changes (IN-04)', async () => {
+    const tree = (range: '6m' | '1y') => (
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 62, bottom: 34, left: 0, right: 0 } }}>
+        <ThemeProvider>
+          <FontScaleProvider value={1}>
+            <NetWorthSectionView state={state()} scope="mine" range={range} currency="USD" onAddAccount={jest.fn()} />
+          </FontScaleProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    const r = await render(tree('6m'));
+    fireEvent.press(r.getByTestId('net-worth-line-point-1', opts));
+    expect(await r.findByTestId('net-worth-line-readout', opts)).toBeTruthy();
+    await r.rerender(tree('1y'));
+    expect(r.queryByTestId('net-worth-line-readout', opts)).toBeNull();
   });
 });

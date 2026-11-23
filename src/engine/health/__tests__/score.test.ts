@@ -52,11 +52,14 @@ describe('healthScore', () => {
     const r = scored(over({ short: true }));
     expect(r.score).toBe(HEALTH_SHORT_CAP);
     expect(r.capped).toBe(true);
+    expect(r.parts.reduce((s, p) => s + p.points, 0) - r.capReduction).toBe(r.score);
+    expect(r.capReduction).toBeGreaterThan(0);
     expect(r.short).toBe(true);
   });
   it('a short month already under the cap is not capped', () => {
     const r = scored(over({ short: true, left: mu(0), emergency: null }));
     expect(r.capped).toBe(false);
+    expect(r.capReduction).toBe(0);
     expect(r.score).toBe(35);
   });
   it('thin data is named in order', () => {

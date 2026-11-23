@@ -2,6 +2,7 @@ import React from 'react';
 import { processColor } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { insights } from '@/i18n/locales/insights';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { chartPalette, stateColors } from '@/theme/tokens';
@@ -69,6 +70,13 @@ describe('CategoryRow', () => {
     expect(a.getByTestId('row-root', opts).props.accessibilityLabel).toBeUndefined();
     const b = await wrap(<CategoryRow {...base} glyph={null} colorIndex={null} />);
     expect(flat(b.getAllByTestId('grow-progress-fill', opts)[0]!.props.style).backgroundColor).not.toBe(chartPalette[0]);
+  });
+});
+
+describe('CategoryRow static label (IN-03)', () => {
+  it('has its own string without the Opens Activity sentence, not a text strip', () => {
+    expect(insights.categories.rowA11yStatic).toBe('{{name}}, {{amount}}, {{percent}} percent of spending.');
+    expect(insights.categories.rowA11y).toBe(`${insights.categories.rowA11yStatic} Opens Activity.`);
   });
 });
 

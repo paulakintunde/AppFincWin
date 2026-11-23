@@ -32,5 +32,7 @@ export type HealthScore =
       readonly score: number;
       readonly parts: readonly HealthPart[];
       readonly capped: boolean;
+      /** Points the short-month cap took off the parts' sum (0 when not capped), so the parts and the score reconcile. */
+      readonly capReduction: number;
       readonly short: boolean;
     };

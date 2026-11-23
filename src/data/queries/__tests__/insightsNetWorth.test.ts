@@ -74,6 +74,12 @@ describe('buildNetWorthInputs', () => {
     expect(out.debts[0]).toMatchObject({ balance: 900, startedBalance: 1_000, paidOffOn: null });
     expect(out.unconverted).toBe(0);
   });
+  it('Just me leaves out a holding in a joint account, which Household counts as the account balance (IN-07)', () => {
+    const inJoint = { ...holding, id: 'h3', account_id: 'joint' } as HoldingRow;
+    const out = buildNetWorthInputs({ ...base, scope: 'mine', holdings: [holding, inJoint], jointAccountIds: new Set(['joint']) });
+    expect(out.holdings.map((h) => h.id)).toEqual(['h1']);
+    expect(out.unconverted).toBe(0);
+  });
   it('leaves out what cannot be converted and counts it', () => {
     const odd = { ...holding, id: 'h2', currency: 'ZZZ' } as HoldingRow;
     const oddDebt = { ...debt, currency: 'ZZZ' } as DebtRow;
@@ -81,6 +87,7 @@ describe('buildNetWorthInputs', () => {
     expect(out.holdings.map((h) => h.id)).toEqual(['h1']);
     expect(out.debts).toEqual([]);
     expect(out.unconverted).toBe(2);
+    expect([out.unconvertedHoldings, out.unconvertedDebts]).toEqual([1, 1]);
   });
 });
 
@@ -108,6 +115,8 @@ const mock = {
   months: ['2026-11', '2026-09', '2026-08'],
   counts: new Map([['2026-11', 3], ['2026-09', 2], ['2026-08', 0]]),
   paidCalls: [] as string[],
+  debts: { data: [] as unknown[] | undefined, isLoading: false, isError: false } as Record<string, unknown>,
+  balances: { isLoading: false, isError: false },
 };
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ householdId: 'hh1', userId: 'me', homeCurrency: 'USD', today: '2026-11-10' }),
@@ -117,13 +126,14 @@ jest.mock('../activity', () => ({
   useTransactionMonths: () => ({ months: mock.months, counts: mock.counts, isLoading: false }),
   useAccountBalances: () => ({
     balances: new Map([['a', { balance: 12_000, otherCurrencies: [], overflow: false, pendingSum: 500, standing: null }]]),
-    isLoading: false,
+    isLoading: mock.balances.isLoading,
+    isError: mock.balances.isError,
   }),
 }));
 jest.mock('../fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('../customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [] }) }));
 jest.mock('../growHoldings', () => ({ useHoldingRows: () => ({ data: [] }), useHoldingLotRows: () => ({ data: [] }) }));
-jest.mock('../decide', () => ({ useDebts: () => ({ data: [] }) }));
+jest.mock('../decide', () => ({ useDebts: () => ({ ...mock.debts, refetch: jest.fn() }) }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/db/recordReads', () => ({
   fetchAccountPaidBefore: jest.fn(async (_c: unknown, _h: string, before: string) => {
@@ -147,6 +157,34 @@ describe('useNetWorthSeries', () => {
     for (const e of ends) expect(client.getQueryData(queryKeys.paidBefore('hh1', paidBeforeDateOf(e)))).toBeDefined();
     expect(result.current.noAccounts).toBe(false);
     expect(result.current.unconverted).toBe(0);
+  });
+});
+
+describe('useNetWorthSeries status (CR-01)', () => {
+  const run = async (): Promise<{ status: string }> => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(QueryClientProvider, { client }, children);
+    const { result } = await renderHook(() => useNetWorthSeries({ range: '6m', scope: 'mine', currency: 'USD' }), { wrapper });
+    await waitForReady(() => result.current.status !== 'loading');
+    return result.current;
+  };
+  afterEach(() => {
+    mock.debts = { data: [], isLoading: false, isError: false };
+    mock.balances = { isLoading: false, isError: false };
+  });
+  it('is loading while debts are still loading', async () => {
+    mock.debts = { data: undefined, isLoading: true, isError: false };
+    expect((await run()).status).toBe('loading');
+  });
+  it('is an error when debts failed, never a figure without them', async () => {
+    mock.debts = { data: undefined, isLoading: false, isError: true };
+    expect((await run()).status).toBe('error');
+  });
+  it('is loading while today balances load, and an error when they fail', async () => {
+    mock.balances = { isLoading: true, isError: false };
+    expect((await run()).status).toBe('loading');
+    mock.balances = { isLoading: false, isError: true };
+    expect((await run()).status).toBe('error');
   });
 });
 

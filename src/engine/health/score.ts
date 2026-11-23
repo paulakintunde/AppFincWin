@@ -52,5 +52,5 @@ export function healthScore(i: HealthInputs): HealthScore {
   ];
   const sum = parts.reduce((s, p) => s + p.points, 0);
   const capped = i.short && sum > HEALTH_SHORT_CAP;
-  return { kind: 'score', score: capped ? HEALTH_SHORT_CAP : sum, parts, capped, short: i.short };
+  return { kind: 'score', score: capped ? HEALTH_SHORT_CAP : sum, parts, capped, capReduction: capped ? sum - HEALTH_SHORT_CAP : 0, short: i.short };
 }

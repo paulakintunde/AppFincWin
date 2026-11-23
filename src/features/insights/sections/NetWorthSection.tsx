@@ -30,7 +30,10 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
   const t = useT();
   const { colors, pairing } = useTheme();
   const f = useDetailFormat(currency);
-  const [selected, setSelected] = useState<number | null>(null);
+  // IN-04: the index belongs to one set of points (one range and scope); a tap from another set reads as no selection.
+  const setKey = `${range}/${scope}`;
+  const [tapped, setTapped] = useState<{ index: number; setKey: string } | null>(null);
+  const selected = tapped !== null && tapped.setKey === setKey ? tapped.index : null;
 
   if (state.status === 'error') return <ErrorCard onRetry={state.retry} testID="net-worth-error" />;
   if (state.status === 'loading') return <LoadingBlock testID="net-worth-loading" height={260} />;
@@ -80,7 +83,9 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
   ];
   if (state.debtsHeldFlat) notes.push({ key: 'debts', text: t('insights.netWorth.notes.debtsHeldFlat') });
   if (state.holdingsLeftOut) notes.push({ key: 'holdings', text: t('insights.netWorth.notes.holdingsFromFirstValue') });
-  if (state.unconverted > 0) notes.push({ key: 'unconverted', text: t('insights.netWorth.notes.unconverted', { count: state.unconverted }) });
+  if (state.unconvertedAccounts > 0) notes.push({ key: 'unconverted', text: t('insights.netWorth.notes.unconverted', { count: state.unconvertedAccounts }) });
+  if (state.unconvertedHoldings > 0) notes.push({ key: 'unconvertedHoldings', text: t('insights.netWorth.notes.unconvertedHoldings', { count: state.unconvertedHoldings }) });
+  if (state.unconvertedDebts > 0) notes.push({ key: 'unconvertedDebts', text: t('insights.netWorth.notes.unconvertedDebts', { count: state.unconvertedDebts }) });
 
   return (
     <Card testID="net-worth-section">
@@ -109,7 +114,7 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
           points={points}
           currency={currency}
           selected={selected}
-          onSelect={(i) => setSelected((cur) => (cur === i ? null : i))}
+          onSelect={(i) => setTapped(selected === i ? null : { index: i, setKey })}
           summary={summary}
         />
       ) : (
