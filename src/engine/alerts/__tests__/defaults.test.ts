@@ -112,6 +112,11 @@ describe('history path', () => {
     expect(r.large).toEqual({ minor: 3000, basis: 'history' });
   });
 
+  it('throws rather than return an unsafe integer', () => {
+    const huge = Array.from({ length: 30 }, () => 2 ** 52);
+    expect(() => suggestAlertAmounts(input({ expenses: lines(huge, TWO_MONTHS) }))).toThrow(RangeError);
+  });
+
   it('rejects an invalid today', () => {
     expect(() => suggestAlertAmounts(input({ today: 'nope' }))).toThrow(RangeError);
   });
