@@ -30,6 +30,7 @@ import {
   matchRefunds,
   applyUncertainRows,
   pdfToDrafts,
+  readWallet,
   reconcile,
   sniffFormat,
   signToTurn,
@@ -48,6 +49,9 @@ import {
   type RefundPurchase,
   type RowCheck,
   type StatementDraft,
+  type WalletDrafts,
+  type WalletKind,
+  walletToDrafts,
 } from '@/engine/statement';
 import { buildTransferLegs, matchTransfers, type ExistingLeg, type ImportedLeg, type TransferAccount } from '@/engine/transfer';
 import { MAX_STATEMENT_BYTES } from '@/engine/statement/limits';
@@ -64,7 +68,14 @@ export type RejectReason =
 
 export type ImportFormat = 'csv' | 'ofx' | 'qfx' | 'pdf';
 
+/** 10-26 (D-21): what a named wallet reader made of a CSV. Absent for any other file (generic mapping runs). */
+export type WalletReading =
+  | { ok: true; drafts: WalletDrafts }
+  | { ok: false; wallet: WalletKind; error: 'missing-column' | 'unreadable' };
+
 export interface PreparedCsv {
+  /** Set only when the header matched PayPal, Wise or Revolut. The generic fields below stay filled for 'Match columns'. */
+  wallet?: WalletReading;
   header: string[];
   dataRows: string[][];
   delimiter: Delimiter;
@@ -162,11 +173,22 @@ function prepareCsv(text: string, region: PrepareRegion): PrepareResult {
 
   const reading = inferCsvReading(dataRows, mapping, region);
 
+  // D-21: a recognised wallet is read by its own reader; any other file falls back to the column matcher.
+  const walletRead = readWallet(text);
+  if (walletRead !== null && walletRead.ok && walletRead.lines.length === 0) return { ok: false, reason: 'no_rows' };
+  const wallet: WalletReading | undefined =
+    walletRead === null
+      ? undefined
+      : walletRead.ok
+        ? { ok: true, drafts: walletToDrafts(walletRead) }
+        : { ok: false, wallet: walletRead.wallet, error: walletRead.error };
+
   return {
     ok: true,
     prepared: {
       format: 'csv',
       csv: {
+        ...(wallet === undefined ? {} : { wallet }),
         header,
         dataRows,
         delimiter: tokens.delimiter,
