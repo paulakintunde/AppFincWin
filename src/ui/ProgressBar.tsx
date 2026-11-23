@@ -6,7 +6,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii } from '@/theme/layout';
 import { DURATION, EASING, useReduceMotion } from '@/theme/motion';
-import { categorySwatch } from '@/theme/tokens';
+import { categorySwatch, type ChartColor } from '@/theme/tokens';
 
 export type ProgressTone = 'accent' | 'blue' | 'ink';
 
@@ -15,6 +15,8 @@ export interface ProgressBarProps {
   percent: number;
   variant?: 'thin' | 'thick';
   tone?: ProgressTone;
+  /** 07 D-24: a chart palette colour for the fill (Insights category bars are a chart). Overrides tone. */
+  chartColor?: ChartColor;
   /** Draws from empty on mount. Screens pass false after the first view. */
   animate?: boolean;
   accessibilityLabel?: string;
@@ -29,7 +31,7 @@ export function clampPercent(percent: number): number {
   return Math.min(100, Math.max(0, Math.round(percent)));
 }
 
-export function ProgressBar({ percent, variant = 'thin', tone = 'accent', animate = true, accessibilityLabel, tickPercent }: ProgressBarProps) {
+export function ProgressBar({ percent, variant = 'thin', tone = 'accent', chartColor, animate = true, accessibilityLabel, tickPercent }: ProgressBarProps) {
   const { colors } = useTheme();
   const reduced = useReduceMotion();
   const now = clampPercent(percent);
@@ -39,7 +41,7 @@ export function ProgressBar({ percent, variant = 'thin', tone = 'accent', animat
   }, [now, animate, reduced, width]);
   const fillStyle = useAnimatedStyle(() => ({ width: `${width.value}%` }));
   const height = PROGRESS_HEIGHT[variant];
-  const fill = tone === 'blue' ? categorySwatch.blue.color : tone === 'ink' ? colors.ink : colors.accent;
+  const fill = chartColor ?? (tone === 'blue' ? categorySwatch.blue.color : tone === 'ink' ? colors.ink : colors.accent);
   return (
     <View
       testID="grow-progress"

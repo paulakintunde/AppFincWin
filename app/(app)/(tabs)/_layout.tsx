@@ -16,7 +16,7 @@ import { ShellEntryHost } from '@/features/record/entry/ShellEntryHost';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { Fab } from '@/shell/fab/Fab';
 import { FabQuickMenu } from '@/shell/fab/FabQuickMenu';
-import { TabBar } from '@/shell/tabBar/TabBar';
+import { GatedTabBar } from '@/features/levels/GatedTabBar';
 import { TabSlideIn } from '@/shell/tabBar/TabSlideIn';
 import { tabRoutes } from '@/shell/tabBar/availableTabs';
 import { isTabId } from '@/shell/tabBar/tabs';
@@ -66,7 +66,7 @@ export default function TabsLayout() {
         tabBar={(props) => (
           <>
             <SampleBar />
-            <TabBar {...props} />
+            <GatedTabBar {...props} />
           </>
         )}
         // 06.1-73 (DB-1): an unfocused tab no longer re-renders on every cache change (27-28 hidden Home commits per Decide
