@@ -48,7 +48,7 @@ export function InOutBars({ bars, currency, selected, onSelect, currentMonth, wi
   const { colors, pairing } = useTheme();
   const motion = useMotion();
   const f = useDetailFormat(currency);
-  const { locale } = useMoneyFormatter();
+  const { locale } = useMoneyFormatter(false);
   const first = useOncePerSession('insights-in-out');
   const grow = useSharedValue(first ? 0 : 1);
   const draws = first && !motion.reduced;

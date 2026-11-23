@@ -42,7 +42,7 @@ export function NetWorthLine({ points, currency, selected, onSelect, summary, te
   const { colors, pairing } = useTheme();
   const motion = useMotion();
   const f = useDetailFormat(currency);
-  const { locale } = useMoneyFormatter();
+  const { locale } = useMoneyFormatter(false);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const first = useOncePerSession('insights-net-worth');
   const values = points.map((p) => p.value);
