@@ -6,6 +6,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useMonthView } from '@/data/queries/activity';
 import { useCloneMonth } from '@/data/mutations/cloneMonth';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
+import { QueueNote } from '@/features/record/entry/QueueNote';
 import { cloneCandidates, type CloneSourceRow } from '@/engine/recurring';
 import { money } from '@/engine/money';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -37,6 +39,8 @@ export function CloneMonthSheet({ visible, targetMonth, onClose }: CloneMonthShe
   const ctx = useRecordContext();
   const formatter = useMoneyFormatter(ctx.showCents);
   const { clone } = useCloneMonth();
+  const guard = useQueueGuard();
+  const [refused, setRefused] = useState(false);
   const prevMonth = previousMonth(targetMonth);
   const prev = useMonthView(ctx, prevMonth);
   const current = useMonthView(ctx, targetMonth);
@@ -69,6 +73,7 @@ export function CloneMonthSheet({ visible, targetMonth, onClose }: CloneMonthShe
   const [unticked, setUnticked] = useState<ReadonlySet<string>>(new Set());
   const close = () => {
     setUnticked(new Set());
+    setRefused(false);
     onClose();
   };
 
@@ -85,6 +90,11 @@ export function CloneMonthSheet({ visible, targetMonth, onClose }: CloneMonthShe
 
   const submit = () => {
     if (ticked.length === 0 || ctx.householdId === null || ctx.userId === null) return;
+    // 10-13 (D-28): a clone that would push the waiting changes past 500 is refused up front, before any write.
+    if (!guard.canAdd(ticked.length)) {
+      setRefused(true);
+      return;
+    }
     clone({
       candidates: ticked,
       householdId: ctx.householdId,
@@ -112,6 +122,7 @@ export function CloneMonthSheet({ visible, targetMonth, onClose }: CloneMonthShe
           ? t('activity.clone.none', { month: prevLabel })
           : t('activity.clone.body', { month: prevLabel })}
       </Text>
+      {refused ? <QueueNote queued={guard.queued} state="blocked" testID="clone-queue-note" /> : null}
       <SheetScroll>
         {candidates.map((c) => {
           const on = !unticked.has(c.sourceId);
