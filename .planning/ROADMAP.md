@@ -1666,12 +1666,12 @@ Plans:
 - [x] 10-22-PLAN.md — Alerts settings, permission flow, push registration, alert log
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 10-14-PLAN.md — Delete account: save a copy, forget Google, backup wording
-- [ ] 10-18-PLAN.md — Import goals/debts/investments/accounts from CSV
-- [ ] 10-23-PLAN.md — alerts-deliver function (quiet hours, digest, Expo push, receipts)
-- [ ] 10-24-PLAN.md — Archive list and read-only archived month with restore
-- [ ] 10-25-PLAN.md — Reviewer visible link, sample life and nightly reset, operator script
-- [ ] 10-26-PLAN.md — Wallet import preview and commit (per-currency accounts, fees, conversions)
+- [x] 10-14-PLAN.md — Delete account: save a copy, forget Google, backup wording
+- [x] 10-18-PLAN.md — Import goals/debts/investments/accounts from CSV
+- [x] 10-23-PLAN.md — alerts-deliver function (quiet hours, digest, Expo push, receipts)
+- [x] 10-24-PLAN.md — Archive list and read-only archived month with restore
+- [x] 10-25-PLAN.md — Reviewer visible link, sample life and nightly reset, operator script
+- [x] 10-26-PLAN.md — Wallet import preview and commit (per-currency accounts, fees, conversions)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 10-27-PLAN.md — Wiring: Security screen, You rows, boot hosts, FCM config, CI Deno tests
@@ -1777,5 +1777,5 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
-| 10. System | 19/30 | In Progress (10-01 waits on owner) |  |
+| 10. System | 25/30 | In Progress (10-01 waits on owner) |  |
 | 11. Compliance & Release | 0/TBD | Not started | - |
