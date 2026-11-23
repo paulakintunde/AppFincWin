@@ -46,6 +46,12 @@ export const STATUS = {
   waitingApproval: { tone: 'notYet', icon: 'stateDue', wordKey: 'appLife.status.waitingApproval' },
   coveredBy: { tone: 'neutral', icon: 'household', wordKey: 'appLife.status.coveredBy' },
   freeAccess: { tone: 'fits', icon: 'stateFits', wordKey: 'appLife.status.freeAccess' },
+  // 10-04 (10 UI-SPEC): devices, archive, lock wait, held alerts and import checks. Existing tones and icons only.
+  thisDevice: { tone: 'neutral', icon: 'laptop', wordKey: 'appLife.status.thisDevice' },
+  archived: { tone: 'neutral', icon: 'history', wordKey: 'appLife.status.archived' },
+  locked: { tone: 'notYet', icon: 'pinLock', wordKey: 'appLife.status.locked' },
+  quietHeld: { tone: 'neutral', icon: 'calendar', wordKey: 'appLife.status.quietHeld' },
+  check: { tone: 'tight', icon: 'stateTight', wordKey: 'appLife.status.check' },
 } as const satisfies Record<string, StatusDef>;
 
 export type StatusKey = keyof typeof STATUS;

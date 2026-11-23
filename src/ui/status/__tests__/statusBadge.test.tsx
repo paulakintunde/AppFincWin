@@ -44,6 +44,7 @@ describe('STATUS map (D-12)', () => {
         'notYet', 'safetyNet', 'fits', 'tight', 'short', 'up', 'down', 'cleared',
         // 09-12 plan status words
         'trial', 'planActive', 'trialEnding', 'paymentFailed', 'readOnly', 'waitingApproval', 'coveredBy', 'freeAccess',
+        'thisDevice', 'archived', 'locked', 'quietHeld', 'check',
       ].sort(),
     );
   });
@@ -59,11 +60,11 @@ describe('STATUS map (D-12)', () => {
 
   it('D-14: red only for over cap, overdue and short; amber only for due soon, behind and tight', () => {
     expect(withTone('short')).toEqual(['overCap', 'overdue', 'short']);
-    expect(withTone('tight')).toEqual(['behind', 'dueSoon', 'paymentFailed', 'tight', 'trialEnding']);
+    expect(withTone('tight')).toEqual(['behind', 'check', 'dueSoon', 'paymentFailed', 'tight', 'trialEnding']);
   });
 
   it('slate clock for due, pending and not yet; up and down are neutral arrows', () => {
-    expect(withTone('notYet')).toEqual(['due', 'notYet', 'pending', 'readOnly', 'waitingApproval']);
+    expect(withTone('notYet')).toEqual(['due', 'locked', 'notYet', 'pending', 'readOnly', 'waitingApproval']);
     for (const k of ['due', 'pending', 'notYet', 'waitingApproval'] as const) expect(STATUS[k].icon).toBe('stateDue');
     expect(STATUS.up).toMatchObject({ tone: 'neutral', icon: 'stateUp' });
     expect(STATUS.down).toMatchObject({ tone: 'neutral', icon: 'stateDown' });
