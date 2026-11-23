@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "08.1 merged 2026-11-22 (PR #180, 36028c69); Phase 7 Insights and Phase 10 System ready to plan"
-last_updated: "2026-11-22T09:00:00.000Z"
-last_activity: 2026-11-22 -- 08.1 merged (PR #180); ARC-21 moved forward, Insights ready to plan
+stopped_at: Phase 10 UI-SPEC approved
+last_updated: "2026-11-22T22:12:50.244Z"
+last_activity: 2026-11-22 -- Phase 10 planning complete
 progress:
-  total_phases: 29
-  completed_phases: 18
-  total_plans: 809
-  completed_plans: 790
+  total_phases: 31
+  completed_phases: 19
+  total_plans: 843
+  completed_plans: 819
   percent: 97
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 08.1 MERGED 2026-11-22 (PR #180, 36028c69). Next: Phase 7 Insights and Phase 10 System, in parallel. Decide setup gate audit: `08.1-DECIDE-SETUP-AUDIT.md` (follow-up phase to be decided). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
+**Current focus:** Phase 08.1 COMPLETE on branch `feat/08.1-build` (22/22; review fixed, verification passed); the PR into main is next. Decide setup gate audit: `08.1-DECIDE-SETUP-AUDIT.md` (follow-up phase to be decided). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
 
 ## Current Position
 
 Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 with summaries; the 08.1 branch adds 15 more summaries).
 
-Phase: 08.1 (decide-rebuild-on-real-data) — PLANS DONE on branch `feat/08.1-build`, 22/22 (plans 01-15 and 19-25; 16-18 moved to 08.2). 20261125000100..000800 live in production 2026-11-21. Tester build 3c50fbb2 + preview OTA ee872d87 (blank-step fix 8c272c6c); three Maestro smoke flows pass on the Pixel 9. Review and verification passed; MERGED into main 2026-11-22 (PR #180, 36028c69).
+Phase: 08.1 (decide-rebuild-on-real-data) — PLANS DONE on branch `feat/08.1-build`, 22/22 (plans 01-15 and 19-25; 16-18 moved to 08.2). 20261125000100..000800 live in production 2026-11-21. Tester build 3c50fbb2 + preview OTA ee872d87 (blank-step fix 8c272c6c); three Maestro smoke flows pass on the Pixel 9. Next: phase review and verification gates, then the PR.
 Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
 Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
-Phase: 7, 10 — READY TO PLAN (08.1 merged 2026-11-22); run in parallel. ARC-21 (health score reads the engine's figures) is built in Phase 7 (quick 261122-fd3). 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
+Phase: 7, 10 — not planned; may run in parallel after 08.1 (owner 2026-11-22). 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
 Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11); one orphan household with no members and no plan.
 Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026-11-14 (PR #102). 06 (grow) — COMPLETE 2026-11-11 (PR #101).
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
@@ -39,8 +39,8 @@ Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple
 Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted, Play verification pending (PR #174). 00-20: first iOS build on the iPhone XR, waits on enrolment; needed before 2026-12-02.
 Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
 Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
-Status: Ready to plan (Phases 7 and 10)
-Last activity: 2026-11-22 - Completed quick task 261122-fd3: ARC-21 moved forward; Insights ready to plan
+Status: Ready to execute
+Last activity: 2026-11-22 -- Phase 10 planning complete
 
 ## Performance Metrics
 
@@ -226,8 +226,7 @@ Recent decisions affecting current work:
 | 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
 | 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18 and Phase 9 26/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
 | 261120-nmr | Naming round 2 research saved: Kint dropped, 90 names screened, deep check of Domla/Plenny/Tavva/Hommi | 2026-11-20 | — | [261120-nmr-naming-research](./quick/261120-nmr-naming-research/) |
-| 261122-m82 | Merge Phase 08.2 (Decide re-audit) into Phase 11 as its final audit; Insights and System run in parallel after 08.1 | 2026-11-22 | #179 | [261122-m82-merge-08-2-into-phase-11](./quick/261122-m82-merge-08-2-into-phase-11/) |
-| 261122-fd3 | ARC-21 moved forward: 08.1 merged, Insights (7) ready to plan; health score is INS-06 | 2026-11-22 | (this PR) | [261122-fd3-arc-21-insights-ready](./quick/261122-fd3-arc-21-insights-ready/) |
+| 261122-m82 | Merge Phase 08.2 (Decide re-audit) into Phase 11 as its final audit; Insights and System run in parallel after 08.1 | 2026-11-22 | (this PR) | [261122-m82-merge-08-2-into-phase-11](./quick/261122-m82-merge-08-2-into-phase-11/) |
 
 ## Deferred Items
 
@@ -239,6 +238,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-20T12:00:00.000Z
-Stopped at: 08.1 plan 15 in progress (main merged in; push waits on owner approval)
-Resume file: none (see Current Position)
+Last session: 2026-11-22T20:54:00.711Z
+Stopped at: Phase 10 UI-SPEC approved
+Resume file: .planning/phases/10-system/10-UI-SPEC.md
