@@ -1418,16 +1418,16 @@ Plans:
   3. A user can see spending broken down by category for a period.
   4. A user can see a financial health score with the figures behind it.
   5. A user can view a month's Activity as a week breakdown, a split view, a balance view and a calendar.
-**Plans:** 12 plans in 5 waves (criterion 5 already met by ACT-06 in Phase 2.2; nothing built for it)
+**Plans:** 6/12 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 07-01-PLAN.md — Engine: health score (recipe, short cap at 74, thin data) reading Decide's figures (INS-06, ARC-21)
-- [ ] 07-02-PLAN.md — Engine: monthBars through this month + engine/insights range, category totals, month against month (INS-02..05)
-- [ ] 07-03-PLAN.md — Engine: netWorthOf moved to engine/grow + month-end net-worth series (INS-01)
-- [ ] 07-04-PLAN.md — Insights copy catalogue, insights copy-guard set, coverage and mutation config
-- [ ] 07-05-PLAN.md — Feature rows insights / netWorthTrend / healthScore in registry and 09-LEVEL-MAP (D-16)
-- [ ] 07-06-PLAN.md — Shared UI: SignedBars neutral tone, SegmentedControl haptic, StatTileRow columns, Row footer
+- [x] 07-01-PLAN.md — Engine: health score (recipe, short cap at 74, thin data) reading Decide's figures (INS-06, ARC-21)
+- [x] 07-02-PLAN.md — Engine: monthBars through this month + engine/insights range, category totals, month against month (INS-02..05)
+- [x] 07-03-PLAN.md — Engine: netWorthOf moved to engine/grow + month-end net-worth series (INS-01)
+- [x] 07-04-PLAN.md — Insights copy catalogue, insights copy-guard set, coverage and mutation config
+- [x] 07-05-PLAN.md — Feature rows insights / netWorthTrend / healthScore in registry and 09-LEVEL-MAP (D-16)
+- [x] 07-06-PLAN.md — Shared UI: SignedBars neutral tone, SegmentedControl haptic, StatTileRow columns, Row footer
 **Wave 2**
 - [ ] 07-07-PLAN.md — Data: scoped Prepared (Just me / Household), net-worth series hook, scope switch (D-18, D-23)
 - [ ] 07-08-PLAN.md — Charts: RangeControl, InOutBars, NetWorthLine, CategoryRow, ChartSummary
@@ -1749,7 +1749,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 06.1 Decide screens from the prototype | 82/82 | Complete (PR #102) | 2026-11-14 |
 | 6. Grow | 37/37 | Complete: review fixed (73), verification passed, owner device check approved | 2026-11-11 |
 | 06.2 App life | 24/24 | Complete (PR #122, 2026-11-15) | 2026-11-15 |
-| 7. Insights | 0/TBD | Not started | - |
+| 7. Insights | 6/12 | In Progress|  |
 | 8. Household | 28/28 | Complete | 2026-11-17 |
 | 08.1 Decide rebuild on real data | 22/22 | Complete (review fixed, verification passed; OTA 7f1776a0) | 2026-11-22 |
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
