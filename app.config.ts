@@ -39,6 +39,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-secure-store',
+    // 10-11 (ACC-08): Face ID usage string (draft copy, owner sign-off). Needs a new dev build; OTA cannot carry it.
+    ['expo-local-authentication', { faceIDPermission: 'FincWin uses Face ID to open the app.' }],
     'expo-font',
     'expo-apple-authentication',
     'expo-web-browser',
