@@ -39,6 +39,9 @@ function state(over: Partial<NetWorthSeriesState> = {}): NetWorthSeriesState {
     current: 1840000,
     change: { from: 1420000, to: 1840000, change: 420000 },
     unconverted: 0,
+    unconvertedAccounts: 0,
+    unconvertedHoldings: 0,
+    unconvertedDebts: 0,
     debtsHeldFlat: false,
     holdingsLeftOut: false,
     noAccounts: false,
@@ -83,15 +86,22 @@ describe('NetWorthSectionView', () => {
   });
 
   it('adds the held-flat, holdings and plural unconverted notes', async () => {
-    const a = await view(state({ debtsHeldFlat: true, holdingsLeftOut: true, unconverted: 2 }));
+    const a = await view(state({ debtsHeldFlat: true, holdingsLeftOut: true, unconverted: 2, unconvertedAccounts: 2 }));
     expect(a.getByTestId('net-worth-note-debts', opts)).toBeTruthy();
     expect(a.getByTestId('net-worth-note-holdings', opts)).toBeTruthy();
     expect(a.getByText('2 accounts could not be converted and are left out.', opts)).toBeTruthy();
   });
 
   it('adds the singular unconverted note', async () => {
-    const b = await view(state({ unconverted: 1 }));
+    const b = await view(state({ unconverted: 1, unconvertedAccounts: 1 }));
     expect(b.getByText('1 account could not be converted and is left out.', opts)).toBeTruthy();
+  });
+
+  it('names a left-out debt or holding as such, not as an account (WR-01)', async () => {
+    const v = await view(state({ unconverted: 3, unconvertedDebts: 1, unconvertedHoldings: 2 }));
+    expect(v.getByText('1 debt could not be converted and is left out.', opts)).toBeTruthy();
+    expect(v.getByText('2 holdings could not be converted and are left out.', opts)).toBeTruthy();
+    expect(v.queryByText(/accounts? could not be converted/, opts)).toBeNull();
   });
 
   it('names what the card counts in Just me', async () => {

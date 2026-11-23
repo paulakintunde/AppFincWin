@@ -81,6 +81,7 @@ describe('buildNetWorthInputs', () => {
     expect(out.holdings.map((h) => h.id)).toEqual(['h1']);
     expect(out.debts).toEqual([]);
     expect(out.unconverted).toBe(2);
+    expect([out.unconvertedHoldings, out.unconvertedDebts]).toEqual([1, 1]);
   });
 });
 

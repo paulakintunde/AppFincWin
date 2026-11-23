@@ -56,7 +56,10 @@ export interface NetWorthBuild {
   accounts: SeriesAccount[];
   holdings: SeriesHolding[];
   debts: SeriesDebt[];
+  /** Holdings and debts left out (no rate); their sum is `unconverted`. */
   unconverted: number;
+  unconvertedHoldings: number;
+  unconvertedDebts: number;
 }
 
 export function buildNetWorthInputs(args: {
@@ -77,10 +80,11 @@ export function buildNetWorthInputs(args: {
     deleted_at: a.deleted_at,
     createdOn: a.created_at.slice(0, 10),
   }));
-  if (args.scope === 'household') return { accounts, holdings: [], debts: [], unconverted: 0 };
+  if (args.scope === 'household') return { accounts, holdings: [], debts: [], unconverted: 0, unconvertedHoldings: 0, unconvertedDebts: 0 };
 
   const conv = (amount: number, from: string): number | null => convertLatest(amount, from, currency, rates, customs, today)?.amount ?? null;
-  let unconverted = 0;
+  let unconvertedHoldings = 0;
+  let unconvertedDebts = 0;
 
   const holdings: SeriesHolding[] = [];
   for (const h of args.holdings) {
@@ -100,7 +104,7 @@ export function buildNetWorthInputs(args: {
       lots.push({ date: l.date, amount });
     }
     if (failed) {
-      unconverted += 1;
+      unconvertedHoldings += 1;
       continue;
     }
     holdings.push({ id: h.id, account_id: h.account_id, deleted_at: h.deleted_at, lots });
@@ -112,12 +116,12 @@ export function buildNetWorthInputs(args: {
     const balance = conv(d.balance, d.currency);
     const started = d.started_balance === null || d.started_balance === undefined ? null : conv(d.started_balance, d.currency);
     if (balance === null || (d.started_balance != null && started === null)) {
-      unconverted += 1;
+      unconvertedDebts += 1;
       continue;
     }
     debts.push({ account_id: d.account_id, balance, startedBalance: started, paidOffOn: d.paid_off_on ?? null, deleted_at: d.deleted_at });
   }
-  return { accounts, holdings, debts, unconverted };
+  return { accounts, holdings, debts, unconverted: unconvertedHoldings + unconvertedDebts, unconvertedHoldings, unconvertedDebts };
 }
 
 /** One account's balance in the target currency from its own-currency balance plus other-currency subtotals; null when any part cannot convert. */
@@ -174,7 +178,11 @@ export interface NetWorthSeriesState {
   points: SeriesPoint[];
   current: number | null;
   change: { from: number; to: number; change: number } | null;
+  /** Total left out, and by kind (WR-01): the note names what was actually dropped. */
   unconverted: number;
+  unconvertedAccounts: number;
+  unconvertedHoldings: number;
+  unconvertedDebts: number;
   debtsHeldFlat: boolean;
   holdingsLeftOut: boolean;
   noAccounts: boolean;
@@ -271,7 +279,7 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
     }
     sources.push({ date: rc.today, isToday: true, balances: todayBalances, accountsWithLegs: accountIds });
     const points = netWorthSeries({ accounts: build.accounts, holdings: build.holdings, debts: build.debts, points: sources });
-    return { points, unconverted: unconvertedIds.size + build.unconverted };
+    return { points, unconvertedAccounts: unconvertedIds.size };
     // dataKey stands in for the per-query data objects, which useQueries re-creates each render
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ends, dataKey, accounts, accountIds, currency, rates, customs, rc.today, todayViews, build]);
@@ -287,7 +295,10 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
     points,
     current: points.length > 0 ? points[points.length - 1]!.value : null,
     change: seriesChange(points),
-    unconverted: computed.unconverted,
+    unconverted: computed.unconvertedAccounts + build.unconverted,
+    unconvertedAccounts: computed.unconvertedAccounts,
+    unconvertedHoldings: build.unconvertedHoldings,
+    unconvertedDebts: build.unconvertedDebts,
     debtsHeldFlat: points.some((p) => p.debtsHeldFlat),
     holdingsLeftOut: points.some((p) => p.holdingsLeftOut > 0),
     noAccounts: accounts.length === 0,

@@ -80,7 +80,9 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
   ];
   if (state.debtsHeldFlat) notes.push({ key: 'debts', text: t('insights.netWorth.notes.debtsHeldFlat') });
   if (state.holdingsLeftOut) notes.push({ key: 'holdings', text: t('insights.netWorth.notes.holdingsFromFirstValue') });
-  if (state.unconverted > 0) notes.push({ key: 'unconverted', text: t('insights.netWorth.notes.unconverted', { count: state.unconverted }) });
+  if (state.unconvertedAccounts > 0) notes.push({ key: 'unconverted', text: t('insights.netWorth.notes.unconverted', { count: state.unconvertedAccounts }) });
+  if (state.unconvertedHoldings > 0) notes.push({ key: 'unconvertedHoldings', text: t('insights.netWorth.notes.unconvertedHoldings', { count: state.unconvertedHoldings }) });
+  if (state.unconvertedDebts > 0) notes.push({ key: 'unconvertedDebts', text: t('insights.netWorth.notes.unconvertedDebts', { count: state.unconvertedDebts }) });
 
   return (
     <Card testID="net-worth-section">
