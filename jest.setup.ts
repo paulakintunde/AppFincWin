@@ -40,6 +40,19 @@ jest.mock('./src/services/locale/deviceReadCache', () => {
   return actual;
 });
 
+// 10-13: create surfaces ask the queue guard, which reads the mutation cache. Most suites render them without a QueryClient, so the
+// guard is an empty queue everywhere; a suite sets the waiting count with setMockQueued(n) from '@/data/sync/useQueueGuard'.
+jest.mock('./src/data/sync/useQueueGuard', () => {
+  const cap = jest.requireActual<typeof import('./src/data/sync/queueCap')>('./src/data/sync/queueCap');
+  let queued = 0;
+  return {
+    setMockQueued: (n: number) => {
+      queued = n;
+    },
+    useQueueGuard: () => ({ state: cap.queueCap(queued), queued, canAdd: (n: number) => cap.canAdd(queued, n) }),
+  };
+});
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('react-native-reanimated').setUpTests();
 
