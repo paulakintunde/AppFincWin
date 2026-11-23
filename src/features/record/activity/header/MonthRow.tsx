@@ -1,12 +1,20 @@
 // Band 2 (D-52..D-55): month switcher sharing a line with Search / Filter / More. The long name
 // is shown when it fits, then the short Intl name, then the icons wrap to their own right-aligned
 // row. Measured, not a fixed width check (a fixed check fails at large text sizes).
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
+import type { Href } from 'expo-router';
+import { router } from 'expo-router';
 import { Text } from '@/ui/Text';
 import { useTheme } from '@/theme/ThemeProvider';
 import { size, space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
+import { canArchiveMonth, visibleMonths } from '@/engine/archive';
+import { localDateIn } from '@/engine/time';
+import { ArchiveMonthConfirm } from '@/features/archive/ArchiveMonthConfirm';
+import { useArchiveState } from '@/features/archive/useArchiveState';
+import { getDeviceTimeZone } from '@/services/locale/deviceLocale';
+import { showToast } from '@/state/undoToast';
 import { formatMonthLabel, MonthSwitcher } from '../MonthSwitcher';
 import { HeaderIconCluster } from './HeaderIconCluster';
 import { chooseMonthLayout, formatMonthShort } from './monthLayout';
@@ -29,9 +37,22 @@ export interface MonthRowProps {
   searchRef?: React.Ref<View>;
 }
 
+/** The month to move to when the selected one is archived: the nearest one still visible, later months first on a tie. */
+function nearestVisible(month: string, months: readonly string[], archived: ReadonlySet<string>): string | null {
+  const at = months.indexOf(month);
+  if (at < 0) return null;
+  for (let d = 1; d < months.length; d += 1) {
+    const newer = months[at - d];
+    if (newer !== undefined && !archived.has(newer)) return newer;
+    const older = months[at + d];
+    if (older !== undefined && !archived.has(older)) return older;
+  }
+  return null;
+}
+
 export function MonthRow({
   month,
-  months,
+  months: allMonths,
   locale,
   onMonthChange,
   counts,
@@ -44,6 +65,27 @@ export function MonthRow({
   searchRef,
 }: MonthRowProps): React.JSX.Element {
   const { colors, pairing } = useTheme();
+  // 10-16 (D-13, D-15): a view filter on the switcher only. Archived months leave this person's list; nothing else reads archive state.
+  const archiveState = useArchiveState();
+  const [pending, setPending] = useState<string | null>(null);
+  const months = useMemo(() => visibleMonths(allMonths, archiveState.archived), [allMonths, archiveState.archived]);
+  const today = useMemo(() => localDateIn(new Date(), getDeviceTimeZone()), []);
+  useEffect(() => {
+    if (!archiveState.archived.has(month)) return;
+    const target = nearestVisible(month, allMonths, archiveState.archived);
+    if (target !== null) onMonthChange(target);
+  }, [month, allMonths, archiveState.archived, onMonthChange]);
+  const confirmArchive = (): void => {
+    const m = pending;
+    setPending(null);
+    if (m === null) return;
+    archiveState.archive(m);
+    showToast({
+      kind: 'ordinary',
+      text: { key: 'system.archive.archivedToast', params: { month: formatMonthLabel(m, locale) } },
+      onUndo: () => archiveState.restore(m),
+    });
+  };
   const [rowWidth, setRowWidth] = useState(0);
   const [longWidth, setLongWidth] = useState(0);
   const [shortWidth, setShortWidth] = useState(0);
@@ -106,11 +148,22 @@ export function MonthRow({
             counts={counts}
             addMonth={addMonth}
             onAddMonth={onAddMonth}
+            archivable={archiveState.enabled ? (m) => canArchiveMonth(m, today) : undefined}
+            onArchive={archiveState.enabled ? setPending : undefined}
+            archivedCount={archiveState.count}
+            onOpenArchive={() => router.push('/archive' as Href)}
             displayLabel={layout.name === 'short' ? shortLabel : longLabel}
           />
         </View>
         {layout.icons === 'inline' ? cluster : null}
       </View>
+      <ArchiveMonthConfirm
+        visible={pending !== null}
+        monthLabel={pending === null ? '' : formatMonthLabel(pending, locale)}
+        shared={archiveState.shared}
+        onConfirm={confirmArchive}
+        onCancel={() => setPending(null)}
+      />
       {layout.icons === 'below' ? (
         <View testID="activity-month-icons-row" style={styles.iconsBelow}>
           {cluster}

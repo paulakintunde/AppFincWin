@@ -166,6 +166,10 @@ export const features = {
       label: 'Undo history',
       sub: 'Roll back one of your recent changes',
     },
+    archive: {
+      label: 'Archive',
+      sub: 'Older months kept out of the way',
+    },
     hh: {
       weightSplit: {
         label: 'Split by weight',
