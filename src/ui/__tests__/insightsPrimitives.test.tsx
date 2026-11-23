@@ -5,7 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { SegmentedControl } from '@/ui/SegmentedControl';
-import { StatTile, StatTileRow } from '@/ui/StatTile';
+import { StatTile, StatTileRow, VALUE_MIN_SCALE, figureTooWideForHalf } from '@/ui/StatTile';
 import { Row } from '@/ui/Row';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { hapticTick } from '@/ui/haptics';
@@ -73,6 +73,62 @@ describe('07-06 StatTileRow columns', () => {
     const { getAllByTestId, getByTestId } = await wrap(<StatTileRow columns={3}>{tiles}</StatTileRow>);
     expect(getAllByTestId('stat-tile-cell', opts)).toHaveLength(3);
     expect(StyleSheet.flatten(getByTestId('stat-tile-row', opts).props.style).flexDirection).toBe('column');
+  });
+});
+
+// Pixel 9 fix: the In / Out / Left figures broke mid-number three across ("$5,4 / 88.9 / 0").
+describe('In / Out / Left figures stay whole', () => {
+  const layout = (w: number) => ({ nativeEvent: { layout: { width: w, height: 100, x: 0, y: 0 } } });
+  const three = (a: string, b: string, c: string) => (
+    <StatTileRow columns={3}>
+      <StatTile label="In" value={a} />
+      <StatTile label="Out" value={b} />
+      <StatTile label="Left" value={c} />
+    </StatTileRow>
+  );
+  beforeEach(() => {
+    mockStack = false;
+  });
+
+  it('each figure is one line that shrinks to fit, never below the 0.8 floor', async () => {
+    const { getAllByTestId } = await wrap(three('$5,488.90', '$154.03', '$5,334.87'));
+    for (const v of getAllByTestId('stat-tile-value', opts)) {
+      expect(v.props.numberOfLines).toBe(1);
+      expect(v.props.adjustsFontSizeToFit).toBe(true);
+      expect(v.props.minimumFontScale).toBe(VALUE_MIN_SCALE);
+    }
+    expect(VALUE_MIN_SCALE).toBeGreaterThanOrEqual(0.8);
+  });
+
+  it('at about 411 wide sets In and Out side by side and Left full width under them', async () => {
+    const { getByTestId, getAllByTestId } = await wrap(three('$5,488.90', '$154.03', '$5,334.87'));
+    await fireEvent(getByTestId('stat-tile-row', opts), 'layout', layout(335));
+    const pair = getByTestId('stat-tile-pair', opts);
+    expect(StyleSheet.flatten(pair.props.style).flexDirection).toBe('row');
+    const cells = getAllByTestId('stat-tile-cell', opts);
+    expect(cells).toHaveLength(3);
+    expect(StyleSheet.flatten(cells[2]!.props.style ?? {}).flex).toBeUndefined();
+  });
+
+  it('stacks one per line when a figure would not fit half the row, rather than shrinking it further', async () => {
+    const { getByTestId, queryByTestId } = await wrap(three('-CA$12,345.67', 'CA$0', '-CA$50'));
+    await fireEvent(getByTestId('stat-tile-row', opts), 'layout', layout(335));
+    expect(queryByTestId('stat-tile-pair', opts)).toBeNull();
+    expect(StyleSheet.flatten(getByTestId('stat-tile-row', opts).props.style).flexDirection).toBe('column');
+  });
+
+  it('stacks one per line at 320 wide or 2.0x text (rule S)', async () => {
+    mockStack = true;
+    const { getByTestId, queryByTestId } = await wrap(three('$5', '$1', '$4'));
+    expect(queryByTestId('stat-tile-pair', opts)).toBeNull();
+    expect(StyleSheet.flatten(getByTestId('stat-tile-row', opts).props.style).flexDirection).toBe('column');
+  });
+
+  it('the half-row estimate: a short figure fits at 411, a long one or a narrow row does not', () => {
+    expect(figureTooWideForHalf('$5,488.90'.length, 335, 1)).toBe(false);
+    expect(figureTooWideForHalf('-CA$12,345.67'.length, 335, 1)).toBe(true);
+    expect(figureTooWideForHalf('$5,488.90'.length, 320 - 76, 1)).toBe(true);
+    expect(figureTooWideForHalf('$5,488.90'.length, 335, 1.3)).toBe(true);
   });
 });
 
