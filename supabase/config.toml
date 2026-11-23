@@ -37,3 +37,14 @@ verify_jwt = false
 # plan-grant (09-07, D-29): operator-only (own secret PLAN_GRANT_SECRET); never callable with a user JWT.
 [functions.plan-grant]
 verify_jwt = false
+
+# before_user_created (10-19, ACC-11, D-25/D-30): refuses email-and-password sign-ups for any email not on public.reviewer_allowlist,
+# so the reviewer sign-in is not a back door. Apple and Google sign-ups pass. Payload checked against
+# https://supabase.com/docs/guides/auth/auth-hooks/before-user-created-hook
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/public/hook_before_user_created"
+
+# reviewer-signin (10-19, ACC-11): store review only; allow-list + rate limit in-function; refuses every non-listed email identically.
+[functions.reviewer-signin]
+verify_jwt = false
