@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: executing
 stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-11-22T22:12:50.244Z"
-last_activity: 2026-11-22 -- Phase 10 planning complete
+last_updated: "2026-11-23T05:47:10.166Z"
+last_activity: 2026-11-23 -- Phase 10 execution started
 progress:
   total_phases: 31
   completed_phases: 19
@@ -21,13 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 08.1 COMPLETE on branch `feat/08.1-build` (22/22; review fixed, verification passed); the PR into main is next. Decide setup gate audit: `08.1-DECIDE-SETUP-AUDIT.md` (follow-up phase to be decided). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
+**Current focus:** Phase 10 — System
 
 ## Current Position
 
 Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 with summaries; the 08.1 branch adds 15 more summaries).
 
-Phase: 08.1 (decide-rebuild-on-real-data) — PLANS DONE on branch `feat/08.1-build`, 22/22 (plans 01-15 and 19-25; 16-18 moved to 08.2). 20261125000100..000800 live in production 2026-11-21. Tester build 3c50fbb2 + preview OTA ee872d87 (blank-step fix 8c272c6c); three Maestro smoke flows pass on the Pixel 9. Next: phase review and verification gates, then the PR.
+Phase: 10 (System) — EXECUTING
+Plan: 1 of 30
 Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
 Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
 Phase: 7, 10 — not planned; may run in parallel after 08.1 (owner 2026-11-22). 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
@@ -39,8 +40,8 @@ Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple
 Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted, Play verification pending (PR #174). 00-20: first iOS build on the iPhone XR, waits on enrolment; needed before 2026-12-02.
 Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
 Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
-Status: Ready to execute
-Last activity: 2026-11-22 -- Phase 10 planning complete
+Status: Executing Phase 10
+Last activity: 2026-11-23 -- Phase 10 execution started
 
 ## Performance Metrics
 
