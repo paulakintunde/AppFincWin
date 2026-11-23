@@ -34,6 +34,7 @@ jest.mock('@/services/lock/lockStore', () => ({
   loadLockState: jest.fn(),
   saveLockSettings: jest.fn(() => Promise.resolve({})),
   clearTries: jest.fn(() => Promise.resolve()),
+  clearPin: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('@/services/lock/biometric', () => ({
   biometricKind: jest.fn(),
@@ -154,6 +155,7 @@ describe('LockSection', () => {
     await fireEvent.press(r.getByText('Extra FincWin PIN'));
     await fireEvent.press(r.getByTestId('pin-check'));
     await waitFor(() => expect(save).toHaveBeenCalledWith({ lockMethod: 'device', biometric: false }));
+    expect(lockStore.clearPin).toHaveBeenCalledTimes(1);
   });
 
   it('shows the app-switcher meta line', async () => {

@@ -51,3 +51,20 @@ export async function requestPushPermissionAndRegister(): Promise<'granted' | 'd
   }
   return 'granted';
 }
+
+/**
+ * 10-27 (T-10-27-01): on every signed-in start, refreshes this device's push token, but only when the OS permission is
+ * already granted. Never asks. Returns whether a token was sent.
+ */
+export async function refreshPushTokenIfGranted(): Promise<boolean> {
+  try {
+    if (toPermission(await Notifications.getPermissionsAsync()) !== 'granted') return false;
+    const projectId = (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId;
+    if (!projectId) return false;
+    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+    await supabase.rpc('register_push_token', { p_token: token, p_platform: Platform.OS });
+    return true;
+  } catch {
+    return false;
+  }
+}
