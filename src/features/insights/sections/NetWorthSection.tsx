@@ -48,6 +48,21 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
     </Text>
   );
   if (state.noAccounts || state.current === null) {
+    // Household counts joint accounts only: a member with personal accounts but no joint one has accounts, so the
+    // household empty state names the missing joint accounts and offers no Add an account.
+    if (scope === 'household') {
+      return (
+        <Card testID="net-worth-section">
+          {title}
+          <EmptyState
+            heading={t('insights.netWorth.householdEmptyHeading')}
+            body={t('insights.netWorth.householdEmptyBody')}
+            icon="info"
+            testID="net-worth-empty"
+          />
+        </Card>
+      );
+    }
     return (
       <Card testID="net-worth-section">
         {title}

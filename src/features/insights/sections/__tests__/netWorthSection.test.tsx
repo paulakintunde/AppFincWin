@@ -134,6 +134,16 @@ describe('NetWorthSectionView', () => {
     expect(onAdd).toHaveBeenCalled();
   });
 
+  it('in Household with no joint accounts names that, and offers no Add an account', async () => {
+    const onAdd = jest.fn();
+    const a = await view(state({ noAccounts: true, points: [], current: null, change: null }), { scope: 'household', onAddAccount: onAdd });
+    expect(a.getByText('No joint accounts yet', opts)).toBeTruthy();
+    expect(a.getByText('Household net worth counts joint accounts only. Personal accounts count in Just me.', opts)).toBeTruthy();
+    expect(a.queryByText('No accounts yet', opts)).toBeNull();
+    expect(a.queryByText('Add an account', opts)).toBeNull();
+    expect(onAdd).not.toHaveBeenCalled();
+  });
+
   it('shows the one-point state without a chart', async () => {
     const b = await view(state({ points: [six[6]!], change: null }));
     expect(b.getByText('The line needs a second month', opts)).toBeTruthy();
