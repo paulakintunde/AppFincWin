@@ -38,6 +38,7 @@ const scored = (short = false) => ({
   kind: 'score',
   score: 72,
   capped: short,
+  capReduction: short ? 14 : 0,
   short,
   parts: [
     { id: 'kept', points: 27, max: 35, figure: 18 },
@@ -93,6 +94,7 @@ describe('ScoreCard', () => {
     }
     expect(queryByTestId('score-short-badge', opts)).toBeNull();
     expect(queryByTestId('score-short-line', opts)).toBeNull();
+    expect(queryByTestId('score-cap-line', opts)).toBeNull();
     expect(mockInputs).toHaveBeenCalledWith(prepared);
   });
 
@@ -117,6 +119,7 @@ describe('ScoreCard', () => {
     expect(getByTestId('score-short-badge', opts)).toBeTruthy();
     expect(getByText('Short', opts)).toBeTruthy();
     expect(getByText('Decide shows this month as short, so the score stays under 75.', opts)).toBeTruthy();
+    expect(getByText('Held at 74 for a short month: −14', opts)).toBeTruthy();
   });
 
   it.each([

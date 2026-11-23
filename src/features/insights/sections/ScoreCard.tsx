@@ -134,6 +134,11 @@ export function ScoreCard({ scope, minePrepared, status, onSwitchToMine, onGapAc
             </View>
           );
         })}
+        {result.capped ? (
+          <Text testID="score-cap-line" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
+            {t('insights.score.capLine', { points: result.capReduction })}
+          </Text>
+        ) : null}
       </View>
       <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('insights.score.footer')}</Text>
     </Card>

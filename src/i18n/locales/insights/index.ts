@@ -142,6 +142,7 @@ export const insights = {
       },
     },
     shortBadge: 'Short',
+    capLine: 'Held at 74 for a short month: −{{points}}',
     shortLine: 'Decide shows this month as short, so the score stays under 75.',
     gap: {
       income: 'Add this month’s income and the score appears.',
