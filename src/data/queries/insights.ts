@@ -5,12 +5,26 @@ import type { DbErrorKind } from '@/db/errors';
 import type { Prepared } from '@/engine/decide/v3';
 import type { SnapshotSource } from '@/features/decide/snapshot/sourceTypes';
 import { preparedV3 } from '@/features/decide/snapshot/v3/computeV3';
+import { insightsMonthSoFar } from '@/features/decide/snapshot/v3/buildInputs';
+import type { V3SettingsSource } from '@/features/decide/snapshot/v3/types';
 import { useDecideSnapshot } from './decide';
 import { useDecideV3 } from './decideV3';
 import { householdSnapshotSource, type FigureScope } from './figureScope';
 
 export function householdPreparedOf(source: SnapshotSource, currency: string): Prepared {
   return preparedV3(householdSnapshotSource(source, currency), null).prepared;
+}
+
+/**
+ * 07 D-35 (Insights only): before the first full month Decide's inputs hold no months, so Insights reads an Insights-only copy of the
+ * prepared with this month so far laid in (the builder's own lines and series for the month). Decide's prepared object is never changed;
+ * once a full month is logged, or with nothing recorded this month, the prepared comes back as it is.
+ */
+export function withMonthSoFar(prepared: Prepared, source: SnapshotSource, v3: V3SettingsSource | null): Prepared {
+  if (prepared.inputs.months.some((m) => m.full)) return prepared;
+  const soFar = insightsMonthSoFar(source, v3);
+  if (soFar === null) return prepared;
+  return { ...prepared, inputs: { ...prepared.inputs, months: [soFar.month], series: soFar.series } };
 }
 
 export interface InsightsPreparedState {
@@ -32,9 +46,17 @@ export function useInsightsPrepared(scope: FigureScope, householdCurrency: strin
   const household = scope === 'household';
   const source = snapshot.source;
   const ready = household && snapshot.status === 'ready' && source !== null;
-  const householdPrepared = useMemo(
-    () => (ready && source !== null ? householdPreparedOf(source, householdCurrency) : null),
-    [ready, source, householdCurrency]
+  const householdPrepared = useMemo(() => {
+    if (!ready || source === null) return null;
+    const hhSource = householdSnapshotSource(source, householdCurrency);
+    return withMonthSoFar(preparedV3(hhSource, null).prepared, hhSource, null);
+  }, [ready, source, householdCurrency]);
+  const minePrepared = mine.prepared;
+  const mineSource = mine.source ?? null;
+  const mineV3 = mine.v3 ?? null;
+  const mineInsights = useMemo(
+    () => (minePrepared === null || mineSource === null ? minePrepared : withMonthSoFar(minePrepared, mineSource, mineV3)),
+    [minePrepared, mineSource, mineV3]
   );
   const retry = (): void => {
     mine.refetch();
@@ -42,13 +64,13 @@ export function useInsightsPrepared(scope: FigureScope, householdCurrency: strin
   };
   const naming = { partnerCategories: source?.partnerCategories, categorySourceIds: source?.categorySourceIds };
   if (!household) {
-    return { status: mine.status, prepared: mine.prepared, minePrepared: mine.prepared, errorKind: mine.errorKind, retry, ...naming };
+    return { status: mine.status, prepared: mineInsights, minePrepared, errorKind: mine.errorKind, retry, ...naming };
   }
   const status = snapshot.status === 'error' ? 'error' : snapshot.status === 'loading' || householdPrepared === null ? 'loading' : 'ready';
   return {
     status,
     prepared: householdPrepared,
-    minePrepared: mine.prepared,
+    minePrepared,
     errorKind: status === 'error' ? snapshot.errorKind ?? null : null,
     retry,
     ...naming,
