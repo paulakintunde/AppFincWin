@@ -31,6 +31,8 @@ jest.mock('../rememberedAccounts', () => ({
   forgetRememberedAccount: (...args: unknown[]) => mockForget(...args),
 }));
 
+jest.mock('@/services/auth/reviewerSignIn', () => ({ reviewerSignIn: jest.fn() }));
+
 jest.mock('@/config/env', () => ({
   getEnv: () => ({ appleSignInEnabled: mockAppleEnabled }),
 }));
