@@ -10,6 +10,11 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// 10-16: MonthRow reads the person's archive state; these tests are about layout, so archive is off.
+jest.mock('@/features/archive/useArchiveState', () => ({
+  useArchiveState: () => ({ enabled: false, archived: new Set<string>(), count: 0, shared: false, archive: jest.fn(), restore: jest.fn() }),
+}));
+
 jest.setTimeout(30000);
 
 const MONTHS = ['2026-10', '2026-09', '2026-08'];

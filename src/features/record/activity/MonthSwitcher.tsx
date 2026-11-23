@@ -32,6 +32,12 @@ export interface MonthSwitcherProps {
   onAddMonth?: (month: string) => void;
   /** 03.1 D-54: visible name; the screen reader always hears the long name. */
   displayLabel?: string;
+  /** 10-16 (UI-SPEC 4a): months that show an 'Archive' link (past months only). Omit for no links. */
+  archivable?: (month: string) => boolean;
+  onArchive?: (month: string) => void;
+  /** 10-16 (UI-SPEC 4a): the footer row 'Archived months (n)' shows when this is above 0. */
+  archivedCount?: number;
+  onOpenArchive?: () => void;
 }
 
 function monthName(month: string, locale: string): string {
@@ -52,7 +58,7 @@ function Chevron({ direction, color }: { direction: 'left' | 'right'; color: str
   );
 }
 
-export function MonthSwitcher({ month, months, locale, onChange, counts, addMonth = null, onAddMonth, displayLabel }: MonthSwitcherProps) {
+export function MonthSwitcher({ month, months, locale, onChange, counts, addMonth = null, onAddMonth, displayLabel, archivable, onArchive, archivedCount = 0, onOpenArchive }: MonthSwitcherProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const [listOpen, setListOpen] = useState(false);
@@ -104,21 +110,40 @@ export function MonthSwitcher({ month, months, locale, onChange, counts, addMont
           onCancel={() => setListOpen(false)}
         />
         <SheetScroll>
-          {months.map((m) => (
-            <Row
-              key={m}
-              label={formatMonthLabel(m, locale)}
-              sublabel={
-                counts !== undefined ? t('activity.months.entries', { count: counts.get(m) ?? 0 }) : undefined
-              }
-              leading={<RadioDot selected={m === month} />}
-              selected={m === month}
-              onPress={() => {
-                setListOpen(false);
-                onChange(m);
-              }}
-            />
-          ))}
+          {months.map((m) => {
+            const row = (
+              <Row
+                key={m}
+                label={formatMonthLabel(m, locale)}
+                sublabel={
+                  counts !== undefined ? t('activity.months.entries', { count: counts.get(m) ?? 0 }) : undefined
+                }
+                leading={<RadioDot selected={m === month} />}
+                selected={m === month}
+                onPress={() => {
+                  setListOpen(false);
+                  onChange(m);
+                }}
+              />
+            );
+            if (onArchive === undefined || archivable === undefined || !archivable(m)) return row;
+            return (
+              <View key={m} style={styles.archivable}>
+                <View style={styles.archivableRow}>{row}</View>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('system.archive.a11yArchiveMonth', { month: formatMonthLabel(m, locale) })}
+                  onPress={() => {
+                    setListOpen(false);
+                    onArchive(m);
+                  }}
+                  style={styles.archiveLink}
+                >
+                  <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('system.archive.archiveLink')}</Text>
+                </Pressable>
+              </View>
+            );
+          })}
           {addMonth !== null && onAddMonth !== undefined ? (
             <Row
               label={t('activity.months.add', { month: monthName(addMonth, locale) })}
@@ -127,6 +152,16 @@ export function MonthSwitcher({ month, months, locale, onChange, counts, addMont
                 setListOpen(false);
                 onAddMonth(addMonth);
                 onChange(addMonth);
+              }}
+            />
+          ) : null}
+          {archivedCount > 0 && onOpenArchive !== undefined ? (
+            <Row
+              label={t('system.archive.switcherFooter', { count: archivedCount })}
+              chevron
+              onPress={() => {
+                setListOpen(false);
+                onOpenArchive();
               }}
             />
           ) : null}
@@ -153,6 +188,9 @@ const styles = StyleSheet.create({
     minHeight: space.touchMin,
     justifyContent: 'center',
   },
+  archivable: { flexDirection: 'row', alignItems: 'center' },
+  archivableRow: { flex: 1 },
+  archiveLink: { minHeight: space.touchMin, justifyContent: 'center', paddingHorizontal: space.gapSm },
   chevron: {
     width: 10,
     height: 10,
