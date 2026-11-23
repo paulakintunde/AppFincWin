@@ -10,4 +10,7 @@ export const push = {
   partnerLargeHidden: 'A household member spent {{amount}} on {{category}}',
   partnerLargePrivate: 'Someone spent {{amount}}.',
   digest: 'Today: {{parts}}.',
+  whenToday: 'today',
+  whenTomorrow: 'tomorrow',
+  whenInDays: 'in {{count}} days',
 } as const;
