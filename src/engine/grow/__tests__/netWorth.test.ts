@@ -69,4 +69,10 @@ describe('netWorthOf', () => {
     expect(netWorthOf({ accounts, balances, holdings: HOLDINGS, debts: DEBTS })).toBe(LEDGER_NET);
     expect(netWorthOf({ accounts: [], balances: new Map(), holdings: [], debts: [] })).toBe(0);
   });
+
+  it('throws when the total leaves the safe integer range', () => {
+    const accounts: NetWorthAccount[] = [{ id: 'a', kind: 'checking' }, { id: 'b', kind: 'checking' }];
+    const balances = new Map([['a', Number.MAX_SAFE_INTEGER], ['b', Number.MAX_SAFE_INTEGER]]);
+    expect(() => netWorthOf({ accounts, balances, holdings: [], debts: [] })).toThrow(RangeError);
+  });
 });
