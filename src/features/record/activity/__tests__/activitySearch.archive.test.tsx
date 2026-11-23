@@ -101,7 +101,7 @@ const tree = () => (
   </ActivityShellProviders>
 );
 
-async function searchEveryMonth(screen: ReturnType<typeof render>, term: string) {
+async function searchEveryMonth(screen: Awaited<ReturnType<typeof render>>, term: string) {
   await fireEvent.press(screen.getByLabelText('Search'));
   await fireEvent.press(screen.getByText('Every month'));
   await fireEvent.changeText(screen.getByPlaceholderText('Search every month'), term);
