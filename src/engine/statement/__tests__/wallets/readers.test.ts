@@ -192,7 +192,7 @@ describe('unreadable cells and number parsing', () => {
       csv(REVOLUT_HEADER, [
         revolutRow({ amount: '+1,000.5' }),
         revolutRow({ amount: '−2.00' }),
-        revolutRow({ amount: '-500', currency: 'jpy' }),
+        revolutRow({ amount: '-500', currency: 'jpy', fee: '0' }),
         revolutRow({ amount: '7' }),
       ])
     );

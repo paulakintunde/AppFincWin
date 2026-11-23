@@ -15,3 +15,4 @@ export * from './duplicates';
 export * from './refundMatch';
 export * from './pdf';
 export * from './extras';
+export * from './wallets';

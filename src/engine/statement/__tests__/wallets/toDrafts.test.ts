@@ -33,7 +33,7 @@ describe('walletToDrafts', () => {
     const eur = out.drafts[0]!;
     expect(eur.rows.map((r) => r.currency)).toEqual(['EUR', 'EUR']);
     expect(eur).toMatchObject({
-      source: 'csv', layoutSignature: 'wallet|revolut|EUR', accountHint: 'bank', periodStart: '2026-03-01', periodEnd: '2026-03-05',
+      source: 'csv', layoutSignature: 'wallet|revolut|EUR', accountHint: 'bank', periodStart: '2026-03-01', periodEnd: '2026-03-04',
     });
     expect(eur.rows[0]).toMatchObject({
       index: 1, magnitude: 2000, marker: 'none', trnType: 'CREDIT', balanceMagnitude: 50, balanceMarker: 'minus', issues: [],
