@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -6,7 +7,7 @@ import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { fontSize } from '@/theme/typography';
 import { resetSessionMotion } from '@/ui/motion/useOncePerSession';
 import type { NetWorthSeriesState } from '@/data/queries/insightsNetWorth';
-import { NetWorthSectionView } from '../NetWorthSection';
+import { FIGURE_MIN_SCALE, NetWorthSectionView } from '../NetWorthSection';
 
 jest.setTimeout(30000);
 const opts = { includeHiddenElements: true };
@@ -56,18 +57,29 @@ const view = (s: NetWorthSeriesState, p: Partial<React.ComponentProps<typeof Net
 beforeEach(() => resetSessionMotion());
 
 describe('NetWorthSectionView', () => {
-  it('shows the title, the figure at the net worth size, the change in words with a glyph, the line and the rates note', async () => {
+  it('shows the title, the figure in the display role, the change in words with a glyph, the line and the rates note', async () => {
     const { getByText, getByTestId, queryByTestId } = await view(state());
     expect(getByText('Net worth', opts)).toBeTruthy();
     const figure = getByTestId('net-worth-figure', opts);
     expect(figure.props.children).toBe('$18,400');
-    expect(JSON.stringify(figure.props.style)).toContain(String(fontSize.netWorth));
+    expect(StyleSheet.flatten(figure.props.style).fontSize).toBe(fontSize.display);
     expect(getByText('as of today', opts)).toBeTruthy();
     expect(getByTestId('net-worth-change', opts).props.children).toBe('Up $4,200 over the last 6 full months and this month so far');
     expect(getByTestId('net-worth-change-glyph', opts)).toBeTruthy();
     expect(getByTestId('net-worth-line', opts)).toBeTruthy();
     expect(getByText('At today’s exchange rates.', opts)).toBeTruthy();
     expect(queryByTestId('net-worth-note-debts', opts)).toBeNull();
+  });
+
+  it('keeps the figure on one line at the display size, shrinking no further than 0.8 (Pixel 9: it ran under the Add button)', async () => {
+    const { getByTestId } = await view(state({ current: 2821213 }));
+    const figure = getByTestId('net-worth-figure', opts);
+    expect(figure.props.children).toBe('$28,212.13');
+    expect(figure.props.numberOfLines).toBe(1);
+    expect(figure.props.adjustsFontSizeToFit).toBe(true);
+    expect(figure.props.minimumFontScale).toBe(FIGURE_MIN_SCALE);
+    expect(FIGURE_MIN_SCALE).toBeGreaterThanOrEqual(0.8);
+    expect(StyleSheet.flatten(figure.props.style).fontSize).toBeLessThan(fontSize.netWorth);
   });
 
   it('words a fall', async () => {

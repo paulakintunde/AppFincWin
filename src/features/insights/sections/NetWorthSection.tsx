@@ -9,7 +9,7 @@ import { useDetailFormat } from '@/features/decide/screens/answer/detail/detailK
 import { useT } from '@/i18n';
 import { step } from '@/theme/layout';
 import { useTheme } from '@/theme/ThemeProvider';
-import { fontSize, textRole } from '@/theme/typography';
+import { textRole } from '@/theme/typography';
 import { EmptyState } from '@/ui/EmptyState';
 import { Glyph } from '@/ui/icons/Glyph';
 import { Text } from '@/ui/Text';
@@ -23,6 +23,9 @@ export interface NetWorthSectionViewProps {
   currency: string;
   onAddAccount: () => void;
 }
+
+/** D-76 rule N: the figure's shrink floor. */
+export const FIGURE_MIN_SCALE = 0.8;
 
 const PERIOD_KEY = { '6m': 'insights.range.periodSixMonths', '1y': 'insights.range.periodOneYear', all: 'insights.range.periodAll' } as const;
 
@@ -92,11 +95,16 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
     <Card testID="net-worth-section">
       {title}
       <View style={styles.figureBlock}>
+        {/* Pixel 9 fix: the display role (not the 42 net-worth size), one line that shrinks to fit, so the figure fits the
+            card at 411dp and ends well left of the floating Add button; at 320 / 2.0x it shrinks to the D-76 rule N floor. */}
         <Text
           testID="net-worth-figure"
           scale="capped"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={FIGURE_MIN_SCALE}
           accessibilityLabel={f.spoken(current)}
-          style={{ ...textRole(pairing, 'display'), fontSize: fontSize.netWorth, lineHeight: fontSize.netWorth * 1.1, color: colors.ink, fontVariant: ['tabular-nums'] }}
+          style={{ ...textRole(pairing, 'display'), color: colors.ink, fontVariant: ['tabular-nums'] }}
         >
           {f.money(current)}
         </Text>
