@@ -796,7 +796,7 @@ describe('YouScreen Phase 10 rows (10-27)', () => {
     expect(r.getByText('2 on')).toBeTruthy();
     const idx = rowOrder(['Alerts', 'Haptics'], r);
     expect(idx[0]).toBeGreaterThanOrEqual(0);
-    expect(idx[0]).toBeLessThan(idx[1]);
+    expect(idx[0] ?? -1).toBeLessThan(idx[1] ?? -1);
     await act(async () => {
       fireEvent.press(r.getByText('Alerts'));
     });
@@ -813,7 +813,7 @@ describe('YouScreen Phase 10 rows (10-27)', () => {
     const on = await renderScreen();
     expect(on.getByText('3 months')).toBeTruthy();
     const idx = rowOrder(['Features', 'Archive'], on);
-    expect(idx[0]).toBeLessThan(idx[1]);
+    expect(idx[0] ?? -1).toBeLessThan(idx[1] ?? -1);
     await act(async () => {
       fireEvent.press(on.getByText('Archive'));
     });
