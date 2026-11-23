@@ -38,4 +38,10 @@ export const status = {
   waitingApproval: 'Waiting',
   coveredBy: 'Covered',
   freeAccess: 'Free access',
+  // Phase 10 (10-04), draft pending owner sign-off.
+  thisDevice: 'This device',
+  archived: 'Archived',
+  locked: 'Locked',
+  quietHeld: 'Held for quiet hours',
+  check: 'Check',
 } as const;

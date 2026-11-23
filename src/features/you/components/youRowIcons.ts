@@ -1,6 +1,6 @@
 /**
  * 06.2-15 (D-06, L04): one icon per You row, from the app's own set (L07). Group headers carry no icon.
- * Only rows that exist on this branch are listed: no Face ID, PIN lock, Alerts or Delete account row yet.
+ * Only rows that exist on this branch are listed: Phase 10 adds security, alerts, archive, importCsv and diagnostic.
  */
 import type { IconName } from '@/ui/icons/iconData';
 
@@ -28,7 +28,12 @@ export type YouRowId =
   | 'subscription'
   | 'features'
   | 'freeHelp'
-  | 'export';
+  | 'export'
+  | 'security'
+  | 'alerts'
+  | 'archive'
+  | 'importCsv'
+  | 'diagnostic';
 
 export const YOU_ROW_ICON: Record<YouRowId, IconName> = {
   expense: 'add',
@@ -56,4 +61,10 @@ export const YOU_ROW_ICON: Record<YouRowId, IconName> = {
   features: 'categories',
   freeHelp: 'headphones',
   export: 'download',
+  // 10-04: Phase 10 rows (UI-SPEC Navigation and Entry Points).
+  security: 'pinLock',
+  alerts: 'alerts',
+  archive: 'history',
+  importCsv: 'import',
+  diagnostic: 'info',
 };
