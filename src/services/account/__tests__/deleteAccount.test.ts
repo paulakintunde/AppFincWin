@@ -1,4 +1,5 @@
 import { requestAccountDeletion } from '../deleteAccount';
+import { consumeSignOutReason } from '@/features/auth/signOutReason';
 
 function deps(over: Record<string, unknown> = {}) {
   const order: string[] = [];
@@ -16,6 +17,13 @@ function deps(over: Record<string, unknown> = {}) {
       await o?.wipeDeviceData?.();
     }),
     resetTheme: jest.fn(),
+    getEmail: jest.fn(async () => {
+      order.push('getEmail');
+      return 'a@b.co';
+    }),
+    forgetGoogle: jest.fn(async () => {
+      order.push('forgetGoogle');
+    }),
     ...over,
   };
   return { d, order };
@@ -25,7 +33,9 @@ describe('requestAccountDeletion', () => {
   it('wipes the device only after the server confirms, then signs out', async () => {
     const { d, order } = deps();
     await expect(requestAccountDeletion(d)).resolves.toEqual({ ok: true });
-    expect(order).toEqual(['invoke', 'signOut', 'wipe']);
+    expect(order).toEqual(['getEmail', 'invoke', 'forgetGoogle', 'signOut', 'wipe']);
+    expect(d.forgetGoogle).toHaveBeenCalledWith('a@b.co');
+    expect(consumeSignOutReason()).toBe('deleted');
     expect(d.resetTheme).not.toHaveBeenCalled(); // handed to the sign-out completion, which runs it
   });
 
@@ -53,5 +63,32 @@ describe('requestAccountDeletion', () => {
     const { d } = deps({ invoke: jest.fn(async () => { throw new Error('network'); }) });
     await expect(requestAccountDeletion(d)).resolves.toEqual({ ok: false, reason: 'failed' });
     expect(d.wipeDeviceData).not.toHaveBeenCalled();
+  });
+
+  it('does not call getEmail, invoke or forgetGoogle when offline', async () => {
+    const { d } = deps({ isOnline: () => false });
+    await requestAccountDeletion(d);
+    expect(d.getEmail).not.toHaveBeenCalled();
+    expect(d.forgetGoogle).not.toHaveBeenCalled();
+    expect(d.signOut).not.toHaveBeenCalled();
+  });
+
+  it('does not forget Google on a server failure', async () => {
+    const { d } = deps({ invoke: jest.fn(async () => ({ data: null, error: new Error('500') })) });
+    await requestAccountDeletion(d);
+    expect(d.forgetGoogle).not.toHaveBeenCalled();
+  });
+
+  it('skips forgetGoogle without an email but still wipes', async () => {
+    const { d } = deps({ getEmail: jest.fn(async () => null) });
+    await expect(requestAccountDeletion(d)).resolves.toEqual({ ok: true });
+    expect(d.forgetGoogle).not.toHaveBeenCalled();
+    expect(d.wipeDeviceData).toHaveBeenCalled();
+  });
+
+  it('still wipes when forgetGoogle rejects', async () => {
+    const { d } = deps({ forgetGoogle: jest.fn(async () => { throw new Error('x'); }) });
+    await expect(requestAccountDeletion(d)).resolves.toEqual({ ok: true });
+    expect(d.wipeDeviceData).toHaveBeenCalled();
   });
 });
