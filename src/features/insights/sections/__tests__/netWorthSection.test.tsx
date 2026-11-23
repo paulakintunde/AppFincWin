@@ -148,4 +148,21 @@ describe('NetWorthSectionView', () => {
     fireEvent.press(getByTestId('net-worth-line-point-1', opts));
     expect(await findByTestId('net-worth-line-readout', opts)).toBeTruthy();
   });
+
+  it('drops the tapped point when the range changes (IN-04)', async () => {
+    const tree = (range: '6m' | '1y') => (
+      <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 402, height: 874 }, insets: { top: 62, bottom: 34, left: 0, right: 0 } }}>
+        <ThemeProvider>
+          <FontScaleProvider value={1}>
+            <NetWorthSectionView state={state()} scope="mine" range={range} currency="USD" onAddAccount={jest.fn()} />
+          </FontScaleProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    );
+    const r = await render(tree('6m'));
+    fireEvent.press(r.getByTestId('net-worth-line-point-1', opts));
+    expect(await r.findByTestId('net-worth-line-readout', opts)).toBeTruthy();
+    await r.rerender(tree('1y'));
+    expect(r.queryByTestId('net-worth-line-readout', opts)).toBeNull();
+  });
 });
