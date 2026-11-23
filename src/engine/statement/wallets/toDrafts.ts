@@ -4,6 +4,7 @@
  * (IMP-06). Rows carry gross; fees are separate, so each currency's balance
  * moves by exactly the net.
  */
+import { minorUnits } from '../../money';
 import type { DraftRow, StatementDraft } from '../types';
 import type { WalletDrafts, WalletFeeLine, WalletLine, WalletRead, WalletTransferPair } from './types';
 
@@ -13,10 +14,10 @@ function toRow(l: WalletLine): DraftRow {
     index: l.index,
     localDate: l.localDate,
     description: l.description,
-    magnitude: Math.abs(l.grossMinor),
+    magnitude: minorUnits(Math.abs(l.grossMinor)),
     marker: l.grossMinor < 0 ? 'minus' : 'none',
     rawAmount: null,
-    balanceMagnitude: balance === null ? null : Math.abs(balance),
+    balanceMagnitude: balance === null ? null : minorUnits(Math.abs(balance)),
     balanceMarker: balance !== null && balance < 0 ? 'minus' : 'none',
     rawBalance: null,
     currency: l.currency,
