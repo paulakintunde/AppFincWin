@@ -1655,15 +1655,15 @@ Plans:
 - [x] 10-11-PLAN.md — expo-local-authentication + lock services (PIN, ladder, timing, D-29)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 10-12-PLAN.md — Device list and revoke (RPCs, heartbeat, Devices section, remote sign-out wipe)
-- [ ] 10-13-PLAN.md — Write-queue cap (400/500) and SYN-03/04 re-verification
-- [ ] 10-15-PLAN.md — Server-side alert evaluation (SQL triggers, outbox, partner privacy)
-- [ ] 10-16-PLAN.md — Archive feature registry, month-switcher filtering, Decide-unchanged proof
-- [ ] 10-17-PLAN.md — Export coverage (migration-aware guard, server records) + diagnostic export
-- [ ] 10-19-PLAN.md — Reviewer sign-in server side (allow-list, sign-up hook, Edge Function)
-- [ ] 10-20-PLAN.md — Daily encrypted backups to R2, keep-alive, monthly restore check, runbook
-- [ ] 10-21-PLAN.md — Phone lock screens, setup, Home offer, app-switcher cover
-- [ ] 10-22-PLAN.md — Alerts settings, permission flow, push registration, alert log
+- [x] 10-12-PLAN.md — Device list and revoke (RPCs, heartbeat, Devices section, remote sign-out wipe)
+- [x] 10-13-PLAN.md — Write-queue cap (400/500) and SYN-03/04 re-verification
+- [x] 10-15-PLAN.md — Server-side alert evaluation (SQL triggers, outbox, partner privacy)
+- [x] 10-16-PLAN.md — Archive feature registry, month-switcher filtering, Decide-unchanged proof
+- [x] 10-17-PLAN.md — Export coverage (migration-aware guard, server records) + diagnostic export
+- [x] 10-19-PLAN.md — Reviewer sign-in server side (allow-list, sign-up hook, Edge Function)
+- [x] 10-20-PLAN.md — Daily encrypted backups to R2, keep-alive, monthly restore check, runbook
+- [x] 10-21-PLAN.md — Phone lock screens, setup, Home offer, app-switcher cover
+- [x] 10-22-PLAN.md — Alerts settings, permission flow, push registration, alert log
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 10-14-PLAN.md — Delete account: save a copy, forget Google, backup wording
@@ -1777,5 +1777,5 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
-| 10. System | 10/30 | In Progress (10-01 waits on owner) |  |
+| 10. System | 19/30 | In Progress (10-01 waits on owner) |  |
 | 11. Compliance & Release | 0/TBD | Not started | - |
