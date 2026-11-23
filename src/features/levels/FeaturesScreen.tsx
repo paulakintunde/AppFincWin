@@ -29,7 +29,7 @@ import { useUserSetup } from './useUserSetup';
 type L = (key: string, params?: Record<string, string | number>) => string;
 
 /** Section order. Insight has no built feature yet, and an empty section is not drawn. */
-const AREA_ORDER: readonly FeatureArea[] = ['Recording', 'Accounts', 'Planning', 'Grow', 'Sharing', 'System'];
+const AREA_ORDER: readonly FeatureArea[] = ['Recording', 'Accounts', 'Planning', 'Grow', 'Insight', 'Sharing', 'System'];
 
 const RERUN_HREF = { pathname: ONBOARDING_HREF as unknown as string, params: { mode: 'rerun' } } as unknown as Href;
 const HOUSEHOLD_HREF = '/household' as Href;
