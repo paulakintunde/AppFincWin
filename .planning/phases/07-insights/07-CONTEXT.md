@@ -60,7 +60,7 @@ Not in this phase: Home changes (D-17), a household health score (D-19), Share/B
 - **D-28:** Categories under 1% of spending fold into an "Everything else" row (07-02 plan default).
 
 ### Owner answers before wave 3 build (2026-11-23)
-- **D-29:** The net-worth line shows 3 value labels down its side (low, middle, high) in  text, and month labels thin out with the point count (every third label above 24 points; never overlapping), per 07-UI-SPEC. Overrides the 07-08 build, which drew no value labels. Built in 07-10.
+- **D-29:** The net-worth line shows 3 value labels down its side (low, middle, high) in the meta text style, and month labels thin out with the point count (every third label above 24 points; never overlapping), per 07-UI-SPEC. Overrides the 07-08 build, which drew no value labels. Built in 07-10.
 - **D-30:** The D-27 note under "Where it went" shows always, in both the single-month and range views.
 
 ### Claude's Discretion
