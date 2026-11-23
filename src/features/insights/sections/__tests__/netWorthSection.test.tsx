@@ -134,6 +134,13 @@ describe('NetWorthSectionView', () => {
     expect(a.getByTestId('net-worth-loading', opts)).toBeTruthy();
   });
 
+  it('shows the offline line and no figure when an input is paused with no cache (NR-01)', async () => {
+    const a = await view(state({ status: 'offline' }));
+    expect(a.getByTestId('net-worth-offline', opts)).toBeTruthy();
+    expect(a.getByText('You’re offline. This shows once you’re back online.', opts)).toBeTruthy();
+    expect(a.queryByTestId('net-worth-figure', opts)).toBeNull();
+  });
+
   it('shows the error card with a working retry', async () => {
     const retry = jest.fn();
     const b = await view(state({ status: 'error', retry }));

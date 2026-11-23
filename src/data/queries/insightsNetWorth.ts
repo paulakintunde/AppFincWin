@@ -177,7 +177,8 @@ export function pointBalances(args: {
 }
 
 export interface NetWorthSeriesState {
-  status: 'loading' | 'error' | 'ready';
+  /** NR-01: 'offline' when an input has no answer, the device is offline and nothing is cached; never a partial figure. */
+  status: 'loading' | 'offline' | 'error' | 'ready';
   points: SeriesPoint[];
   current: number | null;
   change: { from: number; to: number; change: number } | null;
@@ -199,6 +200,24 @@ const NO_HOLDINGS: HoldingRow[] = [];
 const NO_LOTS: HoldingLotRow[] = [];
 const NO_DEBTS: DebtRow[] = [];
 
+/** The parts of a query result the status reads; a mock or a hook may leave fetchStatus out. */
+interface InputRead {
+  data?: unknown;
+  isError?: boolean;
+  fetchStatus?: string;
+}
+/**
+ * NR-01: no answer yet and one may still come. TanStack's isLoading is false while a query is paused offline
+ * (networkMode offlineFirst), so the test is "no data, no error, not idle". A disabled query is idle and not waited on.
+ */
+export function inputWaiting(q: InputRead): boolean {
+  return q.data === undefined && q.isError !== true && q.fetchStatus !== 'idle';
+}
+/** NR-01: no answer, paused offline with nothing cached. */
+export function inputPaused(q: InputRead): boolean {
+  return q.data === undefined && q.isError !== true && q.fetchStatus === 'paused';
+}
+
 export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope; currency: string }): NetWorthSeriesState {
   const { range, scope, currency } = args;
   const rc = useRecordContext();
@@ -213,7 +232,7 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
 
   const allAccounts = accountsQuery.data ?? NO_ACCOUNTS;
   const accounts = useMemo(() => accountsForScope(allAccounts, scope, rc.userId), [allAccounts, scope, rc.userId]);
-  const { balances: todayViews, isLoading: balancesLoading, isError: balancesError } = useAccountBalances(hh, accounts);
+  const { balances: todayViews, isWaiting: balancesWaiting, isPaused: balancesPaused, isError: balancesError } = useAccountBalances(hh, accounts);
   const rates = fx.data ?? NO_RATES;
   const customs = customsQuery.data ?? NO_CUSTOMS;
   const holdings = holdingsQuery.data ?? NO_HOLDINGS;
@@ -256,11 +275,10 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
   // CR-01: every input the figure depends on gates the status, so a partial figure is never shown as final.
   // Scope Household uses neither debts nor holdings, so their reads do not hold it back.
   const inputReads = [accountsQuery, fx, customsQuery, ...(scope === 'mine' ? [debtsQuery, holdingsQuery, lotsQuery] : [])];
+  // NR-01: an input with no data is never treated as loaded. isLoading misses the paused-offline case, so this reads data itself.
   const anyLoading =
-    reads.some((r) => r.data === undefined && !r.isError) ||
-    monthsRead.isLoading ||
-    balancesLoading ||
-    inputReads.some((q) => q.isLoading === true);
+    reads.some((r) => r.data === undefined && !r.isError) || monthsRead.isWaiting || balancesWaiting || inputReads.some(inputWaiting);
+  const anyPaused = reads.some(inputPaused) || monthsRead.isPaused || balancesPaused || inputReads.some(inputPaused);
   const anyError =
     reads.some((r) => r.isError && r.data === undefined) || balancesError || inputReads.some((q) => q.isError === true && q.data === undefined);
 
@@ -288,7 +306,7 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ends, dataKey, accounts, accountIds, currency, rates, customs, rc.today, todayViews, build]);
 
-  const status: NetWorthSeriesState['status'] = anyError ? 'error' : anyLoading ? 'loading' : 'ready';
+  const status: NetWorthSeriesState['status'] = anyError ? 'error' : anyPaused ? 'offline' : anyLoading ? 'loading' : 'ready';
   const points = computed.points;
   const retry = (): void => {
     reads.forEach((r) => void r.refetch());

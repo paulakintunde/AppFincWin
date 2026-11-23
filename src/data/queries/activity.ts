@@ -207,7 +207,15 @@ export function useTransactionMonths(
   householdId: string | null,
   today: string,
   horizonMonth: string | null = null
-): { months: string[]; counts: ReadonlyMap<string, number>; isLoading: boolean } {
+): {
+  months: string[];
+  counts: ReadonlyMap<string, number>;
+  isLoading: boolean;
+  /** NR-01: no answer yet and one may still come (fetching or paused offline); isLoading is false while paused. */
+  isWaiting: boolean;
+  /** NR-01: no answer, offline, nothing cached. */
+  isPaused: boolean;
+} {
   const query = useQuery({
     queryKey: queryKeys.transactionMonths(householdId ?? ''),
     queryFn: () => fetchTransactionMonths(supabase, householdId as string),
@@ -221,7 +229,14 @@ export function useTransactionMonths(
     for (const m of query.data ?? []) map.set(m.month, m.row_count);
     return map;
   }, [months, query.data]);
-  return { months, counts, isLoading: query.isLoading };
+  const noAnswer = query.data === undefined && !query.isError;
+  return {
+    months,
+    counts,
+    isLoading: query.isLoading,
+    isWaiting: noAnswer && query.fetchStatus !== 'idle',
+    isPaused: noAnswer && query.fetchStatus === 'paused',
+  };
 }
 
 /** ACT-03: a 2+ character term searches every month on the server. */
@@ -319,7 +334,15 @@ export function useAccountBalances(
   accounts: readonly AccountRow[],
   /** 06.1-72: a caller may hold the read fresh for longer (Decide's reads use DECIDE_READ_STALE_MS). */
   opts?: { staleTime?: number }
-): { balances: Map<string, AccountBalanceView>; isLoading: boolean; isError: boolean } {
+): {
+  balances: Map<string, AccountBalanceView>;
+  isLoading: boolean;
+  isError: boolean;
+  /** NR-01: no answer yet and one may still come (fetching or paused offline); isLoading is false while paused. */
+  isWaiting: boolean;
+  /** NR-01: no answer, offline, nothing cached. */
+  isPaused: boolean;
+} {
   const query = useQuery({
     queryKey: queryKeys.accountBalances(householdId ?? ''),
     queryFn: () => fetchAccountBalances(supabase, householdId as string),
@@ -345,7 +368,14 @@ export function useAccountBalances(
     return result;
   }, [accounts, legsByAccount]);
 
-  return { balances, isLoading: query.isLoading, isError: query.isError && query.data === undefined };
+  const noAnswer = query.data === undefined && !query.isError;
+  return {
+    balances,
+    isLoading: query.isLoading,
+    isError: query.isError && query.data === undefined,
+    isWaiting: noAnswer && query.fetchStatus !== 'idle',
+    isPaused: noAnswer && query.fetchStatus === 'paused',
+  };
 }
 
 /** Household member labels (D-32: a hidden name is its colour name), for Activity/Accounts and undo-refusal copy. */
