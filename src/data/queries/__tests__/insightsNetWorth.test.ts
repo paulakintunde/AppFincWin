@@ -108,6 +108,8 @@ const mock = {
   months: ['2026-11', '2026-09', '2026-08'],
   counts: new Map([['2026-11', 3], ['2026-09', 2], ['2026-08', 0]]),
   paidCalls: [] as string[],
+  debts: { data: [] as unknown[] | undefined, isLoading: false, isError: false } as Record<string, unknown>,
+  balances: { isLoading: false, isError: false },
 };
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ householdId: 'hh1', userId: 'me', homeCurrency: 'USD', today: '2026-11-10' }),
@@ -117,13 +119,14 @@ jest.mock('../activity', () => ({
   useTransactionMonths: () => ({ months: mock.months, counts: mock.counts, isLoading: false }),
   useAccountBalances: () => ({
     balances: new Map([['a', { balance: 12_000, otherCurrencies: [], overflow: false, pendingSum: 500, standing: null }]]),
-    isLoading: false,
+    isLoading: mock.balances.isLoading,
+    isError: mock.balances.isError,
   }),
 }));
 jest.mock('../fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('../customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [] }) }));
 jest.mock('../growHoldings', () => ({ useHoldingRows: () => ({ data: [] }), useHoldingLotRows: () => ({ data: [] }) }));
-jest.mock('../decide', () => ({ useDebts: () => ({ data: [] }) }));
+jest.mock('../decide', () => ({ useDebts: () => ({ ...mock.debts, refetch: jest.fn() }) }));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/db/recordReads', () => ({
   fetchAccountPaidBefore: jest.fn(async (_c: unknown, _h: string, before: string) => {
@@ -147,6 +150,34 @@ describe('useNetWorthSeries', () => {
     for (const e of ends) expect(client.getQueryData(queryKeys.paidBefore('hh1', paidBeforeDateOf(e)))).toBeDefined();
     expect(result.current.noAccounts).toBe(false);
     expect(result.current.unconverted).toBe(0);
+  });
+});
+
+describe('useNetWorthSeries status (CR-01)', () => {
+  const run = async (): Promise<{ status: string }> => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: React.ReactNode }) => React.createElement(QueryClientProvider, { client }, children);
+    const { result } = await renderHook(() => useNetWorthSeries({ range: '6m', scope: 'mine', currency: 'USD' }), { wrapper });
+    await waitForReady(() => result.current.status !== 'loading');
+    return result.current;
+  };
+  afterEach(() => {
+    mock.debts = { data: [], isLoading: false, isError: false };
+    mock.balances = { isLoading: false, isError: false };
+  });
+  it('is loading while debts are still loading', async () => {
+    mock.debts = { data: undefined, isLoading: true, isError: false };
+    expect((await run()).status).toBe('loading');
+  });
+  it('is an error when debts failed, never a figure without them', async () => {
+    mock.debts = { data: undefined, isLoading: false, isError: true };
+    expect((await run()).status).toBe('error');
+  });
+  it('is loading while today balances load, and an error when they fail', async () => {
+    mock.balances = { isLoading: true, isError: false };
+    expect((await run()).status).toBe('loading');
+    mock.balances = { isLoading: false, isError: true };
+    expect((await run()).status).toBe('error');
   });
 });
 

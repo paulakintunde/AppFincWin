@@ -202,7 +202,7 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
 
   const allAccounts = accountsQuery.data ?? NO_ACCOUNTS;
   const accounts = useMemo(() => accountsForScope(allAccounts, scope, rc.userId), [allAccounts, scope, rc.userId]);
-  const { balances: todayViews } = useAccountBalances(hh, accounts);
+  const { balances: todayViews, isLoading: balancesLoading, isError: balancesError } = useAccountBalances(hh, accounts);
   const rates = fx.data ?? NO_RATES;
   const customs = customsQuery.data ?? NO_CUSTOMS;
   const holdings = holdingsQuery.data ?? NO_HOLDINGS;
@@ -241,8 +241,16 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
 
   const accountIds = useMemo(() => new Set(accounts.map((a) => a.id)), [accounts]);
   const dataKey = reads.map((r) => r.dataUpdatedAt).join(',');
-  const anyLoading = reads.some((r) => r.data === undefined && !r.isError) || accountsQuery.isLoading || monthsRead.isLoading;
-  const anyError = reads.some((r) => r.isError && r.data === undefined) || (accountsQuery.isError && accountsQuery.data === undefined);
+  // CR-01: every input the figure depends on gates the status, so a partial figure is never shown as final.
+  // Scope Household uses neither debts nor holdings, so their reads do not hold it back.
+  const inputReads = [accountsQuery, fx, customsQuery, ...(scope === 'mine' ? [debtsQuery, holdingsQuery, lotsQuery] : [])];
+  const anyLoading =
+    reads.some((r) => r.data === undefined && !r.isError) ||
+    monthsRead.isLoading ||
+    balancesLoading ||
+    inputReads.some((q) => q.isLoading === true);
+  const anyError =
+    reads.some((r) => r.isError && r.data === undefined) || balancesError || inputReads.some((q) => q.isError === true && q.data === undefined);
 
   const computed = useMemo(() => {
     const unconvertedIds = new Set<string>();
@@ -272,7 +280,7 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
   const points = computed.points;
   const retry = (): void => {
     reads.forEach((r) => void r.refetch());
-    void accountsQuery.refetch();
+    for (const q of inputReads) void q.refetch?.();
   };
   return {
     status,
