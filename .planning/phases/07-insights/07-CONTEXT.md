@@ -63,6 +63,12 @@ Not in this phase: Home changes (D-17), a household health score (D-19), Share/B
 - **D-29:** The net-worth line shows 3 value labels down its side (low, middle, high) in the meta text style, and month labels thin out with the point count (every third label above 24 points; never overlapping), per 07-UI-SPEC. Overrides the 07-08 build, which drew no value labels. Built in 07-10.
 - **D-30:** The D-27 note under "Where it went" shows always, in both the single-month and range views.
 
+### Owner answers after code review (2026-11-23)
+- **D-31 (WR-04):** Household Money in counts every shared income line that carries no counts-as / income-kind mark; lines a member marked "not money to spend" stay out. Fixed in figureScope householdSnapshotRows (no engine change).
+- **D-32 (WR-03):** A partner's own category on a shared line shows as "<category name> (<partner name>)", e.g. "Pets (Sam)". Read through a security-definer RPC that returns only id, builtin_key, name, color_key, icon_key for categories on lines/series shared into the caller's households (never monthly_cap or archived_at; no new select policy).
+- **D-33 (WR-03):** The viewer's own category pick on a partner's shared line (transaction_member_categories) wins in both Just me and Household. Resolution order: member override, then the viewer's category with the same builtin_key, then the partner category.
+- **D-34:** Decide reads shared lines through the same category resolution now (Phase 7), so a partner's shared Savings line is treated as saving and the viewer's money rules apply to shared lines. Applied in the data layer before the engine; engine untouched. Decide answers for Household members with partner-categorised shared lines may move.
+
 ### Claude's Discretion
 - The range for the money in/out bars and comparison mode: the same 6M / 1Y / All control, defaulting to 6M.
 - Section order on the Insights screen, empty screens (06.2 empty-state pattern: icon + one line + button), and loading and offline states.
