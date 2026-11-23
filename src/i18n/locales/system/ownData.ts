@@ -48,6 +48,18 @@ export const ownData = {
     importRows: 'Import {{count}} rows',
     addedToast: '{{count}} {{kind}} added',
     unreadable: 'This file could not be read. Check that it is a CSV saved from FincWin or the template.',
+    nameMissing: 'Name missing',
+    badAmount: 'Amount not understood',
+    badDate: 'Date not understood',
+    badChoice: 'Value not recognised',
+    badId: 'Id not understood',
+    outOfRange: 'A value is out of range',
+    kindAccounts: 'accounts',
+    kindGoals: 'goals',
+    kindDebts: 'debts',
+    kindInvestments: 'investments',
+    templateSaved: 'Template saved',
+    noneToImport: 'Nothing to import yet.',
   },
   // 10-17: the Export screen's file list (UI-SPEC Navigation: Export gains the table list and an Import link)
   exportFiles: {
