@@ -41,6 +41,8 @@ export interface RowProps {
   status?: ReactNode;
   /** The status word spoken in the row's sentence when the row is pressable. */
   statusText?: string;
+  /** 07-06: content under the text block, full row width (Insights category share bar). */
+  footer?: ReactNode;
 }
 
 export function Row({
@@ -60,6 +62,7 @@ export function Row({
   amountTone = 'ink',
   status,
   statusText,
+  footer,
 }: RowProps) {
   const { colors, pairing } = useTheme();
   const labelStyle = { ...textRole(pairing, emphasis ? 'bodyStrong' : 'body'), color: colors.ink };
@@ -82,10 +85,15 @@ export function Row({
           {leading}
         </View>
       ) : null}
-      {sublabel ? (
+      {sublabel || footer ? (
         <View style={styles.label}>
           <Text style={labelStyle}>{label}</Text>
-          <Text style={{ ...textRole(pairing, 'label'), color: colors[sublabelTone] }}>{sublabel}</Text>
+          {sublabel ? <Text style={{ ...textRole(pairing, 'label'), color: colors[sublabelTone] }}>{sublabel}</Text> : null}
+          {footer ? (
+            <View testID="row-footer-slot" style={styles.footer}>
+              {footer}
+            </View>
+          ) : null}
         </View>
       ) : (
         <Text style={[styles.label, labelStyle]}>{label}</Text>
@@ -149,5 +157,8 @@ const styles = StyleSheet.create({
   },
   label: {
     flex: 1,
+  },
+  footer: {
+    marginTop: step.hair,
   },
 });

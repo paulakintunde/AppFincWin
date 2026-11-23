@@ -58,9 +58,10 @@ export function StatTile({ label, value, status, statusText, testID }: StatTileP
   );
 }
 
-export function StatTileRow({ children, testID }: { children: ReactNode; testID?: string }) {
+// 07-06: In / Out / Left strip (UI-SPEC): columns={3} holds three tiles; the default stays two.
+export function StatTileRow({ children, testID, columns = 2 }: { children: ReactNode; testID?: string; columns?: 2 | 3 }) {
   const stacked = useShouldStack();
-  const tiles = Children.toArray(children).slice(0, 2);
+  const tiles = Children.toArray(children).slice(0, columns);
   return (
     <View testID={testID ?? 'stat-tile-row'} style={stacked ? styles.stack : styles.row}>
       {tiles.map((tile, i) => (
