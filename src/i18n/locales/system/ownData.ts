@@ -49,6 +49,14 @@ export const ownData = {
     addedToast: '{{count}} {{kind}} added',
     unreadable: 'This file could not be read. Check that it is a CSV saved from FincWin or the template.',
   },
+  // 10-17: the Export screen's file list (UI-SPEC Navigation: Export gains the table list and an Import link)
+  exportFiles: {
+    show: 'Show the {{count}} files',
+    hide: 'Hide the files',
+    intro: 'These files are written, one per kind of record.',
+    serverRecords: 'Records held on our server, such as your plan and Decide test results',
+    importLink: 'Import from CSV',
+  },
   // 10 diagnostic export
   diagnostic: {
     title: 'Diagnostic export',
