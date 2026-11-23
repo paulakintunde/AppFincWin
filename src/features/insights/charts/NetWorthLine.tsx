@@ -71,9 +71,7 @@ export function NetWorthLine({ points, currency, selected, onSelect, summary, te
   const spacing = points.length > 1 ? (width - 16) / (points.length - 1) : width;
   const labelStep = Math.max(points.length > 24 ? 3 : 1, Math.ceil(LABEL_W / spacing));
   // D-29: three value labels (low, middle, high) on the same scale linePoints uses (0 is always inside the range).
-  const span = max - min || 1;
-  const yOf = (v: number): number => 8 + (HEIGHT - 16) - ((HEIGHT - 16) * (v - min)) / span;
-  const ticks = [min, Math.round((min + max) / 2), max].map((v) => ({ v, y: yOf(v) }));
+  const ticks = [min, Math.round((min + max) / 2), max];
   const metaStyle = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
   const sel = selected !== null ? points[selected] : undefined;
 
@@ -84,70 +82,78 @@ export function NetWorthLine({ points, currency, selected, onSelect, summary, te
           {t('insights.netWorth.readout', { date: f.date(sel.date), amount: f.money(sel.value) })}
         </Text>
       ) : null}
-      <View onLayout={(e: LayoutChangeEvent) => setWidth(Math.max(120, e.nativeEvent.layout.width))}>
-        <View testID={`${testID}-image`} accessible accessibilityRole="image" accessibilityLabel={summary}>
-          <Svg width={width} height={HEIGHT} importantForAccessibility="no-hide-descendants">
-            <Line x1={8} x2={width - 8} y1={HEIGHT - 8} y2={HEIGHT - 8} stroke={colors.line3} strokeWidth={1} />
-            {crossesZero ? <Line testID={`${testID}-zero`} x1={8} x2={width - 8} y1={zeroY} y2={zeroY} stroke={colors.line2} strokeWidth={1} /> : null}
-            {points.length > 1 ? (
-              draws ? (
-                <AnimatedPath
-                  testID={`${testID}-path`}
-                  d={linePath(values, width, HEIGHT)}
-                  stroke={colors.accent}
-                  strokeWidth={2}
-                  fill="none"
-                  strokeDasharray={[length, length]}
-                  animatedProps={reveal}
-                />
-              ) : (
-                <Path testID={`${testID}-path`} d={linePath(values, width, HEIGHT)} stroke={colors.accent} strokeWidth={2} fill="none" />
-              )
-            ) : null}
-            {xy.map((p, i) =>
-              i === lastIndex ? (
-                <AnimatedCircle
-                  key={points[i]!.date}
-                  testID={`${testID}-dot-${i}`}
-                  cx={p.x}
-                  cy={p.y}
-                  r={4}
-                  fill={colors.accent}
-                  stroke={colors.surface}
-                  strokeWidth={2}
-                  animatedProps={lastFade}
-                />
-              ) : (
-                <Circle key={points[i]!.date} testID={`${testID}-dot-${i}`} cx={p.x} cy={p.y} r={2.5} fill={colors.accent} />
-              ),
-            )}
-          </Svg>
-        </View>
-        {ticks.map((tk, i) => (
-          <Text key={`tick-${i}`} testID={`${testID}-tick-${i}`} pointerEvents="none" style={[metaStyle, { position: 'absolute', left: 8, top: Math.min(Math.max(0, tk.y - 16), HEIGHT - 16) }]}>
-            {f.money(tk.v)}
-          </Text>
-        ))}
-        {xy.map((p, i) => (
-          <Pressable
-            key={points[i]!.date}
-            testID={`${testID}-point-${i}`}
-            accessibilityRole="button"
-            accessibilityLabel={t('insights.netWorth.pointA11y', { date: f.date(points[i]!.date), amount: f.spoken(points[i]!.value) })}
-            accessibilityState={{ selected: selected === i }}
-            onPress={() => onSelect(i)}
-            style={{ position: 'absolute', left: p.x - TARGET / 2, top: p.y - TARGET / 2, width: TARGET, height: TARGET }}
-          />
-        ))}
-      </View>
-      <View style={styles.axis}>
-        {points.map((p, i) =>
-          (lastIndex - i) % labelStep === 0 ? (
-            <Text key={p.date} style={[metaStyle, { position: 'absolute', left: Math.min(Math.max(0, xy[i]!.x - LABEL_W / 2), width - LABEL_W), width: LABEL_W, textAlign: 'center' }]}>
-              {monthShort(p.date.slice(0, 7), locale, false)}
+      {/* Pixel 9 fix: the low / middle / high labels (D-29) sit in their own gutter left of the plot, top, middle and
+          bottom against the plot's padded range, so they never sit on the line or a dot. */}
+      <View style={styles.chartRow}>
+        <View testID={`${testID}-ticks`} pointerEvents="none" style={[styles.ticks, { height: HEIGHT }]}>
+          {[2, 1, 0].map((i) => (
+            <Text key={`tick-${i}`} testID={`${testID}-tick-${i}`} style={[metaStyle, styles.tickText]}>
+              {f.money(ticks[i]!)}
             </Text>
-          ) : null,
-        )}
+          ))}
+        </View>
+        <View style={styles.plot}>
+          <View onLayout={(e: LayoutChangeEvent) => setWidth(Math.max(120, e.nativeEvent.layout.width))}>
+            <View testID={`${testID}-image`} accessible accessibilityRole="image" accessibilityLabel={summary}>
+              <Svg width={width} height={HEIGHT} importantForAccessibility="no-hide-descendants">
+                <Line x1={8} x2={width - 8} y1={HEIGHT - 8} y2={HEIGHT - 8} stroke={colors.line3} strokeWidth={1} />
+                {crossesZero ? <Line testID={`${testID}-zero`} x1={8} x2={width - 8} y1={zeroY} y2={zeroY} stroke={colors.line2} strokeWidth={1} /> : null}
+                {points.length > 1 ? (
+                  draws ? (
+                    <AnimatedPath
+                      testID={`${testID}-path`}
+                      d={linePath(values, width, HEIGHT)}
+                      stroke={colors.accent}
+                      strokeWidth={2}
+                      fill="none"
+                      strokeDasharray={[length, length]}
+                      animatedProps={reveal}
+                    />
+                  ) : (
+                    <Path testID={`${testID}-path`} d={linePath(values, width, HEIGHT)} stroke={colors.accent} strokeWidth={2} fill="none" />
+                  )
+                ) : null}
+                {xy.map((p, i) =>
+                  i === lastIndex ? (
+                    <AnimatedCircle
+                      key={points[i]!.date}
+                      testID={`${testID}-dot-${i}`}
+                      cx={p.x}
+                      cy={p.y}
+                      r={4}
+                      fill={colors.accent}
+                      stroke={colors.surface}
+                      strokeWidth={2}
+                      animatedProps={lastFade}
+                    />
+                  ) : (
+                    <Circle key={points[i]!.date} testID={`${testID}-dot-${i}`} cx={p.x} cy={p.y} r={2.5} fill={colors.accent} />
+                  ),
+                )}
+              </Svg>
+            </View>
+            {xy.map((p, i) => (
+              <Pressable
+                key={points[i]!.date}
+                testID={`${testID}-point-${i}`}
+                accessibilityRole="button"
+                accessibilityLabel={t('insights.netWorth.pointA11y', { date: f.date(points[i]!.date), amount: f.spoken(points[i]!.value) })}
+                accessibilityState={{ selected: selected === i }}
+                onPress={() => onSelect(i)}
+                style={{ position: 'absolute', left: p.x - TARGET / 2, top: p.y - TARGET / 2, width: TARGET, height: TARGET }}
+              />
+            ))}
+          </View>
+          <View style={styles.axis}>
+            {points.map((p, i) =>
+              (lastIndex - i) % labelStep === 0 ? (
+                <Text key={p.date} style={[metaStyle, { position: 'absolute', left: Math.min(Math.max(0, xy[i]!.x - LABEL_W / 2), width - LABEL_W), width: LABEL_W, textAlign: 'center' }]}>
+                  {monthShort(p.date.slice(0, 7), locale, false)}
+                </Text>
+              ) : null,
+            )}
+          </View>
+        </View>
       </View>
     </View>
   );
@@ -155,5 +161,10 @@ export function NetWorthLine({ points, currency, selected, onSelect, summary, te
 
 const styles = StyleSheet.create({
   column: { gap: step.tight },
+  chartRow: { flexDirection: 'row', gap: step.tight },
+  // The plot pads 8 top and bottom; a meta line is about 16 tall, so top and bottom labels centre on the high and low.
+  ticks: { justifyContent: 'space-between' },
+  tickText: { textAlign: 'right' },
+  plot: { flex: 1, minWidth: 0, gap: step.tight },
   axis: { height: 18 },
 });

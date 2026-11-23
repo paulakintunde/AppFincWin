@@ -156,6 +156,23 @@ describe('NetWorthLine', () => {
     expect(getByTestId('net-worth-line-tick-1', opts).props.children).toBe('$1,000');
     expect(getByTestId('net-worth-line-tick-2', opts).props.children).toBe('$2,000');
   });
+  it('sets the value labels in a gutter beside the plot, never over the line or a dot (Pixel 9: $0 sat on the first point)', async () => {
+    const pts = [{ date: '2026-05-31', value: 0 }, { date: '2026-06-30', value: 0 }, { date: '2026-11-22', value: 2821213 }];
+    const { getByTestId } = await wrap(<NetWorthLine points={pts} currency="USD" selected={null} onSelect={() => undefined} summary="s" />);
+    const gutter = getByTestId('net-worth-line-ticks', opts);
+    const image = getByTestId('net-worth-line-image', opts);
+    // the gutter holds all three labels, high at the top and low at the bottom, and none is positioned over the plot
+    const labels = [2, 1, 0].map((i) => getByTestId(`net-worth-line-tick-${i}`, opts));
+    for (const l of labels) {
+      expect(l.parent?.parent === gutter || l.parent === gutter).toBe(true);
+      expect(flat(l.props.style).position).toBeUndefined();
+    }
+    expect(labels.map((l) => l.props.children)).toEqual(['$28,212.13', '$14,106.07', '$0']);
+    // the gutter is not inside the plot: the image (line and dots) is not under it
+    let p = image.parent;
+    while (p && p !== gutter) p = p.parent;
+    expect(p).toBeNull();
+  });
   it('thins month labels past 24 points and never lets two labels overlap', async () => {
     const many = Array.from({ length: 30 }, (_, i) => ({ date: `${2024 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}-28`, value: 100 + i }));
     const { queryAllByText } = await wrap(<NetWorthLine points={many} currency="USD" selected={null} onSelect={() => undefined} summary="s" />);
