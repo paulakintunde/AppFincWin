@@ -165,7 +165,9 @@ export async function exportCsv(client: DbClient, opts?: ExportOptions): Promise
     fetchServerRecords: async () => {
       const { data, error } = await client.rpc('my_server_export');
       if (error) throw error;
-      return (data ?? []) as unknown as ServerRecord[];
+      // The RPC column is record_json (`row` is a reserved word in Postgres)
+      const out = (data ?? []) as unknown as { table_name: string; record_json: unknown }[];
+      return out.map((r) => ({ table_name: r.table_name, row: r.record_json }));
     },
   });
 

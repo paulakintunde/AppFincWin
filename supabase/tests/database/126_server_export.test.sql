@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(9);
+select extensions.plan(8);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 values
@@ -32,14 +32,14 @@ set local role authenticated;
 set local request.jwt.claims = '{"sub":"12600000-0000-4000-8000-0000000000a1","role":"authenticated"}';
 
 select extensions.is((select count(*)::int from public.my_server_export() where table_name = 'decide_shadow_runs'), 1, 'A gets own shadow run');
-select extensions.is((select row ->> 'code' from public.my_server_export() where table_name = 'decide_shadow_runs'), 'fits_month', 'A shadow run is A''s');
+select extensions.is((select record_json ->> 'code' from public.my_server_export() where table_name = 'decide_shadow_runs'), 'fits_month', 'A shadow run is A''s');
 select extensions.is((select count(*)::int from public.my_server_export() where table_name = 'household_plans'), 1, 'A gets own household plan');
 select extensions.is((select count(*)::int from public.my_server_export() where table_name = 'plan_events'), 1, 'A gets own plan event');
-select extensions.is((select row ->> 'kind' from public.my_server_export() where table_name = 'plan_events'), 'INITIAL_PURCHASE', 'A event is A''s');
-select extensions.is((select count(*)::int from public.my_server_export() where row::text like '%payer_id%' or row::text like '%app_user_id%'), 0, 'no id columns leak');
+select extensions.is((select record_json ->> 'kind' from public.my_server_export() where table_name = 'plan_events'), 'INITIAL_PURCHASE', 'A event is A''s');
+select extensions.is((select count(*)::int from public.my_server_export() where record_json::text like '%payer_id%' or record_json::text like '%app_user_id%'), 0, 'no id columns leak');
 
 set local request.jwt.claims = '{"sub":"12600000-0000-4000-8000-0000000000a2","role":"authenticated"}';
-select extensions.is((select count(*)::int from public.my_server_export() where row ->> 'code' = 'fits_month' or row ->> 'kind' = 'INITIAL_PURCHASE'), 0, 'B sees none of A''s rows');
+select extensions.is((select count(*)::int from public.my_server_export() where record_json ->> 'code' = 'fits_month' or record_json ->> 'kind' = 'INITIAL_PURCHASE'), 0, 'B sees none of A''s rows');
 
 reset role;
 set local role anon;

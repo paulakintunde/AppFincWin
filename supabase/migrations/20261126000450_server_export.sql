@@ -1,8 +1,8 @@
 -- Phase 10 (10-17): DAT-02 server-held records the client cannot read, for the person's own export.
--- One RPC returns (table_name, row) pairs for the caller only: their Decide shadow results, their household's plan
+-- One RPC returns (table_name, record_json) pairs for the caller only: their Decide shadow results, their household's plan
 -- state, and the plan events that name them. Never another person's id (payer_id, user ids, store ids, payloads).
 create function public.my_server_export()
-returns table (table_name text, row jsonb)
+returns table (table_name text, record_json jsonb)
 language plpgsql
 stable
 security definer
