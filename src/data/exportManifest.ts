@@ -174,16 +174,32 @@ export const NOT_USER_DATA: readonly string[] = [
   'statement_periods_live', // a view over statement_periods; exported through statement_periods
   'household_event_reads', // 08-13: one last-opened time per user for the notices badge; no content, erased by FK cascade
   'partner_figures', // 08.1-03: a derived, rounded "left so far" the owner's device publishes; no client read grant (RPC only); erased with the opt-in and by FK cascade
-  'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; added to the server export in Phase 10 (CMP-F06 export)
+  'decide_shadow_runs', // rounded engine results, no client read; erased by FK cascade; exported through my_server_export() (10-17)
   // 09: plan and billing bookkeeping. Server-held, written by edge functions, no client read in src/db; the person's plan
-  // facts reach the server export in Phase 10 (09-18 builds the CSV from this manifest).
+  // facts reach the person's export through my_server_export() (10-17, server-records.csv).
   'plan_products', // the store product catalogue; no user data
-  'household_plans', // the household's plan state and trial dates; billing bookkeeping, erased by FK cascade
-  'plan_events', // append-only plan change log for support and audit; server-written
+  'household_plans', // the household's plan state and trial dates; erased by FK cascade; exported through my_server_export() (10-17)
+  'plan_events', // append-only plan change log for support and audit; server-written; the person's own events are in my_server_export() (10-17)
   'trial_ledger', // one row per trial ever used, kept to stop repeat trials; server-only, hashed identifiers
   'household_leave_log', // rate-limit record of recent leaves for the switch rule; server-only
   'plan_join_requests', // a transient ask to join a plan; erased on resolve or FK cascade
   'plan_settings', // the plan owner's seat and invite settings; plan bookkeeping, not personal records
   'devices', // 10: session bookkeeping; shown in Security, rebuilt on sign-in
   'push_tokens', // 10: the device address for push, not a record; erased by FK cascade
+  // 10-17 migration-aware guard: older server-only tables that had no src/db module, so the src/db guard never saw them
+  'app_config', // public app settings changed only by migrations; no user data
+  'currencies', // the shared currency catalogue; no user data
+  'debt_line_applied', // server bookkeeping of what a paid line took off a debt; derived from transactions and debts, erased with them
+  'fx_alerts', // operator notices about the rate feed; no user data
+  'fx_rate_fetch_failures', // negative cache for rate fetches; no user data
+  'fx_rate_holds', // held rates awaiting operator review; no user data
+  'fx_rate_lookups', // which rate date a fetch returned; no user data
+  'fx_rates', // shared daily exchange rates; no user data
+  'fx_resolve_calls', // per-user hourly call counter for rate fetches; a counter, no records
+  'redeem_attempts', // invite-code attempt log for rate limiting; no records, erased by FK cascade
+  'settlement_nudges', // who nudged whom to settle; server-only, no client read, erased by FK cascade
+  'rate_limits', // 10: a server counter, keys only, no records
+  'account_deletion_log', // 10 (D-19): ids of deleted accounts kept so restores can purge them; no records
+  'alert_outbox', // 10: the push delivery queue; the person's alerts are exported through alert_log
+  'reviewer_allowlist', // 10: store-review emails, operator-managed
 ];
