@@ -5,6 +5,7 @@ import React, { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { Href } from 'expo-router';
 import type { InsightsRange } from '@/engine/insights';
+import { useTransactionMonths } from '@/data/queries/activity';
 import { useInsightsPrepared } from '@/data/queries/insights';
 import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
 import { openEntry } from '@/features/record/entry/entryHost';
@@ -33,6 +34,7 @@ export function InsightsScreen() {
   const [range, setRange] = useState<InsightsRange>('6m');
   const s = useInsightsScope();
   const data = useInsightsPrepared(s.scope, s.householdCurrency);
+  const entries = useTransactionMonths(s.householdId, s.today);
   const visible = useFeatureAccess('insights').visible;
   const showNetWorth = useFeatureAccess('netWorthTrend').visible;
   const showScore = useFeatureAccess('healthScore').visible;
@@ -48,7 +50,11 @@ export function InsightsScreen() {
 
   const household = s.scope === 'household';
   const prepared = data.prepared;
-  const empty = visible && data.status === 'ready' && prepared !== null && recordedMonths(prepared).length === 0;
+  // WR-02: Decide's inputs hold no months until one full month is logged, so a first-month user has none here. In Just me the whole-tab
+  // empty state is for a user with no entries at all; with entries this month the sections show and each owns its own empty state.
+  const hasEntries = entries.months.some((m) => (entries.counts.get(m) ?? 0) > 0);
+  const empty =
+    visible && data.status === 'ready' && prepared !== null && recordedMonths(prepared).length === 0 && !(s.scope === 'mine' && hasEntries);
 
   let body: React.ReactNode;
   if (!visible || empty) {
