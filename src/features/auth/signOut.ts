@@ -12,6 +12,7 @@
 // Tests always inject a fake `supabase` dep, so the dynamic import is never reached.
 import { getPendingWriteCount as realGetPendingWriteCount, wipeDeviceData as realWipeDeviceData } from '@/services/storage/wipe';
 import { getAnalytics } from '@/services/analytics';
+import { lastSignOutReason, setLocalSignOutInProgress, setSignOutReason } from './signOutReason';
 
 export interface SignOutAnalytics {
   disable(): Promise<void>;
@@ -76,15 +77,22 @@ export async function requestSignOut(deps?: Partial<SignOutDeps>): Promise<Reque
 export async function performSignOut(deps?: Partial<SignOutDeps>): Promise<void> {
   const resolved = await resolveDeps(deps);
 
-  await resolved.analytics.disable();
-
+  // 10-12: tells AuthProvider this SIGNED_OUT is ours, so it does not treat it as a remote sign-out.
+  setLocalSignOutInProgress(true);
+  if (lastSignOutReason() !== 'remote') setSignOutReason('local');
   try {
-    await resolved.supabase.auth.signOut({ scope: 'local' });
-  } catch {
-    // Offline or network failure — the local wipe below still removes the session, so the
-    // user is effectively signed out on this device regardless.
-  }
+    await resolved.analytics.disable();
 
-  await resolved.wipeDeviceData();
-  resolved.resetTheme();
+    try {
+      await resolved.supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      // Offline or network failure — the local wipe below still removes the session, so the
+      // user is effectively signed out on this device regardless.
+    }
+
+    await resolved.wipeDeviceData();
+    resolved.resetTheme();
+  } finally {
+    setLocalSignOutInProgress(false);
+  }
 }
