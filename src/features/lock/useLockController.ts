@@ -29,12 +29,16 @@ export function useLockController(): LockController {
   // A restored process counts as a cold start (UI-SPEC 1d): the first load locks whenever the lock is on.
   useEffect(() => {
     alive.current = true;
-    void loadLockState().then((s) => {
-      if (!alive.current) return;
-      setState(s);
-      setLocked(shouldLockOnActive(s, Date.now(), true));
-      setReady(true);
-    });
+    void loadLockState()
+      .then((s) => {
+        if (!alive.current) return;
+        setState(s);
+        setLocked(shouldLockOnActive(s, Date.now(), true));
+      })
+      .catch(() => undefined) // an unreadable store must not trap the person on a blank screen
+      .then(() => {
+        if (alive.current) setReady(true);
+      });
     return () => {
       alive.current = false;
     };
