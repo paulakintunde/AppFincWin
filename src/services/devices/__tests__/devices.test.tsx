@@ -100,7 +100,7 @@ describe('useDevices and revoke', () => {
     const qc = newClient();
     const { result } = await renderHook(() => useDevices('u1', getClient), { wrapper: wrapperFor(qc) });
     await waitFor(() => expect(result.current.data?.length).toBe(2));
-    expect(result.current.data?.[0].sessionId).toBe('s1');
+    expect(result.current.data?.[0]?.sessionId).toBe('s1');
   });
 
   it('revoke calls the rpc then invalidates the list', async () => {
