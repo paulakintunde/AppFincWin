@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { FigureScope } from '@/data/queries/figureScope';
 import { STORAGE_PREFIX } from '@/services/storage/wipe';
 
-export type FigureScreen = 'home';
+export type FigureScreen = 'home' | 'insights';
 
 export function figureScopeKey(screen: FigureScreen): string {
   return `${STORAGE_PREFIX}figureScope.${screen}`;
