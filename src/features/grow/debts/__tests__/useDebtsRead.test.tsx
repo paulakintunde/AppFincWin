@@ -190,6 +190,20 @@ describe('buildDebtsModel on the LEDGER', () => {
   });
 });
 
+describe('261123 (DD-01): rate unknown', () => {
+  it('a carried debt with no stored rate is flagged and named in the plan; a typed 0 is not', () => {
+    const m = buildDebtsModel([{ ...AUTO, apr: null }, { ...CARD, apr: '0' }], LEDGER_TODAY);
+    expect(m.debts.find((d) => d.id === 'auto')?.rateUnknown).toBe(true);
+    expect(m.debts.find((d) => d.id === 'card')?.rateUnknown).toBe(false);
+    expect(m.rateUnknownInPlan).toEqual(['Auto loan']);
+  });
+  it('a card paid in full is never "rate unknown"', () => {
+    const m = buildDebtsModel([{ ...CARD, apr: null, pays_in_full: 'yes' }], LEDGER_TODAY);
+    expect(m.paidInFull[0]?.rateUnknown).toBe(false);
+    expect(m.rateUnknownInPlan).toEqual([]);
+  });
+});
+
 describe('useDebtsRead', () => {
   it('reports loading, error and ready', async () => {
     const loading = await renderHook(() => useDebtsRead());

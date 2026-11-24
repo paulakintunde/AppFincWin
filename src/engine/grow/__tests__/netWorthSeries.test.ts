@@ -8,6 +8,7 @@ import {
   type SeriesAccount,
   type SeriesDebt,
   type SeriesHolding,
+  workedBackBalance,
 } from '../netWorthSeries';
 
 const pt = (date: string, isToday: boolean, balances: [string, number][], legs: string[] = []): PointSource => ({
@@ -129,6 +130,84 @@ describe('netWorthSeries', () => {
     const debts: SeriesDebt[] = [{ account_id: null, balance: 120, startedBalance: null, paidOffOn: '2026-09-10' }];
     const out = netWorthSeries({ accounts: [], holdings: [], debts, points: [pt('2026-08-31', false, [])] });
     expect(out[0]!.value).toBe(-120);
+  });
+});
+
+describe('261123 (DD-07): start dates and worked-back loans', () => {
+  const points = [pt('2026-06-30', false, []), pt('2026-08-31', false, []), pt('2026-09-30', false, []), pt('2026-11-22', true, [])];
+
+  it('a debt is left out of every month-end before its start date, held flat after it', () => {
+    const debts: SeriesDebt[] = [{ account_id: null, balance: 500, startedBalance: null, paidOffOn: null, startDate: '2026-08-15' }];
+    const out = netWorthSeries({ accounts: [], holdings: [], debts, points });
+    expect(out.map((p) => p.value)).toEqual([0, -500, -500, -500]);
+    expect(out.map((p) => p.debtsHeldFlat)).toEqual([false, true, true, false]);
+  });
+
+  it('a fixed loan is today plus the payments after each month-end, capped at the original amount', () => {
+    const debts: SeriesDebt[] = [
+      {
+        account_id: null,
+        balance: 700,
+        startedBalance: 1000,
+        paidOffOn: null,
+        startDate: '2026-06-01',
+        fixed: true,
+        payments: [
+          { date: '2026-07-01', amount: 200 },
+          { date: '2026-09-01', amount: 100 },
+          { date: '2026-10-01', amount: 100 },
+        ],
+      },
+    ];
+    const out = netWorthSeries({ accounts: [], holdings: [], debts, points });
+    // 06-30: 700 + 400 = 1100 -> capped 1000; 08-31: 700 + 200; 09-30: 700 + 100; today: 700.
+    expect(out.map((p) => p.value)).toEqual([-1000, -900, -800, -700]);
+    expect(out.every((p) => !p.debtsHeldFlat)).toBe(true);
+  });
+
+  it('a paid-off fixed loan is worked back before the paid-off date and gone on and after it', () => {
+    const debts: SeriesDebt[] = [
+      {
+        account_id: null,
+        balance: 0,
+        startedBalance: 900,
+        paidOffOn: '2026-09-10',
+        startDate: '2026-07-01',
+        fixed: true,
+        payments: [
+          { date: '2026-08-01', amount: 300 },
+          { date: '2026-09-10', amount: 600 },
+        ],
+      },
+    ];
+    const out = netWorthSeries({ accounts: [], holdings: [], debts, points });
+    expect(out.map((p) => p.value)).toEqual([0, -600, 0, 0]);
+  });
+
+  it('without payments, or when revolving, the old rule stays', () => {
+    const base = { account_id: null, balance: 400, startedBalance: 1000, paidOffOn: null, startDate: '2026-01-01' };
+    const out = netWorthSeries({
+      accounts: [],
+      holdings: [],
+      debts: [
+        { ...base, fixed: true, payments: [] },
+        { ...base, fixed: false, payments: [{ date: '2026-10-01', amount: 100 }] },
+      ],
+      points: [pt('2026-08-31', false, [])],
+    });
+    expect(out[0]!.value).toBe(-800);
+    expect(out[0]!.debtsHeldFlat).toBe(true);
+  });
+
+  it('workedBackBalance is null unless the loan can be worked back, and never passes the original amount', () => {
+    const d: SeriesDebt = { account_id: null, balance: 10, startedBalance: 50, paidOffOn: null, startDate: '2026-01-01', fixed: true, payments: [{ date: '2026-05-01', amount: 5 }] };
+    expect(workedBackBalance(d, '2026-04-30')).toBe(15);
+    expect(workedBackBalance(d, '2026-05-01')).toBe(10);
+    expect(workedBackBalance({ ...d, startDate: null }, '2026-04-30')).toBeNull();
+    expect(workedBackBalance({ ...d, startedBalance: null }, '2026-04-30')).toBeNull();
+    expect(workedBackBalance({ ...d, payments: undefined }, '2026-04-30')).toBeNull();
+    const huge: SeriesDebt = { ...d, balance: Number.MAX_SAFE_INTEGER, startedBalance: Number.MAX_SAFE_INTEGER, payments: [{ date: '2026-05-01', amount: 1 }] };
+    expect(workedBackBalance(huge, '2026-04-30')).toBe(Number.MAX_SAFE_INTEGER);
   });
 });
 

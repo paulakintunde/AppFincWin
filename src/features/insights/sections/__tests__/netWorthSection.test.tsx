@@ -156,6 +156,18 @@ describe('NetWorthSectionView', () => {
     expect(a.getByTestId('net-worth-loading', opts)).toBeTruthy();
   });
 
+  // 261123 (Pixel 9 TalkBack and offline check).
+  it.each(['loading', 'offline', 'error'] as const)('keeps the Net worth heading on the %s state', async (status) => {
+    const a = await view(state({ status, points: [], current: null, change: null }));
+    expect(a.getByText('Net worth', opts).props.accessibilityRole).toBe('header');
+  });
+
+  it('announces the figure as "Net worth, <amount>, as of today", and the visible "as of today" once', async () => {
+    const { getByTestId, getByText } = await view(state({ current: 2821213 }));
+    expect(getByTestId('net-worth-figure', opts).props.accessibilityLabel).toMatch(/^Net worth, .+, as of today$/);
+    expect(getByText('as of today', opts).props.accessibilityElementsHidden).toBe(true);
+  });
+
   it('shows the offline line and no figure when an input is paused with no cache (NR-01)', async () => {
     const a = await view(state({ status: 'offline' }));
     expect(a.getByTestId('net-worth-offline', opts)).toBeTruthy();

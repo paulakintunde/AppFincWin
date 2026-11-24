@@ -433,3 +433,29 @@ describe('Phase 6 review fixes (P3)', () => {
     expect(call.paymentName.endsWith('… final payment')).toBe(true);
   });
 });
+
+describe('261123 debt details on the detail screen (DD-01, DD-05)', () => {
+  it('DD-01: an unknown rate is named, and its interest reads as not counted, never as none', async () => {
+    mockRows = [{ ...AUTO, apr: null }];
+    await wrap(<DebtDetailScreen id="auto" />);
+    expect(screen.getByText(en.grow.debts.detail.rateUnknownValue)).toBeTruthy();
+    expect(screen.getByText(en.grow.debts.detail.interestNotCountedValue)).toBeTruthy();
+    expect(screen.queryByText(/about \$0/)).toBeNull();
+    expect(screen.getByText(en.grow.debts.detail.whatIfInterestUnknown)).toBeTruthy();
+  });
+
+  it('DD-05: the quiet ask names what is missing; Add opens the edit sheet; nothing blocks the screen', async () => {
+    mockRows = [{ ...AUTO, start_date: null, started_balance: null }];
+    await wrap(<DebtDetailScreen id="auto" />);
+    expect(screen.getByText(en.grow.debts.ask.startAndOriginal)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('debt-ask-add-auto'));
+    expect(screen.getByLabelText(en.grow.debts.add.original)).toBeTruthy();
+  });
+
+  it('DD-03: a card names its limit and is not asked for it', async () => {
+    mockRows = [{ ...VISA, credit_limit: 500000 }];
+    await wrap(<DebtDetailScreen id="visa" />);
+    expect(screen.getByText('$5,000')).toBeTruthy();
+    expect(screen.queryByText(en.grow.debts.ask.limit)).toBeNull();
+  });
+});

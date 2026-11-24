@@ -80,6 +80,10 @@ describe('export manifest (05.2 owner OQ3, C13)', () => {
     }
   });
 
+  it('261123 (DD-03): a debt exports its credit limit and whether it revolves', () => {
+    expect(EXPORT_MANIFEST.debts).toEqual(expect.arrayContaining(['credit_limit', 'revolving', 'start_date']));
+  });
+
   it('05.3 D-16: decide_checks exports answer_v3', () => {
     expect(EXPORT_MANIFEST.decide_checks).toContain('answer_v3');
   });

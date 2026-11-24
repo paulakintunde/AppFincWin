@@ -1,6 +1,6 @@
 import { percent } from '@/engine/payoff';
 import { LEDGER_TODAY, autoLoan } from '@/engine/grow/__tests__/fixtures/ledger';
-import { debtPointOf, debtToV3Debt } from '../index';
+import { debtPointOf, debtToV3Debt, rateUnknownOf } from '../index';
 import type { DebtSourceRow } from '../types';
 
 const loan: DebtSourceRow = {
@@ -91,5 +91,16 @@ describe('debtPointOf', () => {
     expect(debtPointOf(card, LEDGER_TODAY)).toMatchObject({ paidInFull: true, payoffDate: null, totalInterest: null, linkedCheckId: 'chk' });
     expect(debtPointOf({ ...card, pays_in_full: 'sometimes' }, LEDGER_TODAY).paidInFull).toBe(false);
     expect(debtPointOf({ ...card, kind: 'loan' }, LEDGER_TODAY).paidInFull).toBe(false);
+  });
+});
+
+describe('rateUnknownOf (261123 DD-01, DD-09)', () => {
+  it('no stored rate is unknown, 0% is known, a card paid in full is exempt', () => {
+    expect(rateUnknownOf({ kind: 'loan', apr: null, pays_in_full: null })).toBe(true);
+    expect(rateUnknownOf({ kind: 'other', apr: '', pays_in_full: null })).toBe(true);
+    expect(rateUnknownOf({ kind: 'other', apr: '0', pays_in_full: null })).toBe(false);
+    expect(rateUnknownOf({ kind: 'loan', apr: '6.9', pays_in_full: null })).toBe(false);
+    expect(rateUnknownOf({ kind: 'card', apr: null, pays_in_full: 'yes' })).toBe(false);
+    expect(rateUnknownOf({ kind: 'card', apr: null, pays_in_full: 'sometimes' })).toBe(true);
   });
 });

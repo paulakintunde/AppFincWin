@@ -16,6 +16,13 @@ function collect(node: unknown, prefix = ''): { path: string; value: string }[] 
 const strings = collect(insights, 'insights');
 
 describe('insights copy', () => {
+  // 261123 (Pixel 9 TalkBack check): the in/out toggle was announced only as "Chart"; the figure only as an amount.
+  it('names the chart toggle and the net-worth figure in words', () => {
+    expect(insights.inOut.modeLabel).not.toBe('Chart');
+    expect(insights.inOut.modeLabel).toMatch(/money in and out/i);
+    expect(insights.netWorth.figureA11y).toBe('Net worth, {{amount}}, as of today');
+  });
+
   it('is wired into en.ts', () => {
     expect(en.insights).toBe(insights);
   });

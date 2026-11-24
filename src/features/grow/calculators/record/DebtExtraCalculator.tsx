@@ -51,6 +51,7 @@ export function DebtExtraCalculator({ id }: { id: string }) {
     if (row === undefined || line === null || line.point.paidInFull || line.point.balance <= 0) return null;
     return {
       balance: line.point.balance,
+      // 261123 (DD-01): an unknown rate runs without interest; the page says interest isn't counted (line.rateUnknown).
       apr: row.apr && row.apr.trim() !== '' ? row.apr : '0',
       payment: line.point.minimum,
       firstDate: dueDateOf(read.today, line.point.dueDay ?? Number(read.today.slice(8, 10)), 0),
@@ -166,6 +167,12 @@ export function DebtExtraCalculator({ id }: { id: string }) {
               day: fmt.ordinal(line.point.dueDay ?? Number(read.today.slice(8, 10))),
             })}
       </Text>
+      {/* 261123 (DD-01): an unknown rate runs without interest here; every figure on this page leaves interest out. */}
+      {line.rateUnknown ? (
+        <Text testID="debt-calc-rate-unknown" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+          {t('grow.debts.interestNotCounted')}
+        </Text>
+      ) : null}
 
       <Text accessibilityRole="header" style={label}>{t('grow.calc.debtExtra.extraLabel')}</Text>
       <View style={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t('grow.calc.debtExtra.extraLabel')}>

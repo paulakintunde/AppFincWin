@@ -14,7 +14,7 @@ import { EmptyState } from '@/ui/EmptyState';
 import { Glyph } from '@/ui/icons/Glyph';
 import { Text } from '@/ui/Text';
 import { NetWorthLine } from '../charts/NetWorthLine';
-import { Card, ErrorCard, LoadingBlock, OfflineCard } from './cardBits';
+import { Card, ErrorCard, LoadingBlock, OfflineCard, SectionHeading } from './cardBits';
 
 export interface NetWorthSectionViewProps {
   state: NetWorthSeriesState;
@@ -38,15 +38,20 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
   const [tapped, setTapped] = useState<{ index: number; setKey: string } | null>(null);
   const selected = tapped !== null && tapped.setKey === setKey ? tapped.index : null;
 
-  if (state.status === 'error') return <ErrorCard onRetry={state.retry} testID="net-worth-error" />;
-  if (state.status === 'offline') return <OfflineCard testID="net-worth-offline" />;
-  if (state.status === 'loading') return <LoadingBlock testID="net-worth-loading" height={260} />;
+  // 261123 (Pixel 9 offline check): the "Net worth" heading stays on the error, offline and loading states.
+  const heading = t('insights.netWorth.title');
+  if (state.status === 'error') return <ErrorCard onRetry={state.retry} testID="net-worth-error" heading={heading} />;
+  if (state.status === 'offline') return <OfflineCard testID="net-worth-offline" heading={heading} />;
+  if (state.status === 'loading') {
+    return (
+      <Card testID="net-worth-loading-card">
+        <SectionHeading title={heading} />
+        <LoadingBlock testID="net-worth-loading" height={220} />
+      </Card>
+    );
+  }
 
-  const title = (
-    <Text accessibilityRole="header" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
-      {t('insights.netWorth.title')}
-    </Text>
-  );
+  const title = <SectionHeading title={heading} />;
   if (state.noAccounts || state.current === null) {
     // Household counts joint accounts only: a member with personal accounts but no joint one has accounts, so the
     // household empty state names the missing joint accounts and offers no Add an account.
@@ -118,12 +123,15 @@ export function NetWorthSectionView({ state, scope, range, currency, onAddAccoun
           numberOfLines={1}
           adjustsFontSizeToFit
           minimumFontScale={FIGURE_MIN_SCALE}
-          accessibilityLabel={f.spoken(current)}
+          accessibilityLabel={t('insights.netWorth.figureA11y', { amount: f.spoken(current) })}
           style={{ ...textRole(pairing, 'display'), color: colors.ink, fontVariant: ['tabular-nums'] }}
         >
           {f.money(current)}
         </Text>
-        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('insights.netWorth.asOfToday')}</Text>
+        {/* Read inside the figure's label ("Net worth, ..., as of today"), so TalkBack does not say it twice. */}
+        <Text accessibilityElementsHidden importantForAccessibility="no" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+          {t('insights.netWorth.asOfToday')}
+        </Text>
         {changeLine !== null ? (
           <View style={styles.changeRow}>
             {glyph !== null ? <Glyph name={glyph} size={16} color={colors.inkDim} testID="net-worth-change-glyph" /> : null}
