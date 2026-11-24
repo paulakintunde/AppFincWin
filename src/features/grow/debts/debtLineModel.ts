@@ -1,8 +1,8 @@
 // 06-17: the small pure helpers the Debts screens need beyond the engine: the debt-payment share of pay against the user's
 // rule, and the "about" rounding. Whole-number rounding, half up, integers only (no floats for money).
 import { currencyExponent, minorUnits } from '@/engine/money';
-import { estimatedCardMinimum, percent, strategy, ZERO_PERCENT, type PayoffOrder, type Percent, type PlanDebt } from '@/engine/payoff';
-import { dueDateOf } from '../connect/debtPoint';
+import { estimatedCardMinimum, percent, strategy, ZERO_PERCENT, type PayoffOrder, type PlanDebt } from '@/engine/payoff';
+import { dueDateOf, rateForMathsOf } from '../connect/debtPoint';
 import type { DebtLine } from './useDebtsRead';
 
 export interface DebtLineModel {
@@ -39,15 +39,6 @@ export function aboutTens(minor: number, exponent = 2): number {
 /** "4 years sooner": whole years once the gap is two years or more (48 -> 4y 0m, 38 -> 3y 2m); under that, months only. */
 export function soonerSpan(months: number): { years: number; months: number } {
   return months < 24 ? { years: 0, months } : { years: Math.floor(months / 12), months: months % 12 };
-}
-
-/**
- * 261123 (DD-01): the rate the payoff maths runs on. An unknown rate (no stored rate, "I don't know") runs without interest
- * and the screens flag every figure built from it (DebtLine.rateUnknown), so "interest not counted" is never shown as
- * interest-free. No rate is invented (D-07).
- */
-export function rateForMathsOf(line: { point: { apr: Percent | null } }): Percent {
-  return line.point.apr ?? ZERO_PERCENT;
 }
 
 /**

@@ -42,6 +42,15 @@ export function dueDateOf(today: string, dueDay: number, index: number): string 
   return `${y}-${pad(m)}-${pad(dayOf(y, m))}`;
 }
 
+/**
+ * 261123 (DD-01): the rate the payoff maths runs on. An unknown rate (no stored rate, "I don't know") runs without interest
+ * and the screens flag every figure built from it (DebtLine.rateUnknown), so "interest not counted" is never shown as
+ * interest-free. No rate is invented (D-07).
+ */
+export function rateForMathsOf(line: { point: { apr: Percent | null } }): Percent {
+  return line.point.apr ?? ZERO_PERCENT;
+}
+
 /** One debt as Grow shows it: its payoff date from the next due date at the minimum plus any extra, and its total interest. */
 export function debtPointOf(row: DebtSourceRow, today: string): DebtPoint {
   const apr = row.apr ? percent(row.apr) : null;

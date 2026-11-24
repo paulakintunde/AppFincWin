@@ -22,8 +22,7 @@ import {
 } from '@/engine/payoff';
 import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { debtPointOf, type DebtPoint } from '../connect';
-import { dueDateOf } from '../connect/debtPoint';
-import { rateForMathsOf } from './debtLineModel';
+import { dueDateOf, rateForMathsOf } from '../connect/debtPoint';
 
 export type DebtsStatus = 'loading' | 'error' | 'ready';
 
