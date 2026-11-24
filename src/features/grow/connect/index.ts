@@ -2,5 +2,5 @@
 export { goalSaved } from './goalSaved';
 export { envelopesOf, goalPointsOf } from './goalPoint';
 export { safetyNetInputsOf, safetyNetPointOf } from './safetyNetPoint';
-export { debtPointOf, debtToV3Debt } from './debtPoint';
+export { debtPointOf, debtToV3Debt, rateUnknownOf } from './debtPoint';
 export type { DebtPoint, DebtSourceRow, GoalLineSource, GoalPoint, GoalSourceRow, SafetyNetPoint, ToHome } from './types';
