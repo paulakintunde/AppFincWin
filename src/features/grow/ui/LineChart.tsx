@@ -24,6 +24,19 @@ const DEFAULT_WIDTH = 330;
 const PAD = 8;
 const LINE_WIDTH = 2;
 
+/** 07-08: the dot positions linePath draws through (same pad and min/max rule), for charts that mark each point. */
+export function linePoints(points: readonly number[], width: number, height: number): { x: number; y: number }[] {
+  const min = Math.min(...points, 0);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const innerW = width - PAD * 2;
+  const innerH = height - PAD * 2;
+  return points.map((v, i) => ({
+    x: points.length < 2 ? PAD : PAD + (innerW * i) / (points.length - 1),
+    y: PAD + innerH - (innerH * (v - min)) / span,
+  }));
+}
+
 export function linePath(points: readonly number[], width: number, height: number): string {
   if (points.length < 2) return '';
   const min = Math.min(...points, 0);

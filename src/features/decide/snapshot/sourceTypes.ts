@@ -1,6 +1,7 @@
 // 05.5-19: the input shapes the one snapshot path reads (rows and settings, as the data layer passes them). Moved here from the
 // deleted old builder (buildSnapshot.ts); types only, no logic. buildInputs turns these into V3Inputs.
 import type { AccountRow, CustomCurrencyRow, FxLatestRow, RecurringSeriesRow, TransactionRow } from '@/db/rows';
+import type { CategorySourceIds, PartnerCategoryRef } from '@/data/sharedCategories';
 
 // structurally identical to src/db/* (05-05); 05-12 passes 05-05 rows here, so its typecheck proves they agree
 /** The old engine's judge-on choice (device view); kept as a plain string union now the old engine is gone. */
@@ -128,4 +129,10 @@ export interface SnapshotSource {
   // 05.4-35 (Decide v3 only): profiles.region_subdivision (D-19); absent/null = not set. It passes with whatever country `region`
   // resolved to, even from the device (D-142); the engine's tax table knows only real country-and-state pairs.
   regionSubdivision?: string | null;
+  // 07 D-32..D-34 (WR-03): shared lines already carry the viewer's category (rows and series are resolved before the builder).
+  // These two are for display only; the builder never reads them. Absent = none.
+  /** A fellow member's own categories left on shared lines (display fields; never a money rule). */
+  partnerCategories?: readonly PartnerCategoryRef[];
+  /** A resolved category id → every stored category id now counted under it (an Insights tap opens Activity on all of them). */
+  categorySourceIds?: CategorySourceIds;
 }

@@ -54,6 +54,11 @@
       "banned": ["\\b(advice|advise|recommend\\w*|should|best|better|optimal)\\b"]
     },
     {
+      "name": "insights",
+      "prefixes": ["insights."],
+      "banned": ["\\b(advice|advise|recommend\\w*|should|best|better|optimal|healthy|unhealthy|poor|good|bad|strong|steady|tight|great|excellent)\\b", "you should", "we suggest"]
+    },
+    {
       "name": "general",
       "prefixes": [""],
       "banned": ["you should", "recommend", "we suggest"]

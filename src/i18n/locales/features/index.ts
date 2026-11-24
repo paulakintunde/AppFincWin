@@ -154,6 +154,18 @@ export const features = {
       label: 'Calculators',
       sub: 'Loan, savings, payoff and growth maths',
     },
+    insights: {
+      label: 'Insights',
+      sub: 'Money in and out, spending by category, and month against month',
+    },
+    netWorthTrend: {
+      label: 'Net worth over time',
+      sub: 'Your net worth month by month, from your records',
+    },
+    healthScore: {
+      label: 'Score',
+      sub: 'One number for this month, from the figures Decide reads',
+    },
     import: {
       label: 'Import and paste',
       sub: 'Bring in a list or a statement',
