@@ -116,8 +116,19 @@ export interface NewGrowDebtFields {
   apr?: string | null;
   minimum_payment?: number;
   due_day?: number | null;
-  /** The balance when first recorded, for the paid-off bar. Defaults to `balance`. */
+  /**
+   * 261123 (DD-02): a fixed loan's ORIGINAL amount, used by the paid-off bar and past net worth. No longer defaults to `balance`:
+   * a revolving debt has none, and a value the user never gave is never invented.
+   */
   started_balance?: number | null;
+  /** 261123 (DD-02): a fixed loan's start date, YYYY-MM-DD. */
+  start_date?: string | null;
+  /** 261123 (DD-03): a revolving debt's credit limit, minor units. */
+  credit_limit?: number | null;
+  /** 261123 (DD-03): a card or line of credit (true), a fixed loan or money owed (false). */
+  revolving?: boolean | null;
+  /** 261123 (DD-04): the date a debt added as already paid off was cleared; its balance must be 0. */
+  paid_off_on?: string | null;
   /** Cards only. 'yes' stays out of the payoff plan; null ("Not sure") is treated as a carried balance. */
   pays_in_full?: GrowPaysInFull;
   account_id?: string | null;
@@ -126,9 +137,23 @@ export interface NewGrowDebtFields {
 
 /** What an existing debt may change from Grow. */
 export type EditGrowDebtFields = Partial<
-  Pick<NewGrowDebtFields, 'name' | 'balance' | 'apr' | 'minimum_payment' | 'due_day' | 'pays_in_full' | 'started_balance'>
+  Pick<
+    NewGrowDebtFields,
+    'name' | 'balance' | 'apr' | 'minimum_payment' | 'due_day' | 'pays_in_full' | 'started_balance' | 'start_date' | 'credit_limit' | 'revolving'
+  >
 >;
-const EDIT_KEYS = ['name', 'balance', 'apr', 'minimum_payment', 'due_day', 'pays_in_full', 'started_balance'] as const;
+const EDIT_KEYS = [
+  'name',
+  'balance',
+  'apr',
+  'minimum_payment',
+  'due_day',
+  'pays_in_full',
+  'started_balance',
+  'start_date',
+  'credit_limit',
+  'revolving',
+] as const;
 
 export type SaveGrowDebtVars =
   | { mode: 'add'; ownerId: string; householdId: string; row: NewDebt; stepId: string }
@@ -155,6 +180,10 @@ function assertFields(f: Partial<NewGrowDebtFields>, where: string): void {
   if (f.started_balance != null && !validMinor(f.started_balance)) throw new RangeError(`${where}: started balance out of range`);
   if (f.apr !== undefined && !validApr(f.apr)) throw new RangeError(`${where}: rate must be 0-100 with at most 2 decimals`);
   if (f.due_day !== undefined && !validDueDay(f.due_day)) throw new RangeError(`${where}: due day must be 1-31`);
+  if (f.credit_limit != null && !validMinor(f.credit_limit)) throw new RangeError(`${where}: credit limit out of range`);
+  if (f.start_date != null && !DATE_RE.test(f.start_date)) throw new RangeError(`${where}: malformed start date`);
+  if (f.paid_off_on != null && !DATE_RE.test(f.paid_off_on)) throw new RangeError(`${where}: malformed paid-off date`);
+  if (f.revolving != null && typeof f.revolving !== 'boolean') throw new RangeError(`${where}: revolving must be a boolean`);
 }
 
 export function registerGrowDebtMutations(qc: QueryClient): void {
@@ -201,7 +230,7 @@ function registerSaveGrowDebt(qc: QueryClient): void {
         const optimistic: WithPending<DebtRow> = {
           ...vars.row,
           check_id: null,
-          paid_off_on: null,
+          paid_off_on: vars.row.paid_off_on ?? null,
           is_housing: false,
           is_sample: false,
           deleted_at: null,
@@ -257,6 +286,7 @@ export function useSaveGrowDebt(): { save(input: SaveGrowDebtInput): { id: strin
         assertFields(f, 'add debt');
         if (!/^[A-Z0-9]{2,4}$/.test(f.currency)) throw new RangeError('add debt: currency must be a code');
         if (f.pays_in_full != null && f.kind !== 'card') throw new RangeError('add debt: pays_in_full is for cards only');
+        if (f.paid_off_on != null && f.balance !== 0) throw new RangeError('add debt: a paid-off debt owes nothing');
         const paysFull = f.kind === 'card' && f.pays_in_full === 'yes';
         const id = Crypto.randomUUID();
         const row: NewDebt = {
@@ -272,15 +302,18 @@ export function useSaveGrowDebt(): { save(input: SaveGrowDebtInput): { id: strin
           minimum_payment: paysFull ? 0 : f.minimum_payment ?? 0,
           secured: f.secured ?? false,
           term_months: null,
-          start_date: null,
+          start_date: f.start_date ?? null,
           min_percent: null,
           min_interest_added: null,
           min_floor: null,
           paid_in_full: false,
           pays_in_full: f.kind === 'card' ? f.pays_in_full ?? null : null,
           due_day: f.due_day ?? null,
-          started_balance: f.started_balance ?? f.balance,
+          started_balance: f.started_balance ?? null,
           payoff_order: null,
+          paid_off_on: f.paid_off_on ?? null,
+          credit_limit: f.credit_limit ?? null,
+          revolving: f.revolving ?? (f.kind === 'card' ? true : f.kind === 'loan' ? false : null),
         };
         mutation.mutate({ mode: 'add', ownerId: input.ownerId, householdId: input.householdId, row, stepId });
         return { id, stepId };
