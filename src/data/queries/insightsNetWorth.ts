@@ -5,8 +5,8 @@
 import { useMemo } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import { fetchAccountPaidBefore } from '@/db/recordReads';
-import type { CustomCurrencyRow, FxLatestRow, AccountRow } from '@/db/rows';
-import type { DebtRow } from '@/db/debts';
+import type { CustomCurrencyRow, FxLatestRow, AccountRow, TransactionRow } from '@/db/rows';
+import { debtIsFixed, type DebtRow } from '@/db/debts';
 import type { HoldingRow } from '@/db/holdings';
 import type { HoldingLotRow } from '@/db/holdingLots';
 import { accountBalance } from '@/engine/activity';
@@ -31,6 +31,7 @@ import { useDebts } from './decide';
 import type { FigureScope } from './figureScope';
 import { convertLatest } from './fxConvert';
 import { useFxLatest } from './fxLatest';
+import { fetchDebtPayments } from './growDebts';
 import { useHoldingLotRows, useHoldingRows } from './growHoldings';
 
 type Rates = readonly FxLatestRow[];
@@ -74,6 +75,8 @@ export function buildNetWorthInputs(args: {
   today: string;
   /** IN-07: joint (shared) account ids. Household counts such an account's own balance, so Just me leaves a holding in one out. */
   jointAccountIds?: ReadonlySet<string>;
+  /** 261123 (DD-07): debt id -> its linked lines (fetchDebtPayments), for the fixed loans that can be worked back. */
+  debtPayments?: ReadonlyMap<string, readonly TransactionRow[]>;
 }): NetWorthBuild {
   const { currency, rates, customs, today } = args;
   const accounts: SeriesAccount[] = args.accounts.map((a) => ({
@@ -122,9 +125,40 @@ export function buildNetWorthInputs(args: {
       unconvertedDebts += 1;
       continue;
     }
-    debts.push({ account_id: d.account_id, balance, startedBalance: started, paidOffOn: d.paid_off_on ?? null, deleted_at: d.deleted_at });
+    // 261123 (DD-07): the start date, and a fixed loan's paid payments so past months can be worked back. A payment that
+    // cannot be converted drops the working-back (the debt keeps today's rule), never a guessed amount.
+    const fixed = debtIsFixed(d);
+    let payments: { date: string; amount: number }[] | undefined;
+    const lines = args.debtPayments?.get(d.id);
+    if (fixed && lines !== undefined) {
+      payments = [];
+      for (const l of lines) {
+        if (l.status !== 'paid' || l.deleted_at !== null || l.original_amount >= 0) continue;
+        const amount = conv(-l.original_amount, l.original_currency);
+        if (amount === null) {
+          payments = undefined;
+          break;
+        }
+        payments.push({ date: l.local_date, amount });
+      }
+    }
+    debts.push({
+      account_id: d.account_id,
+      balance,
+      startedBalance: started,
+      paidOffOn: d.paid_off_on ?? null,
+      deleted_at: d.deleted_at,
+      startDate: d.start_date ?? null,
+      fixed,
+      ...(payments === undefined ? {} : { payments }),
+    });
   }
   return { accounts, holdings, debts, unconverted: unconvertedHoldings + unconvertedDebts, unconvertedHoldings, unconvertedDebts };
+}
+
+/** 261123 (DD-07): a live fixed loan with no account, an original amount and a start date: its past can be worked back. */
+export function canWorkBack(d: DebtRow): boolean {
+  return !d.deleted_at && d.account_id === null && debtIsFixed(d) && d.started_balance != null && Boolean(d.start_date);
 }
 
 /** One account's balance in the target currency from its own-currency balance plus other-currency subtotals; null when any part cannot convert. */
@@ -240,9 +274,30 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
   const debts = debtsQuery.data ?? NO_DEBTS;
 
   const jointAccountIds = useMemo(() => new Set(allAccounts.filter((a) => a.is_shared === true && !a.deleted_at).map((a) => a.id)), [allAccounts]);
+
+  // 261123 (DD-07): the payments of each fixed loan that can be worked back (no account, an original amount and a start date).
+  const workBack = useMemo(() => (scope === 'mine' ? debts.filter(canWorkBack) : []), [scope, debts]);
+  const paymentReads = useQueries({
+    queries: workBack.map((d) => ({
+      queryKey: queryKeys.debtPayments(d.household_id, d.id, d.series_id ?? '', d.extra_series_id ?? ''),
+      queryFn: () => fetchDebtPayments(supabase, d),
+    })),
+  });
+  const paymentsKey = paymentReads.map((r) => r.dataUpdatedAt).join(',');
+  const debtPayments = useMemo(() => {
+    const out = new Map<string, readonly TransactionRow[]>();
+    workBack.forEach((d, i) => {
+      const data = paymentReads[i]?.data;
+      if (data !== undefined) out.set(d.id, data);
+    });
+    return out;
+    // paymentsKey stands in for the per-query data objects, which useQueries re-creates each render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workBack, paymentsKey]);
+
   const build = useMemo(
-    () => buildNetWorthInputs({ scope, accounts, holdings, lots, debts, currency, rates, customs, today: rc.today, jointAccountIds }),
-    [scope, accounts, holdings, lots, debts, currency, rates, customs, rc.today, jointAccountIds]
+    () => buildNetWorthInputs({ scope, accounts, holdings, lots, debts, currency, rates, customs, today: rc.today, jointAccountIds, debtPayments }),
+    [scope, accounts, holdings, lots, debts, currency, rates, customs, rc.today, jointAccountIds, debtPayments]
   );
 
   const firstMonth = useMemo(() => {
@@ -274,7 +329,7 @@ export function useNetWorthSeries(args: { range: SeriesRange; scope: FigureScope
   const dataKey = reads.map((r) => r.dataUpdatedAt).join(',');
   // CR-01: every input the figure depends on gates the status, so a partial figure is never shown as final.
   // Scope Household uses neither debts nor holdings, so their reads do not hold it back.
-  const inputReads = [accountsQuery, fx, customsQuery, ...(scope === 'mine' ? [debtsQuery, holdingsQuery, lotsQuery] : [])];
+  const inputReads = [accountsQuery, fx, customsQuery, ...(scope === 'mine' ? [debtsQuery, holdingsQuery, lotsQuery, ...paymentReads] : [])];
   // NR-01: an input with no data is never treated as loaded. isLoading misses the paused-offline case, so this reads data itself.
   const anyLoading =
     reads.some((r) => r.data === undefined && !r.isError) || monthsRead.isWaiting || balancesWaiting || inputReads.some(inputWaiting);

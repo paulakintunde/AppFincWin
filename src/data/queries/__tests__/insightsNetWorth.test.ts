@@ -1,6 +1,6 @@
 // 07-07 (INS-01, D-07..D-11, D-23): pure helpers and the hook's wiring over mocked reads.
 import { renderHook } from '@testing-library/react-native';
-import type { AccountRow, FxLatestRow } from '@/db/rows';
+import type { AccountRow, FxLatestRow, TransactionRow } from '@/db/rows';
 import type { DebtRow } from '@/db/debts';
 import type { HoldingRow } from '@/db/holdings';
 import type { HoldingLotRow } from '@/db/holdingLots';
@@ -8,7 +8,7 @@ import { monthEndsFor } from '@/engine/grow';
 import { onlineManager, QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { queryKeys } from '../../keys';
-import { accountsForScope, buildNetWorthInputs, inputPaused, inputWaiting, paidBeforeDateOf, pointBalances, useNetWorthSeries } from '../insightsNetWorth';
+import { accountsForScope, buildNetWorthInputs, canWorkBack, inputPaused, inputWaiting, paidBeforeDateOf, pointBalances, useNetWorthSeries } from '../insightsNetWorth';
 
 const acct = (o: Partial<AccountRow>): AccountRow =>
   ({
@@ -88,6 +88,39 @@ describe('buildNetWorthInputs', () => {
     expect(out.debts).toEqual([]);
     expect(out.unconverted).toBe(2);
     expect([out.unconvertedHoldings, out.unconvertedDebts]).toEqual([1, 1]);
+  });
+
+  describe('261123 (DD-07): start date and the payments of a fixed loan', () => {
+    const loan = { ...debt, id: 'd1', kind: 'loan', revolving: false, start_date: '2026-03-01' } as DebtRow;
+    const line = (o: Partial<TransactionRow>): TransactionRow =>
+      ({ status: 'paid', deleted_at: null, original_amount: -100, original_currency: 'USD', local_date: '2026-10-01', ...o }) as TransactionRow;
+
+    it('carries the start date, whether it is fixed, and the paid payments as positive amounts', () => {
+      const lines = [line({}), line({ status: 'pending', local_date: '2026-12-01' }), line({ original_amount: 50 }), line({ deleted_at: 'x' }), line({ original_currency: 'CAD', original_amount: -200, local_date: '2026-09-01' })];
+      const out = buildNetWorthInputs({ ...base, scope: 'mine', debts: [loan], debtPayments: new Map([['d1', lines]]) });
+      expect(out.debts[0]).toMatchObject({ startDate: '2026-03-01', fixed: true, payments: [{ date: '2026-10-01', amount: 100 }, { date: '2026-09-01', amount: 100 }] });
+    });
+    it('a payment that cannot be converted drops the working-back, never a guess', () => {
+      const out = buildNetWorthInputs({ ...base, scope: 'mine', debts: [loan], debtPayments: new Map([['d1', [line({ original_currency: 'ZZZ' })]]]) });
+      expect(out.debts[0]?.payments).toBeUndefined();
+      expect(out.unconverted).toBe(0);
+    });
+    it('a revolving debt carries no payments', () => {
+      const card = { ...loan, kind: 'card', revolving: true } as DebtRow;
+      const out = buildNetWorthInputs({ ...base, scope: 'mine', debts: [card], debtPayments: new Map([['d1', [line({})]]]) });
+      expect(out.debts[0]).toMatchObject({ fixed: false });
+      expect(out.debts[0]?.payments).toBeUndefined();
+    });
+    it('canWorkBack needs a live fixed loan with no account, an original amount and a start date', () => {
+      expect(canWorkBack(loan)).toBe(true);
+      expect(canWorkBack({ ...loan, start_date: null })).toBe(false);
+      expect(canWorkBack({ ...loan, started_balance: null })).toBe(false);
+      expect(canWorkBack({ ...loan, account_id: 'a' })).toBe(false);
+      expect(canWorkBack({ ...loan, deleted_at: 'x' })).toBe(false);
+      expect(canWorkBack({ ...loan, revolving: true })).toBe(false);
+      expect(canWorkBack({ ...loan, revolving: null, kind: 'other' })).toBe(false);
+      expect(canWorkBack({ ...loan, revolving: null, kind: 'loan' })).toBe(true);
+    });
   });
 });
 

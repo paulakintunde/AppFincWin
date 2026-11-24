@@ -7,6 +7,9 @@
 //   - a holding appears from its first dated value and is left out before it (D-22);
 //   - a debt with no account is held at today's figure in past points (debtsHeldFlat); one paid off later counts at its
 //     starting balance (or its current balance when none was recorded) before the paid-off date, and not on or after it.
+//   - 261123 (DD-07): a debt with a start date is left out of every point before that date. A fixed loan with an original
+//     amount (startedBalance), a start date and recorded payments is worked back: at a past month-end it owed today's
+//     balance plus the payments recorded after that date, capped at the original amount; such a point is not held flat.
 // Known edge: a debt paid off later with no startedBalance falls back to its current balance, so earlier months may
 // understate the debt.
 import { addYearMonths, daysInYearMonth, yearMonthOf } from '../decide/v3/dates';
@@ -35,6 +38,25 @@ export interface SeriesDebt {
   readonly startedBalance: number | null;
   readonly paidOffOn: string | null;
   readonly deleted_at?: string | null;
+  /** 261123 (DD-07): YYYY-MM-DD the debt started; points before it leave the debt out. Null or absent on older rows. */
+  readonly startDate?: string | null;
+  /** 261123 (DD-07): a fixed loan (not a card or line of credit); only a fixed loan is worked back from its payments. */
+  readonly fixed?: boolean;
+  /** 261123 (DD-07): paid payments to the debt, positive home-currency minor units, already converted. */
+  readonly payments?: readonly ValueLot[];
+}
+
+/**
+ * 261123 (DD-07): what a fixed loan owed at a past date, from today's balance and the payments recorded after the date, capped
+ * at the original amount. Null when the loan cannot be worked back (not fixed, no original amount, no start date or no payment).
+ */
+export function workedBackBalance(d: SeriesDebt, date: string): number | null {
+  if (d.fixed !== true || d.startedBalance === null || !d.startDate || d.payments === undefined || d.payments.length === 0) return null;
+  let owed = BigInt(d.balance);
+  for (const p of d.payments) if (p.date > date) owed += BigInt(p.amount);
+  const cap = BigInt(d.startedBalance);
+  // Summed in BigInt; the result is at most the original amount, a safe integer.
+  return Number(owed > cap ? cap : owed);
 }
 export interface PointSource {
   readonly date: string;
@@ -108,18 +130,28 @@ export function netWorthSeries(args: {
     }
 
     let debtsHeldFlat = false;
-    const debts: NetWorthDebt[] = args.debts.map((d) => {
+    const debts: NetWorthDebt[] = [];
+    for (const d of args.debts) {
       const paidOff = d.paidOffOn !== null;
       if (p.isToday) {
-        return { account_id: d.account_id, balance: d.balance, paid_off: paidOff, deleted_at: d.deleted_at };
+        debts.push({ account_id: d.account_id, balance: d.balance, paid_off: paidOff, deleted_at: d.deleted_at });
+        continue;
+      }
+      // DD-07: not yet started at this point.
+      if (d.startDate && p.date < d.startDate) continue;
+      const gone = d.paidOffOn !== null && d.paidOffOn <= p.date;
+      const workedBack = gone ? null : workedBackBalance(d, p.date);
+      if (workedBack !== null) {
+        debts.push({ account_id: d.account_id, balance: workedBack, paid_off: false, deleted_at: d.deleted_at });
+        continue;
       }
       if (d.paidOffOn !== null) {
-        const gone = d.paidOffOn <= p.date;
-        return { account_id: d.account_id, balance: d.startedBalance ?? d.balance, paid_off: gone, deleted_at: d.deleted_at };
+        debts.push({ account_id: d.account_id, balance: d.startedBalance ?? d.balance, paid_off: gone, deleted_at: d.deleted_at });
+        continue;
       }
       if (d.account_id === null && !d.deleted_at) debtsHeldFlat = true;
-      return { account_id: d.account_id, balance: d.balance, paid_off: false, deleted_at: d.deleted_at };
-    });
+      debts.push({ account_id: d.account_id, balance: d.balance, paid_off: false, deleted_at: d.deleted_at });
+    }
 
     const value = netWorthOf({ accounts, balances: p.balances, holdings, debts });
     return { date: p.date, value, debtsHeldFlat, holdingsLeftOut };

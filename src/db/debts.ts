@@ -153,6 +153,16 @@ export const DEBT_PATCH_KEYS = [
   'deleted_at',
 ] as const satisfies readonly (keyof DebtPatch)[];
 
+/**
+ * 261123 (DD-02, DD-03): a fixed loan (instalments: loan, money owed) rather than revolving debt (card, line of credit). Uses
+ * `revolving` when stored; an older row without it is fixed only when it is a loan.
+ */
+export function debtIsFixed(row: Pick<DebtRow, 'kind' | 'revolving'>): boolean {
+  if (row.revolving === true) return false;
+  if (row.revolving === false) return true;
+  return row.kind === 'loan';
+}
+
 const ENTITY = 'debts' as const;
 const UNIQUE_VIOLATION = '23505';
 
