@@ -83,6 +83,25 @@ const ACCOUNT_KIND: Readonly<Record<string, AccountKind>> = { checking: 'checkin
 const cashLike = (kind: string | undefined): boolean => kind === 'cash' || kind === 'checking' || kind === 'savings';
 
 export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource | null): V3Inputs {
+  return build(rawSource, settings, false).inputs;
+}
+
+/**
+ * 07 D-35 (Insights only): before the first full month, this month's lines read by the same rules buildInputs uses for a logged month
+ * (the same kept rows, roles, income tags and series), so Insights can draw a "this month so far" bar. Null once a full month is logged (the
+ * month is then already in the inputs) or when nothing is recorded this month. Decide never reads this; buildInputs' output is untouched.
+ */
+export function insightsMonthSoFar(rawSource: InputsSource, settings: V3SettingsSource | null): MonthSoFar | null {
+  return build(rawSource, settings, true).soFar;
+}
+
+/** 07 D-35: the current month (never full) and the stored series as engine series, for Insights' month so far. */
+export interface MonthSoFar {
+  readonly month: V3Month;
+  readonly series: readonly V3Series[];
+}
+
+function build(rawSource: InputsSource, settings: V3SettingsSource | null, wantCurrent: boolean): { inputs: V3Inputs; soFar: MonthSoFar | null } {
   // 08.1-08 (T-08.1-26): with a household source, only the viewer's own and shared lines are ever read, in either scope.
   const source: InputsSource = rawSource.household === undefined ? rawSource : { ...rawSource, rows: viewerRows(rawSource.rows, rawSource.household.viewerId), upcomingRows: viewerRows(rawSource.upcomingRows, rawSource.household.viewerId) };
   const { today, homeCurrency: home } = source;
@@ -238,17 +257,85 @@ export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource 
     };
   };
 
-  let months: V3Month[] = [];
-  let typed: TypedEstimates | null = null;
-  // Cash on hand: every live cash, checking and savings account at its converted balance (an account no rate converts adds nothing).
-  let cashOnHand = 0;
-  for (const a of liveAccounts) {
-    if (!cashLike(a.kind)) continue;
-    const v = toHome(source.balances[a.id] ?? 0, a.currency);
-    if (v !== null) cashOnHand += v;
-  }
+  // ── lines ──
+  const anyUse = Object.keys(effectiveUses).length > 0;
+  const counts = (id: string | undefined): boolean => {
+    const u = id === undefined ? undefined : effectiveUses[id];
+    return u !== undefined && (u.kind === 'everyday' || u.kind === 'mixed');
+  };
+  const roleOf = (row: InputsRow, out: boolean): LineRole => {
+    if (row.transfer_id === null) {
+      // 06 ARC-15: single-leg goal contribution, counted once as an envelope deposit
+      if (isLiveGoal(row.goal_id)) return out ? 'envelope_deposit' : 'envelope_withdrawal';
+      // 06-37 D-35: a line tagged to a debt is a debt payment (money out once); money IN tagged to a debt is the asset sale itself (P5-WR-05).
+      if (row.debt_id !== null && row.debt_id !== undefined) return out ? 'debt_payment' : 'other_in';
+      return out ? 'spending' : row.is_refund ? 'refund' : 'income';
+    }
+    const partner = (legsOf.get(row.transfer_id) as readonly InputsRow[]).find((r) => r.id !== row.id);
+    const mine = kindOf(row.account_id);
+    const theirs = partner === undefined ? '' : kindOf(partner.account_id);
+    const fromKind = out ? mine : theirs;
+    const toKind = out ? theirs : mine;
+    const fromId = out ? row.account_id : partner?.account_id;
+    const toId = out ? partner?.account_id : row.account_id;
+    const tagged = isLiveGoal(row.goal_id) || isLiveGoal(partner?.goal_id);
+    // M-06: stated uses decide what counts; with none stated the account kinds do.
+    const fromSpending = anyUse ? counts(fromId) : SPENDING_KINDS.includes(fromKind);
+    const toSpending = anyUse ? counts(toId) : SPENDING_KINDS.includes(toKind);
+    if (out && fromSpending && !toSpending) {
+      if (tagged) return 'envelope_deposit'; // D-22 stand-in: money into a pot or goal
+      if (DEBT_KINDS.includes(toKind)) return 'debt_payment';
+      if ((anyUse && partner !== undefined) || SAVED_KINDS.includes(toKind)) return 'saved_invested';
+      return 'other_out';
+    }
+    if (!out && toSpending && !fromSpending) return tagged ? 'envelope_withdrawal' : 'other_in';
+    return 'own_transfer';
+  };
+  const marks = v3?.month_marks ?? null;
+  // 05.5-28 Q11 A: a line dated on the confirm day counts as logged after the confirm when the server stamped the confirm earlier
+  // than the row was created. No stamp (confirmed before it existed) or an unreadable time = never marked (the anchor day stays inside).
+  const confirmDay = dateOf(v3?.unspent_anchor_at);
+  const confirmedAtMs = v3?.unspent_anchor_set_at == null ? Number.NaN : Date.parse(v3.unspent_anchor_set_at);
+  const loggedAfterConfirm = (row: InputsRow): boolean => {
+    if (confirmDay === null || row.local_date !== confirmDay || row.created_at == null) return false;
+    return Date.parse(row.created_at) > confirmedAtMs; // NaN on either side compares false
+  };
+  // One month's lines (the same mapping for Decide's months and, 07 D-35, Insights' month so far).
+  const monthOfKey = (m: string, seriesById: ReadonlyMap<string, V3Series>): V3Month => {
+    const mark = marks === null ? undefined : marks[m];
+    return {
+      month: m,
+      full: flags.get(m) === true,
+      mark: inList(MARKS, mark) ? (mark as MonthMark) : null,
+      lines: (keptByMonth.get(m) ?? []).map(({ row, amount }): V3Line => {
+        const out = amount < 0;
+        const role = roleOf(row, out);
+        const s = row.recurring_series_id === null ? undefined : seriesById.get(row.recurring_series_id);
+        return {
+          id: row.id,
+          date: row.local_date,
+          amount: minorUnits(Math.abs(amount)),
+          role,
+          status: row.status as 'paid' | 'pending',
+          seriesId: row.recurring_series_id,
+          categoryId: row.category_id,
+          coversMonths: null,
+          source: row.import_batch_id ? 'statement' : 'manual', // D-51
+          expected: false,
+          // 05.2 F-10: an occurrence without its own tag takes its series' income type, as countsAs does
+          incomeKind: role === 'income' ? (incomeKindOf(str(row.income_kind)) ?? (s !== undefined ? s.incomeKind : null)) : null,
+          countsAs: role === 'income' ? (row.counts_as ?? (s !== undefined ? s.countsAs : null)) : null,
+          refundOf: str(row.refund_of),
+          ...(loggedAfterConfirm(row) ? { loggedAfterConfirm: true } : {}),
+        };
+      }),
+    };
+  };
 
-  if (logged) {
+  // The stored series as engine series (bills, then income, then saving and investing). Decide reads them once a month is full;
+  // 07 D-35: Insights reads them for the month so far, so a pay occurrence counts by the same rule.
+  const seriesOfSource = (): V3Series[] => {
+    const out: V3Series[] = [];
     const bills: V3Series[] = [];
     const income: V3Series[] = [];
     for (const s of liveSeries) {
@@ -267,7 +354,7 @@ export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource 
         income.push(make(s.id, role, s.freq, s.anchor_date, s.end_date, s.occurrence_count, amount, null));
       }
     }
-    series.push(...bills, ...income);
+    out.push(...bills, ...income);
     // Saving and investing series: a Savings-category series no debt covers and no live goal carries.
     const covered = new Set(liveDebts.filter((d) => d.series_id !== null).map((d) => d.series_id as string));
     for (const s of liveSeries) {
@@ -275,83 +362,34 @@ export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource 
       if (s.end_date !== null && s.end_date < today) continue;
       const amount = toHome(Math.abs(s.amount), s.currency);
       if (amount === null || amount === 0) continue;
-      series.push(make(s.id, investing.has(s.id) ? 'investing' : 'saving', s.freq, s.anchor_date, s.end_date, s.occurrence_count, amount, s.category_id));
+      out.push(make(s.id, investing.has(s.id) ? 'investing' : 'saving', s.freq, s.anchor_date, s.end_date, s.occurrence_count, amount, s.category_id));
     }
+    return out;
+  };
 
-    // ── lines ──
-    const anyUse = Object.keys(effectiveUses).length > 0;
-    const counts = (id: string | undefined): boolean => {
-      const u = id === undefined ? undefined : effectiveUses[id];
-      return u !== undefined && (u.kind === 'everyday' || u.kind === 'mixed');
-    };
-    const roleOf = (row: InputsRow, out: boolean): LineRole => {
-      if (row.transfer_id === null) {
-        // 06 ARC-15: single-leg goal contribution, counted once as an envelope deposit
-        if (isLiveGoal(row.goal_id)) return out ? 'envelope_deposit' : 'envelope_withdrawal';
-        // 06-37 D-35: a line tagged to a debt is a debt payment (money out once); money IN tagged to a debt is the asset sale itself (P5-WR-05).
-        if (row.debt_id !== null && row.debt_id !== undefined) return out ? 'debt_payment' : 'other_in';
-        return out ? 'spending' : row.is_refund ? 'refund' : 'income';
-      }
-      const partner = (legsOf.get(row.transfer_id) as readonly InputsRow[]).find((r) => r.id !== row.id);
-      const mine = kindOf(row.account_id);
-      const theirs = partner === undefined ? '' : kindOf(partner.account_id);
-      const fromKind = out ? mine : theirs;
-      const toKind = out ? theirs : mine;
-      const fromId = out ? row.account_id : partner?.account_id;
-      const toId = out ? partner?.account_id : row.account_id;
-      const tagged = isLiveGoal(row.goal_id) || isLiveGoal(partner?.goal_id);
-      // M-06: stated uses decide what counts; with none stated the account kinds do.
-      const fromSpending = anyUse ? counts(fromId) : SPENDING_KINDS.includes(fromKind);
-      const toSpending = anyUse ? counts(toId) : SPENDING_KINDS.includes(toKind);
-      if (out && fromSpending && !toSpending) {
-        if (tagged) return 'envelope_deposit'; // D-22 stand-in: money into a pot or goal
-        if (DEBT_KINDS.includes(toKind)) return 'debt_payment';
-        if ((anyUse && partner !== undefined) || SAVED_KINDS.includes(toKind)) return 'saved_invested';
-        return 'other_out';
-      }
-      if (!out && toSpending && !fromSpending) return tagged ? 'envelope_withdrawal' : 'other_in';
-      return 'own_transfer';
-    };
+  /** 07 D-35: this month's lines and the series they read against, only before the first full month (Insights only). */
+  const monthSoFar = (): MonthSoFar | null => {
+    const current = today.slice(0, 7);
+    if (logged || !keptByMonth.has(current)) return null;
+    const own = seriesOfSource();
+    return { month: monthOfKey(current, new Map(own.map((s) => [s.id, s]))), series: own };
+  };
+
+  let months: V3Month[] = [];
+  let typed: TypedEstimates | null = null;
+  // Cash on hand: every live cash, checking and savings account at its converted balance (an account no rate converts adds nothing).
+  let cashOnHand = 0;
+  for (const a of liveAccounts) {
+    if (!cashLike(a.kind)) continue;
+    const v = toHome(source.balances[a.id] ?? 0, a.currency);
+    if (v !== null) cashOnHand += v;
+  }
+
+  if (logged) {
+    series.push(...seriesOfSource());
+
     const seriesById = new Map(series.map((s) => [s.id, s]));
-    const marks = v3?.month_marks ?? null;
-    // 05.5-28 Q11 A: a line dated on the confirm day counts as logged after the confirm when the server stamped the confirm earlier
-    // than the row was created. No stamp (confirmed before it existed) or an unreadable time = never marked (the anchor day stays inside).
-    const confirmDay = dateOf(v3?.unspent_anchor_at);
-    const confirmedAtMs = v3?.unspent_anchor_set_at == null ? Number.NaN : Date.parse(v3.unspent_anchor_set_at);
-    const loggedAfterConfirm = (row: InputsRow): boolean => {
-      if (confirmDay === null || row.local_date !== confirmDay || row.created_at == null) return false;
-      return Date.parse(row.created_at) > confirmedAtMs; // NaN on either side compares false
-    };
-    months = monthKeys.map((m) => {
-      const mark = marks === null ? undefined : marks[m];
-      return {
-        month: m,
-        full: flags.get(m) === true,
-        mark: inList(MARKS, mark) ? (mark as MonthMark) : null,
-        lines: (keptByMonth.get(m) ?? []).map(({ row, amount }): V3Line => {
-          const out = amount < 0;
-          const role = roleOf(row, out);
-          const s = row.recurring_series_id === null ? undefined : seriesById.get(row.recurring_series_id);
-          return {
-            id: row.id,
-            date: row.local_date,
-            amount: minorUnits(Math.abs(amount)),
-            role,
-            status: row.status as 'paid' | 'pending',
-            seriesId: row.recurring_series_id,
-            categoryId: row.category_id,
-            coversMonths: null,
-            source: row.import_batch_id ? 'statement' : 'manual', // D-51
-            expected: false,
-            // 05.2 F-10: an occurrence without its own tag takes its series' income type, as countsAs does
-            incomeKind: role === 'income' ? (incomeKindOf(str(row.income_kind)) ?? (s !== undefined ? s.incomeKind : null)) : null,
-            countsAs: role === 'income' ? (row.counts_as ?? (s !== undefined ? s.countsAs : null)) : null,
-            refundOf: str(row.refund_of),
-            ...(loggedAfterConfirm(row) ? { loggedAfterConfirm: true } : {}),
-          };
-        }),
-      };
-    });
+    months = monthKeys.map((m) => monthOfKey(m, seriesById));
   } else if (moneyUsable && st !== null && st.rough_income !== null && st.rough_spending !== null) {
     // Typed estimates (D-04): only before the first full month, in the settings currency (converted at stored rates).
     // moneyUsable means the settings currency is the home currency (or unstamped), so no conversion is needed.
@@ -549,5 +587,5 @@ export function buildInputs(rawSource: InputsSource, settings: V3SettingsSource 
     hh?.joint === undefined || hh.joint.length === 0
       ? []
       : jointToHome(jointWithPending(hh.joint, [...source.rows, ...source.upcomingRows], today, nextPayDate(built.series, today)), jointKeys, toHome);
-  return withHouseholdScope(built, hh, joint);
+  return { inputs: withHouseholdScope(built, hh, joint), soFar: wantCurrent ? monthSoFar() : null };
 }

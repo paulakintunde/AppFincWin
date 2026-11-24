@@ -90,7 +90,7 @@ describe('FeaturesScreen (UI-SPEC 11)', () => {
     expect(getByText(`${FEATURES.filter((f) => f.minLevel <= 2).length} of ${FEATURES.length} features on`)).toBeTruthy();
     fireEvent.press(getByText('Run setup again'));
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/onboarding', params: { mode: 'rerun' } });
-    for (const area of ['Recording', 'Accounts', 'Planning', 'Grow', 'Sharing', 'System']) {
+    for (const area of ['Recording', 'Accounts', 'Planning', 'Grow', 'Insight', 'Sharing', 'System']) {
       expect(getByTestId(`features-area-${area}`)).toBeTruthy();
     }
     expect(queryByTestId('features-choose-plan')).toBeNull();
@@ -118,6 +118,14 @@ describe('FeaturesScreen (UI-SPEC 11)', () => {
     fireEvent.press(row);
     expect(mockSet).toHaveBeenCalledWith({ userId: 'u1', featureId: 'categories', isOn: true });
     expect((mockShowToast.mock.calls[0]?.[0] as { text: { key: string } }).text.key).toBe('features.toastOn');
+  });
+
+  it('07-05: a level-2 user has the Insights row on and the level-3 Insight rows marked Not in your level', async () => {
+    const { getByTestId, getByLabelText } = await renderScreen();
+    expect(getByTestId('features-area-Insight')).toBeTruthy();
+    expect(getByLabelText('Insights').props.accessibilityState.checked).toBe(true);
+    expect(getByLabelText('Score, Not in your level').props.accessibilityState.checked).toBe(false);
+    expect(getByLabelText('Net worth over time, Not in your level').props.accessibilityState.checked).toBe(false);
   });
 
   it('above your level: says Not in your level and the switch still works (owner Q6)', async () => {

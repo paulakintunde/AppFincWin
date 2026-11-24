@@ -1,5 +1,6 @@
 // D-04/D-14/D-19: the large tab-root header: optional date eyebrow, 26/700 heading-role title that
-// wraps (no numberOfLines) at large text sizes, optional screen-owned controls, and the avatar.
+// wraps between words at large text sizes (never inside a word: a word wider than the screen shrinks to fit),
+// optional screen-owned controls, and the avatar.
 // 05.5 device fix (Pixel 6): at a large font scale, screen-owned controls take their own row above the title, so the title keeps the
 // full width ("Can I afford it?" broke over three lines beside Decide's Past decisions pill).
 import React, { useState } from 'react';
@@ -31,6 +32,14 @@ export interface TabHeaderProps {
 
 /** At or above this font scale, a header with screen-owned controls stacks them above the title. */
 export const TAB_HEADER_STACK_SCALE = 1.3;
+
+/** Smallest share of the title's size it may shrink to so one long word fits on its line. */
+export const TITLE_MIN_FONT_SCALE = 0.5;
+
+/** One line per word: the title may wrap between words but never break inside one. */
+export function titleWordCount(title: string): number {
+  return Math.max(1, title.trim().split(/\s+/).length);
+}
 
 export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, showBack, titleRole = 'heading' }: TabHeaderProps): React.JSX.Element {
   const { colors, fonts, pairing } = useTheme();
@@ -92,6 +101,11 @@ export function TabHeader({ title, eyebrow, titleRef, showAvatar, trailing, show
             if (!stacked && trailing != null && e.nativeEvent.lines.length > 1) setWrappedFor(wrapKey);
           }}
           accessibilityLabel={eyebrow ? `${title}, ${eyebrow}` : undefined}
+          // Device fix: "Overview" at 2x on a 320dp Pixel broke as "Overvie / w". One line per word lets the title wrap
+          // between words (D-19) while a single word that is too wide shrinks to fit instead of breaking.
+          numberOfLines={titleWordCount(title)}
+          adjustsFontSizeToFit
+          minimumFontScale={TITLE_MIN_FONT_SCALE}
           style={{
             ...textRole(pairing, titleRole),
             color: colors.ink,

@@ -1,5 +1,5 @@
 // 06-14 (D-26, T-06-14-03): the net-worth rule on the LEDGER and on linked / unlinked investment accounts.
-import { accounts as ledgerAccounts, holdings as ledgerHoldings, netWorth as LEDGER_NET, autoLoan } from '@/engine/grow/__tests__/fixtures/ledger';
+import { accounts as ledgerAccounts, holdings as ledgerHoldings, netWorth as LEDGER_NET, autoLoan } from './fixtures/ledger';
 import { netWorthOf, type NetWorthAccount, type NetWorthDebt, type NetWorthHolding } from '../netWorth';
 
 const ACCOUNTS: NetWorthAccount[] = [
@@ -68,5 +68,11 @@ describe('netWorthOf', () => {
     const balances = new Map(BALANCES).set('old', 99999);
     expect(netWorthOf({ accounts, balances, holdings: HOLDINGS, debts: DEBTS })).toBe(LEDGER_NET);
     expect(netWorthOf({ accounts: [], balances: new Map(), holdings: [], debts: [] })).toBe(0);
+  });
+
+  it('throws when the total leaves the safe integer range', () => {
+    const accounts: NetWorthAccount[] = [{ id: 'a', kind: 'checking' }, { id: 'b', kind: 'checking' }];
+    const balances = new Map([['a', Number.MAX_SAFE_INTEGER], ['b', Number.MAX_SAFE_INTEGER]]);
+    expect(() => netWorthOf({ accounts, balances, holdings: [], debts: [] })).toThrow(RangeError);
   });
 });

@@ -7,6 +7,7 @@ import type { AccentKey } from './accents';
  * (FincWin United.dc.html lines 3217-3218). DSG-02 is enforced by
  * src/theme/__tests__/noRawColours.test.ts: any hex/rgb literal outside this file,
  * src/theme/accents.ts or src/features/auth/brand/ fails CI.
+ * Owner exceptions since §2: pageTint (06.2), memberColors keys 7 and 9 (09-26) and chartPalette (07 D-24).
  */
 export const colors = {
   surface: '#FFFFFF',
@@ -157,6 +158,17 @@ export const memberColorNames = [
   'Green', 'Rust', 'Slate', 'Ochre', 'Plum', 'Teal',
   'Navy', 'Magenta', 'Brown', 'Orange', 'Charcoal', 'Brick',
 ] as const;
+
+/**
+ * 07 D-24 (owner exception 2026-11-22): the chart-only palette for series such as category bars. Charts may use vibrant colour;
+ * these six live only here and are used only inside charts (bars, lines, legend swatches), never for text, rows, tiles or cards.
+ * Each reaches 3:1 or better (WCAG 1.4.11) on surface, canvas, fill1 and every page tint (tested in __tests__/contrast.test.ts).
+ * Colour is never the only signal: every bar/point keeps its spoken label and each chart its summary line.
+ */
+export const chartPalette = ['#1F6FEB', '#D9531E', '#00876C', '#C2409A', '#6B3FCB', '#7F7A00'] as const;
+/** Names for chartPalette, in the same order (legends, tests). */
+export const chartPaletteNames = ['Blue', 'Orange', 'Green', 'Magenta', 'Violet', 'Olive'] as const;
+export type ChartColor = (typeof chartPalette)[number];
 
 export const shadowColor = '#14150F';
 

@@ -40,6 +40,8 @@ const mockFetch = {
   goalLines: jest.fn(),
   balances: jest.fn(),
   subdivision: jest.fn(),
+  sharedCats: jest.fn(),
+  picks: jest.fn(),
 };
 jest.mock('@/db/transactions', () => ({ fetchTransactionsInRange: (...a: unknown[]) => mockFetch.range(...a) }));
 jest.mock('@/db/decideChecks', () => ({ fetchDecideChecks: (...a: unknown[]) => mockFetch.checks(...a) }));
@@ -89,7 +91,26 @@ jest.mock('../activity', () => ({
 }));
 jest.mock('../recurringSeries', () => ({ useRecurringSeries: () => mockSeries }));
 jest.mock('../fxLatest', () => ({ useFxLatest: () => mockFx }));
-jest.mock('../categories', () => ({ useCategories: () => mockCategories }));
+// 07 D-32, D-33: the shared-line category reads; `enabled` is recorded so a household with no shared line is seen not to need them.
+// NR-03: they are real queries over mocked fetchers, so a failure and a Retry go through TanStack as in the app.
+const mockSharedReads = { enabled: [] as boolean[] };
+jest.mock('../categories', () => {
+  const { useQuery } = jest.requireActual('@tanstack/react-query');
+  return {
+    useCategories: () => mockCategories,
+    useSharedLineCategories: (h: string | undefined, enabled: boolean) => {
+      mockSharedReads.enabled.push(enabled);
+      return useQuery({ queryKey: ['test-shared-line-categories', h ?? ''], queryFn: () => mockFetch.sharedCats(), enabled });
+    },
+    useMyLineCategories: (h: string | undefined, u: string | undefined, enabled: boolean) =>
+      useQuery({ queryKey: ['test-my-line-categories', h ?? '', u ?? ''], queryFn: () => mockFetch.picks(), enabled }),
+  };
+});
+// A shared line also needs the stored splits; none are stored here.
+jest.mock('../householdBalances', () => ({
+  ...jest.requireActual('../householdBalances'),
+  useSharedSplits: (_h: unknown, enabled: boolean) => ({ data: enabled ? new Map() : undefined, isError: false, error: null, refetch: jest.fn() }),
+}));
 jest.mock('../customCurrencies', () => ({ useCustomCurrencies: () => mockCustom }));
 
 function wrapper(client: QueryClient) {
@@ -165,6 +186,8 @@ function resetMocks(): void {
   mockFetch.written.mockResolvedValue([]);
   mockFetch.balances.mockResolvedValue([]);
   mockFetch.subdivision.mockResolvedValue(null);
+  mockFetch.sharedCats.mockResolvedValue([]);
+  mockFetch.picks.mockResolvedValue([]);
 }
 beforeEach(resetMocks);
 
@@ -293,6 +316,15 @@ describe('useDecideSnapshot', () => {
     expect(mockFetch.subdivision).toHaveBeenCalledWith(expect.anything(), 'u1');
   });
 
+  it('07 D-32: with no shared line, the shared-line category reads are never made or required', async () => {
+    mockSharedReads.enabled = [];
+    const { result } = await ready();
+    expect(result.current.status).toBe('ready');
+    expect(mockSharedReads.enabled.every((e) => e === false)).toBe(true);
+    expect(result.current.source?.partnerCategories).toBeUndefined();
+    expect(result.current.source?.categorySourceIds).toBeUndefined();
+  });
+
   it('05.4-35: no stored state or province reads as null on the source', async () => {
     const { result } = await ready();
     expect(result.current.source?.regionSubdivision).toBeNull();
@@ -337,6 +369,30 @@ describe('useDecideSnapshot', () => {
     });
     await waitFor(() => expect(hook.result.current.status).toBe('ready'));
     expect(mockFetch.debts).toHaveBeenCalledTimes(2);
+  });
+
+  // NR-03: with a shared line, the two shared-category reads are required; Retry must refetch them too, or Decide stays stuck.
+  const withSharedLine = async (_c: unknown, _h: string, r: { from: string }) =>
+    r.from > '2026-10-31'
+      ? []
+      : [...history(), txRow({ id: 'shared-food', local_date: '2026-09-12', original_amount: -20_000, home_amount: -20_000, category_id: 'c-p-pets', ...({ is_shared: true, created_by: 'u2' } as object) })];
+
+  it.each([
+    ['shared-line categories', 'sharedCats'],
+    ['my line categories', 'picks'],
+  ] as const)('NR-03: a failed %s read is an error, and Retry refetches it until Decide answers', async (_name, key) => {
+    mockFetch.range.mockImplementation(withSharedLine);
+    mockFetch[key].mockRejectedValueOnce(new Error('PGRST202'));
+    const hook = await renderHook(() => useDecideSnapshot(), { wrapper: wrapper(newClient()) });
+    await waitFor(() => expect(hook.result.current.status).toBe('error'));
+    expect(hook.result.current.source).toBeNull();
+    expect(mockFetch[key]).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      hook.result.current.retry();
+    });
+    await waitFor(() => expect(hook.result.current.status).toBe('ready'));
+    expect(mockFetch[key]).toHaveBeenCalledTimes(2);
+    expect(hook.result.current.source).not.toBeNull();
   });
 
   it('keeps the snapshot ready from the cached copy when a refetch fails (offline)', async () => {

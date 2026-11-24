@@ -265,14 +265,14 @@ describe('Grow home shell', () => {
     expect(screen.getByText(en.grow.home.footer)).toBeTruthy();
   });
 
-  it('the Grow tab is on: 4 tabs, and the layout hides a tab only when it is not available', () => {
-    expect(availableTabs()).toEqual(['home', 'activity', 'decide', 'grow']);
+  it('the Grow tab is on: 5 tabs, and the layout hides a tab only when it is not available', () => {
+    expect(availableTabs()).toEqual(['home', 'activity', 'decide', 'grow', 'insights']);
     expect(availableTabs()).toContain('grow');
     const layout = fs.readFileSync(path.join(__dirname, '../../../../../app/(app)/(tabs)/_layout.tsx'), 'utf8');
     // The layout maps tabRoutes() (no null children); a tab that is not available keeps its route with href null.
     expect(layout).toContain('tabRoutes()');
     expect(layout).toContain('href: null');
-    expect(tabRoutes().map((r) => r.name)).toEqual(['home', 'activity', 'decide', 'grow']);
+    expect(tabRoutes().map((r) => r.name)).toEqual(['home', 'activity', 'decide', 'grow', 'insights']);
     expect(tabRoutes().every((r) => !r.hidden)).toBe(true);
   });
 });
