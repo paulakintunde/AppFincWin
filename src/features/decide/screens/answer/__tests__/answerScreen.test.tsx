@@ -13,6 +13,8 @@ jest.mock('@/services/locale/deviceLocale', () => ({ useDeviceLocale: () => ({ l
 jest.mock('expo-crypto', () => ({ randomUUID: () => '00000000-0000-4000-8000-000000000000' }));
 // 09-24: the sample look-around intro reads the plan and auth; this suite covers the answer itself.
 jest.mock('../SampleAnswerIntro', () => ({ SampleAnswerIntro: () => null }));
+// Quick 261124-2bs: AnswerScreen reads the plan to turn on the sample (First read) treatment; this suite is not in sample mode.
+jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'trial', loading: false }) }));
 
 const mockTrack = jest.fn();
 jest.mock('@/services/analytics', () => ({ getAnalytics: () => ({ track: (...a: unknown[]) => mockTrack(...a) }) }));
