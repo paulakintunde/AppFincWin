@@ -110,6 +110,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     'due_day',
     // 06
     'started_balance', 'payoff_order', 'payoff_extra', 'extra_series_id',
+    // 261123 (DD-03)
+    'credit_limit', 'revolving',
   ],
   savings_goals: [
     'id', 'household_id', 'created_by', 'check_id', 'name', 'currency', 'target', 'monthly_amount', 'ready_by', 'opening_saved',
