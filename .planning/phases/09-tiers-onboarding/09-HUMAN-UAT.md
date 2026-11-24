@@ -114,7 +114,7 @@ result: [pending: after launch]
 
 ### B7. CLAUDE.md stack row for react-native-purchases
 expected: The CLAUDE.md Technology Stack and Services rows still say react-native-purchases 10.9.1. The installed exact pin is 10.16.0 (09-10). The owner approves the CLAUDE.md edit, then the row is changed to 10.16.0.
-result: [pending: owner OK needed; CLAUDE.md not edited]
+result: pass (CLAUDE.md Services row already reads react-native-purchases 10.16.0; the 10.9.1 mention is the historical staleness table, left as history) — quick 261124-2bs
 
 ### B8. ENV-12 RevenueCat (09-08 Task 4; 09-PUSH-LOG open item)
 expected: Create the RevenueCat project (entitlement `access`, offerings `default` and `no_trial`, restore "Transfer if there are no active subscriptions", Family Sharing off). Put the secret API key and one webhook secret in the main checkout's `.env.local`, set them as function secrets, add the plan-webhook URL, send a TEST event and record the webhook auth mode in 09-PUSH-LOG.md. Also set the RevenueCat public keys in the EAS preview environment.
@@ -158,11 +158,11 @@ result: [pending: launch]
 
 | # | Item | Source | Needs |
 |---|------|--------|-------|
-| 1 | `left_at` in `plan_state()` (newest `household_leave_log.left_at` for a person alone with no covering plan). Fixes `lock.explainer.afterSeven` and makes `payerAfterLeaving` accurate (today it also matches a Duo payer who has not invited anyone, and `{{home}}` is the current home, not the one left) | 09-19, 09-20 | A migration (later plan) |
-| 2 | First read intro on the sample answer: the `StageTag` "First read" (`onboarding.sample.firstRead`) and "Based on sample figures" (`onboarding.sample.basis`) at the `SampleAnswerIntro` seam | 09-24 (PARTIAL, owner-approved) | 08.1 plans 19-20 to merge |
-| 3 | Trial reminder tap on a cold start opens the app without routing to Subscription (handled only while the app runs) | 09-19 | Read the last notification response on launch |
-| 4 | `plans.invite.waiting.expired` is not wired: the waiting screen does not poll | 09-20 | Invitee-side re-check of the request |
-| 5 | CLAUDE.md react-native-purchases 10.9.1 -> 10.16.0 | 09-10 | Owner OK (same as B7) |
+| 1 | `left_at` in `plan_state()` (newest `household_leave_log.left_at` for a person alone with no covering plan). Fixes `lock.explainer.afterSeven` and makes `payerAfterLeaving` accurate (today it also matches a Duo payer who has not invited anyone, and `{{home}}` is the current home, not the one left) | 09-19, 09-20 | A migration (later plan) — DONE quick 261124-2bs (migration 20261125001200_plan_state_left_at.sql) |
+| 2 | First read intro on the sample answer: the `StageTag` "First read" (`onboarding.sample.firstRead`) and "Based on sample figures" (`onboarding.sample.basis`) at the `SampleAnswerIntro` seam | 09-24 (PARTIAL, owner-approved) | 08.1 plans 19-20 to merge — DONE quick 261124-2bs (StageTag was removed by 08.1-13; done as the top-bar stage word + sample basis line) |
+| 3 | Trial reminder tap on a cold start opens the app without routing to Subscription (handled only while the app runs) | 09-19 | Read the last notification response on launch — DONE quick 261124-2bs |
+| 4 | `plans.invite.waiting.expired` is not wired: the waiting screen does not poll | 09-20 | Invitee-side re-check of the request — DONE quick 261124-2bs |
+| 5 | CLAUDE.md react-native-purchases 10.9.1 -> 10.16.0 | 09-10 | Owner OK (same as B7) — DONE quick 261124-2bs |
 | 6 | `plan_join_requests` is not in the CSV export manifest | 09-18, 09-20 | Owner not yet asked whether join requests belong in the export (GDPR portability) |
 | 7 | iOS dev build before the CocoaPods trunk freeze on 2026-12-02 | Pitfall 9 | Same as B5 |
 | 8 | People who signed up after the 09 backfill migration but before this build ships have no `user_setup` row and get the questions once | 09-23 | Note only; testers included |

@@ -34,6 +34,7 @@ const mockPush = jest.fn();
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   router: { push: (...a: unknown[]) => mockPush(...a), replace: (...a: unknown[]) => mockReplace(...a) },
+  useFocusEffect: (cb: () => void) => require('react').useEffect(cb, [cb]),
 }));
 const mockBack = jest.fn();
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ useBackHistory: () => ({ goBack: mockBack, history: [] }) }));
@@ -286,6 +287,107 @@ describe('JoinScreen and plans', () => {
     await fireEvent.press(screen.getByText('Contact support'));
     expect(open).toHaveBeenCalledWith(expect.stringContaining('support@'));
     open.mockRestore();
+  });
+});
+
+describe('JoinScreen waiting re-check (quick 261124-2bs, UAT C2-5)', () => {
+  const REQUEST = { id: 'r1', household_id: 'hNew', user_id: 'me', needed_plan_size: 6, status: 'waiting', created_at: '2026-11-20T00:00:00Z' };
+
+  async function waitThenTick(ms = 30_000) {
+    mockPreview.mockResolvedValue(PREVIEW);
+    mockRedeem.mockResolvedValue({ ok: false, reason: 'needs_approval', request_id: 'r1' });
+    await joinThrough();
+    await waitFor(() => expect(screen.getByTestId('join-waiting')).toBeTruthy());
+    mockPreview.mockClear();
+    mockFetchRequest.mockClear();
+    return async () => {
+      await act(async () => {
+        jest.advanceTimersByTime(ms);
+      });
+    };
+  }
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    mockFetchRequest.mockResolvedValue(REQUEST);
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('asks every 30 s while waiting and stays waiting when nothing changed', async () => {
+    const tick = await waitThenTick(29_000);
+    await tick();
+    expect(mockFetchRequest).not.toHaveBeenCalled();
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+    });
+    expect(mockFetchRequest).toHaveBeenCalledTimes(1);
+    expect(mockPreview).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId('join-waiting-expired')).toBeNull();
+    expect(screen.getByTestId('join-waiting')).toBeTruthy();
+  });
+
+  it('shows the expired line when the request expired, and stops asking', async () => {
+    const tick = await waitThenTick(0);
+    mockFetchRequest.mockResolvedValue({ ...REQUEST, status: 'expired' });
+    await tick();
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByTestId('join-waiting-expired')).toBeTruthy();
+    expect(screen.getByText('This invite expired. Ask Sam to send a new one.')).toBeTruthy();
+    expect(screen.queryByText(/You will be added when they approve/)).toBeNull();
+    const calls = mockFetchRequest.mock.calls.length;
+    await act(async () => {
+      jest.advanceTimersByTime(90_000);
+    });
+    expect(mockFetchRequest).toHaveBeenCalledTimes(calls);
+  });
+
+  it('a cancelled request reads the same expired line', async () => {
+    const tick = await waitThenTick(0);
+    mockFetchRequest.mockResolvedValue({ ...REQUEST, status: 'cancelled' });
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByText('This invite expired. Ask Sam to send a new one.')).toBeTruthy();
+    void tick;
+  });
+
+  it('a request still waiting but an invite that no longer previews reads the expired line', async () => {
+    await waitThenTick(0);
+    mockPreview.mockResolvedValue({ ok: false, reason: 'expired' });
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByTestId('join-waiting-expired')).toBeTruthy();
+  });
+
+  it('an admitted request runs the joined path', async () => {
+    await waitThenTick(0);
+    mockFetchRequest.mockResolvedValue({ ...REQUEST, status: 'admitted' });
+    await AsyncStorage.setItem('fincwin.whatsSharedSeen.hNew', '1');
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/household'));
+    const calls = mockFetchRequest.mock.calls.length;
+    await act(async () => {
+      jest.advanceTimersByTime(90_000);
+    });
+    expect(mockFetchRequest).toHaveBeenCalledTimes(calls);
+  });
+
+  it('a failing read keeps the waiting state and shows no error', async () => {
+    await waitThenTick(0);
+    mockFetchRequest.mockRejectedValue(new Error('network'));
+    await act(async () => {
+      jest.advanceTimersByTime(30_000);
+    });
+    expect(screen.getByTestId('join-waiting')).toBeTruthy();
+    expect(screen.queryByTestId('join-error')).toBeNull();
+    expect(screen.queryByTestId('join-waiting-expired')).toBeNull();
   });
 });
 
