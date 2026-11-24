@@ -32,11 +32,22 @@ export function LoadingBlock({ testID, height }: { testID: string; height: numbe
   return <View testID={testID} accessible={false} style={{ height, borderRadius: radii.card, backgroundColor: colors.fill1 }} />;
 }
 
-export function ErrorCard({ onRetry, testID = 'insights-error' }: { onRetry: () => void; testID?: string }) {
+/** 261123 (Pixel 9 TalkBack check): the section's own heading, kept on its loading, error and offline states. */
+export function SectionHeading({ title }: { title: string }) {
+  const { colors, pairing } = useTheme();
+  return (
+    <Text accessibilityRole="header" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>
+      {title}
+    </Text>
+  );
+}
+
+export function ErrorCard({ onRetry, testID = 'insights-error', heading }: { onRetry: () => void; testID?: string; heading?: string }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   return (
     <Card testID={testID}>
+      {heading === undefined ? null : <SectionHeading title={heading} />}
       <View style={styles.errorHead}>
         <Glyph name="info" size={20} color={colors.inkMuted} />
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink, flexShrink: 1 }}>
@@ -50,11 +61,12 @@ export function ErrorCard({ onRetry, testID = 'insights-error' }: { onRetry: () 
 }
 
 /** NR-01: offline with nothing cached; the read resumes on its own when the device is back online, so there is no button. */
-export function OfflineCard({ testID = 'insights-offline' }: { testID?: string }) {
+export function OfflineCard({ testID = 'insights-offline', heading }: { testID?: string; heading?: string }) {
   const t = useT();
   const { colors, pairing } = useTheme();
   return (
     <Card testID={testID}>
+      {heading === undefined ? null : <SectionHeading title={heading} />}
       <View style={styles.errorHead}>
         <Glyph name="info" size={20} color={colors.inkMuted} />
         <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, flexShrink: 1 }}>{t('insights.states.offlineNoCache')}</Text>

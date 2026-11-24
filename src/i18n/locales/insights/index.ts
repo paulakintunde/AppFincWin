@@ -19,7 +19,8 @@ export const insights = {
   },
   inOut: {
     title: 'Money in and out',
-    modeLabel: 'Chart',
+    // Pixel 9 TalkBack check (261123): the toggle was announced only as "Chart"; it names what it switches.
+    modeLabel: 'What the money in and out chart shows',
     modeInOut: 'In and out',
     modeLeft: 'Left each month',
     tileIn: 'In',
@@ -87,6 +88,8 @@ export const insights = {
   netWorth: {
     title: 'Net worth',
     asOfToday: 'as of today',
+    // Pixel 9 TalkBack check (261123): the figure was announced as the amount alone.
+    figureA11y: 'Net worth, {{amount}}, as of today',
     up: 'Up {{amount}} over {{period}}',
     down: 'Down {{amount}} over {{period}}',
     flat: 'No change over {{period}}',
