@@ -111,12 +111,9 @@ begin
   end if;
 
   -- 6. Nothing here is "sample" any more: the review account is a normal full account. The guards that pin is_sample are
-  -- triggers, so this step runs with user triggers off (no foreign key is touched by it).
-  begin
-    perform set_config('session_replication_role', 'replica', true);
-  exception when others then
-    null;
-  end;
+  -- user triggers. session_replication_role needs superuser (refused on Supabase), so each table's user triggers are
+  -- switched off for this one update only. This function owns the tables, ALTER TABLE is transactional (any error rolls
+  -- the disable back too), and the lock lasts only for the reviewer's own rows. Foreign-key triggers are not user triggers.
   for r in
     select c.table_name,
            bool_or(c.column_name = 'household_id') as by_household
@@ -128,14 +125,16 @@ begin
                              where table_schema = 'public' and column_name = 'is_sample')
      group by c.table_name
   loop
+    set constraints all immediate;  -- flush deferred checks queued by the earlier steps; ALTER TABLE refuses pending events
+    execute format('alter table public.%I disable trigger user', r.table_name);
     if r.by_household then
       execute format('update public.%I set is_sample = false where household_id = $1 and is_sample', r.table_name) using v_hh;
     else
       execute format('update public.%I set is_sample = false where owner_id = any($1) and is_sample', r.table_name)
         using array[v_rev, v_par];
     end if;
+    execute format('alter table public.%I enable trigger user', r.table_name);
   end loop;
-  perform set_config('session_replication_role', 'origin', true);
 
   perform set_config('fincwin.plan_bypass', 'off', true);
   perform set_config('fincwin.system_restamp', '', true);
