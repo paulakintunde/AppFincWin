@@ -221,15 +221,10 @@ export function planNotices(input: PlanNoticeInput): Notice[] {
     });
   }
 
-  // Payer after leaving (D-19, D-42): a household plan still bills for a household of one. Quick 261124-2bs: only after a
-  // real leave (a Duo payer who never invited anyone has no leftAt), and it names the home they left.
-  if (
-    plan.payerIsMe &&
-    plan.members === 1 &&
-    plan.planSize > 1 &&
-    (plan.leftAt ?? null) !== null &&
-    (plan.status === 'active' || plan.status === 'trial')
-  ) {
+  // Payer after leaving (D-19, D-42): a household plan still bills for a household of one. Quick 261124-2bs: when the payer
+  // really left a home (leftAt), the notice names that home; the condition itself is unchanged, so a payer whose partner
+  // left still gets the Manage / Move to Solo offer.
+  if (plan.payerIsMe && plan.members === 1 && plan.planSize > 1 && (plan.status === 'active' || plan.status === 'trial')) {
     out.push({
       id: 'payerAfterLeaving',
       titleKey: 'plans.notices.payerAfterLeaving.title',

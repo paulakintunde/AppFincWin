@@ -26,9 +26,12 @@ export function useTrialReminderTap(enabled: boolean): void {
       void Notifications.clearLastNotificationResponseAsync().catch(() => undefined);
     };
 
-    void Notifications.getLastNotificationResponseAsync().then((r) => {
-      if (!cancelled) route(r);
-    });
+    // A failed read (no native module, or a malformed stored response) must never break the signed-in layout.
+    void Notifications.getLastNotificationResponseAsync()
+      .then((r) => {
+        if (!cancelled) route(r);
+      })
+      .catch(() => undefined);
     const sub = Notifications.addNotificationResponseReceivedListener(route);
     return () => {
       cancelled = true;

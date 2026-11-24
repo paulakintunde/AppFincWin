@@ -140,9 +140,10 @@ describe('planNotices', () => {
     expect(x?.params).toEqual({ home: 'Maple' });
   });
 
-  it('payerAfterLeaving is NOT shown for a Duo payer who never invited anyone (no leftAt)', () => {
-    expect(ids(input({ plan: view({ members: 1, leftAt: null }) }))).not.toContain('payerAfterLeaving');
-    expect(ids(input({ plan: view({ members: 1 }) }))).not.toContain('payerAfterLeaving');
+  it('payerAfterLeaving still shows with no leftAt (a payer whose partner left keeps the Manage / Move to Solo offer)', () => {
+    const x = one(input({ plan: view({ members: 1, leftAt: null }) }), 'payerAfterLeaving');
+    expect(x?.params).toEqual({ home: 'The Flat' });
+    expect(x?.actions.map((a) => a.kind)).toEqual(['manage', 'moveSolo']);
   });
 
   it('double cover, nobody picked, I am a payer: two choose buttons, not dismissible, default line', () => {
