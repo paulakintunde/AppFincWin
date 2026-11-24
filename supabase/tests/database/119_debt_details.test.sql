@@ -66,11 +66,12 @@ select extensions.throws_ok(
   $$update public.debts set credit_limit = -1 where id = 'd1190000-0000-0000-0000-000000000002'$$,
   '23514', null, 'a negative limit is refused');
 
--- 10-12. apply_patches takes the three new keys, and Undo restores them.
+-- 10-12. apply_patches takes the three new keys, and the Undo step stores the inverse (as the app sends it: undo_log.ops is
+-- NOT NULL, so a step always carries its inverse ops, written against the version the forward patch leaves behind).
 select extensions.is(
   (public.apply_patches(
     '[{"entity":"debts","id":"d1190000-0000-0000-0000-000000000002","expectedVersion":1,"patch":{"credit_limit":600000,"revolving":true}}]'::jsonb,
-    '{"id":"e1190000-0000-0000-0000-000000000001","label_key":"debtEdited","label_params":{"name":"Card"}}'::jsonb)) ->> 'status',
+    '{"id":"e1190000-0000-0000-0000-000000000001","label_key":"debtEdited","label_params":{"name":"Card"},"ops":[{"entity":"debts","id":"d1190000-0000-0000-0000-000000000002","expectedVersion":2,"patch":{"credit_limit":500000,"revolving":true}}]}'::jsonb)) ->> 'status',
   'applied', 'apply_patches takes credit_limit and revolving');
 select extensions.is(
   (public.apply_patches(
@@ -86,11 +87,15 @@ values ('71190000-0000-0000-0000-000000000001', (select id from hh where owner_i
        ('71190000-0000-0000-0000-000000000002', (select id from hh where owner_id = '11111111-1111-1111-1111-111111111111'),
         'a1190000-0000-0000-0000-000000000001', -10000, 'USD', current_date, 'UTC', 'Sofa deposit');
 
+-- The helper is made as the test owner (as in 112/113), not as authenticated, which need not hold CREATE on public.
+reset role;
 create function public.t119_go(p_check uuid, p_row uuid, p_debt jsonb, p_step uuid) returns text language sql as $$
   select public.record_decide_go(p_check, array[p_row]::uuid[], '[]'::jsonb, '[]'::jsonb, p_debt,
     '{"verdict":"fits","estimate_day_one":1000,"estimate_monthly":0,"estimate_monthly_payment":0,"estimate_running":0,"broke_line":false,"row_roles":["day_one"],"series_roles":[]}'::jsonb,
     jsonb_build_object('id', p_step, 'label_key', 'decisionWritten')) ->> 'status'
 $$;
+grant execute on function public.t119_go(uuid, uuid, jsonb, uuid) to authenticated;
+set local role authenticated;
 
 select extensions.is(
   public.t119_go('c1190000-0000-0000-0000-000000000001', '71190000-0000-0000-0000-000000000001',
