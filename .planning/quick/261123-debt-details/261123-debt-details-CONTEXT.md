@@ -32,8 +32,14 @@ TalkBack and offline check.
 - **DD-08 Decide "Go ahead" on a financed purchase** (`record_decide_go`) stores `started_balance` = the financed amount and
   `start_date` = the purchase date. Shipped as a NEW additive migration: `create or replace function` copied from the latest
   definition with only that change.
+- **DD-09 Decide's debt entry follows DD-01** (owner 2026-11-23). A rate (0 valid) or "I don't know the rate" is required,
+  except a card paid in full each month. Reuse Grow's form/helper; the Decide engine does not change and Decide answers do
+  not move.
+- **DD-10 Paid-off debts in Grow's Debts list** (owner 2026-11-23). Paid-off debts show in a collapsed "Paid off" group at
+  the bottom of the Debts segment, with the count in its header; a tap opens it and each row opens the debt's detail.
+  Active debts and totals are unchanged; a paid-off debt never counts in a total.
 
-## Implementation choices (made by the executor inside DD-01..DD-08)
+## Implementation choices (made by the executor inside DD-01..DD-10)
 
 - **"Rate unknown" is `apr IS NULL` on a carried debt.** No new column: a null rate already means "not known" under D-07,
   0% is stored as `'0'`, and a card paid in full keeps a null rate but is not in any payoff figure. Payoff maths still runs
@@ -45,3 +51,15 @@ TalkBack and offline check.
   update grant. `paid_off_on` gains an insert grant for DD-04.
 - `started_balance` is no longer set to today's balance on add: a fixed loan stores its original amount; a revolving debt
   stores none.
+- **DD-09: there is no separate Decide debt form.** Decide's Debts setup item (`DebtsSetup.tsx`) only lists Grow's debts and
+  edits their due days; its "+ Add a debt" opens Grow's Debts segment, so Grow's `AddDebtSheet` (DD-01) is the only place a
+  debt is added or its rate typed. "Leave blank if none." (en.ts ~1054) is the savings/investment account APY field
+  (`accounts.sheet.rateHelp`), not a debt form, and is left alone. The installment-plan sheet prices a purchase being
+  considered (its example rate is never stored) and is not a debt record. So DD-09 is met by sharing one rule:
+  `rateUnknownOf(row)` in `src/features/grow/connect/debtPoint.ts` (no stored rate on a carried debt = "rate unknown"; a card
+  paid in full exempt; '0' is a known 0%), used by Grow's read model. Decide's Debts setup row for such a debt still reads
+  "{balance} · {minimum} minimum" (no rate shown, never 0%): showing "rate unknown" there is new Decide wording, which the
+  D-15 wording lock holds until the owner signs it off.
+- **DD-10: "paid off" = `paid_off_on` set on or before today** (exactly the rows `buildDebtsModel` already left out). Paying a
+  debt to 0 and DD-04's "Already paid off" both set that date. A zero balance with no paid-off date (for example a card or
+  line of credit at 0) stays in the open list, so the open list is unchanged. The group is newest paid-off first.

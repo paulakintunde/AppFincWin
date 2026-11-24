@@ -73,7 +73,7 @@ Owner decisions are in `261123-debt-details-CONTEXT.md`. Branch: `worktree-agent
 - `npm run verify:migrations`: MIGRATION GATE OK.
 - jest `src/features/grow src/data src/engine/grow src/engine/payoff src/features/insights src/i18n src/db`: 271 suites passed, 27111 tests passed, 2 skipped. After the refactor, grow/debts, grow/connect and grow/calculators were re-run: 311 tests passed.
 - netWorthSeries.ts coverage: 100% statements, branches, functions and lines.
-- **pgTAP not run.** Docker Desktop is not running on this machine, so `supabase db start` could not run. `119_debt_details.test.sql` has never been executed. Run it before the migration is pushed.
+- **pgTAP not run** at first (Docker was down). Later fixed and run: see the DD-09/DD-10 section below (16/16).
 
 ## For the owner
 
@@ -81,6 +81,41 @@ Owner decisions are in `261123-debt-details-CONTEXT.md`. Branch: `worktree-agent
 2. **Decide's own debt sheet still says "Leave blank if none."** (en.ts ~1054, `decide...rateHelp`). It is not part of the Grow form, and I left it alone. If DD-01 should cover Decide's sheet too, that is a follow-up.
 3. A paid-off debt is not listed in the Grow Debts segment, which is existing behaviour. After it is added, its detail page (the "cleared" view) opens. A "paid off" list is not part of these decisions.
 4. Net worth history still begins at the first month with records. A loan that started earlier does not push the chart further back.
+
+## Follow-ups DD-09 and DD-10 (owner 2026-11-23)
+
+**DD-09 (Decide's debt entry follows DD-01).** Decide has no debt form of its own. Its Debts setup item lists Grow's debts and
+edits due days; "+ Add a debt" opens Grow's Debts segment, so Grow's `AddDebtSheet` (rate, 0 valid, or "I don't know the
+rate"; card paid in full exempt) is already the only place a debt's rate is typed. "Leave blank if none." (en.ts ~1054) is
+the savings/investment account APY help, not a debt form, so it is unchanged (correcting item 2 of "For the owner" above).
+What changed: the rule is now one named helper, `rateUnknownOf(row)` in `src/features/grow/connect/debtPoint.ts`, used by
+Grow's read model (no behaviour change). Decide code and copy are unchanged: a Decide Debts setup row with no rate still reads
+"{balance} · {minimum} minimum" (never 0%). A "rate unknown" word on that row was built and then taken out because the D-15
+wording lock (`src/i18n/__tests__/wordingSignoff.test.ts`) refuses new Decide wording without the owner's sign-off. Owner
+follow-up if wanted: sign off `decide.screens.setupOthers.debts.rowSubRateUnknown: '{{balance}} · rate unknown · {{amount}}
+minimum'` via `npm run wording:page`. `src/engine/decide` is untouched; Decide answers do not move.
+
+**DD-10 (paid-off debts in Grow's Debts list).** `buildDebtsModel` now returns `paidOff` (debts with `paid_off_on` on or
+before today, newest first), the same rows it already left out of `debts`, totals and the plan. `DebtsSegment` shows them
+in a collapsed "Paid off · N" card at the bottom (also under the empty card when only paid-off debts exist). The header is a
+button with `expanded` state and the label "Paid off, N debt(s)"; rows read "Paid off Mar 2026" (spoken "paid off March
+2026") and open the debt detail. The open list, hero total, line card and plan are unchanged. A zero balance with no
+paid-off date (e.g. a card at 0) stays in the open list.
+
+Files: `src/features/grow/connect/debtPoint.ts`, `src/features/grow/connect/index.ts`, `src/features/grow/debts/useDebtsRead.ts`,
+`src/features/grow/debts/DebtsSegment.tsx`, `src/i18n/locales/en.ts`, plus tests in `debtPoint.test.ts` and
+`debtScreens.test.tsx`. No database change; cache version stays 18 (the model is not persisted).
+
+Checks: tsc clean; eslint 0 errors (2 old require() warnings); depcruise no violations; check:cache-version unchanged (18);
+jest `src/features/grow src/features/decide src/engine/decide/v3 src/i18n`: 350 suites passed, 29871 tests passed; two
+failed on the first run: the D-15 wording lock (the Decide row wording, since taken out) and `prepare.test.ts`'s Node timing
+check (p95 67 ms against 50 ms on a loaded machine; engine unchanged). Both pass on a re-run (prepare p95 8 ms).
+
+**pgTAP 119 fix (CI rls job).** Test 10 called `apply_patches` with an undo step that had no `ops`, so `undo_log.ops` (NOT NULL)
+got null: `apply_patches` in 20261125001100 is the 20261122000300 body unchanged in that part, and the app always sends the
+inverse ops. The fixture now sends the inverse op (expectedVersion 2), as test 76 does. The `t119_go` helper is now created
+as the test owner (reset role, grant execute), as tests 112/113 do. Run locally against the local stack, migration plus test
+in one rolled-back transaction: 16/16 ok.
 
 ## Self-Check: PASSED
 - All files listed in key-files exist. Commits ba246196, 97f01177, ed73bf46, 41712c3e, 3293fe35, f9f05d04 and 97a60a1f are on the branch.
