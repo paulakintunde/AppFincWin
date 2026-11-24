@@ -56,6 +56,8 @@ export function toPlanView(row: PlanStateRow, meta: PlanViewMeta = EMPTY_META): 
     leftGrace: row.state === 'left_grace',
     trialAvailable: row.trial_available === true,
     billingIssueAt: row.billing_issue_at ?? null,
+    leftAt: row.left_at ?? null,
+    leftHomeName: row.left_home_name ?? null,
     loading: meta.loading,
     isError: meta.isError,
   };
@@ -85,6 +87,8 @@ const NO_ROW: PlanStateRow = {
   writable: false,
   billing_issue_at: null,
   last_synced_at: null,
+  left_at: null,
+  left_home_name: null,
 };
 
 export function usePlanState(): PlanView {

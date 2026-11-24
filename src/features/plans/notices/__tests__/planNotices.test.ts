@@ -129,10 +129,20 @@ describe('planNotices', () => {
     expect(takeoverToast([e], null, BEA, nameOf)).toBeNull();
   });
 
-  it('payer alone on a bigger plan: payerAfterLeaving with Manage and Move to Solo', () => {
-    const x = one(input({ plan: view({ members: 1 }) }), 'payerAfterLeaving');
+  it('payer alone on a bigger plan after a real leave: payerAfterLeaving with Manage and Move to Solo', () => {
+    const x = one(input({ plan: view({ members: 1, leftAt: '2026-11-18T10:00:00Z', leftHomeName: null }) }), 'payerAfterLeaving');
     expect(x?.params).toEqual({ home: 'The Flat' });
     expect(x?.actions.map((a) => a.kind)).toEqual(['manage', 'moveSolo']);
+  });
+
+  it('payerAfterLeaving names the home they left', () => {
+    const x = one(input({ plan: view({ members: 1, leftAt: '2026-11-18T10:00:00Z', leftHomeName: 'Maple' }) }), 'payerAfterLeaving');
+    expect(x?.params).toEqual({ home: 'Maple' });
+  });
+
+  it('payerAfterLeaving is NOT shown for a Duo payer who never invited anyone (no leftAt)', () => {
+    expect(ids(input({ plan: view({ members: 1, leftAt: null }) }))).not.toContain('payerAfterLeaving');
+    expect(ids(input({ plan: view({ members: 1 }) }))).not.toContain('payerAfterLeaving');
   });
 
   it('double cover, nobody picked, I am a payer: two choose buttons, not dismissible, default line', () => {

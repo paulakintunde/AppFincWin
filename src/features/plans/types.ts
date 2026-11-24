@@ -34,6 +34,9 @@ export interface PlanStateRow {
   writable: boolean | null;
   billing_issue_at: string | null;
   last_synced_at: string | null;
+  /** quick 261124-2bs: set only for someone alone in a home made by their own leave. Absent on older servers and cached rows. */
+  left_at?: string | null;
+  left_home_name?: string | null;
 }
 
 export interface PlanView {
@@ -60,6 +63,10 @@ export interface PlanView {
   leftGrace: boolean;
   trialAvailable: boolean;
   billingIssueAt: string | null;
+  /** quick 261124-2bs (UAT C2-1): when this person left a home and now lives alone; null otherwise. Optional so fixtures need no edit. */
+  leftAt?: string | null;
+  /** The name of the home they left; null when that home is gone. */
+  leftHomeName?: string | null;
   loading: boolean;
   isError: boolean;
 }
