@@ -183,6 +183,45 @@ describe('Debts segment (G05)', () => {
     expect(screen.getByLabelText(en.grow.debts.add.name)).toBeTruthy();
   });
 
+  it('261123 (DD-10): paid-off debts sit in a collapsed "Paid off" group; totals are unchanged; a row opens the detail', async () => {
+    mockRows = [
+      AUTO,
+      VISA,
+      debt({ id: 'old', name: 'Old car loan', balance: 0, apr: '4', minimum_payment: 0, paid_off_on: '2026-03-10', started_balance: 1200000 }),
+      debt({ id: 'phone', name: 'Phone loan', balance: 0, apr: '0', minimum_payment: 0, paid_off_on: '2026-09-01', started_balance: 80000 }),
+    ];
+    await wrap(<DebtsSegment />);
+    // The hero total and the auto loan row are the same as with no paid-off debts.
+    expect(screen.getAllByText('$8,420')).toHaveLength(2);
+    expect(screen.getByText('Paid off · 2')).toBeTruthy();
+    expect(screen.queryByText('Old car loan')).toBeNull();
+    const toggle = screen.getByTestId('grow-debts-paid-off-toggle');
+    expect(toggle.props.accessibilityLabel).toBe('Paid off, 2 debts');
+    expect(toggle.props.accessibilityState).toEqual({ expanded: false });
+    await fireEvent.press(toggle);
+    expect(screen.getByTestId('grow-debts-paid-off-toggle').props.accessibilityState).toEqual({ expanded: true });
+    // Newest paid off first.
+    expect(screen.getAllByTestId(/^grow-debt-paid-off-/).map((n) => n.props.testID)).toEqual(['grow-debt-paid-off-phone', 'grow-debt-paid-off-old']);
+    expect(screen.getByText('Paid off Mar 2026')).toBeTruthy();
+    expect(screen.getByLabelText('Old car loan, paid off March 2026')).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('grow-debt-paid-off-old'));
+    expect(mockPush).toHaveBeenCalledWith('/grow/debt/old');
+    expect(allText()).not.toMatch(FORBIDDEN);
+  });
+
+  it('261123 (DD-10): no paid-off debts, no group', async () => {
+    await wrap(<DebtsSegment />);
+    expect(screen.queryByTestId('grow-debts-paid-off')).toBeNull();
+  });
+
+  it('261123 (DD-10): only paid-off debts: the empty card, with the group under it', async () => {
+    mockRows = [debt({ id: 'old', name: 'Old car loan', balance: 0, apr: '4', minimum_payment: 0, paid_off_on: '2026-03-10', started_balance: 1200000 })];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText(en.grow.debts.emptyTitle)).toBeTruthy();
+    expect(screen.getByText('Paid off · 1')).toBeTruthy();
+    expect(screen.getByTestId('grow-debts-paid-off-toggle').props.accessibilityLabel).toBe('Paid off, 1 debt');
+  });
+
   it('the FAB can open the sheet through addOpen', async () => {
     const closed = jest.fn();
     await wrap(<DebtsSegment addOpen onAddClosed={closed} />);

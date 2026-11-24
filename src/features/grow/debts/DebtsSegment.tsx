@@ -41,6 +41,7 @@ import {
   useDebtsRead,
   type DebtLine,
   type DebtsRead,
+  type PaidOffLine,
 } from './useDebtsRead';
 import { useDebts } from '@/data/queries/decide';
 
@@ -91,11 +92,14 @@ export function DebtsSegment({ addOpen = false, onAddClosed }: DebtsSegmentProps
   if (model.debts.length === 0 && model.paidInFull.length === 0) {
     return (
       <>
-        <View testID="grow-debts-empty" style={[...card, styles.center]}>
-          <GrowGlyph name="debt" color={colors.accent} size={28} />
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.debts.emptyTitle')}</Text>
-          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.debts.emptyBody')}</Text>
-          <Pill label={t('grow.debts.emptyAction')} variant="primary" onPress={() => setOwnOpen(true)} />
+        <View style={styles.stack}>
+          <View testID="grow-debts-empty" style={[...card, styles.center]}>
+            <GrowGlyph name="debt" color={colors.accent} size={28} />
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.ink, textAlign: 'center' }}>{t('grow.debts.emptyTitle')}</Text>
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>{t('grow.debts.emptyBody')}</Text>
+            <Pill label={t('grow.debts.emptyAction')} variant="primary" onPress={() => setOwnOpen(true)} />
+          </View>
+          <PaidOffGroup lines={model.paidOff} fmt={fmt} />
         </View>
         {sheet}
       </>
@@ -440,13 +444,75 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         </Pressable>
       )}
 
+      {/* 261123 (DD-10): paid-off debts at the bottom, collapsed. Not in the hero total or the plan above. */}
+      <PaidOffGroup lines={model.paidOff} fmt={fmt} />
+
       <Text style={{ ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted }}>{t('grow.debts.footer')}</Text>
       {editing === null ? null : <AddDebtSheet visible debt={editing} onClose={() => setEditing(null)} />}
     </View>
   );
 }
 
+/**
+ * 261123 (DD-10): the "Paid off" group. Collapsed by default with the count in its header; a tap opens it. Each row opens the
+ * debt's detail page (its cleared view). Nothing here is added to any total. Renders nothing when no debt is paid off.
+ */
+function PaidOffGroup({ lines, fmt }: { lines: readonly PaidOffLine[]; fmt: DebtFormat }) {
+  const t = useT() as unknown as (key: string, options?: Record<string, string | number>) => string;
+  const { colors, pairing } = useTheme();
+  const [open, setOpen] = useState(false);
+  if (lines.length === 0) return null;
+  const card = [styles.card, styles.listCard, { backgroundColor: colors.surface, ...shadows.card }];
+  const line = { ...textRole(pairing, 'label'), color: colors.inkMuted };
+  return (
+    <View testID="grow-debts-paid-off" style={card}>
+      <Pressable
+        testID="grow-debts-paid-off-toggle"
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={t('grow.debts.paidOffSectionA11y', { count: lines.length })}
+        onPress={() => {
+          hapticTap();
+          setOpen((o) => !o);
+        }}
+        style={({ pressed }) => [styles.groupHead, { opacity: pressed ? PRESSED_OPACITY : 1 }]}
+      >
+        <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{t('grow.debts.paidOffSection', { count: lines.length })}</Text>
+        <View style={{ transform: [{ rotate: open ? '-90deg' : '90deg' }] }}>
+          <GrowGlyph name="chev" color={colors.inkMuted} size={16} />
+        </View>
+      </Pressable>
+      {open
+        ? lines.map((d) => {
+            const date = fmt.monthYear(d.paidOffOn);
+            return (
+              <Pressable
+                key={d.id}
+                testID={`grow-debt-paid-off-${d.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={t('grow.debts.paidOffRowA11y', { name: d.name, date: fmt.monthYearLong(d.paidOffOn) })}
+                onPress={() => pushOnce(debtHref(d.id))}
+                style={({ pressed }) => [
+                  styles.row,
+                  { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line1, opacity: pressed ? PRESSED_OPACITY : 1 },
+                ]}
+              >
+                <AccTile glyph={d.kind === 'card' ? 'card' : 'debt'} />
+                <View style={styles.flex}>
+                  <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.ink }}>{d.name}</Text>
+                  <Text style={line}>{t('grow.debts.paidOffRow', { date })}</Text>
+                </View>
+                <GrowGlyph name="chev" color={colors.inkMuted} size={16} />
+              </Pressable>
+            );
+          })
+        : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  groupHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.gapMd, minHeight: 52 },
   stack: { gap: space.groupGap },
   card: { borderRadius: radii.card, padding: space.cardPadLg, gap: space.gapSm },
   center: { alignItems: 'center' },

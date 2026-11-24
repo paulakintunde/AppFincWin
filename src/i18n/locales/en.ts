@@ -2724,6 +2724,12 @@ const en = {
       lineCardNoRule: 'Debt payments · {{percent}}% of pay.',
       section: 'Debts',
       paidInFullSection: 'Cards paid in full',
+      // 261123 (DD-10): paid-off debts, in a collapsed group under the open ones. Never counted in a total.
+      paidOffSection: 'Paid off · {{count}}',
+      paidOffSectionA11y_one: 'Paid off, {{count}} debt',
+      paidOffSectionA11y_other: 'Paid off, {{count}} debts',
+      paidOffRow: 'Paid off {{date}}',
+      paidOffRowA11y: '{{name}}, paid off {{date}}',
       row: '{{rate}} · {{payment}} a month · due the {{day}}',
       rowNoRate: '{{payment}} a month · due the {{day}}',
       rowNoDay: '{{rate}} · {{payment}} a month',
