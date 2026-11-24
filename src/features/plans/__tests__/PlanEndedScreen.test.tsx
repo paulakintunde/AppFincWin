@@ -134,6 +134,29 @@ describe('PlanEndedScreen', () => {
     expect(mockShowToast).toHaveBeenCalledWith({ kind: 'info', text: { key: 'plans.subscription.manageFailed' } });
   });
 
+  it('quick 261124-2bs: shows "Your 7 days after leaving ended" for a non-payer who left a home', async () => {
+    mockPlan = { ...base, payerIsMe: false, payerId: 'u2', payerName: null, leftAt: '2026-11-01T10:00:00Z' };
+    const { getByText } = await render(
+      <ThemeProvider>
+        <PlanEndedScreen />
+      </ThemeProvider>,
+    );
+    expect(getByText('Your 7 days after leaving ended')).toBeTruthy();
+  });
+
+  it('quick 261124-2bs: hides the 7-days line with no leftAt, and for the payer', async () => {
+    for (const over of [{ leftAt: null }, { leftAt: '2026-11-01T10:00:00Z', payerIsMe: true }]) {
+      mockPlan = { ...base, ...over };
+      const { queryByTestId, unmount } = await render(
+        <ThemeProvider>
+          <PlanEndedScreen />
+        </ThemeProvider>,
+      );
+      expect(queryByTestId('lock-after-seven')).toBeNull();
+      await unmount();
+    }
+  });
+
   it('09-25 A5-1: the Needs a plan lines are information only: not buttons, no chevrons, no press handler', async () => {
     const { getByText, getByTestId, queryAllByRole } = await render(
       <ThemeProvider>

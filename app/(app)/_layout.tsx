@@ -36,11 +36,18 @@ import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost'
 import { AppPartnerFigurePublisher } from '@/features/household/decide/PartnerFigurePublisher';
 import { PlanHost } from '@/features/plans/PlanHost';
 import { LockHost } from '@/features/plans/LockHost';
+import { useTrialReminderTap } from '@/features/plans/notices/useTrialReminderTap';
 import { LockedSheetProvider } from '@/features/plans/useWriteGate';
 
 // D-10: mounted after the consent redirect, so a reminder tap routes only after sign-in and consent.
 function DecideNotificationObserver({ enabled }: { enabled: boolean }) {
   useNotificationObserver(enabled);
+  return null;
+}
+
+// 09-19 / UAT C2-3: a tap on the trial reminder (warm or cold start) opens You > Subscription. Same consent gate as above.
+function TrialReminderObserver({ enabled }: { enabled: boolean }) {
+  useTrialReminderTap(enabled);
   return null;
 }
 
@@ -183,6 +190,7 @@ export default function AppLayout() {
               {/* WR-D13: a reminder tap routes only once consent is on record; a missing profile is not consent.
                   quick-261025-f46: while Decide is closed a reminder tap must not push /decide/check/[id] (a redirect to the answer). */}
               <DecideNotificationObserver enabled={DECIDE_OPEN && !decideOff && consentAnswered({ loading, consent })} />
+              <TrialReminderObserver enabled={consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
               <HouseholdRealtimeHost />
               {/* 09-10: store identity, plan Realtime and foreground refresh. */}

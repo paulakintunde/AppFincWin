@@ -228,6 +228,7 @@ Recent decisions affecting current work:
 | 261119-vjo | Phase 0 enrolment status: D-U-N-S issued, Apple submitted, Play verification approved (2026-11-21), third-party stores declined | 2026-11-19 | 998a63f8 | [261119-vjo-phase-0-enrolment-status](./quick/261119-vjo-phase-0-enrolment-status/) |
 | 261120-nmr | Naming round 2 research saved: Kint dropped, 90 names screened, deep check of Domla/Plenny/Tavva/Hommi | 2026-11-20 | — | [261120-nmr-naming-research](./quick/261120-nmr-naming-research/) |
 | 261122-m82 | Merge Phase 08.2 (Decide re-audit) into Phase 11 as its final audit; Insights and System run in parallel after 08.1 | 2026-11-22 | (this PR) | [261122-m82-merge-08-2-into-phase-11](./quick/261122-m82-merge-08-2-into-phase-11/) |
+| 261124-2bs | Phase 9 code gaps (09-HUMAN-UAT C2 rows 1-5): plan_state returns left_at/left_home_name (migration 20261125001200, pgTAP 120; production push after owner approval); sample answer gets the stage word and "Based on sample figures"; trial reminder tap routes on a cold start; invite waiting screen re-checks and shows the expired line; B7 marked pass | 2026-11-24 | 723599cf | [261124-2bs-phase-9-code-gaps](./quick/261124-2bs-phase-9-code-gaps/) |
 
 ## Deferred Items
 

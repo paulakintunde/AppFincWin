@@ -129,8 +129,19 @@ describe('planNotices', () => {
     expect(takeoverToast([e], null, BEA, nameOf)).toBeNull();
   });
 
-  it('payer alone on a bigger plan: payerAfterLeaving with Manage and Move to Solo', () => {
-    const x = one(input({ plan: view({ members: 1 }) }), 'payerAfterLeaving');
+  it('payer alone on a bigger plan after a real leave: payerAfterLeaving with Manage and Move to Solo', () => {
+    const x = one(input({ plan: view({ members: 1, leftAt: '2026-11-18T10:00:00Z', leftHomeName: null }) }), 'payerAfterLeaving');
+    expect(x?.params).toEqual({ home: 'The Flat' });
+    expect(x?.actions.map((a) => a.kind)).toEqual(['manage', 'moveSolo']);
+  });
+
+  it('payerAfterLeaving names the home they left', () => {
+    const x = one(input({ plan: view({ members: 1, leftAt: '2026-11-18T10:00:00Z', leftHomeName: 'Maple' }) }), 'payerAfterLeaving');
+    expect(x?.params).toEqual({ home: 'Maple' });
+  });
+
+  it('payerAfterLeaving still shows with no leftAt (a payer whose partner left keeps the Manage / Move to Solo offer)', () => {
+    const x = one(input({ plan: view({ members: 1, leftAt: null }) }), 'payerAfterLeaving');
     expect(x?.params).toEqual({ home: 'The Flat' });
     expect(x?.actions.map((a) => a.kind)).toEqual(['manage', 'moveSolo']);
   });

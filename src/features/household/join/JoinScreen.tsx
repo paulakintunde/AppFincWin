@@ -3,9 +3,9 @@
 // Every code that cannot be used (unknown, used, expired, cancelled) gets the same message, so the screen never says which
 // (HH-15). Too many tries, a full household and being in another household each have their own plain message. Nothing joins
 // until the person taps Join: a link only fills the code and shows the preview (T-08-66).
-import React, { useEffect, useRef, useState } from 'react';
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
-import { router, type Href } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Linking, Pressable, StyleSheet, View } from 'react-native';
+import { router, useFocusEffect, type Href } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQueryClient } from '@tanstack/react-query';
 import { Pill } from '@/ui/Pill';
@@ -26,7 +26,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { useAccounts } from '@/data/queries/accounts';
 import { resetHouseholdScope, useHouseholdId } from '@/data/queries/household';
 import { useSyncStatus } from '@/data/sync/useSyncStatus';
-import { normaliseInviteCode, previewInvite, redeemInvite, type InvitePreview } from '@/db/householdInvites';
+import { fetchJoinRequest, normaliseInviteCode, previewInvite, redeemInvite, type InvitePreview } from '@/db/householdInvites';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { supabase } from '@/services/supabase';
 import { formatPlanDate } from '@/features/plans/formatPlanDate';
@@ -43,6 +43,12 @@ export const WHATS_SHARED_SEEN_KEY = (householdId: string) => `fincwin.whatsShar
 
 const href = (path: string): Href => path as Href;
 
+/**
+ * Quick 261124-2bs (UAT C2-5): the payer's decision is not pushed to the invitee, so the waiting screen asks. 30 s is light on
+ * the API and quick enough for someone holding the screen open; it also asks on focus and when the app returns to the foreground.
+ */
+const WAITING_RECHECK_MS = 30_000;
+
 /** D-39: the support route for a refused switch. A plain mail link; the text never names the store country. */
 const SUPPORT_URL = 'mailto:support@fincwin.com';
 
@@ -50,7 +56,7 @@ type Phase =
   | { kind: 'enter' }
   | { kind: 'checking' }
   | { kind: 'preview'; code: string; preview: InvitePreview }
-  | { kind: 'waiting'; payer: string }
+  | { kind: 'waiting'; payer: string; code: string; requestId: string | null; expired: boolean }
   | { kind: 'switchRule'; code: string; preview: InvitePreview; openFrom: string }
   | { kind: 'error'; text: string };
 
@@ -149,6 +155,27 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once on arrival
   }, []);
 
+  /** The steps after a person is in: used by a direct join and by an approved waiting request. */
+  const finishJoin = async (householdId: string, household: string): Promise<void> => {
+    if (userId === null) return;
+    resetHouseholdScope(qc, userId, oldHouseholdId);
+    // 06.2 D-20: joining is a light tap, not a milestone.
+    hapticTap();
+    if (householdId === '') {
+      router.replace(href('/household'));
+      return;
+    }
+    let seen = false;
+    try {
+      seen = (await AsyncStorage.getItem(WHATS_SHARED_SEEN_KEY(householdId))) !== null;
+      if (!seen) await AsyncStorage.setItem(WHATS_SHARED_SEEN_KEY(householdId), '1');
+    } catch {
+      // If the mark cannot be read or written the card shows once more rather than never.
+    }
+    if (seen) afterJoin();
+    else setShared({ household });
+  };
+
   const join = async (value: string, preview: InvitePreview) => {
     if (joining || userId === null) return;
     setJoining(true);
@@ -159,7 +186,13 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
       if (!res.ok) {
         if (res.reason === 'needs_approval') {
           // D-21: the person waits; they cannot join, even provisionally, until the payer's bigger plan goes through.
-          setPhase({ kind: 'waiting', payer: inviterName(preview) });
+          setPhase({
+            kind: 'waiting',
+            payer: inviterName(preview),
+            code: value,
+            requestId: typeof res.request_id === 'string' ? res.request_id : null,
+            expired: false,
+          });
           return;
         }
         hapticFailed();
@@ -174,19 +207,7 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
         }
         return;
       }
-      resetHouseholdScope(qc, userId, oldHouseholdId);
-      // 06.2 D-20: joining is a light tap, not a milestone.
-      hapticTap();
-      const household = res.household_name ?? preview.household_name ?? '';
-      let seen = false;
-      try {
-        seen = (await AsyncStorage.getItem(WHATS_SHARED_SEEN_KEY(res.household_id))) !== null;
-        if (!seen) await AsyncStorage.setItem(WHATS_SHARED_SEEN_KEY(res.household_id), '1');
-      } catch {
-        // If the mark cannot be read or written the card shows once more rather than never.
-      }
-      if (seen) afterJoin();
-      else setShared({ household });
+      await finishJoin(res.household_id, res.household_name ?? preview.household_name ?? '');
     } catch {
       hapticFailed();
       setPhase({ kind: 'error', text: t('household.reasons.try_again') });
@@ -194,6 +215,65 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
       setJoining(false);
     }
   };
+
+  // Re-check while waiting. The request can stay 'waiting' after its invite lapsed (the server only flips it when the plan size
+  // rises), so the code is previewed too. A failed read keeps the waiting state; nothing is shown for it.
+  const inFlight = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const waiting = phase.kind === 'waiting' && !phase.expired ? phase : null;
+  const recheck = useCallback(async (): Promise<void> => {
+    if (waiting === null || !online || inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const [request, preview] = await Promise.all([
+        waiting.requestId !== null ? fetchJoinRequest(supabase, waiting.requestId) : Promise.resolve(null),
+        previewInvite(supabase, waiting.code),
+      ]);
+      if (!mounted.current) return;
+      if (request?.status === 'admitted' || (preview.ok && preview.already_member)) {
+        // In: leave the waiting phase so the re-checks stop and the joined steps run once.
+        setPhase({ kind: 'enter' });
+        await finishJoin(request?.household_id ?? '', preview.ok ? (preview.household_name ?? '') : '');
+        return;
+      }
+      if (request?.status === 'expired' || request?.status === 'cancelled' || !preview.ok) {
+        setPhase({ ...waiting, expired: true });
+      }
+    } catch {
+      // stay waiting
+    } finally {
+      inFlight.current = false;
+    }
+    // finishJoin closes over the latest render's state; the ref below always calls the newest recheck.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waiting, online, userId, oldHouseholdId, qc]);
+  const recheckRef = useRef(recheck);
+  useEffect(() => {
+    recheckRef.current = recheck;
+  }, [recheck]);
+  const isWaiting = waiting !== null;
+  useEffect(() => {
+    if (!isWaiting) return undefined;
+    const timer = setInterval(() => void recheckRef.current(), WAITING_RECHECK_MS);
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') void recheckRef.current();
+    });
+    return () => {
+      clearInterval(timer);
+      sub.remove();
+    };
+  }, [isWaiting]);
+  useFocusEffect(
+    useCallback(() => {
+      void recheckRef.current();
+    }, []),
+  );
 
   const spelled = [...input.replace(/-/g, '')].join(', ');
   const meta = { ...textRole(pairing, 'label'), fontSize: fontSize.meta, color: colors.inkMuted };
@@ -258,9 +338,15 @@ export function JoinScreen({ initialCode }: JoinScreenProps) {
           <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
             {t('plans.invite.waiting.heading', { payer: phase.payer })}
           </Text>
-          <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
-            {t('plans.invite.waiting.body', { payer: phase.payer })}
-          </Text>
+          {phase.expired ? (
+            <Text testID="join-waiting-expired" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+              {t('plans.invite.waiting.expired', { payer: phase.payer })}
+            </Text>
+          ) : (
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+              {t('plans.invite.waiting.body', { payer: phase.payer })}
+            </Text>
+          )}
           <Pressable accessibilityRole="button" hitSlop={LINK_HIT_SLOP} onPress={leave} style={styles.notNow}>
             <Text style={{ ...textRole(pairing, 'body'), color: colors.accent }}>{t('household.join.gotIt')}</Text>
           </Pressable>
