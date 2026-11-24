@@ -20,7 +20,7 @@ This plan was originally written assuming a single company domain. There are two
 
 ## Status: Apple Developer Program enrolment
 
-Status as of 2026-11-19: **submitted, awaiting Apple's review** (reported by the owner 2026-11-19). Not yet enrolled. 00-20 (Sign in with Apple, first iOS build on the iPhone XR) stays blocked until membership is active. D-U-N-S issued by 2026-11-19. Website audit history: REMEDIATE (9 items) 2026-09-23, READY pending two items after the 2026-09-26 re-audit (see `docs/enrolment/website-audit.md`).
+Status as of 2026-11-23: **approved** — Apple approved the organisation membership on 2026-11-22 (reported by the owner 2026-11-23). 00-20 (Sign in with Apple, first iOS build on the iPhone XR) is unblocked. Earlier: submitted and awaiting review (reported 2026-11-19). D-U-N-S issued by 2026-11-19. Website audit history: REMEDIATE (9 items) 2026-09-23, READY pending two items after the 2026-09-26 re-audit (see `docs/enrolment/website-audit.md`).
 
 ## Apple enrolment form — exact fields to have ready
 

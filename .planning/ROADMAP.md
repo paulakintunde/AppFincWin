@@ -80,7 +80,7 @@ Plans:
 - [x] 00-04-PLAN.md — Android toolchain + first dev build on the emulator (W2)
 - [x] 00-05-PLAN.md — Engine-purity lint/depcruise, D-21 coverage gates with self-test, typed env config (W2)
 - [x] 00-06-PLAN.md — Household-of-one, profiles, app_config migrations + pgTAP + [BLOCKING] production push (W2)
-- [ ] 00-07-PLAN.md — Website audit, Apple org enrolment submission, Play Console registration (W2) — 2026-11-19: D-U-N-S issued, Apple enrolment submitted (awaiting review), Play org set up, developer verification approved 2026-11-21
+- [x] 00-07-PLAN.md — Website audit, Apple org enrolment submission, Play Console registration (W2) — D-U-N-S issued 2026-11-19, Apple organisation membership approved 2026-11-22, Play org set up and developer verification approved 2026-11-21
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 00-08-PLAN.md — GitHub Actions CI (checks, gitleaks, RLS) + required checks on main (W3) — *branch protection on, `enforce_admins: true` (FND-04/05 complete 2026-09-26)*
@@ -105,7 +105,7 @@ Plans:
 - [x] 00-19-PLAN.md — Android acceptance, register consolidation, approved prod push (W7)
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 00-20-PLAN.md — iOS: Sign in with Apple config, first EAS iOS build on iPhone XR (W8, waits on enrolment)
+- [ ] 00-20-PLAN.md — iOS: Sign in with Apple config, first EAS iOS build on iPhone XR (W8; unblocked 2026-11-22, Apple membership approved)
 **Research flag**: EAS provisioning and credentials from Windows are unproven for this project. Trigger the first iOS EAS Build on day one — provisioning surprises are cheaper in week one than week ten.
 
 **Dependency provisioning — what blocks on what:**
@@ -1772,7 +1772,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Foundation | 18/20 | In Progress: 00-07 Apple enrolment submitted and D-U-N-S issued, Play verification approved 2026-11-21 (package name still to register); 00-20 iOS build on the iPhone XR waits on enrolment (due before 2026-12-02) | - |
+| 0. Foundation | 19/20 | In Progress: 00-07 done (Apple membership approved 2026-11-22; Play package name still to register); 00-20 Sign in with Apple and the first iOS build on the iPhone XR now unblocked (due before 2026-12-02) | - |
 | 1. Money Core | 16/16 | Complete | 2026-09-26 |
 | 2. Record | 50/50 | Complete | 2026-10-09 |
 | 2.1 PDF statement import | 17/17 | Complete (Android verified; iOS pending enrolment) | 2026-10-11 |
