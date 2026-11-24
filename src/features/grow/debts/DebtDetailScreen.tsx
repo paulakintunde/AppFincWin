@@ -41,6 +41,7 @@ import { Pill } from '@/ui/Pill';
 import { Row } from '@/ui/Row';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
+import { DebtDetailsAsk } from './DebtDetailsAsk';
 import { DebtClearedBadge, DebtClearedMoment, useDebtClearedMoment } from './DebtClearedMoment';
 import { aboutTens, paidPercent, soonerSpan } from './debtLineModel';
 import { useDebtFormat, useDebtRows } from './debtScreenData';
@@ -160,6 +161,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
       <DetailScreen title={row.name}>
         <View testID="grow-debt-cleared" style={styles.stack}>
           <View style={styles.hero}>{clearedMark}</View>
+          <DebtDetailsAsk debt={row} userId={read.userId} onAdd={gate.gated ? undefined : () => setEditOpen(true)} />
           <View style={[...card, styles.paymentsCard]}>
             <Row label={t('grow.debts.detail.seeAllInActivity')} chevron dense onPress={() => router.navigate({ pathname: '/activity', params: { debt: row.id } } as Href)} />
           </View>
@@ -169,6 +171,7 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
             </LockedLabel>
           </Pressable>
         </View>
+        {editOpen ? <AddDebtSheet visible debt={row} onClose={() => setEditOpen(false)} /> : null}
         {removeSheet}
       </DetailScreen>
     );
@@ -207,6 +210,10 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
   // T5: the fact rows sit tight with a hairline between them.
   const facts: { name: string; value: string }[] = [];
   if (!line.point.paidInFull && rate !== null) facts.push({ name: t('grow.debts.detail.rate'), value: t('grow.debts.detail.rateValue', { rate }) });
+  // 261123 (DD-01): an unknown rate is named, and its interest is "not counted", never shown as none.
+  if (line.rateUnknown) facts.push({ name: t('grow.debts.detail.rate'), value: t('grow.debts.detail.rateUnknownValue') });
+  if (row.credit_limit != null) facts.push({ name: t('grow.debts.detail.limit'), value: fmt.money(row.credit_limit, cur) });
+  if (row.start_date) facts.push({ name: t('grow.debts.detail.startDate'), value: fmt.monthYear(row.start_date) });
   if (!line.point.paidInFull) facts.push({ name: t('grow.debts.detail.payment'), value: payment });
   if (accountName !== null) facts.push({ name: t('grow.debts.detail.paidFrom'), value: accountName });
   // P3-WR-11: the same end date and interest as the Debts list (the saved plan when there is one), so the two never disagree.
@@ -215,7 +222,10 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
     facts.push({ name: t('grow.debts.detail.ends'), value: t(endsKey, { date: fmt.monthYear(line.endDate) }) });
   }
   if (line.interestLeft !== null) {
-    facts.push({ name: t('grow.debts.detail.interestLeft'), value: t('grow.debts.detail.interestLeftValue', { amount: about(line.interestLeft) }) });
+    facts.push({
+      name: t('grow.debts.detail.interestLeft'),
+      value: line.rateUnknown ? t('grow.debts.detail.interestNotCountedValue') : t('grow.debts.detail.interestLeftValue', { amount: about(line.interestLeft) }),
+    });
   }
 
   const spanText = (months: number): string => {
@@ -235,6 +245,12 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
     const lessRounded = aboutTens(f.less, exp);
     const less = lessRounded > 0 ? t('grow.debts.revealLess', { amount: fmt.money(lessRounded, cur) }) : t('grow.debts.revealSame');
     const interest = about(f.interest);
+    // 261123 (DD-01): with an unknown rate there is no interest figure to show; the line says interest isn't counted.
+    if (line.rateUnknown) {
+      const dateLine = t('grow.debts.detail.whatIfDate', { date, sooner });
+      const unknown = t('grow.debts.detail.whatIfInterestUnknown');
+      return { date: dateLine, interest: unknown, a11y: `${dateLine}. ${unknown}` };
+    }
     return {
       date: t('grow.debts.detail.whatIfDate', { date, sooner }),
       interest: t('grow.debts.detail.whatIfInterest', { interest, less }),
@@ -308,6 +324,8 @@ export function DebtDetailScreen({ id }: DebtDetailScreenProps) {
           {line.minimumEstimated ? <StateBadge tone="slate" shape="sQuestion" label={t('grow.debts.minimumEstimated')} /> : null}
           {cleared ? clearedMark : null}
         </View>
+        {/* 261123 (DD-05): what this debt is missing, with "Not now"; never blocks editing or saving. */}
+        <DebtDetailsAsk debt={row} userId={read.userId} onAdd={gate.gated ? undefined : () => setEditOpen(true)} />
 
         {facts.length === 0 && !line.minimumEstimated ? null : (
           <View testID="debt-facts" style={[...card, styles.factsCard]}>

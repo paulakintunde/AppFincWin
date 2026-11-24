@@ -465,6 +465,14 @@ async function openAdd() {
   await wrap(<DebtsSegment addOpen />);
 }
 
+/** 261123: a new loan's owed-now, original amount, start date and rate (DD-01, DD-02). */
+async function fillLoan(owed: string, rate = '6.5') {
+  await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), owed);
+  await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.original), '20000');
+  await fireEvent.changeText(screen.getByTestId('add-debt-start'), '2024-01-15');
+  await fireEvent.changeText(screen.getByTestId('add-debt-rate'), rate);
+}
+
 describe('Add a debt (G07, D-15, D-28)', () => {
   beforeEach(() => {
     mockRows = [AUTO];
@@ -479,18 +487,25 @@ describe('Add a debt (G07, D-15, D-28)', () => {
     expect(screen.queryByText(en.grow.debts.add.save)).toBeNull();
   });
 
-  it('Yes: only the statement due day (and an optional balance), no rate or minimum', async () => {
+  it('Yes: the statement due day, the limit and the balance (0 allowed), no rate or minimum (D-15, 261123 DD-03)', async () => {
     await openAdd();
     await fireEvent.press(screen.getByText(en.grow.debts.add.typeCard));
     await fireEvent.press(screen.getByTestId('add-debt-full-yes'));
     expect(screen.getByLabelText(en.grow.debts.add.statementDay)).toBeTruthy();
-    expect(screen.getByLabelText(en.grow.debts.add.balanceOptional)).toBeTruthy();
-    expect(screen.queryByLabelText(en.grow.debts.add.rate)).toBeNull();
+    expect(screen.getByLabelText(en.grow.debts.add.owedNow)).toBeTruthy();
+    expect(screen.queryByTestId('add-debt-rate')).toBeNull();
+    expect(screen.queryByTestId('add-debt-rate-unknown')).toBeNull();
     expect(screen.queryByLabelText(en.grow.debts.add.minimum)).toBeNull();
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Visa card');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '0');
+    expect(button(en.grow.debts.add.save).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText(en.grow.debts.add.limitNeeded)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.limit), '5000');
     await fireEvent.press(screen.getByText(en.grow.debts.add.save));
     expect(mockSaveDebt).toHaveBeenCalledWith(
-      expect.objectContaining({ fields: expect.objectContaining({ kind: 'card', pays_in_full: 'yes', minimum_payment: 0, apr: null }) }),
+      expect.objectContaining({
+        fields: expect.objectContaining({ kind: 'card', pays_in_full: 'yes', minimum_payment: 0, apr: null, credit_limit: 500000, revolving: true, balance: 0 }),
+      }),
     );
   });
 
@@ -499,7 +514,7 @@ describe('Add a debt (G07, D-15, D-28)', () => {
     await fireEvent.press(screen.getByText(en.grow.debts.add.typeCard));
     await fireEvent.press(screen.getByTestId('add-debt-full-no'));
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '4200');
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.rate), '21.9');
+    await fireEvent.changeText(screen.getByTestId('add-debt-rate'), '21.9');
     expect(screen.getByTestId('add-debt-estimate').props.children).toBe('Estimated minimum $118.65. Type the statement minimum to replace it.');
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.minimum), '150');
     expect(screen.queryByTestId('add-debt-estimate')).toBeNull();
@@ -508,7 +523,7 @@ describe('Add a debt (G07, D-15, D-28)', () => {
   it('shows the live line, and crossing the rule shows Over your rule with one warning haptic; save still works', async () => {
     await openAdd();
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Furniture loan');
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '9000');
+    await fillLoan('9000');
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.minimum), '200');
     expect(screen.getByText('Debt payments would be 16% of pay. Your rule is at most 36%.')).toBeTruthy();
     expect(screen.queryByText(en.grow.debts.add.overBadge)).toBeNull();
@@ -593,7 +608,7 @@ describe('Phase 6 review fixes (P3)', () => {
     mockRows = [AUTO];
     await openAdd();
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Car loan');
-    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '15000');
+    await fillLoan('15000');
     expect(screen.getByText(en.grow.debts.add.minimumNeeded)).toBeTruthy();
     expect(button(en.grow.debts.add.save).props.accessibilityState.disabled).toBe(true);
     await fireEvent.press(screen.getByText(en.grow.debts.add.save));
@@ -610,6 +625,8 @@ describe('Phase 6 review fixes (P3)', () => {
     await fireEvent.press(screen.getByTestId('add-debt-full-no'));
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Store card');
     await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '4200');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.limit), '6000');
+    await fireEvent.changeText(screen.getByTestId('add-debt-rate'), '24.9');
     expect(screen.queryByText(en.grow.debts.add.minimumNeeded)).toBeNull();
     await fireEvent.press(screen.getByText(en.grow.debts.add.save));
     expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ fields: expect.objectContaining({ kind: 'card', minimum_payment: 0 }) }));
@@ -634,5 +651,120 @@ describe('Phase 6 review fixes (P3)', () => {
   });
 });
 
+describe('261123 debt details (DD-01..DD-05)', () => {
+  beforeEach(() => {
+    mockRows = [AUTO];
+  });
+
+  it('DD-01: a rate is required; 0 is a real answer, and "I don\'t know" saves no rate', async () => {
+    await openAdd();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Family loan');
+    await fireEvent.press(screen.getByText(en.grow.debts.add.typeOwed));
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '3000');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.original), '5000');
+    await fireEvent.changeText(screen.getByTestId('add-debt-start'), '2025-06-01');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.minimum), '100');
+    expect(button(en.grow.debts.add.save).props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByText(en.grow.debts.add.rateNeeded)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('add-debt-rate-unknown'));
+    expect(screen.getByText(en.grow.debts.add.rateUnknownNote)).toBeTruthy();
+    await fireEvent.press(screen.getByText(en.grow.debts.add.save));
+    expect(mockSaveDebt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fields: expect.objectContaining({ kind: 'other', apr: null, revolving: false, started_balance: 500000, start_date: '2025-06-01', credit_limit: null }),
+      }),
+    );
+  });
+
+  it('DD-01: a typed 0% saves as 0, not as unknown', async () => {
+    await openAdd();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Sofa plan');
+    await fillLoan('900', '0');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.minimum), '75');
+    await fireEvent.press(screen.getByText(en.grow.debts.add.save));
+    expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ fields: expect.objectContaining({ apr: '0' }) }));
+  });
+
+  it('DD-02: a new loan needs its original amount and a real start date, no later than today', async () => {
+    await openAdd();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Car loan');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.owedNow), '9000');
+    await fireEvent.changeText(screen.getByTestId('add-debt-rate'), '6');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.minimum), '300');
+    expect(screen.getByText(en.grow.debts.add.originalNeeded)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.original), '20000');
+    expect(button(en.grow.debts.add.save).props.accessibilityState.disabled).toBe(true);
+    await fireEvent.changeText(screen.getByTestId('add-debt-start'), '2024-02-31');
+    expect(screen.getByText(en.grow.debts.add.dateInvalid)).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('add-debt-start'), '2099-01-01');
+    expect(screen.getByText(en.grow.debts.add.dateInvalid)).toBeTruthy();
+    await fireEvent.changeText(screen.getByTestId('add-debt-start'), '2024-02-29');
+    await fireEvent.press(screen.getByText(en.grow.debts.add.save));
+    expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ fields: expect.objectContaining({ started_balance: 2000000, start_date: '2024-02-29', revolving: false }) }));
+  });
+
+  it('DD-04: an already paid-off loan saves at 0 with its date, and says why the history needs it', async () => {
+    await openAdd();
+    await fireEvent.press(screen.getByTestId('add-debt-status-paidOff'));
+    expect(screen.queryByLabelText(en.grow.debts.add.owedNow)).toBeNull();
+    expect(screen.queryByLabelText(en.grow.debts.add.minimum)).toBeNull();
+    expect(screen.getByText(en.grow.debts.add.whyHistory)).toBeTruthy();
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Old car');
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.original), '15000');
+    await fireEvent.changeText(screen.getByTestId('add-debt-start'), '2022-03-01');
+    await fireEvent.changeText(screen.getByTestId('add-debt-rate'), '4.9');
+    await fireEvent.changeText(screen.getByTestId('add-debt-paid-off-on'), '2021-01-01');
+    expect(screen.getByText(en.grow.debts.add.paidOffBeforeStart)).toBeTruthy();
+    expect(button(en.grow.debts.add.save).props.accessibilityState.disabled).toBe(true);
+    await fireEvent.changeText(screen.getByTestId('add-debt-paid-off-on'), '2025-02-01');
+    await fireEvent.press(screen.getByText(en.grow.debts.add.save));
+    expect(mockSaveDebt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fields: expect.objectContaining({ balance: 0, minimum_payment: 0, paid_off_on: '2025-02-01', started_balance: 1500000, start_date: '2022-03-01', apr: '4.9' }),
+      }),
+    );
+  });
+
+  it('DD-01: an edit of a debt stored with no rate opens on "I don\'t know"; typing a rate saves it', async () => {
+    const noRate = { ...AUTO, apr: null };
+    await wrap(<AddDebtSheet visible debt={noRate} onClose={jest.fn()} />);
+    expect(screen.getByTestId('add-debt-rate-unknown').props.accessibilityState.checked).toBe(true);
+    await fireEvent.press(screen.getByTestId('add-debt-rate-unknown'));
+    await fireEvent.changeText(screen.getByTestId('add-debt-rate'), '7.5');
+    const saves = screen.getAllByText(en.grow.debts.add.saveEdit);
+    await fireEvent.press(saves[saves.length - 1]!);
+    expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ existing: noRate, fields: { apr: '7.5' } }));
+  });
+
+  it('DD-05: an edit never requires the original amount or start date of an older loan', async () => {
+    const older = { ...AUTO, start_date: null, started_balance: null };
+    await wrap(<AddDebtSheet visible debt={older} onClose={jest.fn()} />);
+    await fireEvent.changeText(screen.getByLabelText(en.grow.debts.add.name), 'Auto loan 2');
+    const saves = screen.getAllByText(en.grow.debts.add.saveEdit);
+    await fireEvent.press(saves[saves.length - 1]!);
+    expect(mockSaveDebt).toHaveBeenCalledWith(expect.objectContaining({ fields: { name: 'Auto loan 2' } }));
+  });
+
+  it('DD-01: the list names an unknown rate, and the plan says its interest is not counted', async () => {
+    mockRows = [{ ...AUTO, apr: null }];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText(/rate unknown/)).toBeTruthy();
+    expect(screen.getByTestId('debts-rate-unknown-note').props.children).toBe('Interest isn’t counted for Auto loan: the rate is unknown.');
+  });
+
+  it('DD-05: a loan with no start date gets a quiet ask on its row; Not now hides it', async () => {
+    mockRows = [{ ...AUTO, start_date: null }];
+    await wrap(<DebtsSegment />);
+    expect(screen.getByText(en.grow.debts.ask.start)).toBeTruthy();
+    await fireEvent.press(screen.getByTestId('debt-ask-not-now-auto'));
+    expect(screen.queryByText(en.grow.debts.ask.start)).toBeNull();
+  });
+
+  it('DD-05: a loan with its start date asks nothing', async () => {
+    mockRows = [{ ...AUTO, start_date: '2024-01-01', started_balance: 2000000 }];
+    await wrap(<DebtsSegment />);
+    expect(screen.queryByTestId('debt-ask-auto')).toBeNull();
+  });
+});
 
 void act;

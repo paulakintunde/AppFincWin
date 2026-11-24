@@ -29,6 +29,7 @@ import { hapticTap } from '@/ui/haptics';
 import { Pill } from '@/ui/Pill';
 import { Text } from '@/ui/Text';
 import { AddDebtSheet } from './AddDebtSheet';
+import { DebtDetailsAsk } from './DebtDetailsAsk';
 import { debtLineModel, firstClearedDate } from './debtLineModel';
 import { debtHref, fitLineName, payAccountId, useDebtFormat, useDebtMonth, useDebtRows, type DebtFormat } from './debtScreenData';
 import { PayoffPlanCard, type ScenarioKey } from './PayoffPlanCard';
@@ -276,7 +277,8 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
 
   const subOf = (d: DebtLine, paidInFull: boolean): string => {
     if (paidInFull) return t('grow.debts.paidInFullRow');
-    const rate = fmt.rate(rows.get(d.id)?.apr ?? null);
+    // 261123 (DD-01): a debt saved with "I don't know" says so; it never reads as interest-free.
+    const rate = d.rateUnknown ? t('grow.debts.rateUnknownRow') : fmt.rate(rows.get(d.id)?.apr ?? null);
     const payment = fmt.money(d.point.minimum, d.currency);
     const day = d.point.dueDay === null ? null : fmt.ordinal(d.point.dueDay);
     const end = d.endDate === null ? null : fmt.monthYear(d.endDate);
@@ -316,6 +318,10 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
         >
           {content}
         </DeletableRow>
+        {/* 261123 (DD-05): what this debt is missing, with "Not now"; never blocks anything. */}
+        {stored === undefined ? null : (
+          <DebtDetailsAsk debt={stored} userId={userId} onAdd={gate.gated ? undefined : () => setEditing(stored)} />
+        )}
       </View>
     );
   };
@@ -411,6 +417,11 @@ function DebtsBody({ read, onAdd, fmt }: { read: DebtsRead; onAdd: () => void; f
           fmt={fmt}
           currency={currency}
         />
+      )}
+      {whatIf.scenarios === null || model.rateUnknownInPlan.length === 0 ? null : (
+        <Text testID="debts-rate-unknown-note" style={line}>
+          {t('grow.debts.planRateUnknown', { names: model.rateUnknownInPlan.join(', ') })}
+        </Text>
       )}
 
       {recordLine === null ? null : (

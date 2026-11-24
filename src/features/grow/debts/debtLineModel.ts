@@ -1,7 +1,7 @@
 // 06-17: the small pure helpers the Debts screens need beyond the engine: the debt-payment share of pay against the user's
 // rule, and the "about" rounding. Whole-number rounding, half up, integers only (no floats for money).
 import { currencyExponent, minorUnits } from '@/engine/money';
-import { estimatedCardMinimum, percent, strategy, ZERO_PERCENT, type PayoffOrder, type PlanDebt } from '@/engine/payoff';
+import { estimatedCardMinimum, percent, strategy, ZERO_PERCENT, type PayoffOrder, type Percent, type PlanDebt } from '@/engine/payoff';
 import { dueDateOf } from '../connect/debtPoint';
 import type { DebtLine } from './useDebtsRead';
 
@@ -42,13 +42,23 @@ export function soonerSpan(months: number): { years: number; months: number } {
 }
 
 /**
+ * 261123 (DD-01): the rate the payoff maths runs on. An unknown rate (no stored rate, "I don't know") runs without interest
+ * and the screens flag every figure built from it (DebtLine.rateUnknown), so "interest not counted" is never shown as
+ * interest-free. No rate is invented (D-07).
+ */
+export function rateForMathsOf(line: { point: { apr: Percent | null } }): Percent {
+  return line.point.apr ?? ZERO_PERCENT;
+}
+
+/**
  * The date the first debt in the plan is cleared, in the given payoff order, with `extra` a month on top of the minimums.
  * Null with fewer than two debts in the plan (the screen shows the line only with 2+), or when none clears.
  */
 export function firstClearedDate(lines: readonly DebtLine[], extra: number, order: PayoffOrder, today: string): string | null {
   const inPlan = lines.filter((l) => l.inPlan);
   if (inPlan.length < 2) return null;
-  const debts: PlanDebt[] = inPlan.map((l) => ({ id: l.id, balance: l.point.balance, apr: l.point.apr ?? ZERO_PERCENT, minimum: l.point.minimum }));
+  // 261123 (DD-01): an unknown rate runs without interest; the plan card names those debts (rateUnknownInPlan).
+  const debts: PlanDebt[] = inPlan.map((l) => ({ id: l.id, balance: l.point.balance, apr: rateForMathsOf(l), minimum: l.point.minimum }));
   const result = strategy(debts, minorUnits(extra), order);
   let first: { id: string; month: number } | null = null;
   for (const d of result.debts) {
