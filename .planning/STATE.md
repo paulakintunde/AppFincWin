@@ -21,26 +21,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 08.1 COMPLETE on branch `feat/08.1-build` (22/22; review fixed, verification passed); the PR into main is next. Decide setup gate audit: `08.1-DECIDE-SETUP-AUDIT.md` (follow-up phase to be decided). Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
+**Current focus:** Phase 08.1 is merged into main (PR #180, 2026-11-22). Next: plan and build Insights (7) and System (10) in parallel (context PRs #182, #183); decide where the Decide setup fixes are built (`08.1-DECIDE-SETUP-AUDIT.md`, starting with the missing "Did your pay arrive?" screen); answer the Phase 08.12 questions; keep the launch steps moving. Phase 9 is merged. Launch is blocked on owner steps: RevenueCat setup (ENV-12), the app name (Kint dropped 2026-11-20; Phase 08.25 paused), Apple enrolment and Play verification.
 
 ## Current Position
 
 Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 with summaries; the 08.1 branch adds 15 more summaries).
 
-Phase: 08.1 (decide-rebuild-on-real-data) — PLANS DONE on branch `feat/08.1-build`, 22/22 (plans 01-15 and 19-25; 16-18 moved to 08.2). 20261125000100..000800 live in production 2026-11-21. Tester build 3c50fbb2 + preview OTA ee872d87 (blank-step fix 8c272c6c); three Maestro smoke flows pass on the Pixel 9. Next: phase review and verification gates, then the PR.
+Phase: 08.1 (decide-rebuild-on-real-data) — COMPLETE and MERGED 2026-11-22 (PR #180, merge 36028c69), 22/22 (plans 01-15 and 19-25; 16-18 moved to Phase 11's final audit, former 08.2). Migrations 20261125000100..000900 live in production. Review: criticals and A-WR-01 / C-WR-02 fixed; A-CR-02 (pooled money hold-back) is Phase 08.12's first item. Verification passed. Testers on build 3c50fbb2 + preview OTA 7f1776a0. The two device checks (`08.1-HUMAN-UAT.md`), open review warnings and the setup audit are on Phase 11's list.
 Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
 Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
-Phase: 7, 10 — not planned; may run in parallel after 08.1 (owner 2026-11-22). 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
-Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11); one orphan household with no members and no plan.
+Phase: 7 (insights) — BUILT on branch `feat/07-build`, PR #185 open (phone-check fixes #186 merged; review, verification and device checks next). 10 (system) — PLANNED 2026-11-22 (30 plans, 6 waves, checker passed; PR #183 merged), ready to execute. 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
+Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11). (The orphan household with no members is gone: production has 0 households without members, checked 2026-11-22.)
 Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026-11-14 (PR #102). 06 (grow) — COMPLETE 2026-11-11 (PR #101).
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
 Phase: 04 (decide-engine) — COMPLETE 2026-10-16; the v1 engine was deleted on purpose in 05.5 (04-VERIFICATION.md is historical).
 Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple enrolment).
 Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted (awaiting Apple review), Google Play developer verification approved 2026-11-21 (next: register package name com.fincwin.app). 00-20: first iOS build on the iPhone XR, waits on Apple enrolment; needed before 2026-12-02.
 Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
-Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
-Status: Ready to execute
-Last activity: 2026-11-22 -- Phase 10 planning complete
+Open PRs: #174 enrolment status, #176 dependency updates, #178 naming round 3, #182 Insights context, #185 Insights build.
+Status: Executing (Phase 7 built in PR #185; Phase 10 planned, ready to execute)
+Last activity: 2026-11-24 - status file brought up to date (08.1 merged; Phase 10 planned; Phase 7 in PR #185); old loose ends closed
 
 ## Performance Metrics
 
@@ -154,14 +154,12 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- **Decide test flag in production** — count the accounts with `profiles.decide_v3` on (not yet checked; the auto-mode classifier blocked a read-only production query on 2026-11-02). First step of BO-06 in 05.4.
 - **Decide owner decisions** — fix plan section 11, question 10 is open (3, 4 and 5 were answered in 05.4-CONTEXT); question 12 (legal launch countries) is open; the Free vs Pro list is needed by APP-18 (05.5) as well as Phase 9; decide whether to insert the home-buying phase (FIN-30) and 06.1 into ROADMAP.
 - **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files. As of 2026-11-19 the D-U-N-S is issued; Play developer verification approved 2026-11-21; waits now on Apple review of the submitted enrolment (see `docs/dependency-register.md`).
 - **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
 - **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
 - **Public repo privacy** — a personal test Gmail address is committed in `docs/acceptance/phase-00-android.md` and `docs/acceptance/phase-01-money-core.md`; the repo is public.
-- **Phase 2 human UAT** — 2 items in `02-HUMAN-UAT.md` (iOS statement file picker, pending Apple enrolment; home-currency switch FX fetch). The settings screen now exists (02.2-32, You → Money), so the home-currency item can be checked during the 02.2 walkthrough (criterion 8). A preview build would also need rebuilding (native fingerprint changed again with expo-haptics); the 02.2 walkthrough uses development build e07f9578.
-- **Phase 2.1 close-out** — security verified (02.1-SECURITY.md, 99/99 closed); 1 item in `02.1-HUMAN-UAT.md` (iOS walkthrough, pending Apple enrolment; privacy paragraph published 2026-10-11). Review deferrals LO-04, LO-05, IN-02..IN-04 in `02.1-REVIEW.md`.
+- **Phase 2.1 close-out** — security verified (02.1-SECURITY.md, 99/99 closed). Review deferrals LO-04, LO-05, IN-02..IN-04 in `02.1-REVIEW.md`. (The iOS walkthrough is carried to plan 00-20 with Phase 2's iOS file-picker check; Phase 2's home-currency check passed in the 02.2 walkthrough. Closed 2026-11-22.)
 - **Phase 2.2 close-out** — after the walkthrough: plan 35 Task 3 (VALIDATION sign-off, `nyquist_compliant: true`), then `/gsd-verify-work 02.2` or the phase verifier, `/gsd-secure-phase 02.2` (security enforcement is on and there is no 02.2-SECURITY.md yet), and tick ACT-06..18 / REC-19..25 in REQUIREMENTS.md on verification evidence.
 - **Phase 1 human UAT** — 3 items in `01-HUMAN-UAT.md` (region separators on device, RateAttribution mounted by Phase 2, FX hold/ISO list product review).
 
