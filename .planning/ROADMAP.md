@@ -1720,7 +1720,7 @@ Plans:
   2. A user can attach a receipt photo (camera or gallery) to a transaction and view it; the image is private to the owner (and shared-line members where the line is shared), removed with the transaction and with account deletion, and included in the data export.
   3. A user can scan a receipt, review the items it reads, and assign each item to a category and, on a shared line, to members; nothing is saved until the user confirms, and the totals still match the receipt.
   4. Split lines work with the household split, undo, import and export.
-**Plans:** 0 plans (discussion first)
+**Plans:** 30 plans in 10 waves (planned 2026-11-24; owner gates: 01 receipt corpus, 03 icon approval, 08 and 29 Pixel checks, 28 production push). Execution starts after Phase 10 merges.
 **UI hint**: yes
 **Research flag**: receipt text reading on-device versus a server service (privacy, cost, Windows/EAS build impact), and store privacy disclosures for photos.
 
@@ -1851,6 +1851,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
-| 10.1 Split and receipts | 0/TBD | Not started (discussion first) | - |
+| 10.1 Split and receipts | 0/30 | Planned | - |
 | 10.2 Envelope rollover | 0/10 | Planned | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
