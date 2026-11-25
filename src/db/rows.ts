@@ -14,6 +14,7 @@ import type { FormatProfile } from '@/engine/statement';
 import type { RecurringFreq } from '@/engine/recurring';
 import type { CategoryColorKey, SeedCategoryKey } from '@/engine/categorize';
 import type { UndoLabelKey, UndoLabelParams, UndoStepStatus } from '@/engine/undo';
+import type { StoredItemSplit, StoredPart } from './categoryParts';
 
 export type DbClient = SupabaseClient;
 
@@ -100,6 +101,11 @@ export interface TransactionRow {
   income_kind?: string | null;
   counts_as?: 'available' | 'kept' | null;
   refund_of?: string | null;
+  // 10.1 (D-01): parts of one line across categories, and the item split behind them. category_parts is client-insertable (a scan
+  // inserts a line with its parts) but changes only through set_category_parts; item_split is select-only. Optional in the type so
+  // the many existing literal fixtures stay valid; readers treat undefined as null.
+  category_parts?: StoredPart[] | null;
+  item_split?: StoredItemSplit | null;
   // 08 Household (select-only: only the 08-10, 08-11 and 08-14 RPCs write these, so they sit in neither write-key list).
   // Optional in the type so the many existing literal fixtures stay valid; readers treat undefined as false or null.
   is_shared?: boolean;
@@ -217,6 +223,8 @@ export interface NewTransaction {
   income_kind?: string | null;
   counts_as?: 'available' | 'kept' | null;
   refund_of?: string | null;
+  // 10.1 (D-01): insert-only; later edits go through set_category_parts.
+  category_parts?: StoredPart[] | null;
 }
 
 // D-45: raw_amount/raw_balance/external_id/import_format are insert-only provenance and are

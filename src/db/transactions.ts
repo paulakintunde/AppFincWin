@@ -6,6 +6,7 @@
 
 import { monthRange } from '@/engine/time';
 import { DbError, NotFoundError, VersionConflictError, toDbError } from './errors';
+import type { StoredPart } from './categoryParts';
 import {
   assertAllowedKeys,
   type DbClient,
@@ -59,6 +60,7 @@ export const TRANSACTION_INSERT_KEYS = [
   'stmt_orig_amount',
   'stmt_orig_currency',
   'fx_fee_of',
+  'category_parts', // 10.1 (D-01): a scanned line is inserted with its parts; edits go through set_category_parts
 ] as const satisfies readonly (keyof NewTransaction)[];
 
 // D-45: raw_amount/raw_balance/external_id/import_format are insert-only provenance and are
@@ -87,6 +89,7 @@ export const TRANSACTION_PATCH_KEYS = [
   'refund_of', // 05.2 (20261028000400)
 ] as const satisfies readonly (keyof TransactionPatch)[];
 
+// 10.1 (D-01): category_parts is insert-only for clients (no update grant; set_category_parts writes it) and item_split is select-only.
 // 08 (08-10, 08-11, 08-14): is_shared, paid_by, paid_by_former_key, household_amount, household_currency, household_rate_pending,
 // split_rule, split_manual, is_settlement, settlement_id, copied_from and copy_share are select-only: only the household RPCs write them.
 // 06-30 (D-33): debt_id is select-only -- the column has no client grant (20261106000400); only
@@ -95,7 +98,7 @@ export const TRANSACTION_PATCH_KEYS = [
 // them out of JS float arithmetic on the way in from Postgres's `numeric` type (MON-01) --
 // callers parse the string themselves via engine/money, never `parseFloat`.
 export const TRANSACTION_COLUMNS =
-  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, name, category_id, payment_type, status, deleted_at, import_batch_id, recurring_series_id, occurrence_date, updated_by, raw_amount, raw_balance, external_id, import_format, transfer_id, is_refund, is_automatic, one_off, goal_id, debt_id, income_kind, counts_as, refund_of, is_shared, paid_by, paid_by_former_key, household_amount, household_currency, household_rate_pending, split_rule, split_manual, is_settlement, settlement_id, copied_from, copy_share, stmt_orig_amount, stmt_orig_currency, conversion_source, fx_fee_of, is_sample, version, created_at, updated_at';
+  'id, household_id, account_id, created_by, original_amount, original_currency, home_currency, home_amount, rate:rate::text, orig_per_eur:orig_per_eur::text, home_per_eur:home_per_eur::text, orig_custom_unit_value:orig_custom_unit_value::text, orig_custom_ref_per_eur:orig_custom_ref_per_eur::text, home_custom_unit_value:home_custom_unit_value::text, home_custom_ref_per_eur:home_custom_ref_per_eur::text, rate_date, rate_source, rate_pending, local_date, time_zone, note, name, category_id, payment_type, status, deleted_at, import_batch_id, recurring_series_id, occurrence_date, updated_by, raw_amount, raw_balance, external_id, import_format, transfer_id, is_refund, is_automatic, one_off, goal_id, debt_id, income_kind, counts_as, refund_of, is_shared, paid_by, paid_by_former_key, household_amount, household_currency, household_rate_pending, split_rule, split_manual, is_settlement, settlement_id, copied_from, copy_share, stmt_orig_amount, stmt_orig_currency, conversion_source, fx_fee_of, is_sample, category_parts, item_split, version, created_at, updated_at';
 
 const ENTITY = 'transactions' as const;
 
@@ -511,21 +514,27 @@ export const MERGE_LIMIT = 6000;
  */
 export const MERGE_ROWS_MAX = MERGE_LIMIT - 1;
 
-/** D-36: every active row's id/version/local_date in one category, for a category merge. */
+/**
+ * D-36: every active row's id/version/local_date in one category, for a category merge. 10.1 (D-01): also rows whose category
+ * parts name the category, with their parts, so a merge can move the part too.
+ */
 export async function fetchActiveIdsByCategory(
   client: DbClient,
   householdId: string,
   categoryId: string
-): Promise<{ id: string; version: number; local_date: string }[]> {
+): Promise<{ id: string; version: number; local_date: string; category_parts: StoredPart[] | null }[]> {
   const { data, error, status } = await client
     .from(ACTIVE_VIEW)
-    .select('id, version, local_date')
+    .select('id, version, local_date, category_parts')
     .eq('household_id', householdId)
-    .eq('category_id', categoryId)
+    .or(`category_id.eq.${categoryId},category_parts.cs.[{"c":"${categoryId}"}]`)
     .limit(MERGE_LIMIT + 1);
 
   if (error) throw toDbError(error, status);
-  return (data as { id: string; version: number; local_date: string }[] | null) ?? [];
+  return (data as { id: string; version: number; local_date: string; category_parts?: StoredPart[] | null }[] | null)?.map((r) => ({
+    ...r,
+    category_parts: r.category_parts ?? null,
+  })) ?? [];
 }
 
 /** T-02-11-04: denial-of-service guard on one import chunk. */

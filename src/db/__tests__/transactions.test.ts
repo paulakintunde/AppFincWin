@@ -699,17 +699,17 @@ describe('fetchCategorisedNames', () => {
 });
 
 describe('fetchActiveIdsByCategory', () => {
-  it(`returns {id, version, local_date} rows, limited to MERGE_LIMIT + 1 (${MERGE_LIMIT + 1})`, async () => {
+  it(`returns {id, version, local_date, category_parts} rows, limited to MERGE_LIMIT + 1 (${MERGE_LIMIT + 1})`, async () => {
     const client = createFakeSupabase();
     client.respondWith({ data: [{ id: 't1', version: 1, local_date: '2026-09-01' }], error: null, status: 200 });
 
     await fetchActiveIdsByCategory(client, 'h1', 'cat-1');
 
     expect(client.calls.every((c) => c.table === ACTIVE_VIEW)).toBe(true);
-    expect(client.calls.find((c) => c.method === 'select')?.args[0]).toBe('id, version, local_date');
-    expect(client.calls.find((c) => c.method === 'eq' && c.args[0] === 'category_id')?.args).toEqual([
-      'category_id',
-      'cat-1',
+    expect(client.calls.find((c) => c.method === 'select')?.args[0]).toBe('id, version, local_date, category_parts');
+    // 10.1 (D-01): a line counts when its own category or one of its parts is the category.
+    expect(client.calls.find((c) => c.method === 'or')?.args).toEqual([
+      'category_id.eq.cat-1,category_parts.cs.[{"c":"cat-1"}]',
     ]);
     expect(client.calls.find((c) => c.method === 'limit')?.args).toEqual([MERGE_LIMIT + 1]);
   });
