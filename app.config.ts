@@ -30,6 +30,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: APP_ID,
     // D-06 / 03-RESEARCH Pitfall 1: predictive back sends Android 13-15 back presses past BackHandler and Modal onRequestClose; off so the sheet -> history -> Home -> exit order runs.
     predictiveBackGestureEnabled: false,
+    // 10.1-02 (D-21, RCP-07): the Android system photo picker needs no storage permission, so these are blocked; CAMERA is the only new one.
+    blockedPermissions: [
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.READ_MEDIA_VIDEO',
+      'android.permission.RECORD_AUDIO',
+    ],
     adaptiveIcon: {
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
@@ -41,6 +49,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     // 10-11 (ACC-08): Face ID usage string (draft copy, owner sign-off). Needs a new dev build; OTA cannot carry it.
     ['expo-local-authentication', { faceIDPermission: 'FincWin uses Face ID to open the app.' }],
+    // 10.1-02 (D-06, D-21, RCP-07): receipt capture and scan. Needs a new dev build; OTA cannot carry it.
+    [
+      'expo-image-picker',
+      {
+        cameraPermission: 'FincWin uses the camera to photograph a receipt for a line you choose.',
+        photosPermission: 'FincWin opens your photos so you can pick a receipt for a line you choose.',
+        microphonePermission: false,
+      },
+    ],
+    ['react-native-document-scanner-plugin', { cameraPermission: 'FincWin uses the camera to scan a receipt for a line you choose.' }],
     'expo-font',
     'expo-apple-authentication',
     'expo-web-browser',
