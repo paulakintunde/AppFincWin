@@ -170,6 +170,17 @@ select public.t131_as('11111111-1111-1111-1111-111111111111');
 insert into res select 'r15', public.set_category_parts('e1310000-0000-0000-0000-000000000008', public.t131_ver('08'),
   jsonb_build_array(public.t131_p(null, -3000), public.t131_p(null, -2000)));
 select extensions.is((select v ->> 'reason' from res where k = 'r15'), 'line_locked', 'a settled shared line is locked');
+-- Put the real lock check back (20261122000700 body) so later edits are not refused as locked.
+reset role;
+create or replace function public.hh_line_locked(p_tx uuid) returns boolean language sql stable security definer set search_path = '' as $$
+  select exists (
+    select 1 from public.settlement_lines l
+      join public.settlements s on s.id = l.settlement_id
+     where l.transaction_id = p_tx and l.live
+       and (s.status in ('confirmed', 'written_off') or (s.status = 'pending' and now() < s.expires_at)))
+$$;
+set local role authenticated;
+select public.t131_as('11111111-1111-1111-1111-111111111111');
 
 -- 28-29. Undo through apply_patches restores the old parts
 insert into res select 'r16', public.set_category_parts('e1310000-0000-0000-0000-000000000006', public.t131_ver('06'),
