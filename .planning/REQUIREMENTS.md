@@ -322,6 +322,20 @@ The Decide fix plan's IDs (FIN, ENG, APP, UX, CMP-F, ARC, QA, BO, VC) are tracke
 - [ ] **INS-05**: User can compare a month against the previous one
 - [ ] **INS-06**: User can see a financial health score with the figures behind it
 
+### Envelope rollover (Phase 10.2)
+
+- [ ] **ROLL-01**: User can turn one "Envelope rollover" switch on under You; it is off by default and, while off, no figure or screen changes
+- [ ] **ROLL-02**: Each capped category's limit for a month is the plain limit plus the carried amount, where leftovers and overspends carry, clamped between $0 and twice the plain limit, in integer minor units
+- [ ] **ROLL-03**: The first carry is at the end of the month rollover was turned on; earlier months are never counted
+- [ ] **ROLL-04**: Turning rollover off drops every carried amount at once, after a confirm note; turning it on again starts fresh
+- [ ] **ROLL-05**: The Categories list, the entry-sheet picker, the over-limit toast and the category sheet use the carried limit and show "$500 + $80 carried from October" / "$500 − $50 over in October"
+- [ ] **ROLL-06**: Activity's over-limit badge uses each month's own carried limit, and a single-category view shows the limit and carried line
+- [ ] **ROLL-07**: Insights category rows show the limit and carried line for a single month in the user's own view
+- [ ] **ROLL-08**: Decide compares a purchase in a category with the carried limit; spare money never changes, and every answer is unchanged while rollover is off
+- [ ] **ROLL-09**: Setting, changing or removing a category's limit restarts its carry from that month, with a note before saving and Undo restoring the carry
+- [ ] **ROLL-10**: Envelope rollover is listed in Features at level 3 (Planning), with the signed level map amended
+- [ ] **ROLL-11**: In a household, a shared line counts the member's own share toward the member's own category's limit; a partner's limit or carry is never shown
+
 ### Household
 
 - [ ] **HH-01**: User can invite another person with an expiring link and code
@@ -775,10 +789,21 @@ Populated during roadmap creation.
 | CMP-11 | Phase 11 - Compliance & Release | Pending |
 | CMP-12 | Phase 11 - Compliance & Release | Pending |
 | CMP-13 | Phase 11 - Compliance & Release | Pending |
+| ROLL-01 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-02 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-03 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-04 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-05 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-06 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-07 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-08 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-09 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-10 | Phase 10.2 - Envelope rollover | Pending |
+| ROLL-11 | Phase 10.2 - Envelope rollover | Pending |
 
 **Coverage:**
-- v1 requirements: 316 total (188 ticked)
-- Mapped to phases: 316
+- v1 requirements: 327 total (188 ticked)
+- Mapped to phases: 327
 - Unmapped: 0 ✓
 
 ---
