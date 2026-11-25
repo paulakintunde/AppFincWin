@@ -33,8 +33,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11) (completed 2026-11-23)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [x] **Phase 08.1: Decide rebuild on real data** (INSERTED, completed 2026-11-22) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
-- [ ] **Phase 08.12: Joint spending agreements** (INSERTED; **v2, after launch**, owner 2026-11-24) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
-- [ ] **Phase 08.13: Private rooms in a household** (INSERTED; **v2, after launch**, depends on 08.12, owner 2026-11-24) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
+- [ ] **Phase 08.12: Joint spending agreements** (INSERTED; **v1, before launch**, after 10.2, owner 2026-11-24) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
+- [ ] **Phase 08.13: Private rooms in a household** (INSERTED; **v1, before launch**, after 08.12, owner 2026-11-24) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 10.1: Split and receipts** (INSERTED) - Split one transaction across categories (was 999.1), receipt photo on a transaction (was 999.2), and receipt scan with a split by item (08.12 round 4: before launch); owner 2026-11-24
@@ -1569,7 +1569,7 @@ Plans:
 
 ### Phase 08.12: Joint spending agreements (INSERTED)
 
-**Release:** v2, after launch (owner 2026-11-22 Path to Launch; confirmed 2026-11-24). No v1 phase depends on it; the 08.12 round 4 items v1 needs live elsewhere (price-rise notices in Phase 10, subscriptions list in Phase 7, receipt split by item in Phase 10.1, closure notice in Phase 11).
+**Release:** v1, before launch (owner 2026-11-24, reversing the 2026-11-22 Path to Launch v2 placement). Runs after Phase 10.2 and before Phase 11; Phase 08.13 follows it. Its round 4 items placed elsewhere stay there (price-rise notices in Phase 10, subscriptions list in Phase 7, receipt split by item in Phase 10.1, closure notice in Phase 11).
 
 **Goal:** Groups can agree how shared money is spent, and Decide shows the agreement in its answers. On an equal-access joint account, the group can set a spend limit: spends over it need another member's OK, or the group can choose "no approval needed". The phase also covers one-earner households, where one person is the main earner and the other partner is at home or not working. That partner may be paid an allowance by the main earner, be given a set sum, spend from the same account, or a mix of these. FincWin only records what the group agreed. It holds no money and cannot block a card payment.
 **Requirements**: TBD (from research and the owner's questions)
@@ -1584,7 +1584,7 @@ Plans:
 
 ### Phase 08.13: Private rooms in a household (INSERTED)
 
-**Release:** v2, after launch, after 08.12 (owner 2026-11-24).
+**Release:** v1, before launch, after 08.12 and before Phase 11 (owner 2026-11-24).
 
 **Goal:** A household can hold private rooms, such as the parents' own arrangement, a whole-family pot, or two roommates' joint account. Only a room's members know it exists. Every account, line and series sits in exactly one room, and today's household becomes the "everyone" room. Each room has its own spending rule, limit, personal money, settle-up and Decide choice, and money is counted once across overlapping rooms.
 **Requirements**: TBD (from 08.12-RESEARCH-ROOMS.md and the owner's answers in 08.12-OWNER-ANSWERS.md, round 5)
@@ -1740,7 +1740,7 @@ Plans:
 ### Phase 11: Compliance & Release
 **Goal**: The app is truthfully described, proven correct by one final audit, and ready for store submission.
 **Merged in 2026-11-22 (owner, quick 261122-m82):** former Phase 08.2 (Decide re-audit) is now part of this phase. It was an audit, not a build, so it runs once here on the finished app instead of between 08.1 and Insights. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 7 and 9; its scope now also covers Insights and System.
-**Depends on**: Phases 0-10.2 (final verification gate), including 08.1
+**Depends on**: Phases 0-10.2, 08.12 and 08.13 (final verification gate), including 08.1
 **Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08, CMP-09, CMP-10, CMP-11, DSG-01, DSG-05, ENV-11, CMP-12, CMP-13; from former 08.2: the section 7 checklists for the financial, engine, app, UI, UX, compliance and integration auditors
 **Success Criteria** (what must be TRUE):
   1. A findable disclaimer states the app is not financial advice and involves no institution, and no user-facing string claims data stays on the device or is not sent anywhere.
@@ -1799,7 +1799,7 @@ Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. 
 ## Progress
 
 **Execution Order:**
-Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 9 → 7 ∥ 10 → 10.1 → 10.2 → 11
+Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 9 → 7 ∥ 10 → 10.1 → 10.2 → 08.12 → 08.13 → 11
 The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. *Amended 2026-11-22 (owner, quick 261122-m82): 08.2 is merged into Phase 11's final audit; Insights (7) and System (10) run in parallel after 08.1.* Two agreed phases are not inserted yet: home buying (FIN-30), after 08.1, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). *Superseded 2026-11-06 (owner, quick 261106-bf2): Decide is open to every tester; the store switch-on follows Phase 11's final audit (former 08.2).*
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
 2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
