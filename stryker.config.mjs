@@ -17,6 +17,11 @@ export default {
     '!src/engine/health/**/__tests__/**',
     'src/engine/insights/**/*.ts',
     '!src/engine/insights/**/__tests__/**',
+    // 10.1-04
+    'src/engine/parts/**/*.ts',
+    '!src/engine/parts/**/__tests__/**',
+    'src/engine/receipt/**/*.ts',
+    '!src/engine/receipt/**/__tests__/**',
     // Shared: old-engine root files that v3 source imports
     'src/engine/decide/bisectCore.ts',
     'src/engine/decide/cardRule.ts',

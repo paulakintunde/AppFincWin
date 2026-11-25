@@ -36,7 +36,7 @@ const REST = { branches: 95, functions: 95, lines: 95, statements: 95 };
 
 const coverageThreshold = {};
 if (hasSource('src/engine')) coverageThreshold['./src/engine/'] = REST; // D-21: 95% on the rest of engine/
-for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'categorize', 'undo', 'activity', 'ofx', 'statement', 'transfer', 'accounts', 'paste', 'entryList', 'grow', 'month', 'household', 'health', 'insights']) { // 07-04: Insights engine folders (health score, category totals)
+for (const f of ['money', 'decide', 'payoff', 'split', 'recurring', 'csv', 'categorize', 'undo', 'activity', 'ofx', 'statement', 'transfer', 'accounts', 'paste', 'entryList', 'grow', 'month', 'household', 'health', 'insights', 'parts', 'receipt']) { // 07-04: Insights engine folders (health score, category totals); 10.1-04: category parts and receipt parsing are 100% folders
   // D-21: 100% folders
   if (hasSource(`src/engine/${f}`)) coverageThreshold[`./src/engine/${f}/`] = FULL;
 }
