@@ -4,6 +4,7 @@
  * day's net. Trailing blanks pad the grid to a multiple of 7.
  */
 import { daysInMonth } from '../time/calendar';
+import { expandParts, type Part } from '../parts';
 import { netOf, type GroupRow } from './groups';
 import { firstWeekdayOffset } from './weeks';
 
@@ -27,7 +28,7 @@ export function weekdayOrder(weekStart: 0 | 1): number[] {
   return [0, 1, 2, 3, 4, 5, 6].map((i) => (i + weekStart) % 7);
 }
 
-export function calendarCells<T extends GroupRow & { category_id: string | null }>(
+export function calendarCells<T extends GroupRow & { category_id: string | null; parts?: readonly Part[] | null }>(
   month: string,
   weekStart: 0 | 1,
   rows: readonly T[]
@@ -47,9 +48,14 @@ export function calendarCells<T extends GroupRow & { category_id: string | null 
     const list = byDay.get(day) ?? [];
     const dots: (string | null)[] = [];
     for (const row of list) {
-      if (dots.length === MAX_CALENDAR_DOTS) break;
       const counts = row.transfer_id === null && row.status !== 'skipped';
-      if (counts && !dots.includes(row.category_id)) dots.push(row.category_id);
+      if (!counts) continue;
+      // 10.1-10 (D-05): every part's category (and the gap, as null) gets a dot.
+      const cats = expandParts({ id: row.id, amount: row.original_amount, categoryId: row.category_id, parts: row.parts ?? null });
+      for (const c of cats) {
+        if (dots.length === MAX_CALENDAR_DOTS) break;
+        if (!dots.includes(c.categoryId)) dots.push(c.categoryId);
+      }
     }
     const date = `${month}-${String(day).padStart(2, '0')}`;
     cells.push({ kind: 'day', key: date, date, day, dots, ...netOf(list) });

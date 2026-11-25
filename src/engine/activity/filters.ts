@@ -4,6 +4,7 @@
  * 'transfers' shows only transfer legs, keyed on transfer_id, never on the
  * Transfer category.
  */
+import { partsMatch, type Part } from '../parts';
 
 export interface ActivityFilter {
   categoryIds: readonly (string | null)[] | null; // null entry = uncategorised
@@ -29,6 +30,9 @@ export const EMPTY_FILTER: ActivityFilter = {
 };
 
 export interface FilterRow {
+  id?: string;
+  /** 10.1-10 (D-05): category parts of a split line; a line matches a category filter through any of them. */
+  parts?: readonly Part[] | null;
   category_id: string | null;
   account_id: string;
   original_amount: number;
@@ -110,7 +114,14 @@ export function isUnpaidBill(
 
 export function filterRows<T extends FilterRow>(rows: readonly T[], f: ActivityFilter): T[] {
   return rows.filter((row) => {
-    if (f.categoryIds !== null && !f.categoryIds.includes(row.category_id)) return false;
+    if (
+      f.categoryIds !== null &&
+      !partsMatch(
+        { id: row.id ?? '', amount: row.original_amount, categoryId: row.category_id, parts: row.parts ?? null },
+        f.categoryIds
+      )
+    )
+      return false;
     if (f.accountIds !== null && !f.accountIds.includes(row.account_id)) return false;
     if (f.unpaidOnly && !isUnpaidBill(row)) return false;
     if (!matchesDirection(row, f.direction)) return false;
