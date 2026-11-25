@@ -33,10 +33,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11) (completed 2026-11-23)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [x] **Phase 08.1: Decide rebuild on real data** (INSERTED, completed 2026-11-22) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
-- [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
-- [ ] **Phase 08.13: Private rooms in a household** (INSERTED) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
+- [ ] **Phase 08.12: Joint spending agreements** (INSERTED; **v1, before launch**, after 10.2, owner 2026-11-24) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
+- [ ] **Phase 08.13: Private rooms in a household** (INSERTED; **v1, before launch**, after 08.12, owner 2026-11-24) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
+- [ ] **Phase 10.1: Split and receipts** (INSERTED) - Split one transaction across categories (was 999.1), receipt photo on a transaction (was 999.2), and receipt scan with a split by item (08.12 round 4: before launch); owner 2026-11-24
+- [ ] **Phase 10.2: Envelope rollover** (INSERTED) - Unspent category limits roll into next month (was 999.3); owner 2026-11-24
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
 
 ## When You First See It Running
@@ -1567,6 +1569,8 @@ Plans:
 
 ### Phase 08.12: Joint spending agreements (INSERTED)
 
+**Release:** v1, before launch (owner 2026-11-24, reversing the 2026-11-22 Path to Launch v2 placement). Runs after Phase 10.2 and before Phase 11; Phase 08.13 follows it. Its round 4 items placed elsewhere stay there (price-rise notices in Phase 10, subscriptions list in Phase 7, receipt split by item in Phase 10.1, closure notice in Phase 11).
+
 **Goal:** Groups can agree how shared money is spent, and Decide shows the agreement in its answers. On an equal-access joint account, the group can set a spend limit: spends over it need another member's OK, or the group can choose "no approval needed". The phase also covers one-earner households, where one person is the main earner and the other partner is at home or not working. That partner may be paid an allowance by the main earner, be given a set sum, spend from the same account, or a mix of these. FincWin only records what the group agreed. It holds no money and cannot block a card payment.
 **Requirements**: TBD (from research and the owner's questions)
 **Depends on:** Phase 08.1 (the spending rule, joint account purposes and joint money counted once, from plans 22 and 23)
@@ -1579,6 +1583,8 @@ Plans:
 **Plans:** 0 plans (questions before build)
 
 ### Phase 08.13: Private rooms in a household (INSERTED)
+
+**Release:** v1, before launch, after 08.12 and before Phase 11 (owner 2026-11-24).
 
 **Goal:** A household can hold private rooms, such as the parents' own arrangement, a whole-family pot, or two roommates' joint account. Only a room's members know it exists. Every account, line and series sits in exactly one room, and today's household becomes the "everyone" room. Each room has its own spending rule, limit, personal money, settle-up and Decide choice, and money is counted once across overlapping rooms.
 **Requirements**: TBD (from 08.12-RESEARCH-ROOMS.md and the owner's answers in 08.12-OWNER-ANSWERS.md, round 5)
@@ -1703,10 +1709,38 @@ Plans:
 - [ ] 10-30-PLAN.md — Phase gate: full suite, new builds, owner device session, validation sign-off
 **UI hint**: no (not in the flagged UI-heavy set; ships mostly settings/security surfaces on top of existing shell patterns)
 
+### Phase 10.1: Split and receipts (INSERTED)
+
+**Goal:** One purchase can be split across several categories, a receipt photo can be attached to a transaction, and a receipt can be scanned and split by item between categories and household members. Category totals, limits, Insights and Decide all read the parts, and money is counted once.
+**Source:** owner 2026-11-24 moved backlog 999.1 and 999.2 into v1, together with the receipt scan and split by item that the owner placed before launch in 08.12 round 4 (`08.12-OWNER-ANSWERS.md`). This resolves the clash with the 2026-11-22 Path to Launch plan, which had receipts in v2.
+**Depends on:** Phase 10 (System: archive, export and account deletion must cover receipt images and split parts), Phase 8 (household split on shared lines), Phase 7 (Insights category sections)
+**Requirements**: TBD (from discussion)
+**Success Criteria** (draft, to be confirmed in discussion):
+  1. A user can split one transaction across several categories; the parts always add up exactly to the total (integer minor units), and Activity, category limits, Insights and Decide use the parts.
+  2. A user can attach a receipt photo (camera or gallery) to a transaction and view it; the image is private to the owner (and shared-line members where the line is shared), removed with the transaction and with account deletion, and included in the data export.
+  3. A user can scan a receipt, review the items it reads, and assign each item to a category and, on a shared line, to members; nothing is saved until the user confirms, and the totals still match the receipt.
+  4. Split lines work with the household split, undo, import and export.
+**Plans:** 0 plans (discussion first)
+**UI hint**: yes
+**Research flag**: receipt text reading on-device versus a server service (privacy, cost, Windows/EAS build impact), and store privacy disclosures for photos.
+
+### Phase 10.2: Envelope rollover (INSERTED)
+
+**Goal:** Unspent money in a category limit can roll into next month, so a category works like an envelope (prototype L5359).
+**Source:** owner 2026-11-24 moved backlog 999.3 into v1.
+**Depends on:** Phase 10.1 (category parts from split lines feed category spending)
+**Requirements**: TBD (from discussion)
+**Success Criteria** (draft, to be confirmed in discussion):
+  1. A user can turn rollover on per category; with it off, nothing changes from today.
+  2. At month end, unspent money carries into next month's limit, and the category shows where its limit comes from (for example "$500 + $80 carried from October").
+  3. Overspend handling, any carry cap, and whether carried money ever counts as spare money in Decide follow the owner's discussion answers, with right-answer cases.
+**Plans:** 0 plans (discussion first)
+**UI hint**: yes
+
 ### Phase 11: Compliance & Release
 **Goal**: The app is truthfully described, proven correct by one final audit, and ready for store submission.
 **Merged in 2026-11-22 (owner, quick 261122-m82):** former Phase 08.2 (Decide re-audit) is now part of this phase. It was an audit, not a build, so it runs once here on the finished app instead of between 08.1 and Insights. Source: `.planning/research/DECIDE-FIX-PLAN.md` sections 7 and 9; its scope now also covers Insights and System.
-**Depends on**: Phases 0-10 (final verification gate), including 08.1
+**Depends on**: Phases 0-10.2, 08.12 and 08.13 (final verification gate), including 08.1
 **Requirements**: CMP-01, CMP-02, CMP-03, CMP-04, CMP-05, CMP-06, CMP-07, CMP-08, CMP-09, CMP-10, CMP-11, DSG-01, DSG-05, ENV-11, CMP-12, CMP-13; from former 08.2: the section 7 checklists for the financial, engine, app, UI, UX, compliance and integration auditors
 **Success Criteria** (what must be TRUE):
   1. A findable disclaimer states the app is not financial advice and involves no institution, and no user-facing string claims data stays on the device or is not sent anywhere.
@@ -1737,17 +1771,17 @@ Plans:
 
 Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. Captured 2026-10-13 from the prototype review during the Phase 3 re-discussion.
 
-### Phase 999.1: Split a transaction across categories (BACKLOG)
+### Phase 999.1: Split a transaction across categories (PROMOTED 2026-11-24 to Phase 10.1)
 **Goal:** Divide one transaction between several categories, as in the prototype's split sheet (`FincWin United.dc.html` L2149–2151, L2572, L6514). This is separate from the household split (HH-04).
 **Requirements:** none yet.
 **Plans:** none.
 
-### Phase 999.2: Receipt photo on a transaction (BACKLOG)
+### Phase 999.2: Receipt photo on a transaction (PROMOTED 2026-11-24 to Phase 10.1)
 **Goal:** Attach a receipt image to a transaction (prototype receipt sheet L2747). The detail sheet currently omits Receipt (`src/features/record/activity/detailRows.ts` L3).
 **Requirements:** none yet.
 **Plans:** none.
 
-### Phase 999.3: Envelope rollover of unspent caps (BACKLOG)
+### Phase 999.3: Envelope rollover of unspent caps (PROMOTED 2026-11-24 to Phase 10.2)
 **Goal:** Unspent category caps roll into next month (prototype L5359).
 **Requirements:** none yet.
 **Plans:** none.
@@ -1765,7 +1799,7 @@ Ideas parked outside the active phases. Promote one with `/gsd-review-backlog`. 
 ## Progress
 
 **Execution Order:**
-Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 9 → 7 ∥ 10 → 11
+Phases execute in this order: 0 → 1 → 2 → 2.2 → 2.1 → 2.3 → 3 → 03.1 → 4* → 5 → 05.1 → 05.2 → (05.3 stopped) → 05.4 → 05.5 → 6 → 06.1 → 06.2 → 8 → 08.1 → 9 → 7 ∥ 10 → 10.1 → 10.2 → 08.12 → 08.13 → 11
 The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (7) runs after 08.2. *Amended 2026-11-22 (owner, quick 261122-m82): 08.2 is merged into Phase 11's final audit; Insights (7) and System (10) run in parallel after 08.1.* Two agreed phases are not inserted yet: home buying (FIN-30), after 08.1, and an optional 06.1 for the Activity views. Decide stays off for everyone, testers included, until the Variant C screens are built in 08.1 (BO-08). *Superseded 2026-11-06 (owner, quick 261106-bf2): Decide is open to every tester; the store switch-on follows Phase 11's final audit (former 08.2).*
 *Phase 4 has no data-layer dependency and may run concurrently with Phases 1-3 if parallel workstreams are available.
 2.2 runs before 2.1 because it changes the import commit path that 2.1's plans build on; 2.1 is replanned after 2.2 (STATE.md Blockers).
@@ -1797,4 +1831,6 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
+| 10.1 Split and receipts | 0/TBD | Not started (discussion first) | - |
+| 10.2 Envelope rollover | 0/TBD | Not started (discussion first) | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
