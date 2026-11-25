@@ -46,6 +46,7 @@ function mockUseStore<T>(pick: () => T): T {
 // 08-23: the (app) layout opens the household live channel; wiring only here.
 jest.mock('@/features/decide/screens/answer/TesterBuildProvider', () => ({ TesterBuildProvider: ({ children }: { children: unknown }) => children })); // 08.1-05: keeps the profile query (and the Supabase client) out of the shell test
 jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
+jest.mock('@/features/record/receipt/ReceiptOutboxHost', () => ({ ReceiptOutboxHost: () => null }));
 jest.mock('@/features/plans/PlanHost', () => ({ PlanHost: () => null }));
 // 09: the plan shell (lock host, lock banner, write gate) reads plan_state through React Query; these suites test the shell
 // layout, so the plan is a writable tester household and the plan hosts render nothing (like PlanHost).

@@ -32,6 +32,7 @@ import { perfEnabled } from '@/features/decide/perf/perfMarks';
 import { probeCommit } from '@/data/perf/cacheProbe';
 import { DecideV3Scope } from '@/data/queries/decideV3';
 import { HouseholdRealtimeHost } from '@/data/realtime/HouseholdRealtimeHost';
+import { ReceiptOutboxHost } from '@/features/record/receipt/ReceiptOutboxHost';
 import { SystemHosts } from '@/features/system/SystemHosts';
 import { RemovedNoticeHost } from '@/features/household/leave/RemovedNoticeHost';
 import { AppPartnerFigurePublisher } from '@/features/household/decide/PartnerFigurePublisher';
@@ -194,6 +195,8 @@ export default function AppLayout() {
               <TrialReminderObserver enabled={consentAnswered({ loading, consent })} />
               <SampleClearPrompts />
               <HouseholdRealtimeHost />
+              {/* 10.1-17 (D-09): receipt uploads outside the write queue */}
+              <ReceiptOutboxHost />
               {/* 10-27: alert channels, time-zone sync, push token refresh (only if already allowed) and the device heartbeat. */}
               <SystemHosts />
               {/* 09-10: store identity, plan Realtime and foreground refresh. */}

@@ -1,11 +1,3 @@
-import type { LocalReceiptFile } from '../types';
-
-jest.mock('@/services/storage/wipe', () => ({ registerWipeHandler: jest.fn() }));
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  __esModule: true,
-  default: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
-}));
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerWipeHandler } from '@/services/storage/wipe';
 import {
@@ -21,7 +13,14 @@ import {
   type OutboxDeps,
   type OutboxItem,
 } from '../outbox';
-import type { UploadOutcome } from '../upload';
+import type { LocalReceiptFile, UploadOutcome } from '../types';
+
+jest.mock('@/services/storage/wipe', () => ({ registerWipeHandler: jest.fn() }));
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: { getItem: jest.fn(), setItem: jest.fn(), removeItem: jest.fn() },
+}));
+
 
 // the wipe handler is registered at import time, before any test clears the mock
 const wipeHandler = (registerWipeHandler as jest.Mock).mock.calls[0]?.[0] as { id: string; wipe(): Promise<void>; pendingWriteCount(): Promise<number> };

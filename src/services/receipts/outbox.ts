@@ -6,8 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onlineManager } from '@tanstack/react-query';
 import { registerWipeHandler } from '@/services/storage/wipe';
 import { RECEIPT_MAX_BYTES } from './limits';
-import type { LocalReceiptFile, ReceiptKind, ReceiptMime } from './types';
-import type { UploadOutcome } from './upload';
+import type { LocalReceiptFile, OutboxItem, ReceiptKind, UploadOutcome } from './types';
+
+export type { OutboxItem } from './types';
 
 export const OUTBOX_KEY = 'fincwin:receiptOutbox';
 export const OUTBOX_DIR = 'receipts-pending/'; // under the app's document folder
@@ -15,22 +16,6 @@ export const OUTBOX_MAX_FILES = 40;
 export const OUTBOX_MAX_BYTES = 150 * 1024 * 1024;
 export const MAX_ATTEMPTS = 5;
 const MAX_BACKOFF_MINUTES = 60;
-
-export interface OutboxItem {
-  receiptId: string;
-  groupId: string;
-  pageNo: number;
-  transactionId: string;
-  kind: ReceiptKind;
-  mime: ReceiptMime;
-  ext: string;
-  bytes: number;
-  localUri: string;
-  attempts: number;
-  nextAttemptAt: string | null;
-  state: 'waiting' | 'failed';
-  createdAt: string;
-}
 
 export interface OutboxDeps {
   readList(): Promise<OutboxItem[]>;

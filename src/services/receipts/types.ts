@@ -28,3 +28,21 @@ export interface OcrResult {
   imageHeight: number | null;
 }
 export type ReadResult = { ok: true; result: OcrResult } | { ok: false; reason: 'unavailable' | 'failed' | 'empty' };
+
+// 10.1-17: the upload outbox (shared here so outbox.ts and upload.ts do not import each other)
+export interface OutboxItem {
+  receiptId: string;
+  groupId: string;
+  pageNo: number;
+  transactionId: string;
+  kind: ReceiptKind;
+  mime: ReceiptMime;
+  ext: string;
+  bytes: number;
+  localUri: string;
+  attempts: number;
+  nextAttemptAt: string | null;
+  state: 'waiting' | 'failed';
+  createdAt: string;
+}
+export type UploadOutcome = 'uploaded' | 'line_not_ready' | 'retry' | 'rejected';

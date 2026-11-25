@@ -3,9 +3,9 @@
 // landed it) and add_receipt is idempotent on the receipt id ('already'). This module never logs paths or file names.
 import { addReceipt, receiptObjectPath } from '@/db/receipts';
 import type { DbClient } from '@/db/rows';
-import type { OutboxItem } from './outbox';
+import type { OutboxItem, UploadOutcome } from './types';
 
-export type UploadOutcome = 'uploaded' | 'line_not_ready' | 'retry' | 'rejected';
+export type { UploadOutcome } from './types';
 
 export interface UploadDeps {
   client(): DbClient;

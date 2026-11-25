@@ -61,6 +61,7 @@ jest.mock('@/features/record/useDeviceHomeCurrencyDefault', () => ({ DeviceHomeC
 jest.mock('@/features/record/samples/SampleBanner', () => ({ SampleBanner: () => null }));
 // 08-23: the layout opens the household live channel; wiring only here.
 jest.mock('@/data/realtime/HouseholdRealtimeHost', () => ({ HouseholdRealtimeHost: () => null }));
+jest.mock('@/features/record/receipt/ReceiptOutboxHost', () => ({ ReceiptOutboxHost: () => null }));
 jest.mock('@/features/plans/PlanHost', () => ({ PlanHost: () => null }));
 // 09: the plan shell (lock host, lock banner, write gate) reads plan_state through React Query; these suites test the shell
 // layout, so the plan is a writable tester household and the plan hosts render nothing (like PlanHost).
