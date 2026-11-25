@@ -10,6 +10,7 @@ import { yearMonthOf } from '../../decide/v3/dates';
 import { LOW_MONTH_RANK, UNDER_LOGGED_PACE_PERCENT, V3_HISTORY_MONTHS } from '../../decide/v3/constants';
 import { monthlyEquivalentOf } from '../../decide/v3/plan/cadence';
 import type { LowMonth, MonthMark, Notice, ReasonCode, TypedEstimates, V3Month, V3Series } from '../../decide/v3/types';
+import { linePartAmounts } from '../../parts/lineParts';
 import { classifyLine, liveSeriesOf, seriesIndex } from './series';
 
 /** Median; odd count = middle value, even count = half-up mean of the two middle values (D-29). */
@@ -40,7 +41,10 @@ export function everydayByMonth(months: readonly V3Month[], series: readonly V3S
       if (cls !== 'everyday' && cls !== 'refund') continue;
       const signed = cls === 'everyday' ? BigInt(l.amount) : -BigInt(l.amount);
       total += signed;
-      if (l.categoryId !== null) cats.set(l.categoryId, (cats.get(l.categoryId) ?? 0n) + signed);
+      const sign = cls === 'everyday' ? 1n : -1n;
+      for (const p of linePartAmounts(l)) {
+        if (p.categoryId !== null) cats.set(p.categoryId, (cats.get(p.categoryId) ?? 0n) + sign * BigInt(p.amount));
+      }
     }
     const byCategory = new Map<string, bigint>();
     // Stryker disable next-line EqualityOperator: at a figure of 0 both branches give 0

@@ -11,6 +11,7 @@ import { MATCH_DAYS } from '../../decide/v3/constants';
 import { addYearMonths, daysInYearMonth, dayOfMonth, yearMonthOf } from '../../decide/v3/dates';
 import type { IncomeThisMonth, PaidByOtherDue, V3Month, V3Series } from '../../decide/v3/types';
 import type { DueDrops } from './dueDrops';
+import { linePartAmounts } from '../../parts/lineParts';
 import { classifyLine, liveSeriesOf, seriesIndex, seriesOccurrences } from './series';
 import { matchWindowDays, settle, toPaidLine, type Due, type PaidLine } from './settle';
 
@@ -125,7 +126,7 @@ export function thisMonth(input: ThisMonthInput): ThisMonthResult {
         break;
       case 'everyday':
         everyday += amount;
-        byCategory.set(l.categoryId, (byCategory.get(l.categoryId) ?? 0n) + amount);
+        for (const p of linePartAmounts(l)) byCategory.set(p.categoryId, (byCategory.get(p.categoryId) ?? 0n) + BigInt(Math.abs(p.amount)));
         break;
       case 'refund':
         refunds += amount;

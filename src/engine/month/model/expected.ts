@@ -10,6 +10,7 @@
  */
 import { addYearMonths, yearMonthOf } from '../../decide/v3/dates';
 import type { V3Line, V3Series } from '../../decide/v3/types';
+import { linePartAmounts } from '../../parts/lineParts';
 import { liveSeriesOf, seriesOccurrences } from './series';
 
 /** max(0, expected - actual). */
@@ -44,9 +45,12 @@ export function expectedDueCounts(input: ExpectedDueInput): ReadonlyMap<string, 
 
   const pool = new Map<string, bigint>();
   for (const l of input.lines) {
-    if (l.status !== 'paid' || l.role !== 'spending' || l.seriesId !== null || l.categoryId === null) continue;
+    if (l.status !== 'paid' || l.role !== 'spending' || l.seriesId !== null) continue;
     if (yearMonthOf(l.date) !== month) continue;
-    pool.set(l.categoryId, (pool.get(l.categoryId) ?? 0n) + BigInt(Math.abs(l.amount)));
+    for (const p of linePartAmounts(l)) {
+      if (p.categoryId === null) continue;
+      pool.set(p.categoryId, (pool.get(p.categoryId) ?? 0n) + BigInt(Math.abs(p.amount)));
+    }
   }
 
   dues.sort((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : a.id < b.id ? -1 : 1));

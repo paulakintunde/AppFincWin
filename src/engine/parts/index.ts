@@ -4,3 +4,5 @@ export { partsBalance } from './partsBalance';
 export { primaryCategory } from './primaryCategory';
 export { scaleParts } from './scaleParts';
 export type { Part, LinePartsInput, CategoryAmount, PartsInvalidReason, Balance } from './types';
+export { linePartAmounts, scaleLineParts } from './lineParts';
+export { homeCategoryAmounts, partsMatch, amountInCategories } from './rowParts';

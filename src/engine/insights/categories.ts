@@ -5,6 +5,7 @@
  */
 import { divideHalfUp } from '../money/rounding';
 import type { MinorUnits } from '../money/types';
+import { linePartAmounts } from '../parts/lineParts';
 import { minorFromBigInt } from '../payoff/types';
 import type { LineRole, V3Month } from '../decide/v3/types';
 
@@ -40,8 +41,10 @@ export function spendByCategory(months: readonly V3Month[], include: readonly st
     for (const l of m.lines) {
       if (l.status !== 'paid') continue;
       if (l.role !== 'spending' && l.role !== 'refund') continue;
-      const amount = BigInt(Math.abs(l.amount));
-      out.set(l.categoryId, (out.get(l.categoryId) ?? 0n) + (l.role === 'spending' ? amount : -amount));
+      for (const p of linePartAmounts(l)) {
+        const amount = BigInt(Math.abs(p.amount));
+        out.set(p.categoryId, (out.get(p.categoryId) ?? 0n) + (l.role === 'spending' ? amount : -amount));
+      }
     }
   }
   return out;

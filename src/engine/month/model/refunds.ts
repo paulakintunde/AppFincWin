@@ -26,6 +26,7 @@
  */
 import { minorFromBigInt } from '../../payoff/types';
 import type { V3Inputs, V3Line, V3Month, V3Series } from '../../decide/v3/types';
+import { scaleLineParts } from '../../parts/lineParts';
 import { classifyLine, seriesIndex } from './series';
 
 interface Located {
@@ -79,7 +80,9 @@ export function redateRefunds(months: readonly V3Month[], series: readonly V3Ser
       room -= credit;
       editOf(monthIndex).removed.add(r.id);
       if (credit > 0n && !onPlan) {
-        editOf(purchaseMonth).added.push({ ...r, date: purchase.date, categoryId: purchase.categoryId, amount: minorFromBigInt(credit, 'redateRefunds'), refundOf: null });
+        const credited = minorFromBigInt(credit, 'redateRefunds');
+        const parts = scaleLineParts(purchase, Number(credit));
+        editOf(purchaseMonth).added.push({ ...r, date: purchase.date, categoryId: purchase.categoryId, amount: credited, refundOf: null, ...(parts === undefined ? {} : { parts }) });
       }
       if (amount > credit) {
         editOf(monthIndex).added.push({ ...r, id: `${r.id}:surplus`, role: 'other_in', amount: minorFromBigInt(amount - credit, 'redateRefunds'), refundOf: null });
@@ -87,7 +90,10 @@ export function redateRefunds(months: readonly V3Month[], series: readonly V3Ser
     }
     if (onPlan && room < BigInt(purchase.amount)) {
       editOf(purchaseMonth).removed.add(purchase.id);
-      if (room > 0n) editOf(purchaseMonth).added.push({ ...purchase, amount: minorFromBigInt(room, 'redateRefunds') });
+      if (room > 0n) {
+        const parts = scaleLineParts(purchase, Number(room));
+        editOf(purchaseMonth).added.push({ ...purchase, amount: minorFromBigInt(room, 'redateRefunds'), ...(parts === undefined ? {} : { parts }) });
+      }
     }
   }
 
