@@ -26,6 +26,7 @@ import {
   type V3Series,
 } from '@/engine/decide/v3';
 import { currencyCode, minorUnits } from '@/engine/money';
+import { homeCategoryAmounts, type CategoryAmount } from '@/engine/parts';
 import { ZERO_PERCENT, percent, simulateMinimum, type CardMinimumTerms } from '@/engine/payoff';
 import { type RecurringFreq } from '@/engine/recurring';
 import { convertLatest } from '@/data/queries/fxConvert';
@@ -205,7 +206,7 @@ function build(rawSource: InputsSource, settings: V3SettingsSource | null, wantC
 
   // Which rows reach a month, in which direction. A row of a month the history window skips never reaches one; a row no stored rate
   // converts is left out (D-37); a Savings-category outflow outside a transfer is folded into saving, never a line.
-  interface Kept { row: InputsRow; amount: number }
+  interface Kept { row: InputsRow; amount: number; parts?: readonly CategoryAmount[] }
   const keptByMonth = new Map<string, Kept[]>();
   for (const r of liveRows) {
     const month = r.local_date.slice(0, 7);
@@ -215,11 +216,20 @@ function build(rawSource: InputsSource, settings: V3SettingsSource | null, wantC
     if (conv === null) continue;
     if (usedMonths.has(month)) markProvisional(conv);
     if (r.isSettlement === true) continue; // D-06: a settlement between people is not the user's own money in or out
-    if (conv.amount < 0 && r.transfer_id === null && categoryKey(r.category_id) === 'Savings') continue;
+    // 10.1-16 (D-04): each part counts as its category does; the builder folds Savings and Transfer parts like whole lines.
+    const split = homeCategoryAmounts({ id: r.id, amount: r.original_amount, categoryId: r.category_id, parts: r.category_parts?.map((part) => ({ categoryId: part.c, amount: part.a })) ?? null }, conv.amount);
+    const isSplit = split !== null && split.length > 1;
+    if (!isSplit && conv.amount < 0 && r.transfer_id === null && categoryKey(r.category_id) === 'Savings') continue;
     if (r.status === 'skipped') continue; // a skipped occurrence settles its due (skipped), it is never a line
+    let entry: Kept = { row: r, amount: conv.amount };
+    if (isSplit) {
+      const kept = split.filter((p) => p.amount !== 0 && categoryKey(p.categoryId) !== 'Transfer' && !(p.amount < 0 && r.transfer_id === null && categoryKey(p.categoryId) === 'Savings'));
+      if (kept.length === 0) continue; // every part folded away: left out like a whole Savings line
+      entry = { row: r, amount: kept.reduce((sum, p) => sum + p.amount, 0), parts: kept };
+    }
     const bucket = keptByMonth.get(month);
-    if (bucket) bucket.push({ row: r, amount: conv.amount });
-    else keptByMonth.set(month, [{ row: r, amount: conv.amount }]);
+    if (bucket) bucket.push(entry);
+    else keptByMonth.set(month, [entry]);
   }
 
   // ── series ── (only once there is a full month; before that the typed estimates stand in)
@@ -307,10 +317,13 @@ function build(rawSource: InputsSource, settings: V3SettingsSource | null, wantC
       month: m,
       full: flags.get(m) === true,
       mark: inList(MARKS, mark) ? (mark as MonthMark) : null,
-      lines: (keptByMonth.get(m) ?? []).map(({ row, amount }): V3Line => {
+      lines: (keptByMonth.get(m) ?? []).map(({ row, amount, parts }): V3Line => {
         const out = amount < 0;
         const role = roleOf(row, out);
         const s = row.recurring_series_id === null ? undefined : seriesById.get(row.recurring_series_id);
+        // The line's own category when a kept part has it, else the largest kept part's (the first on a tie).
+        const largest = parts?.reduce((a, b) => (Math.abs(b.amount) > Math.abs(a.amount) ? b : a));
+        const categoryId = parts === undefined || parts.some((p) => p.categoryId === row.category_id) ? row.category_id : (largest as CategoryAmount).categoryId;
         return {
           id: row.id,
           date: row.local_date,
@@ -318,7 +331,8 @@ function build(rawSource: InputsSource, settings: V3SettingsSource | null, wantC
           role,
           status: row.status as 'paid' | 'pending',
           seriesId: row.recurring_series_id,
-          categoryId: row.category_id,
+          categoryId,
+          ...(parts !== undefined && parts.length > 1 ? { parts: parts.map((p) => ({ categoryId: p.categoryId, amount: minorUnits(Math.abs(p.amount)) })) } : {}),
           coversMonths: null,
           source: row.import_batch_id ? 'statement' : 'manual', // D-51
           expected: false,
