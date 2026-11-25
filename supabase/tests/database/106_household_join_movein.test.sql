@@ -182,7 +182,7 @@ select extensions.is(
     where c.table_schema = 'public' and c.column_name = 'household_id' and t.table_type = 'BASE TABLE'
       and c.table_name not in (select table_name from public.hh_move_tables())
       and c.table_name not in ('households', 'household_members', 'household_events', 'household_invites', 'statement_periods', 'category_rules',
-        'transaction_splits', 'transaction_member_categories', 'household_split_defaults', 'settlements', 'settlement_lines', 'settlement_nudges',
+        'transaction_splits', 'transaction_receipts', 'transaction_member_categories', 'household_split_defaults', 'settlements', 'settlement_lines', 'settlement_nudges',
         'household_former_members', 'member_departures', 'decide_partner_optins', 'partner_figures', 'safety_net_shares',
         -- Phase 9 plan records stay with the household: its plan, the one-trial-per-household ledger, the join requests
         -- waiting on it, and the leave history the switch rule reads (the household that was left).

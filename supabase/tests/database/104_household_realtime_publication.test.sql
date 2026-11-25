@@ -23,7 +23,7 @@ select extensions.is((select count(*)::int from pg_publication_tables where pubn
 select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'debt_line_applied'), 0, 'debt_line_applied is not published');
 select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename like 'decide\_%'), 0, 'no decide_* table is published');
 
-select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename not in ('transactions', 'accounts', 'household_events', 'transaction_splits', 'settlements', 'settlement_lines', 'household_split_defaults', 'household_former_members', 'member_departures', 'household_plans')), 0, 'only shared-capable tables are published');
+select extensions.is((select count(*)::int from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public' and tablename not in ('transactions', 'accounts', 'household_events', 'transaction_splits', 'transaction_receipts', 'settlements', 'settlement_lines', 'household_split_defaults', 'household_former_members', 'member_departures', 'household_plans')), 0, 'only shared-capable tables are published');
 
 select extensions.is(has_table_privilege('authenticated', 'public.transactions', 'DELETE'), false, 'authenticated cannot hard-delete transactions');
 select extensions.is(has_table_privilege('authenticated', 'public.accounts', 'DELETE'), false, 'authenticated cannot hard-delete accounts');

@@ -31,7 +31,7 @@ insert into classified (table_name, class, parent) values
   ('transactions', 'shared_or_owner', null), ('accounts', 'shared_or_owner', null), ('recurring_series', 'shared_or_owner', null),
   -- account_derived, derived, party
   ('statement_periods', 'account_derived', 'accounts'),
-  ('transaction_splits', 'derived', 'transactions'), ('settlement_lines', 'derived', 'settlements'),
+  ('transaction_splits', 'derived', 'transactions'), ('transaction_receipts', 'derived', 'transactions'), ('settlement_lines', 'derived', 'settlements'),
   ('settlements', 'party', null),
   -- household (all members by design)
   ('households', 'household', null), ('household_members', 'household', null), ('household_events', 'household', null),
