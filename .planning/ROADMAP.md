@@ -33,8 +33,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11) (completed 2026-11-23)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [x] **Phase 08.1: Decide rebuild on real data** (INSERTED, completed 2026-11-22) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
-- [ ] **Phase 08.12: Joint spending agreements** (INSERTED) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
-- [ ] **Phase 08.13: Private rooms in a household** (INSERTED) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
+- [ ] **Phase 08.12: Joint spending agreements** (INSERTED; **v2, after launch**, owner 2026-11-24) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
+- [ ] **Phase 08.13: Private rooms in a household** (INSERTED; **v2, after launch**, depends on 08.12, owner 2026-11-24) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
 - [ ] **Phase 10.1: Split and receipts** (INSERTED) - Split one transaction across categories (was 999.1), receipt photo on a transaction (was 999.2), and receipt scan with a split by item (08.12 round 4: before launch); owner 2026-11-24
@@ -1569,6 +1569,8 @@ Plans:
 
 ### Phase 08.12: Joint spending agreements (INSERTED)
 
+**Release:** v2, after launch (owner 2026-11-22 Path to Launch; confirmed 2026-11-24). No v1 phase depends on it; the 08.12 round 4 items v1 needs live elsewhere (price-rise notices in Phase 10, subscriptions list in Phase 7, receipt split by item in Phase 10.1, closure notice in Phase 11).
+
 **Goal:** Groups can agree how shared money is spent, and Decide shows the agreement in its answers. On an equal-access joint account, the group can set a spend limit: spends over it need another member's OK, or the group can choose "no approval needed". The phase also covers one-earner households, where one person is the main earner and the other partner is at home or not working. That partner may be paid an allowance by the main earner, be given a set sum, spend from the same account, or a mix of these. FincWin only records what the group agreed. It holds no money and cannot block a card payment.
 **Requirements**: TBD (from research and the owner's questions)
 **Depends on:** Phase 08.1 (the spending rule, joint account purposes and joint money counted once, from plans 22 and 23)
@@ -1581,6 +1583,8 @@ Plans:
 **Plans:** 0 plans (questions before build)
 
 ### Phase 08.13: Private rooms in a household (INSERTED)
+
+**Release:** v2, after launch, after 08.12 (owner 2026-11-24).
 
 **Goal:** A household can hold private rooms, such as the parents' own arrangement, a whole-family pot, or two roommates' joint account. Only a room's members know it exists. Every account, line and series sits in exactly one room, and today's household becomes the "everyone" room. Each room has its own spending rule, limit, personal money, settle-up and Decide choice, and money is counted once across overlapping rooms.
 **Requirements**: TBD (from 08.12-RESEARCH-ROOMS.md and the owner's answers in 08.12-OWNER-ANSWERS.md, round 5)
