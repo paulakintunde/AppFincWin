@@ -48,7 +48,7 @@ export function WalletReview({ state }: { state: ImportState }) {
   }
   if (plan === null || drafts === null) return null;
 
-  const items = walletItems(drafts, plan, state.walletUnlinked);
+  const items = walletItems(drafts, plan, state.walletUnlinked, state.walletMarks);
   const label = walletLabel(plan.wallet);
   const waiting = plan.targets.some((x) => x.create && x.accountId === null);
   const feeText = (fee: { magnitude: number; currency: string }): string =>
@@ -71,6 +71,7 @@ export function WalletReview({ state }: { state: ImportState }) {
       </View>
       <Heading>{t('system.ownData.walletImport.summary', { lines: plan.counts.lines, fees: plan.counts.fees, conversions: plan.counts.conversions, accounts: plan.counts.newAccounts })}</Heading>
       <WalletAccountsCard state={state} />
+      {plan.duplicateCount > 0 ? <T tone="inkMuted">{t('system.ownData.walletImport.duplicatesSkipped', { count: plan.duplicateCount })}</T> : null}
       {plan.counts.fees > 0 ? <T tone="inkMuted">{t('system.ownData.walletImport.feeMeta')}</T> : null}
     </View>
   );
@@ -130,6 +131,13 @@ export function WalletReview({ state }: { state: ImportState }) {
             <Pill label={t('system.ownData.walletImport.choose')} variant="secondary" onPress={() => state.setWalletCreate(r.currency, true)} />
           </View>
         ) : null}
+        {item.duplicate ? (
+          <View style={styles.feeRow}>
+            <T role="label" tone="inkMuted">
+              {t('system.ownData.walletImport.alreadyImported')}
+            </T>
+          </View>
+        ) : null}
         {item.held || item.fee === null ? null : feeRow(item.fee)}
         {item.relinkFrom === null ? null : (
           <Actions>
@@ -150,7 +158,7 @@ export function WalletReview({ state }: { state: ImportState }) {
           <Pill
             label={t('system.ownData.walletImport.importLines', { count: plan.counts.lines })}
             variant="primary"
-            disabled={plan.counts.lines === 0 || waiting}
+            disabled={plan.counts.lines === 0 || waiting || !state.walletMarksReady}
             onPress={state.commit}
           />
           <Pill label={t('importCsv.back')} variant="secondary" onPress={state.back} />

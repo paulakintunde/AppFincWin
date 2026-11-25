@@ -11,6 +11,7 @@ const { setMockQueued } = jest.requireMock('@/data/sync/useQueueGuard') as { set
 const mockCommit = jest.fn();
 const mockAddCategory = jest.fn(() => ({ id: 'fees-new', stepId: 's' }));
 let mockUuid = 0;
+let mockBuiltinIds = new Map<string, string>();
 let mockCategories: { id: string; builtin_key: string | null; name: string | null; is_system: boolean; archived_at: null }[] = [];
 
 jest.mock('@/services/files/pickStatement', () => ({ pickStatementBytes: jest.fn() }));
@@ -35,7 +36,7 @@ jest.mock('@/data/queries/accounts', () => ({
   }),
 }));
 jest.mock('@/data/queries/categories', () => ({
-  useCategoryLookup: () => ({ all: mockCategories, active: mockCategories, builtinIds: new Map(), transferCategoryId: 'cat-transfer', loading: false }),
+  useCategoryLookup: () => ({ all: mockCategories, active: mockCategories, builtinIds: mockBuiltinIds, transferCategoryId: 'cat-transfer', loading: false }),
 }));
 jest.mock('@/data/queries/fxLatest', () => ({ useFxLatest: () => ({ data: [] }) }));
 jest.mock('@/data/queries/customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [], isLoading: false }) }));
@@ -51,18 +52,23 @@ const REVOLUT = [
   'EXCHANGE,Current,2026-03-05 10:00:00,2026-03-05 10:00:00,Exchanged from EUR,85.10,0.00,GBP,COMPLETED,',
 ].join('\n');
 
-function wrapper() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+const PLAIN_CSV = ['Date,Description,Amount', '2026-03-01,Shop,-5.00'].join(String.fromCharCode(10));
+
+function wrapper(client: QueryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
   };
 }
 
-async function started() {
-  pickStatementBytes.mockResolvedValueOnce({ kind: 'ok', bytes: new TextEncoder().encode(REVOLUT), mimeType: null, extension: 'csv' });
-  const hook = await renderHook(() => useStatementImport({ entry: 'account', accountId: 'acc-eur' }), { wrapper: wrapper() });
+async function started(text = REVOLUT, client?: QueryClient, accountId: string | null = 'acc-eur') {
+  pickStatementBytes.mockResolvedValueOnce({ kind: 'ok', bytes: new TextEncoder().encode(text), mimeType: null, extension: 'csv' });
+  const hook = await renderHook(() => useStatementImport({ entry: 'account', accountId }), { wrapper: wrapper(client) });
   await act(async () => {
     hook.result.current.start();
+  });
+  // D-34: the duplicate check and category guess finish before the Import pill enables.
+  await act(async () => {
+    await Promise.resolve();
   });
   return hook;
 }
@@ -71,6 +77,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUuid = 0;
   mockCategories = [];
+  mockBuiltinIds = new Map();
   setMockQueued(0);
 });
 
@@ -137,6 +144,49 @@ describe('useStatementImport: wallet files', () => {
     expect(mockAddCategory).not.toHaveBeenCalled();
     expect(result.current.commitProblem).toBe('queueFull');
     expect(result.current.stage).toBe('review');
+  });
+
+  it('D-34: importing the same wallet file twice adds nothing the second time (duplicates skipped, fees too)', async () => {
+    const first = await started();
+    await act(async () => {
+      first.result.current.commit();
+    });
+    expect(mockCommit).toHaveBeenCalledTimes(1);
+    const input = mockCommit.mock.calls[0]?.[0] as { rows: { id: string; account_id: string; local_date: string; original_amount: number; name: string | null; external_id: string | null; import_format: string | null }[]; walletFees: { row: { id: string; account_id: string; local_date: string; original_amount: number; name: string | null; external_id: string | null; import_format: string | null } }[] };
+    // The stored rows the second import sees: the first import's lines and fee expenses.
+    const stored = [...input.rows, ...input.walletFees.map((f) => f.row)].map((r) => ({ ...r, status: 'paid', version: 1, original_currency: 'EUR', transfer_id: null }));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(['transactions', 'hh-1', '2026-03'], stored);
+    mockCommit.mockClear();
+    const second = await started(REVOLUT, client);
+    expect(second.result.current.walletMarksReady).toBe(true);
+    expect(second.result.current.walletPlan?.duplicateCount).toBe(2);
+    expect(second.result.current.walletPlan?.counts.lines).toBe(0);
+    expect(second.result.current.walletPlan?.counts.fees).toBe(0);
+    await act(async () => {
+      second.result.current.commit();
+    });
+    expect(mockCommit).not.toHaveBeenCalled();
+  });
+
+  it('D-34: a known merchant line gets the guessed category the statement import would give it', async () => {
+    mockBuiltinIds = new Map([['Groceries', 'cat-groceries']]);
+    const { result } = await started(REVOLUT.replace('Bakery', 'Tesco Stores'));
+    await act(async () => {
+      result.current.commit();
+    });
+    const input = mockCommit.mock.calls[0]?.[0] as { rows: { name: string | null; category_id: string | null }[] };
+    expect(input.rows.find((r) => r.name === 'Tesco Stores')?.category_id).toBe('cat-groceries');
+    expect(input.rows.find((r) => r.name !== 'Tesco Stores')?.category_id).toBeNull();
+  });
+
+  it('10-28: a wallet file can be picked before any account exists; another file asks for one first', async () => {
+    const wallet = await started(REVOLUT, undefined, null);
+    expect(wallet.result.current.stage).toBe('review');
+    expect(wallet.result.current.needAccount).toBe(false);
+    const plain = await started(PLAIN_CSV, undefined, null);
+    expect(plain.result.current.stage).toBe('idle');
+    expect(plain.result.current.needAccount).toBe(true);
   });
 
   it('a switched-on currency with no account yet blocks the commit until its account exists', async () => {

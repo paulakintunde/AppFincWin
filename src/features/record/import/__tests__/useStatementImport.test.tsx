@@ -453,16 +453,22 @@ describe('useStatementImport: pick, statement choice, format and mapping', () =>
     expect(result.current.stage).toBe('format');
   });
 
-  it('with no account the import waits for one, then reads', async () => {
+  it('with no account a non-wallet file asks for one (10-28), then reads on the next pick', async () => {
     pickOk(csv(CSV_DECIDED));
     const { result } = await setup({ accountId: null });
     await act(async () => {
       result.current.start();
     });
     expect(result.current.profile).toBeNull();
+    expect(result.current.stage).toBe('idle');
+    expect(result.current.needAccount).toBe(true);
     expect(fetchImportProfile).not.toHaveBeenCalled();
     await act(async () => {
       result.current.setAccount('acc-1');
+    });
+    pickOk(csv(CSV_DECIDED));
+    await act(async () => {
+      result.current.start();
     });
     expect(result.current.profile).not.toBeNull();
   });

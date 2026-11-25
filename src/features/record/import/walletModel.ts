@@ -3,7 +3,8 @@
 // held back for want of an account, and the rows, fee expenses and conversion pairs a commit
 // writes (D-23: payments at gross, each fee its own expense, so every account balance moves by
 // exactly the file's net).
-import type { DraftRow, WalletDrafts, WalletKind } from '@/engine/statement';
+import { DEFAULT_KEYWORD_RULES, guessCategory, type GuessContext } from '@/engine/categorize';
+import { findDuplicates, type DraftRow, type ExistingRow, type WalletDrafts, type WalletKind } from '@/engine/statement';
 import type { NewTransaction } from '@/db/rows';
 
 export interface WalletTarget {
@@ -21,6 +22,8 @@ export interface WalletPlan {
   /** DraftRow.index of every line whose currency has no account and no new-account switch. */
   heldBack: number[];
   counts: { lines: number; fees: number; conversions: number; newAccounts: number };
+  /** D-34: lines already imported, left out of the counts above and skipped by the commit. */
+  duplicateCount: number;
 }
 
 export interface WalletPlanAccount {
@@ -37,6 +40,8 @@ export interface WalletChoices {
   link?: ReadonlyMap<string, string>;
   /** Conversions the person unlinked, by the index of their outgoing line. */
   unlinked?: ReadonlySet<number>;
+  /** D-34: duplicates and guesses; duplicates leave the counts. */
+  marks?: WalletMarks;
 }
 
 /** The brand names are proper nouns, not interface copy. */
@@ -68,16 +73,20 @@ export function walletPlan(d: WalletDrafts, accounts: readonly WalletPlanAccount
   });
   const available = new Set(targets.filter((x) => x.accountId !== null || x.create).map((x) => x.currency));
   const heldBack = d.drafts.filter((x) => !available.has(x.currency ?? '')).flatMap((x) => x.rows.map((r) => r.index));
-  const lines = d.drafts.filter((x) => available.has(x.currency ?? '')).reduce((a, x) => a + x.rows.length, 0);
-  const fees = d.feeLines.filter((f) => available.has(f.currency)).length;
+  const dup = choices.marks?.duplicates ?? new Set<number>();
+  const dupFees = choices.marks?.duplicateFees ?? new Set<number>();
+  const lines = d.drafts.filter((x) => available.has(x.currency ?? '')).reduce((a, x) => a + x.rows.filter((r) => !dup.has(r.index)).length, 0);
+  const duplicateCount = d.drafts.filter((x) => available.has(x.currency ?? '')).reduce((a, x) => a + x.rows.filter((r) => dup.has(r.index)).length, 0);
+  const fees = d.feeLines.filter((f, position) => available.has(f.currency) && !dupFees.has(position)).length;
   const conversions = d.transferPairs.filter(
-    (p) => available.has(p.fromCurrency) && available.has(p.toCurrency) && choices.unlinked?.has(p.fromIndex) !== true
+    (p) => available.has(p.fromCurrency) && available.has(p.toCurrency) && choices.unlinked?.has(p.fromIndex) !== true && !dup.has(p.fromIndex) && !dup.has(p.toIndex)
   ).length;
   return {
     wallet: d.wallet,
     targets,
     heldBack,
     counts: { lines, fees, conversions, newAccounts: targets.filter((x) => x.create).length },
+    duplicateCount,
   };
 }
 
@@ -91,6 +100,8 @@ export interface WalletCommitInput {
   feesCategoryId: string | null;
   transferCategoryId: string | null;
   unlinked?: ReadonlySet<number>;
+  /** D-34: lines already in the books (and their fees) are skipped; guessed categories are applied. */
+  marks?: WalletMarks;
   newId: () => string;
 }
 
@@ -105,6 +116,72 @@ function signed(r: DraftRow): number {
   return (r.marker === 'minus' ? -1 : 1) * (r.magnitude ?? 0);
 }
 
+/** D-34: what the same duplicate check and category guess as a bank statement found for a wallet file. */
+export interface WalletMarks {
+  /** DraftRow.index of every line already stored (skipped by default, as for statements). */
+  duplicates: ReadonlySet<number>;
+  /** Position in WalletDrafts.feeLines of every fee already stored, or whose payment line is a duplicate. */
+  duplicateFees: ReadonlySet<number>;
+  /** DraftRow.index -> the guessed category id (only lines with a guess appear). */
+  categories: ReadonlyMap<number, string>;
+}
+
+export const NO_WALLET_MARKS: WalletMarks = { duplicates: new Set(), duplicateFees: new Set(), categories: new Map() };
+
+/**
+ * D-34: reuses the statement import's findDuplicates (per account, over already-settled stored rows)
+ * and guessCategory (rules, learned names, keywords). A fee is a duplicate when its payment line is,
+ * or when a stored expense with the same wallet-fee name, date and amount exists (multiset-counted).
+ */
+export function walletMarks(
+  d: WalletDrafts,
+  accountByCurrency: ReadonlyMap<string, string>,
+  existingByAccount: ReadonlyMap<string, readonly ExistingRow[]>,
+  guess: Omit<GuessContext, 'keywordRules'>
+): WalletMarks {
+  const duplicates = new Set<number>();
+  const categories = new Map<number, string>();
+  const ctx: GuessContext = { keywordRules: DEFAULT_KEYWORD_RULES, ...guess };
+
+  for (const draft of d.drafts) {
+    const accountId = draft.rows.length === 0 ? undefined : accountByCurrency.get(draft.rows[0]?.currency ?? '');
+    const existing = accountId === undefined ? [] : (existingByAccount.get(accountId) ?? []);
+    const candidates = draft.rows.map((r) => ({
+      index: r.index,
+      localDate: r.localDate,
+      amount: r.magnitude === null ? null : signed(r),
+      name: r.description,
+      externalId: r.externalId,
+    }));
+    for (const index of findDuplicates(candidates, existing, { sourceFormat: 'csv' }).matches.keys()) duplicates.add(index);
+    for (const r of draft.rows) {
+      if (r.magnitude === null) continue;
+      const g = guessCategory({ name: r.description, amount: signed(r) }, ctx);
+      if (g.categoryId !== null) categories.set(r.index, g.categoryId);
+    }
+  }
+
+  const feeName = `${LABELS[d.wallet]} fee`;
+  const used = new Map<string, number>();
+  const duplicateFees = new Set<number>();
+  d.feeLines.forEach((f, position) => {
+    if (duplicates.has(f.forIndex)) {
+      duplicateFees.add(position);
+      return;
+    }
+    const accountId = accountByCurrency.get(f.currency);
+    const stored = accountId === undefined ? [] : (existingByAccount.get(accountId) ?? []);
+    const matching = stored.filter((e) => e.name === feeName && e.localDate === f.localDate && e.amount === -f.magnitude).length;
+    const key = `${accountId ?? ''}|${f.localDate}|${f.magnitude}`;
+    const seen = used.get(key) ?? 0;
+    if (seen < matching) {
+      used.set(key, seen + 1);
+      duplicateFees.add(position);
+    }
+  });
+  return { duplicates, duplicateFees, categories };
+}
+
 export function buildWalletCommit(input: WalletCommitInput): WalletCommit {
   const { drafts: d } = input;
   const rows: NewTransaction[] = [];
@@ -114,6 +191,7 @@ export function buildWalletCommit(input: WalletCommitInput): WalletCommit {
     for (const r of draft.rows) {
       const accountId = input.accountByCurrency.get(r.currency);
       if (accountId === undefined || r.magnitude === null || r.localDate === null) continue;
+      if (input.marks?.duplicates.has(r.index) === true) continue;
       const row: NewTransaction = {
         id: input.newId(),
         household_id: input.householdId,
@@ -124,7 +202,7 @@ export function buildWalletCommit(input: WalletCommitInput): WalletCommit {
         time_zone: input.timeZone,
         note: null,
         name: r.description === '' ? null : r.description,
-        category_id: null,
+        category_id: input.marks?.categories.get(r.index) ?? null,
         status: 'paid',
         import_batch_id: input.batchId,
         raw_amount: null,
@@ -138,9 +216,9 @@ export function buildWalletCommit(input: WalletCommitInput): WalletCommit {
   }
 
   const walletFees: WalletCommit['walletFees'] = [];
-  for (const f of d.feeLines) {
+  d.feeLines.forEach((f, position) => {
     const accountId = input.accountByCurrency.get(f.currency);
-    if (accountId === undefined || f.magnitude <= 0) continue;
+    if (accountId === undefined || f.magnitude <= 0 || input.marks?.duplicateFees.has(position) === true) return;
     walletFees.push({
       forRowId: idByIndex.get(f.forIndex) ?? null,
       row: {
@@ -162,7 +240,7 @@ export function buildWalletCommit(input: WalletCommitInput): WalletCommit {
         import_format: 'csv',
       },
     });
-  }
+  });
 
   // A conversion links only when both lines are imported, the legs run out and in on different
   // accounts (the database pair rule), and a Transfer category exists; otherwise they stay plain lines.
@@ -188,7 +266,7 @@ export interface WalletFeeView {
 }
 
 export type WalletItem =
-  | { kind: 'line'; key: string; row: DraftRow; held: boolean; fee: WalletFeeView | null; /** Set on the outgoing line of a conversion the person unlinked. */ relinkFrom: number | null }
+  | { kind: 'line'; key: string; row: DraftRow; held: boolean; /** D-34: already imported, skipped. */ duplicate: boolean; fee: WalletFeeView | null; /** Set on the outgoing line of a conversion the person unlinked. */ relinkFrom: number | null }
   | { kind: 'conversion'; key: string; from: DraftRow; to: DraftRow; fee: WalletFeeView | null; fromIndex: number }
   | { kind: 'feeOnly'; key: string; localDate: string; fee: WalletFeeView };
 
@@ -196,7 +274,7 @@ export type WalletItem =
  * The preview list (D-22, D-23): every line in file order, a linked conversion as one item, each fee
  * under its payment, and lines with no account held back rather than guessed.
  */
-export function walletItems(d: WalletDrafts, plan: WalletPlan, unlinked: ReadonlySet<number> = new Set()): WalletItem[] {
+export function walletItems(d: WalletDrafts, plan: WalletPlan, unlinked: ReadonlySet<number> = new Set(), marks: WalletMarks = NO_WALLET_MARKS): WalletItem[] {
   const rows = d.drafts.flatMap((x) => x.rows).sort((a, b) => a.index - b.index);
   const byIndex = new Map(rows.map((r) => [r.index, r] as const));
   const held = new Set(plan.heldBack);
@@ -229,6 +307,7 @@ export function walletItems(d: WalletDrafts, plan: WalletPlan, unlinked: Readonl
       key: `l${r.index}`,
       row: r,
       held: held.has(r.index),
+      duplicate: marks.duplicates.has(r.index),
       fee: feeFor.get(r.index) ?? null,
       relinkFrom: pair !== undefined && unlinked.has(pair.fromIndex) ? pair.fromIndex : null,
     });

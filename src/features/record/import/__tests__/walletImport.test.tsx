@@ -6,7 +6,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { readWallet, walletToDrafts, type WalletDrafts } from '@/engine/statement';
 import { csv, REVOLUT_HEADER, revolutRow, WISE_HEADER, wiseRow } from '@/engine/statement/__tests__/wallets/synthetic';
-import { walletPlan, type WalletChoices } from '../walletModel';
+import { NO_WALLET_MARKS, walletPlan, type WalletChoices } from '../walletModel';
 import { ReviewStep } from '../ReviewStep';
 import type { useStatementImport } from '../useStatementImport';
 
@@ -90,6 +90,8 @@ function stateFor(drafts: WalletDrafts, choices: WalletChoices = {}, over: Parti
     walletError: null,
     walletPlan: walletPlan(drafts, accounts, choices),
     walletUnlinked: choices.unlinked ?? new Set<number>(),
+    walletMarks: choices.marks ?? NO_WALLET_MARKS,
+    walletMarksReady: true,
     setWalletCreate: jest.fn(),
     linkWalletAccount: jest.fn(),
     toggleWalletConversion: jest.fn(),
@@ -153,6 +155,21 @@ describe('wallet preview', () => {
     const importPill = screen.getByRole('button', { name: 'Import 2 lines' });
     expect(importPill.props.accessibilityState.disabled).toBeFalsy();
     await fireEvent.press(importPill);
+  });
+
+  it('D-34: lines already imported are marked, counted as skipped and left out of the Import count', async () => {
+    const d = wise();
+    const firstIndex = d.drafts.flatMap((x) => x.rows)[0]?.index ?? 0;
+    const marks = { duplicates: new Set([firstIndex]), duplicateFees: new Set<number>(), categories: new Map<number, string>() };
+    await renderStep(stateFor(d, { link: new Map([['EUR', 'a-eur'], ['GBP', 'g']]), marks }));
+    expect(screen.getByText('1 lines are already in your records and will be skipped.')).toBeTruthy();
+    expect(screen.getByText('Already imported, skipped')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Import 1 lines' })).toBeTruthy();
+  });
+
+  it('D-34: the Import pill waits until the duplicate check has finished', async () => {
+    await renderStep(stateFor(wise(), { link: new Map([['EUR', 'a-eur'], ['GBP', 'g']]) }, { walletMarksReady: false }));
+    expect(screen.getByRole('button', { name: 'Import 2 lines' }).props.accessibilityState.disabled).toBe(true);
   });
 
   it('disables Import while a switched-on currency still waits for its account', async () => {

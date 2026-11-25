@@ -19,6 +19,8 @@ export const ownData = {
     useExisting: 'Use an existing account',
     skipLines: 'Skip these lines',
     heldBack: 'Not imported: no account yet',
+    alreadyImported: 'Already imported, skipped',
+    duplicatesSkipped: '{{count}} lines are already in your records and will be skipped.',
     choose: 'Choose',
     feeLine: 'Fee {{amount}} · {{category}}',
     feeMeta: 'Fees are saved as separate expenses in a Fees category. The account balance still matches the file.',
