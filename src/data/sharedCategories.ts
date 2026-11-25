@@ -5,6 +5,8 @@
 // same builtin_key as the partner's, then the partner's category itself. A partner category that stays is named
 // "<name> (<partner>)" on screen (D-32); its money rule (monthly_cap) is never read (the RPC does not return it).
 
+import type { StoredPart } from '@/db/rows';
+
 export interface OwnCategoryRef {
   id: string;
   builtin_key: string | null;
@@ -57,7 +59,7 @@ export function sharedCategoryResolution(
   };
 }
 
-type CategorisedRow = { id: string; category_id: string | null; is_shared?: boolean | null };
+type CategorisedRow = { id: string; category_id: string | null; is_shared?: boolean | null; category_parts?: readonly StoredPart[] | null };
 type CategorisedSeries = { category_id: string | null };
 
 /** Resolved category id → every stored category id that now counts under it (more than itself only). */
@@ -81,6 +83,22 @@ export function resolveSharedRows<R extends CategorisedRow>(
   let changed = false;
   const out = rows.map((r) => {
     if (r.is_shared !== true) return r;
+    // 10.1-16: member overrides apply to unsplit shared lines; split lines show each part by builtin match (07 D-31..D-34).
+    if (r.category_parts != null && r.category_parts.length >= 2) {
+      const nextParts = r.category_parts.map((part) => ({ ...part, c: res.category(part.c) }));
+      const nextCategory = res.category(r.category_id);
+      const partsChanged = nextParts.some((part, i) => part.c !== (r.category_parts as readonly StoredPart[])[i]!.c);
+      if (!partsChanged && nextCategory === r.category_id) return r;
+      changed = true;
+      if (sources !== undefined) {
+        r.category_parts.forEach((part, i) => {
+          const to = nextParts[i]!.c;
+          if (to !== null && to !== part.c) addSource(sources, to, part.c);
+        });
+        if (nextCategory !== null && nextCategory !== r.category_id) addSource(sources, nextCategory, r.category_id);
+      }
+      return { ...r, category_id: nextCategory, category_parts: nextParts };
+    }
     const next = res.line(r.id, r.category_id);
     if (next === r.category_id) return r;
     changed = true;
