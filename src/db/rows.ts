@@ -14,9 +14,26 @@ import type { FormatProfile } from '@/engine/statement';
 import type { RecurringFreq } from '@/engine/recurring';
 import type { CategoryColorKey, SeedCategoryKey } from '@/engine/categorize';
 import type { UndoLabelKey, UndoLabelParams, UndoStepStatus } from '@/engine/undo';
-import type { StoredItemSplit, StoredPart } from './categoryParts';
 
 export type DbClient = SupabaseClient;
+
+/** One part as stored: category id (null = Uncategorised), signed integer minor units, optional label. */
+export interface StoredPart {
+  c: string | null;
+  a: number;
+  l?: 'taxTip' | null;
+}
+
+/** What transactions.item_split holds (written only by set_split_by_item, 10.1-14). */
+export interface StoredItemSplit {
+  store: string | null;
+  date: string | null;
+  items: { name: string; price: number; discount: number; c: string | null; people: string[] }[];
+  extras: { tax: number; tip: number; discounts: number };
+  by: string | null;
+  at: string | null;
+}
+
 
 export type RateSource = 'same-currency' | 'frankfurter-v2' | 'open-er-api' | 'custom';
 

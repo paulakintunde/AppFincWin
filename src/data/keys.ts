@@ -27,6 +27,8 @@ export const queryKeys = {
   // 07 D-32, D-33: a fellow member's categories on shared lines, and the caller's own picks on shared lines. Under
   // transactionsRoot so any line write (share, make private, recategorise) refreshes them.
   sharedLineCategories: (householdId: string) => ['transactions', householdId, 'shared-line-categories'] as const,
+  // 10.1-11 (RCP-01): receipt rows of one line. Rows only: signed links are made on demand and never held in a query.
+  receipts: (householdId: string, transactionId: string) => ['receipts', householdId, transactionId] as const,
   myLineCategories: (householdId: string, userId: string) => ['transactions', householdId, 'my-line-categories', userId] as const,
   householdMembers: (householdId: string) => ['household-members', householdId] as const,
   // 08-13: the household row, its notices, the caller's read marker and the owner's open invites
@@ -252,6 +254,8 @@ export const mutationKeys = {
   makeLinePrivate: ['household-sharing', 'make-private'] as const,
   setPaidBy: ['household-sharing', 'paid-by'] as const,
   setMyLineCategory: ['household-sharing', 'my-category'] as const,
+  // 10.1-11 (SPL-01): the parts of a line, queued like the other line writes.
+  setCategoryParts: ['setCategoryParts'] as const,
   // 10-03: alert switches and delivery preferences, month archive and restore.
   saveAlertSetting: ['save-alert-setting'] as const,
   saveAlertPrefs: ['save-alert-prefs'] as const,

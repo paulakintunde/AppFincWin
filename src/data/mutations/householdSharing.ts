@@ -110,20 +110,20 @@ export interface SetMyLineCategoryVars {
   categoryId: string | null;
 }
 
-function patchLine(qc: QueryClient, v: { householdId: string; month: string; id: string }, patch: Partial<TransactionRow>): void {
+export function patchLine(qc: QueryClient, v: { householdId: string; month: string; id: string }, patch: Partial<TransactionRow>): void {
   patchMonthCacheIfLoaded(qc, v.householdId, v.month, (rows: TransactionList) =>
     rows.map((r) => (r.id === v.id ? { ...r, ...patch, pending: true } : r))
   );
 }
 
 /** Not awaited: query-core holds the write scope while handlers are awaited, and a refetch must never delay the next write. */
-function refreshAfterLineWrite(qc: QueryClient, v: { householdId: string; month: string }): void {
+export function refreshAfterLineWrite(qc: QueryClient, v: { householdId: string; month: string }): void {
   void qc.invalidateQueries({ queryKey: queryKeys.transactionsMonth(v.householdId, v.month) });
   void qc.invalidateQueries({ queryKey: queryKeys.householdBalances(v.householdId) });
 }
 
 /** After a settled failure: take the optimistic change back by re-reading the month, and park the failure for the list. */
-async function handleFailure(
+export async function handleFailure(
   qc: QueryClient,
   err: unknown,
   v: { householdId: string; month: string },

@@ -274,6 +274,42 @@ describe('useMergeCategory', () => {
     expect(qc.getQueryData<CategoryRow[]>(queryKeys.categories('user-1'))?.find((c) => c.id === 'src')?.archived_at).not.toBeNull();
   });
 
+  it('10.1: a line with parts moves the part (not category_id) and its undo puts the parts back', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    fake.respondWith(ok([
+      { id: 't1', version: 2, local_date: '2026-09-01', category_parts: [{ c: 'src', a: -3000 }, { c: 'other', a: -2000, l: 'taxTip' }] },
+      { id: 't2', version: 5, local_date: '2026-08-01', category_parts: null },
+    ]));
+    fake.respondWith(ok([]));
+    fake.respondWith(
+      ok({
+        status: 'applied',
+        rows: [
+          { entity: 'transactions', id: 't1', version: 3 },
+          { entity: 'transactions', id: 't2', version: 6 },
+          { entity: 'categories', id: 'src', version: 5 },
+        ],
+      })
+    );
+    const qc = newClient();
+    qc.setQueryData(queryKeys.categories('user-1'), [cat('src', { version: 4 }), cat('dst')]);
+    const { result } = await renderHook(() => useMergeCategory(), { wrapper: wrapper(qc) });
+
+    result.current.merge(vars);
+    await waitFor(() => expect(fake.calls.some((c) => c.method === 'rpc')).toBe(true));
+
+    const args = fake.calls.find((c) => c.method === 'rpc')!.args[1] as {
+      p_ops: unknown[];
+      p_undo_step: { ops: { patch: unknown }[] };
+    };
+    expect(args.p_ops.slice(0, 2)).toEqual([
+      { entity: 'transactions', id: 't1', expectedVersion: 2, patch: { category_parts: [{ c: 'dst', a: -3000 }, { c: 'other', a: -2000, l: 'taxTip' }] } },
+      { entity: 'transactions', id: 't2', expectedVersion: 5, patch: { category_id: 'dst' } },
+    ]);
+    expect(args.p_undo_step.ops[0]!.patch).toEqual({ category_parts: [{ c: 'src', a: -3000 }, { c: 'other', a: -2000, l: 'taxTip' }] });
+  });
+
   it('WR-05: moves the source category recurring series templates in the same call and undo step', async () => {
     const fake = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = fake;

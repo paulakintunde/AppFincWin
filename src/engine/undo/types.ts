@@ -14,7 +14,12 @@
 export type UndoEntity = 'transactions' | 'categories' | 'recurring_series' | 'accounts' | 'category_rules' | 'decide_checks' | 'debts' | 'decide_links' | 'decide_changes' | 'savings_goals' | 'decide_settings' | 'recurring_dismissals' | 'income_payer_prompts' | 'decide_answers' | 'holdings' | 'holding_lots'; // 05.2; 06 Grow: holdings and their entries
 
 /** A patch value as it travels over the wire to `apply_patches`. */
-export type PatchValue = string | number | boolean | null;
+export type PatchValue = string | number | boolean | null | readonly PatchJsonObject[];
+
+/** 10.1-11: an object inside a patch value (a line's category parts travel as an array of these). */
+export interface PatchJsonObject {
+  readonly [key: string]: string | number | boolean | null | undefined;
+}
 
 /** Server-substituted `now()` (plan 02-09), used wherever an inverse sets a timestamp. */
 export const NOW_SENTINEL = '$now' as const;

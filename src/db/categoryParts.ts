@@ -5,24 +5,10 @@
 
 import type { Part } from '@/engine/parts';
 import { callRpc, type RpcResult } from './householdMembers';
-import type { DbClient } from './rows';
+import type { DbClient, StoredPart } from './rows';
 
-/** One part as stored: category id (null = Uncategorised), signed integer minor units, optional label. */
-export interface StoredPart {
-  c: string | null;
-  a: number;
-  l?: 'taxTip' | null;
-}
-
-/** What transactions.item_split holds (written only by set_split_by_item, 10.1-14). */
-export interface StoredItemSplit {
-  store: string | null;
-  date: string | null;
-  items: { name: string; price: number; discount: number; c: string | null; people: string[] }[];
-  extras: { tax: number; tip: number; discounts: number };
-  by: string | null;
-  at: string | null;
-}
+// StoredPart and StoredItemSplit live in rows.ts (TransactionRow needs them; a type import back here would be a cycle).
+export type { StoredItemSplit, StoredPart } from './rows';
 
 export function toParts(raw: readonly StoredPart[] | null): Part[] | null {
   if (raw === null || raw === undefined) return null;

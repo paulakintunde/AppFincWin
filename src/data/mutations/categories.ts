@@ -26,6 +26,7 @@ import { DbError, VersionConflictError, type WriteEntity } from '@/db/errors';
 import { insertCategory, updateCategory } from '@/db/categories';
 import { applyPatches } from '@/db/patches';
 import { fetchSeriesIdsByCategory } from '@/db/recurringSeries';
+import { fromParts, toParts } from '@/db/categoryParts';
 import { MERGE_LIMIT, MERGE_ROWS_MAX, fetchActiveIdsByCategory } from '@/db/transactions';
 import type { CategoryPatch, CategoryRow } from '@/db/rows';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
@@ -211,13 +212,30 @@ export function registerCategoryMutations(qc: QueryClient): void {
 
         const originals = [...rows.map((r) => r.version), ...series.map((s) => s.version), vars.source.version];
         const items: BulkPatchItem[] = [
-          ...rows.map((r) => ({
-            entity: 'transactions' as const,
-            id: r.id,
-            expectedVersion: resolveExpectedVersion('transactions', r.id, r.version),
-            before: { category_id: vars.source.id },
-            patch: { category_id: vars.target.id },
-          })),
+          ...rows.map((r): BulkPatchItem => {
+            // 10.1 (D-01): a line with parts moves the part, not category_id (the database keeps category_id equal to
+            // the largest part). A line whose own category is the source and has no parts moves as before.
+            const stored = r.category_parts;
+            if (stored && stored.some((p) => p.c === vars.source.id)) {
+              const moved = fromParts(
+                (toParts(stored) ?? []).map((p) => (p.categoryId === vars.source.id ? { ...p, categoryId: vars.target.id } : p))
+              ).map((p) => ({ ...p }));
+              return {
+                entity: 'transactions' as const,
+                id: r.id,
+                expectedVersion: resolveExpectedVersion('transactions', r.id, r.version),
+                before: { category_parts: stored.map((p) => ({ ...p })) },
+                patch: { category_parts: moved },
+              };
+            }
+            return {
+              entity: 'transactions' as const,
+              id: r.id,
+              expectedVersion: resolveExpectedVersion('transactions', r.id, r.version),
+              before: { category_id: vars.source.id },
+              patch: { category_id: vars.target.id },
+            };
+          }),
           ...series.map((s) => ({
             entity: 'recurring_series' as const,
             id: s.id,
