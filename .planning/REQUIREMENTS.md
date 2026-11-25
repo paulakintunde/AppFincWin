@@ -336,6 +336,30 @@ The Decide fix plan's IDs (FIN, ENG, APP, UX, CMP-F, ARC, QA, BO, VC) are tracke
 - [ ] **ROLL-10**: Envelope rollover is listed in Features at level 3 (Planning), with the signed level map amended
 - [ ] **ROLL-11**: In a household, a shared line counts the member's own share toward the member's own category's limit; a partner's limit or carry is never shown
 
+### Split and receipts (Phase 10.1)
+
+- [ ] **SPL-01**: User can split one line into two or more category parts that add up exactly to its total (sheet, RPC, undo)
+- [ ] **SPL-02**: Editing a split line's total shows the gap ("X left to place" / "X over"); the gap counts as Uncategorised until placed
+- [ ] **SPL-03**: Category totals, caps, Insights, the month model, Decide and Activity filters count each part exactly once
+- [ ] **SPL-04**: Activity shows a split line as one row with an "N categories" tag; the detail shows and edits the parts, with "Remove the split"
+- [ ] **SPL-05**: Savings and Transfer parts count as their category does today; a split line's household default rule resolves from its largest part
+- [ ] **SPL-06**: "Split a line" is level 3; parts are in the export, the cache version is bumped, and undo and deletion cover them
+- [ ] **RCP-01**: User can attach a photo, a file (image or PDF) or a multi-page scan to a line: up to 5 receipts per line, 5 MB per file; remove one or all
+- [ ] **RCP-02**: Receipts live in a private bucket; only the owner (private line) or the people the line is shared with can read them
+- [ ] **RCP-03**: User can open a receipt: a zoom viewer for images, the system viewer for PDFs
+- [ ] **RCP-04**: Attaching offline keeps the file on the phone and uploads it later; the line shows "Receipt waiting to upload"
+- [ ] **RCP-05**: Removing a receipt deletes the stored file; deleting the line or the account purges files (shared-line receipts stay with the household)
+- [ ] **RCP-06**: The data export delivers receipt files with a mapping to their lines
+- [ ] **RCP-07**: Receipts are level 2; camera and photo permission strings, store disclosures and the receipt, file and scan icons are in place
+- [ ] **SCN-01**: User can scan a receipt from Add (creates one line) and from an existing line (fills its parts)
+- [ ] **SCN-02**: A receipt is read on the phone into store, date, total, items, tax, tip and discounts (phone only at launch)
+- [ ] **SCN-03**: Unsure rows show "Check this"; a mismatch shows the amount; nothing saves until the user confirms; a failed read opens the review with empty rows
+- ~~**SCN-04**~~: Dropped 2026-11-24 by 10.1 D-18 (online reading deferred)
+- [ ] **SCN-05**: Each item gets a likely category from past lines and the store
+- [ ] **SCN-06**: On a shared line, items are assigned to people; tax, tip and discounts are shared in proportion with largest remainder; tax and tip become their own "Tax and tip" part
+- [ ] **SCN-07**: Everyone on the line sees who split it, before and after, with Undo; two editors cannot silently overwrite each other
+- ~~**SCN-08**~~: Dropped 2026-11-24 by 10.1 D-18 (no online reading, so no abuse cap)
+
 ### Household
 
 - [ ] **HH-01**: User can invite another person with an expiring link and code
@@ -800,6 +824,25 @@ Populated during roadmap creation.
 | ROLL-09 | Phase 10.2 - Envelope rollover | Pending |
 | ROLL-10 | Phase 10.2 - Envelope rollover | Pending |
 | ROLL-11 | Phase 10.2 - Envelope rollover | Pending |
+| SPL-01 | Phase 10.1 - Split and receipts | Pending |
+| SPL-02 | Phase 10.1 - Split and receipts | Pending |
+| SPL-03 | Phase 10.1 - Split and receipts | Pending |
+| SPL-04 | Phase 10.1 - Split and receipts | Pending |
+| SPL-05 | Phase 10.1 - Split and receipts | Pending |
+| SPL-06 | Phase 10.1 - Split and receipts | Pending |
+| RCP-01 | Phase 10.1 - Split and receipts | Pending |
+| RCP-02 | Phase 10.1 - Split and receipts | Pending |
+| RCP-03 | Phase 10.1 - Split and receipts | Pending |
+| RCP-04 | Phase 10.1 - Split and receipts | Pending |
+| RCP-05 | Phase 10.1 - Split and receipts | Pending |
+| RCP-06 | Phase 10.1 - Split and receipts | Pending |
+| RCP-07 | Phase 10.1 - Split and receipts | Pending |
+| SCN-01 | Phase 10.1 - Split and receipts | Pending |
+| SCN-02 | Phase 10.1 - Split and receipts | Pending |
+| SCN-03 | Phase 10.1 - Split and receipts | Pending |
+| SCN-05 | Phase 10.1 - Split and receipts | Pending |
+| SCN-06 | Phase 10.1 - Split and receipts | Pending |
+| SCN-07 | Phase 10.1 - Split and receipts | Pending |
 
 **Coverage:**
 - v1 requirements: 327 total (188 ticked)

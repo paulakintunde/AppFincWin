@@ -1714,7 +1714,7 @@ Plans:
 **Goal:** One purchase can be split across several categories, a receipt photo can be attached to a transaction, and a receipt can be scanned and split by item between categories and household members. Category totals, limits, Insights and Decide all read the parts, and money is counted once.
 **Source:** owner 2026-11-24 moved backlog 999.1 and 999.2 into v1, together with the receipt scan and split by item that the owner placed before launch in 08.12 round 4 (`08.12-OWNER-ANSWERS.md`). This resolves the clash with the 2026-11-22 Path to Launch plan, which had receipts in v2.
 **Depends on:** Phase 10 (System: archive, export and account deletion must cover receipt images and split parts), Phase 8 (household split on shared lines), Phase 7 (Insights category sections)
-**Requirements**: TBD (from discussion)
+**Requirements**: SPL-01, SPL-02, SPL-03, SPL-04, SPL-05, SPL-06, RCP-01, RCP-02, RCP-03, RCP-04, RCP-05, RCP-06, RCP-07, SCN-01, SCN-02, SCN-03, SCN-05, SCN-06, SCN-07 (SCN-04, SCN-08 dropped by D-18)
 **Success Criteria** (draft, to be confirmed in discussion):
   1. A user can split one transaction across several categories; the parts always add up exactly to the total (integer minor units), and Activity, category limits, Insights and Decide use the parts.
   2. A user can attach a receipt photo (camera or gallery) to a transaction and view it; the image is private to the owner (and shared-line members where the line is shared), removed with the transaction and with account deletion, and included in the data export.
