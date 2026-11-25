@@ -62,6 +62,14 @@ export const features = {
       label: 'Money in and out',
       sub: 'The entry sheet and the Activity list',
     },
+    receipts: {
+      label: 'Receipts',
+      sub: 'Attach photos and files to a line',
+    },
+    splitLine: {
+      label: 'Split a line',
+      sub: 'One purchase across several categories',
+    },
     categories: {
       label: 'Categories',
       sub: 'Sort every line into a category',
@@ -183,6 +191,10 @@ export const features = {
       sub: 'Older months kept out of the way',
     },
     hh: {
+      itemSplit: {
+        label: 'Split items between people',
+        sub: 'Give each item on a receipt to one person or several',
+      },
       weightSplit: {
         label: 'Split by weight',
         sub: 'Split a line by shares, such as 60 / 40',
