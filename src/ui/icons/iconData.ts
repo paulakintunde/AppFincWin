@@ -281,6 +281,15 @@ export const ICONS = {
       {tag:'path',attrs:{d:'M9 15a4.2 4.2 0 0 0 6 0M12 9.6v2.6',stroke:'C','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',fill:'none'}},
     ],
   },
+  file: {
+    viewBox: '0 0 24 24',
+    back: [
+      {tag:'path',attrs:{d:'M6 2.6h8l4.6 4.6v12.9A1.6 1.6 0 0 1 17 21.7H6a1.6 1.6 0 0 1-1.6-1.6V4.2A1.6 1.6 0 0 1 6 2.6Z',fill:'C'}},
+    ],
+    front: [
+      {tag:'path',attrs:{d:'M13.6 2.8v4.4h4.6M8.2 12.2h7.6M8.2 15.8h5',stroke:'C','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',fill:'none'}},
+    ],
+  },
   firstEntry: {
     viewBox: '0 0 24 24',
     back: [
@@ -451,6 +460,15 @@ export const ICONS = {
       {tag:'circle',attrs:{cx:'12',cy:'8.4',r:'4.2',fill:'C'}},
     ],
   },
+  receipt: {
+    viewBox: '0 0 24 24',
+    back: [
+      {tag:'path',attrs:{d:'M6 2.6h12v18.9l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5-2 1.5Z',fill:'C'}},
+    ],
+    front: [
+      {tag:'path',attrs:{d:'M9 8h6M9 11.4h6M9 14.8h3.5',stroke:'C','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',fill:'none'}},
+    ],
+  },
   savedOffline: {
     viewBox: '0 0 24 24',
     back: [
@@ -469,6 +487,15 @@ export const ICONS = {
     front: [
       {tag:'rect',attrs:{x:'5.8',y:'3.4',width:'12.4',height:'3.2',rx:'1.3',fill:'C'}},
       {tag:'circle',attrs:{cx:'12',cy:'15.4',r:'2.6',fill:'C'}},
+    ],
+  },
+  scan: {
+    viewBox: '0 0 24 24',
+    back: [
+      {tag:'path',attrs:{d:'M8 7.4h8v9.2H8Z',fill:'C'}},
+    ],
+    front: [
+      {tag:'path',attrs:{d:'M3.4 8.6V5.4a2 2 0 0 1 2-2h3.2M15.4 3.4h3.2a2 2 0 0 1 2 2v3.2M20.6 15.4v3.2a2 2 0 0 1-2 2h-3.2M8.6 20.6H5.4a2 2 0 0 1-2-2v-3.2M6.4 12h11.2',stroke:'C','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round',fill:'none'}},
     ],
   },
   search: {

@@ -60,6 +60,8 @@ const LABELS = {
     Pension: 'acctPension',
     Other: 'acctOther',
   },
+  // 10.1-03 (RCP-07, UI-SPEC owner answer 1)
+  Receipts: { Receipt: 'receipt', File: 'file', Scan: 'scan' },
   'Actions and settings': {
     Add: 'add',
     'Pay bills': 'payBills',
