@@ -50,3 +50,36 @@ export async function deleteAccount(req: DeleteRequest, deps: DeleteDeps): Promi
   }
   return { status: 200, body: { ok: true } };
 }
+
+// 10.1-12 (D-19, RCP-05): the receipt files to delete with an account are listed from transaction_receipts rows, never from
+// storage.list(userId): a user's folder also holds files of shared lines, and those stay with the household whoever uploaded them.
+// Only receipts on the leaving user's own private lines (created_by = user, is_shared = false) go. The query is made in index.ts;
+// the rows are checked again here so a wrong query can only ever delete less, never a shared line's file.
+export const RECEIPT_BUCKET = 'receipts';
+export const RECEIPT_PAGE = 1000;
+
+export interface ReceiptRowWithLine {
+  object_path: string | null;
+  transactions: { created_by: string | null; is_shared: boolean } | { created_by: string | null; is_shared: boolean }[] | null;
+}
+
+export type ReceiptPageFetcher = (
+  from: number,
+  to: number,
+) => Promise<{ data: ReceiptRowWithLine[] | null; error: unknown }>;
+
+export async function privateLineReceiptObjects(fetchPage: ReceiptPageFetcher, userId: string): Promise<StorageObject[]> {
+  const out: StorageObject[] = [];
+  for (let from = 0; ; from += RECEIPT_PAGE) {
+    const { data, error } = await fetchPage(from, from + RECEIPT_PAGE - 1);
+    if (error) throw new Error('storage');
+    const rows = data ?? [];
+    for (const r of rows) {
+      const line = Array.isArray(r.transactions) ? r.transactions[0] : r.transactions;
+      if (!r.object_path || !line || line.created_by !== userId || line.is_shared !== false) continue;
+      out.push({ bucket: RECEIPT_BUCKET, path: r.object_path });
+    }
+    if (rows.length < RECEIPT_PAGE) break;
+  }
+  return out;
+}

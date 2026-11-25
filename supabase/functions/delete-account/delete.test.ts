@@ -1,5 +1,12 @@
 // Runs under Deno (`npm run test:deno`, the CI deno job) and under Jest (the default suite): the same file, no runner imports.
-import { deleteAccount, type DeleteDeps, type StorageObject } from './delete.ts';
+import {
+  deleteAccount,
+  privateLineReceiptObjects,
+  RECEIPT_PAGE,
+  type DeleteDeps,
+  type ReceiptRowWithLine,
+  type StorageObject,
+} from './delete.ts';
 
 type Runner = (name: string, fn: () => Promise<void>) => void;
 const g = globalThis as unknown as { Deno?: { test: Runner }; test?: Runner };
@@ -89,4 +96,54 @@ run('a user_id in the body is ignored: the verified caller is the one deleted', 
   await deleteAccount({ method: 'POST', body: { user_id: 'victim', userId: 'victim' } }, h.deps);
   assertEquals(h.deleted, ['u1']);
   assertEquals(h.calls[0], 'list:u1');
+});
+
+// 10.1-12 (D-19): receipt files go with the account only when they sit on the leaver's private lines.
+const row = (path: string, createdBy: string, isShared: boolean): ReceiptRowWithLine => ({
+  object_path: path,
+  transactions: { created_by: createdBy, is_shared: isShared },
+});
+const pager = (rows: ReceiptRowWithLine[]) => (from: number, to: number) =>
+  Promise.resolve({ data: rows.slice(from, to + 1), error: null });
+
+run('receipts on the leaver private lines are listed', async () => {
+  const res = await privateLineReceiptObjects(pager([row('u1/t1/a.jpg', 'u1', false), row('u1/t2/b.pdf', 'u1', false)]), 'u1');
+  assertEquals(res, [
+    { bucket: 'receipts', path: 'u1/t1/a.jpg' },
+    { bucket: 'receipts', path: 'u1/t2/b.pdf' },
+  ]);
+});
+
+run('a receipt on the leaver shared line is not listed', async () => {
+  const res = await privateLineReceiptObjects(pager([row('u1/t1/a.jpg', 'u1', true), row('u1/t2/b.jpg', 'u1', false)]), 'u1');
+  assertEquals(res, [{ bucket: 'receipts', path: 'u1/t2/b.jpg' }]);
+});
+
+run('a receipt the leaver uploaded to a partner shared line is not listed', async () => {
+  const res = await privateLineReceiptObjects(pager([row('u2/t9/a.jpg', 'u2', true), row('u2/t8/b.jpg', 'u2', false)]), 'u1');
+  assertEquals(res, []);
+});
+
+run('an embedded line returned as a one-item list is read the same way', async () => {
+  const res = await privateLineReceiptObjects(
+    pager([{ object_path: 'u1/t1/a.jpg', transactions: [{ created_by: 'u1', is_shared: false }] }]),
+    'u1',
+  );
+  assertEquals(res, [{ bucket: 'receipts', path: 'u1/t1/a.jpg' }]);
+});
+
+run('receipts are read page by page until a short page', async () => {
+  const rows = Array.from({ length: RECEIPT_PAGE + 5 }, (_, i) => row(`u1/t/${i}.jpg`, 'u1', false));
+  const res = await privateLineReceiptObjects(pager(rows), 'u1');
+  assertEquals(res.length, RECEIPT_PAGE + 5);
+});
+
+run('a receipts query error makes the whole request answer 500 and deletes nobody', async () => {
+  const h = harness({
+    listUserStorageObjects: (uid) =>
+      privateLineReceiptObjects(() => Promise.resolve({ data: null, error: { message: 'boom' } }), uid),
+  });
+  const res = await deleteAccount({ method: 'POST' }, h.deps);
+  assertEquals(res, { status: 500, body: { ok: false, error: 'delete_failed' } });
+  assertEquals(h.deleted, []);
 });

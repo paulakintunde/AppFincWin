@@ -15,6 +15,10 @@ verify_jwt = true
 [functions.purge-statement-uploads]
 verify_jwt = false
 
+# purge-receipts (10.1 D-08): invoked every 5 minutes by pg_cron via net.http_post with its own shared secret (x-receipt-purge-secret), not a user JWT.
+[functions.purge-receipts]
+verify_jwt = false
+
 # read-pdf-statement (IMP-01, D-01): client-invoked with the caller's JWT, verified by the
 # gateway and again in-function (the path's folder must equal the caller's user id).
 [functions.read-pdf-statement]

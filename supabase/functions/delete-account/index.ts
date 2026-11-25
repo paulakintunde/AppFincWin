@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
-import { deleteAccount, type DeleteDeps } from './delete.ts';
+import { deleteAccount, privateLineReceiptObjects, type DeleteDeps, type ReceiptRowWithLine } from './delete.ts';
 import { hitRateLimit, tooManyRequests } from '../_shared/rateLimit.ts';
 
 // Same bucket and folder layout as read-pdf-statement: statement-uploads/<user id>/<file>.pdf.
@@ -40,7 +40,20 @@ Deno.serve(async (req) => {
     listUserStorageObjects: async (userId) => {
       const { data, error } = await admin.storage.from(STATEMENT_BUCKET).list(userId, { limit: 1000 });
       if (error) throw new Error('storage');
-      return (data ?? []).filter((o) => o.name).map((o) => ({ bucket: STATEMENT_BUCKET, path: `${userId}/${o.name}` }));
+      const statements = (data ?? []).filter((o) => o.name).map((o) => ({ bucket: STATEMENT_BUCKET, path: `${userId}/${o.name}` }));
+      // 10.1-12 (D-19): by rows, never storage.list(userId) -- a user's folder also holds files of shared lines that stay with the household.
+      const receipts = await privateLineReceiptObjects(
+        async (from, to) =>
+          (await admin
+            .from('transaction_receipts')
+            .select('object_path, transactions!inner(created_by, is_shared)')
+            .eq('transactions.created_by', userId)
+            .eq('transactions.is_shared', false)
+            .order('id', { ascending: true })
+            .range(from, to)) as { data: ReceiptRowWithLine[] | null; error: unknown },
+        userId,
+      );
+      return [...statements, ...receipts];
     },
     removeStorageObjects: async (objects) => {
       for (const bucket of new Set(objects.map((o) => o.bucket))) {
