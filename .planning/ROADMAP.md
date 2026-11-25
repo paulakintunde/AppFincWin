@@ -1728,13 +1728,33 @@ Plans:
 
 **Goal:** Unspent money in a category limit can roll into next month, so a category works like an envelope (prototype L5359).
 **Source:** owner 2026-11-24 moved backlog 999.3 into v1.
-**Depends on:** Phase 10.1 (category parts from split lines feed category spending)
-**Requirements**: TBD (from discussion)
-**Success Criteria** (draft, to be confirmed in discussion):
-  1. A user can turn rollover on per category; with it off, nothing changes from today.
-  2. At month end, unspent money carries into next month's limit, and the category shows where its limit comes from (for example "$500 + $80 carried from October").
-  3. Overspend handling, any carry cap, and whether carried money ever counts as spare money in Decide follow the owner's discussion answers, with right-answer cases.
-**Plans:** 0 plans (discussion first)
+**Depends on:** Phase 10.1 (category parts from split lines feed category spending). 10.2 counts spend through one selector (`categoryPartsOf` in `src/data/limitSpend.ts`) that consumes 10.1's `homeCategoryAmounts` / `toParts` when 10.1 has landed (the expected order); if 10.1 is absent at execution time it reads each line's own category and 10.2-04 records the split-line counting as a must-do. Migration `20261128000100_envelope_rollover.sql` and pgTAP 136 sort after Phase 10 (20261126*, 120-128) and 10.1 (20261127*, 131-135).
+**Requirements**: ROLL-01, ROLL-02, ROLL-03, ROLL-04, ROLL-05, ROLL-06, ROLL-07, ROLL-08, ROLL-09, ROLL-10, ROLL-11
+**Success Criteria** (from 10.2-CONTEXT D-01..D-08):
+  1. One "Envelope rollover" switch under You, off by default; with it off, no number or screen changes and every Decide answer is byte-identical (D-01, D-07).
+  2. Leftovers and overspends carry into next month's limit, clamped between $0 and twice the plain limit, from integer net spend per calendar month; the first carry is at the end of the month it was turned on; turning it off drops carries at once after a confirm note (D-02..D-06).
+  3. The category, its limit bar, Activity's category view and Insights show "$500 + $80 carried from October" / "$500 − $50 over in October" (D-08).
+  4. Decide compares a purchase in the category with the carried limit only; spare money never changes (D-07).
+**Plans:** 10 plans
+
+Plans:
+**Wave 1**
+- [ ] 10.2-01-PLAN.md — Engine carry chain (carryChain, chainStartMonth, $0-limit usage), TDD with right-answer table and properties
+- [ ] 10.2-02-PLAN.md — Schema (profiles.rollover_since, categories.rollover_from, apply_patches copied from the newest definition), pgTAP 136, prefs setter, export
+- [ ] 10.2-03-PLAN.md — Copy (UI-SPEC verbatim, plus Decide's own limit-change helper keys), carriedLabel builder, LimitBar
+- [ ] 10.2-10-PLAN.md — Cap-edit stamping of rollover_from with Undo; every add/edit caller and caller test passes the month
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 10.2-04-PLAN.md — useEffectiveLimits hook, shared counting selector (mine scope, shared-line categories, 10.1 parts via homeCategoryAmounts), cached range read
+- [ ] 10.2-05-PLAN.md — You switch (RolloverRow, confirm, toasts), Features row level 3, level map amended
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 10.2-06-PLAN.md — Categories list, picker, over-limit toast, category sheet LimitCard and limit-change helper
+- [ ] 10.2-07-PLAN.md — Activity per-month badge and LimitStrip; Insights limit line counted through the shared path
+- [ ] 10.2-08-PLAN.md — Decide categoryCaps injection with byte-identity proof; rule-row sub-label; fallback note
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 10.2-09-PLAN.md — Phase gate, PR + CI (pgTAP), owner checkpoint, [BLOCKING] production schema push from the unmerged branch, verify, then merge
 **UI hint**: yes
 
 ### Phase 11: Compliance & Release
@@ -1832,5 +1852,5 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
 | 10. System | 0/TBD | Not started | - |
 | 10.1 Split and receipts | 0/30 | Planned | - |
-| 10.2 Envelope rollover | 0/TBD | Not started (discussion first) | - |
+| 10.2 Envelope rollover | 0/10 | Planned | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
