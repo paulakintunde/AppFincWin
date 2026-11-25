@@ -51,6 +51,7 @@
 -- alert_settings (120)
 -- alert_prefs (120)
 -- alert_log (120)
+-- transaction_receipts (132)
 -- end-export-tables
 
 begin;

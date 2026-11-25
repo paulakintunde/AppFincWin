@@ -28,6 +28,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
     // 08 (08-10, 08-11, 08-14): the stamped household figure, how it was split, settle-up records and personal copies
     'paid_by_former_key', 'household_amount', 'household_currency', 'household_rate_pending', 'split_rule', 'split_manual',
     'is_settlement', 'settlement_id', 'copied_from', 'copy_share',
+    // 10.1 (D-01, D-17)
+    'category_parts', 'item_split',
   ],
   accounts: [
     'id', 'household_id', 'created_by', 'name', 'kind', 'currency', 'opening_balance', 'archived_at', 'overdraft_limit',
@@ -168,6 +170,8 @@ export const EXPORT_MANIFEST: Readonly<Record<string, readonly string[]>> = {
   alert_settings: ['kind', 'enabled', 'threshold_minor', 'threshold_currency', 'lead_days', 'updated_at'],
   alert_prefs: ['mode', 'quiet_enabled', 'quiet_start', 'quiet_end', 'time_zone', 'partner_alerts', 'updated_at'],
   alert_log: ['id', 'kind', 'params', 'raised_at', 'delivered_at', 'held_for_quiet', 'delivery'],
+  // 10.1 (D-08): the files themselves are delivered by the receipt export (10.1-22)
+  transaction_receipts: ['id', 'transaction_id', 'household_id', 'group_id', 'page_no', 'uploaded_by', 'object_path', 'kind', 'mime_type', 'bytes', 'created_at'],
 };
 
 /** Tables src/db reads that hold no user data of their own, each with the reason. */
@@ -204,4 +208,5 @@ export const NOT_USER_DATA: readonly string[] = [
   'account_deletion_log', // 10 (D-19): ids of deleted accounts kept so restores can purge them; no records
   'alert_outbox', // 10: the push delivery queue; the person's alerts are exported through alert_log
   'reviewer_allowlist', // 10: store-review emails, operator-managed
+  'receipt_purge_queue', // 10.1 (D-08): system queue of storage paths awaiting deletion; no client access, no records of the person
 ];
