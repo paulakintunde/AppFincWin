@@ -9,6 +9,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { AccountRow, TransactionRow } from '@/db/rows';
 import { fetchTransactionsSearch, fetchTransferLegs, TRANSFER_LEGS_MAX } from '@/db/transactions';
 import { fetchAccountBalances, fetchTransactionMonths, fetchHouseholdMemberNames, type AccountBalanceLegRow } from '@/db/recordReads';
+import type { Part } from '@/engine/parts';
+import { toParts } from '@/db/categoryParts';
 import { accountBalance, isOverdue, monthTotals, monthsForSwitcher, type AccountBalance, type MonthTotals } from '@/engine/activity';
 import { accountStanding, type Standing } from '@/engine/accounts';
 import { memberLabel } from '@/engine/household/memberLabel';
@@ -29,6 +31,8 @@ export interface ActivityRowView extends WithPending<TransactionRow> {
   overdue: boolean;
   /** D-50: set only for a transfer leg (row.transfer_id !== null); the other leg's account. */
   counterpartAccountId: string | null;
+  /** 10.1-10: the line's category parts in engine shape (null when the line is not split). */
+  parts?: readonly Part[] | null;
 }
 
 export interface ProjectionView {
@@ -146,6 +150,7 @@ export function useMonthView(
         ...row,
         amountHome: homeAmountFor(row, homeCurrency, rates),
         overdue: isOverdue(row, today),
+        parts: toParts(row.category_parts ?? null),
         counterpartAccountId: row.transfer_id !== null ? (counterparts.get(`${row.transfer_id}:${row.id}`) ?? null) : null,
       })),
     [rows, homeCurrency, rates, today, counterparts]
@@ -274,6 +279,7 @@ export function useTransactionsSearch(
         ...row,
         amountHome: homeAmountFor(row, homeCurrency, rates),
         overdue: isOverdue(row, today),
+        parts: toParts(row.category_parts ?? null),
         counterpartAccountId: null,
       })),
     [query.data, homeCurrency, rates, today]

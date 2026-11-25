@@ -12,16 +12,18 @@
  */
 import type { ActivityRowView } from '@/data/queries/activity';
 import type { CategoryRow } from '@/db/rows';
+import { homeCategoryAmounts } from '@/engine/parts';
+import { toParts } from '@/db/categoryParts';
 
 type CapRow = Pick<
   ActivityRowView,
   'id' | 'category_id' | 'local_date' | 'status' | 'transfer_id' | 'amountHome' | 'original_amount'
-> & { created_at?: string | null };
+> & { category_parts?: ActivityRowView['category_parts']; created_at?: string | null };
 
 type CapCategory = Pick<CategoryRow, 'id' | 'monthly_cap'>;
 
 function counted(row: CapRow): row is CapRow & { amountHome: number } {
-  return row.status !== 'skipped' && row.transfer_id === null && row.category_id !== null && row.amountHome !== null;
+  return row.status !== 'skipped' && row.transfer_id === null && row.amountHome !== null;
 }
 
 function byDateThenCreated(a: CapRow, b: CapRow): number {
@@ -45,12 +47,19 @@ export function overCapRows(rows: readonly CapRow[], categories: readonly CapCat
   const groups = new Map<string, (CapRow & { amountHome: number })[]>();
   for (const row of rows) {
     if (!counted(row)) continue;
-    const categoryId = row.category_id as string;
-    if (!caps.has(categoryId)) continue;
-    const key = `${categoryId}|${row.local_date.slice(0, 7)}`;
-    const list = groups.get(key);
-    if (list) list.push(row);
-    else groups.set(key, [row]);
+    // 10.1-10 (D-05): caps count each category's part, never the whole split line.
+    const amounts = homeCategoryAmounts(
+      { id: row.id, amount: row.original_amount, categoryId: row.category_id, parts: toParts(row.category_parts ?? null) },
+      row.amountHome
+    );
+    for (const part of amounts ?? []) {
+      if (part.categoryId === null || !caps.has(part.categoryId)) continue;
+      const key = `${part.categoryId}|${row.local_date.slice(0, 7)}`;
+      const entry = { ...row, amountHome: part.amount };
+      const list = groups.get(key);
+      if (list) list.push(entry);
+      else groups.set(key, [entry]);
+    }
   }
 
   for (const [key, list] of groups) {
@@ -63,7 +72,8 @@ export function overCapRows(rows: readonly CapRow[], categories: readonly CapCat
       spent -= row.amountHome;
       if (crossing === null && row.amountHome < 0 && spent > cap) crossing = { id: row.id, over: spent - cap };
     }
-    if (crossing !== null && spent > cap) out.set(crossing.id, crossing.over);
+    // A split line can cross two caps: the map holds one figure per row, so keep the larger.
+    if (crossing !== null && spent > cap) out.set(crossing.id, Math.max(out.get(crossing.id) ?? 0, crossing.over));
   }
   return out;
 }
