@@ -21,9 +21,11 @@ export interface SegmentedControlProps {
   accessibilityLabel: string;
   /** 08.1-10: 'radio' reads the group as a radiogroup of radios (a two-way choice such as Who pays); the default is a tablist of tabs. */
   itemRole?: 'tab' | 'radio';
+  /** 07-06: false for read-only screens (Insights range, mode, scope: no haptic, UI-SPEC). */
+  haptic?: boolean;
 }
 
-export function SegmentedControl({ options, value, onChange, accessibilityLabel, itemRole = 'tab' }: SegmentedControlProps) {
+export function SegmentedControl({ options, value, onChange, accessibilityLabel, itemRole = 'tab', haptic = true }: SegmentedControlProps) {
   const { colors, pairing } = useTheme();
   // 06.1-62 (CB-5 / CF-1): every segment shows a native ripple (Android) or a pressed dim (iOS)
   const feedback = usePressFeedback('row');
@@ -39,7 +41,7 @@ export function SegmentedControl({ options, value, onChange, accessibilityLabel,
             accessibilityLabel={option.a11yLabel ?? option.label}
             onPress={() => {
               if (selected) return;
-              hapticTick();
+              if (haptic) hapticTick();
               onChange(option.key);
             }}
             android_ripple={feedback.android_ripple}

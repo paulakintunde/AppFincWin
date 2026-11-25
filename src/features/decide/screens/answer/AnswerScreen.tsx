@@ -37,6 +37,7 @@ import { CheckNotFound } from '@/features/decide/screens/ui/CheckNotFound';
 import { openNewCheck } from '@/features/decide/screens/logic/checkHref';
 import { checkInputsKey } from '@/features/decide/screens/logic/checkInputsKey';
 import { goDecideHome, withFromAnswer } from '@/features/decide/screens/logic/decideNav';
+import { usePlanState } from '@/features/plans/usePlanState';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
 import { stageReadingOf } from '@/features/decide/screens/logic/stageReading';
@@ -196,6 +197,8 @@ function outcomeOf(row: DecideCheckRow, t: ReturnType<typeof useT>, shortMoment:
 
 export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, writes }: AnswerScreenProps) {
   const t = useT();
+  // 09-UI-SPEC 4: the sample look-around gets the First read treatment (stage word, sample basis line) in AnswerFrame.
+  const plan = usePlanState();
   const rc = useRecordContext();
   const data = useStepData();
   const fmt = useMoneyFormatter(rc.showCents, data.currency);
@@ -731,6 +734,7 @@ export function AnswerScreen({ id, side = null, renderGate, renderNetQuestion, w
         answeredRows={answeredRows}
         householdNote={householdNote}
         intro={<SampleAnswerIntro />}
+        sample={!plan.loading && plan.status === 'sample'}
       >
         {body}
       </AnswerFrame>

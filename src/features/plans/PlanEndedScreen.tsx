@@ -48,6 +48,8 @@ export function PlanEndedScreen() {
   const home = household.data?.name ?? '';
   const memberOfLapsedHome = multi && !plan.payerIsMe && plan.payerName !== null;
   const noPayer = plan.payerId === null;
+  // Quick 261124-2bs (UI-SPEC 9c): someone who left a home and is now alone, once their 7 days are over.
+  const afterSeven = plan.status === 'locked' && (plan.leftAt ?? null) !== null && !plan.payerIsMe;
   const tint = accentTintOver(colors.fill1, colors.accent);
   const tile = (icon: IconName) => <IconTile icon={icon} color={colors.accent} tint={tint} />;
 
@@ -82,6 +84,11 @@ export function PlanEndedScreen() {
         <Text accessibilityRole="header" style={{ ...textRole(pairing, 'heading'), color: colors.ink }}>
           {heading}
         </Text>
+        {afterSeven ? (
+          <Text testID="lock-after-seven" style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>
+            {t('lock.explainer.afterSeven')}
+          </Text>
+        ) : null}
         <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('lock.explainer.body')}</Text>
         {memberOfLapsedHome ? (
           <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>

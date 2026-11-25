@@ -50,6 +50,9 @@ jest.mock('@/features/record/useRecordContext', () => ({
 }));
 // 06.1-72: the app layouts wrap Decide screens in DecideV3Scope; here it only passes its children through.
 jest.mock('@/data/queries/decideV3', () => ({ DecideV3Scope: ({ children }: { children: unknown }) => children }));
+// 07-11 (D-16): GatedTabBar reads access; a Basics user (Insights hidden) is the default, one case turns it on.
+let mockInsightsVisible = false;
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: mockInsightsVisible }) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockAccounts }));
 jest.mock('@/features/record/history/UndoToastHost', () => ({
   UndoToastHost: () => null,
@@ -139,6 +142,7 @@ async function mountRouter(initialUrl: string) {
       '(app)/(tabs)/activity': leaf('activity-root'),
       '(app)/(tabs)/decide': leaf('decide-root'),
       '(app)/(tabs)/grow': leaf('grow-root'),
+      '(app)/(tabs)/insights': leaf('insights-root'),
       '(app)/accounts/[id]': leaf('account-detail'),
       '(app)/accounts/index': leaf('accounts-root'),
       '(app)/categories': leaf('categories-root'),
@@ -158,6 +162,7 @@ async function mountRouter(initialUrl: string) {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockInsightsVisible = false;
   resetShellStores();
   listeners.length = 0;
   mockAccounts = { data: [{ archived_at: null }], isLoading: false, isError: false };
@@ -181,6 +186,14 @@ describe('shell navigation on the real layouts', () => {
     expect(screen.getByLabelText('Activity, tab, 2 of 4')).toBeTruthy();
     expect(screen.getByLabelText('Decide, tab, 3 of 4')).toBeTruthy();
     expect(screen.getByLabelText('Grow, tab, 4 of 4')).toBeTruthy();
+  });
+
+  it('shows five tabs, Insights last, once the user reaches Everyday (07-11, D-16)', async () => {
+    mockInsightsVisible = true;
+    await mountRouter('/');
+    expect(await screen.findByText('home-root')).toBeTruthy();
+    expect(screen.getByLabelText('Home, tab, 1 of 5')).toBeTruthy();
+    expect(screen.getByLabelText('Insights, tab, 5 of 5')).toBeTruthy();
   });
 
   it('pressing the Activity tab navigates to /activity', async () => {

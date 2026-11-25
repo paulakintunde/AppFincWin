@@ -1,12 +1,10 @@
 // 09-10: app-wide plan plumbing, mounted once in the (app) layout after the consent gate. Renders nothing.
 // (1) Store identity: logIn(Supabase user id) once per user. (2) Realtime on household_plans, so a purchase on another
 // device or a webhook shows here at once. (3) A throttled server refresh when the app returns to the foreground.
-// 09-19: (4) keeps the local trial reminder in step with the plan, and opens Subscription when it is tapped. (5) The realtime
+// 09-19: (4) keeps the local trial reminder in step with the plan (the tap that opens Subscription is useTrialReminderTap, mounted in the (app) layout). (5) The realtime
 // callback also refreshes the double-cover choice, so a pick or the 7-day default by the other payer clears it at once.
 import { useEffect, useState } from 'react';
 import { AppState, Platform } from 'react-native';
-import { router } from 'expo-router';
-import * as Notifications from 'expo-notifications';
 import { useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/data/keys';
 import { useHouseholdId } from '@/data/queries/household';
@@ -15,8 +13,7 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { captureError } from '@/services/errors';
 import { supabase } from '@/services/supabase';
 import { DOUBLE_COVER_KEY } from './notices/doubleCover';
-import { isTrialReminderResponse, syncTrialReminder } from './notices/trialReminder';
-import { SUBSCRIPTION_HREF } from './routes';
+import { syncTrialReminder } from './notices/trialReminder';
 import { loadOffers, purchasesApiKey, startPurchases } from './store/purchasesClient';
 import { usePlanState } from './usePlanState';
 
@@ -111,16 +108,6 @@ export function PlanHost() {
     // The reminder depends on these fields only; the whole plan object changes identity on every read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan.loading, plan.status, plan.trialEndsAt, plan.willRenew, plan.productId, renewingTrial, foregroundTick]);
-
-  // A tap on the trial reminder opens You > Subscription.
-  useEffect(() => {
-    if (!userId) return undefined;
-    const open = (r: Notifications.NotificationResponse | null) => {
-      if (isTrialReminderResponse(r)) router.push(SUBSCRIPTION_HREF);
-    };
-    const sub = Notifications.addNotificationResponseReceivedListener(open);
-    return () => sub.remove();
-  }, [userId]);
 
   return null;
 }

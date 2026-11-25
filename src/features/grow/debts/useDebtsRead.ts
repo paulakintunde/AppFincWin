@@ -14,6 +14,7 @@ import {
   percent,
   strategy,
   ZERO_PERCENT,
+
   type PayoffOutcome,
   type PayoffOrder,
   type PlanDebt,
@@ -21,7 +22,7 @@ import {
 } from '@/engine/payoff';
 import { usePastContext } from '@/features/decide/screens/past/data/usePastDecisions';
 import { debtPointOf, type DebtPoint } from '../connect';
-import { dueDateOf } from '../connect/debtPoint';
+import { dueDateOf, rateForMathsOf, rateUnknownOf } from '../connect/debtPoint';
 
 export type DebtsStatus = 'loading' | 'error' | 'ready';
 
@@ -48,6 +49,11 @@ export interface DebtLine {
   point: DebtPoint;
   /** D-28: the minimum in `point` is the estimate, not a typed figure. */
   minimumEstimated: boolean;
+  /**
+   * 261123 (DD-01): a carried debt with no stored rate ("I don't know"). Its payoff figures run without interest, so every
+   * screen that shows them says interest isn't counted; it is never shown as interest-free (D-07: no rate is invented).
+   */
+  rateUnknown: boolean;
   startedBalance: number | null;
   /** The extra a month saved on this debt. */
   extra: number;
@@ -106,9 +112,21 @@ export interface Scenario {
   totalInterest: MinorUnits | null;
 }
 
+/** 261123 (DD-10): a debt paid off on or before today. Listed apart in a collapsed group; never in a total or the plan. */
+export interface PaidOffLine {
+  id: string;
+  name: string;
+  kind: DebtRow['kind'];
+  currency: string;
+  /** The local date it was paid off (YYYY-MM-DD). */
+  paidOffOn: string;
+}
+
 export interface DebtsModel {
   /** Open debts, carried or not, in the order stored. Paid-off debts are left out. */
   debts: DebtLine[];
+  /** 261123 (DD-10): paid-off debts, newest paid-off first. Not in `debts`, any total, or the plan. */
+  paidOff: PaidOffLine[];
   /** D-15: cards paid in full each month; listed apart and left out of the plan. */
   paidInFull: DebtLine[];
   /** The currency the combined plan is worked in (the largest open balance). Debts in other currencies are not in it. */
@@ -117,6 +135,8 @@ export interface DebtsModel {
   extra: number;
   /** The saved order, or null when none was chosen. */
   savedOrder: PayoffOrder | null;
+  /** 261123 (DD-01): the names of the plan's debts whose rate is unknown; the plan's interest leaves them out. */
+  rateUnknownInPlan: string[];
   /** One debt in the plan: both orders are the same (D-13). */
   oneDebt: boolean;
   plan: { rate: OrderPlan; balance: OrderPlan } | null;
@@ -139,10 +159,12 @@ export interface DebtsRead {
 
 export const EMPTY_DEBTS_MODEL: DebtsModel = {
   debts: [],
+  paidOff: [],
   paidInFull: [],
   planCurrency: null,
   extra: 0,
   savedOrder: null,
+  rateUnknownInPlan: [],
   oneDebt: false,
   plan: null,
   focus: null,
@@ -184,9 +206,12 @@ function compareOf(base: WhatIf, sc: WhatIf): Compare {
   };
 }
 
-/** Pure: one debt's what-if via fixedPayoff (debt detail chips): minimum only against the extra a month and/or a one-off. */
+/**
+ * Pure: one debt's what-if via fixedPayoff (debt detail chips): minimum only against the extra a month and/or a one-off.
+ * With an unknown rate (line.rateUnknown) the interest figures leave interest out; the screen says so.
+ */
 export function debtWhatIf(line: DebtLine, today: string, opts: { extra?: number; lump?: number }): { minimumOnly: WhatIf; scenario: WhatIf & Compare } {
-  const apr = line.point.apr ?? ZERO_PERCENT;
+  const apr = rateForMathsOf(line);
   const dueDay = line.point.dueDay;
   const toWhatIf = (r: ReturnType<typeof fixedPayoff>): WhatIf => ({
     outcome: r.outcome,
@@ -205,14 +230,21 @@ export function debtWhatIf(line: DebtLine, today: string, opts: { extra?: number
 export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: { extra?: number; lump?: number } = {}): DebtsModel {
   const lines: DebtLine[] = [];
   const paidInFull: DebtLine[] = [];
+  const paidOff: PaidOffLine[] = [];
   for (const row of rows) {
     if (row.deleted_at !== null) continue;
-    const apr = row.apr ? percent(row.apr) : ZERO_PERCENT;
     const paysFull = row.kind === 'card' && row.pays_in_full === 'yes';
+    // 261123 (DD-01): no stored rate on a carried debt is "rate unknown", not 0%. The estimate below runs without interest.
+    const rateUnknown = rateUnknownOf(row);
+    const apr = row.apr ? percent(row.apr) : ZERO_PERCENT;
     const estimated = !paysFull && row.kind === 'card' && row.minimum_payment === 0 && row.balance > 0;
     const effective: DebtRow = estimated ? { ...row, minimum_payment: estimatedCardMinimum(minorUnits(row.balance), apr, currencyExponent(row.currency)) } : row;
     const point = debtPointOf(effective, today);
-    if (point.paidOff) continue;
+    if (point.paidOff) {
+      // 261123 (DD-10): kept for the "Paid off" group only. point.paidOff means paid_off_on is set and on or before today.
+      paidOff.push({ id: row.id, name: row.name, kind: row.kind, currency: row.currency, paidOffOn: row.paid_off_on as string });
+      continue;
+    }
     const line: DebtLine = {
       id: row.id,
       name: row.name,
@@ -220,6 +252,7 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
       currency: row.currency,
       point,
       minimumEstimated: estimated,
+      rateUnknown,
       startedBalance: row.started_balance ?? null,
       extra: row.payoff_extra ?? 0,
       order: row.payoff_order ?? null,
@@ -247,7 +280,7 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
 
   const extra = inPlan.reduce((s, l) => s + l.extra, 0);
   const savedOrder = inPlan.find((l) => l.order !== null)?.order ?? null;
-  const planDebts: PlanDebt[] = inPlan.map((l) => ({ id: l.id, balance: l.point.balance, apr: l.point.apr ?? ZERO_PERCENT, minimum: l.point.minimum }));
+  const planDebts: PlanDebt[] = inPlan.map((l) => ({ id: l.id, balance: l.point.balance, apr: rateForMathsOf(l), minimum: l.point.minimum }));
   const dueDayOf = (id: string): number | null => inPlan.find((l) => l.id === id)?.point.dueDay ?? null;
 
   // 06-35 (D-34): each debt's end date. Under a saved extra the plan's own strategy says when each debt clears (the saved
@@ -263,7 +296,7 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
       interest = months === null || own === undefined ? null : own.interest;
       l.endsInPlan = true;
     } else {
-      const own = fixedPayoff(l.point.balance, l.point.apr ?? ZERO_PERCENT, minorUnits(l.point.minimum + l.extra));
+      const own = fixedPayoff(l.point.balance, rateForMathsOf(l), minorUnits(l.point.minimum + l.extra));
       months = own.outcome === 'cleared' ? own.months : null;
       interest = own.outcome === 'cleared' ? own.totalInterest : null;
     }
@@ -283,7 +316,7 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
   let focus: DebtsModel['focus'] = null;
   const biggest = inPlan.reduce<DebtLine | null>((best, l) => (best === null || l.point.balance > best.point.balance ? l : best), null);
   if (biggest !== null) {
-    const apr = biggest.point.apr ?? ZERO_PERCENT;
+    const apr = rateForMathsOf(biggest);
     const base = (opts2: { extra?: MinorUnits; lump?: MinorUnits }) => fixedPayoff(biggest.point.balance, apr, biggest.point.minimum, opts2);
     focus = {
       id: biggest.id,
@@ -319,7 +352,9 @@ export function buildDebtsModel(rows: readonly DebtRow[], today: string, opts: {
     }
   }
 
-  return { debts: lines, paidInFull, planCurrency, extra, savedOrder, oneDebt: inPlan.length === 1, plan, focus, scenarios, savedExtraPlan };
+  const rateUnknownInPlan = inPlan.filter((l) => l.rateUnknown).map((l) => l.name);
+  paidOff.sort((a, b) => (a.paidOffOn < b.paidOffOn ? 1 : a.paidOffOn > b.paidOffOn ? -1 : 0));
+  return { debts: lines, paidOff, paidInFull, planCurrency, extra, savedOrder, rateUnknownInPlan, oneDebt: inPlan.length === 1, plan, focus, scenarios, savedExtraPlan };
 }
 
 /**

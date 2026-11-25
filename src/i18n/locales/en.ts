@@ -51,6 +51,7 @@
 import { EXCHANGE_RATE_API_ATTRIBUTION } from '../mandatedCopy';
 import { appLife } from './appLife';
 import { household } from './household';
+import { insights } from './insights';
 import { plans } from './plans';
 import { onboarding } from './onboarding';
 import { features } from './features';
@@ -2724,6 +2725,12 @@ const en = {
       lineCardNoRule: 'Debt payments · {{percent}}% of pay.',
       section: 'Debts',
       paidInFullSection: 'Cards paid in full',
+      // 261123 (DD-10): paid-off debts, in a collapsed group under the open ones. Never counted in a total.
+      paidOffSection: 'Paid off · {{count}}',
+      paidOffSectionA11y_one: 'Paid off, {{count}} debt',
+      paidOffSectionA11y_other: 'Paid off, {{count}} debts',
+      paidOffRow: 'Paid off {{date}}',
+      paidOffRowA11y: '{{name}}, paid off {{date}}',
       row: '{{rate}} · {{payment}} a month · due the {{day}}',
       rowNoRate: '{{payment}} a month · due the {{day}}',
       rowNoDay: '{{rate}} · {{payment}} a month',
@@ -2798,11 +2805,31 @@ const en = {
       minimumEstimated: 'Estimate',
       minimumEstimatedNote: 'No minimum typed in, so this is an estimate: the month’s interest plus 1% of the balance, at least {{floor}}.',
       footer: 'An estimate. A lender’s figures can differ. FincWin lends no money.',
+      // 261123 (DD-01): a carried debt saved with "I don't know" for its rate.
+      rateUnknownRow: 'rate unknown',
+      interestNotCounted: 'Interest isn’t counted: the rate is unknown.',
+      planRateUnknown: 'Interest isn’t counted for {{names}}: the rate is unknown.',
+      // 261123 (DD-05): a quiet ask for what an older debt is missing; never blocks a save.
+      ask: {
+        startAndOriginal: 'Add the start date and original amount to see this loan’s history.',
+        start: 'Add the start date to see this loan’s history.',
+        original: 'Add the original amount to see this loan’s history.',
+        limit: 'Add the credit limit to complete this record.',
+        add: 'Add',
+        notNow: 'Not now',
+        addA11y: 'Add the missing details for {{name}}',
+        notNowA11y: 'Not now, hide this for {{name}}',
+      },
       detail: {
         owed: '{{amount}} owed',
         started: 'Started at {{amount}} · {{percent}}% paid',
         rate: 'Rate',
         rateValue: '{{rate}} a year',
+        rateUnknownValue: 'Unknown · interest isn’t counted',
+        interestNotCountedValue: 'Not counted · rate unknown',
+        limit: 'Credit limit',
+        startDate: 'Started',
+        original: 'Original amount',
         payment: 'Payment',
         paymentValue: '{{amount}} on the {{day}} · {{mode}}',
         automatic: 'Automatic',
@@ -2830,6 +2857,7 @@ const en = {
         chipOnce: '{{amount}} once',
         whatIfDate: 'Debt-free by {{date}} · {{sooner}}',
         whatIfInterest: 'Interest about {{interest}} · {{less}}',
+        whatIfInterestUnknown: 'Interest isn’t counted: the rate is unknown',
         paymentPaidSub: 'From {{account}}',
         paymentExtraSub: 'Extra · from {{account}}',
         paymentOneOffSub: 'One-off · from {{account}}',
@@ -2859,7 +2887,24 @@ const en = {
         name: 'Name',
         owedNow: 'Owed now',
         rate: 'Rate',
-        rateHelp: 'Yearly rate (APR). Leave blank if none.',
+        rateHelp: 'Yearly rate (APR). Type 0 for no interest.',
+        rateUnknown: 'I don’t know the rate',
+        rateUnknownNote: 'Saved as rate unknown. Payoff figures leave interest out until a rate is added.',
+        rateNeeded: 'Type the rate, or choose I don’t know the rate.',
+        statusQuestion: 'Is it still owed?',
+        statusOpen: 'Still owed',
+        statusPaidOff: 'Already paid off',
+        paidOffOn: 'Paid off on',
+        original: 'Original loan amount',
+        originalNeeded: 'Type the amount first borrowed.',
+        startDate: 'Start date',
+        dateHelp: 'YYYY-MM-DD',
+        dateInvalid: 'Type a real date, no later than today (YYYY-MM-DD).',
+        paidOffBeforeStart: 'The paid-off date is before the start date.',
+        whyHistory:
+          'FincWin uses the original amount and start date to show your past net worth correctly. Without them, a paid-off loan would look like it never existed.',
+        limit: 'Credit limit',
+        limitNeeded: 'Type the credit limit.',
         payment: 'Payment',
         minimum: 'Minimum',
         minimumEstimate: 'Estimated minimum {{amount}}. Type the statement minimum to replace it.',
@@ -3278,6 +3323,7 @@ const en = {
   appLife: appLife,
   // Phase 8 Household copy, one file per area so parallel UI plans never edit the same file. Source: 08-UI-SPEC.md. Declarative, never advice.
   household: household,
+  insights: insights,
   // Phase 9 copy, owner-signed in 09-WORDING.md; one file per area.
   plans: plans,
   onboarding: onboarding,

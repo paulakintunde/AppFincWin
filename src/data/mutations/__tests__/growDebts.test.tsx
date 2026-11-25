@@ -110,14 +110,24 @@ describe('registration', () => {
 });
 
 describe('useSaveGrowDebt', () => {
-  it('adds a loan: started balance defaults to the balance, one debtAdded step', async () => {
+  it('adds a loan: the original amount and start date are stored as given, one debtAdded step (261123 DD-02)', async () => {
     const { fake, qc } = setup();
-    fake.respondWith(ok(debt({ id: 'id-2', version: 1, started_balance: 842000 })));
+    fake.respondWith(ok(debt({ id: 'id-2', version: 1, started_balance: 1200000 })));
     const { result } = await renderHook(() => useSaveGrowDebt(), { wrapper: wrapper(qc) });
     const out = result.current.save({
       ownerId: 'user-1',
       householdId: 'hh-1',
-      fields: { name: ' Auto loan ', kind: 'loan', currency: 'USD', balance: 842000, apr: '6.9', minimum_payment: 31200, due_day: 15 },
+      fields: {
+        name: ' Auto loan ',
+        kind: 'loan',
+        currency: 'USD',
+        balance: 842000,
+        apr: '6.9',
+        minimum_payment: 31200,
+        due_day: 15,
+        started_balance: 1200000,
+        start_date: '2024-03-01',
+      },
     });
     expect(out).toEqual({ id: 'id-2', stepId: 'id-1' });
     await waitFor(() => expect(qc.getQueryData<DebtRow[]>(KEY)?.map((r) => r.id)).toEqual(['id-2']));
@@ -131,10 +141,46 @@ describe('useSaveGrowDebt', () => {
       apr: '6.9',
       minimum_payment: 31200,
       due_day: 15,
-      started_balance: 842000,
+      started_balance: 1200000,
+      start_date: '2024-03-01',
+      revolving: false,
       pays_in_full: null,
     });
     expect(insertUndoStep.mock.calls[0]![1]).toMatchObject({ labelKey: 'debtAdded', labelParams: { name: 'Auto loan' } });
+  });
+
+  it("261123: the started balance is never set to today's balance when none is given", async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(debt({ id: 'id-2', version: 1 })));
+    const { result } = await renderHook(() => useSaveGrowDebt(), { wrapper: wrapper(qc) });
+    result.current.save({
+      ownerId: 'user-1',
+      householdId: 'hh-1',
+      fields: { name: 'Card', kind: 'card', currency: 'USD', balance: 50000, apr: '24.9', pays_in_full: 'no', credit_limit: 500000 },
+    });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
+    expect(insertArg(fake)).toMatchObject({ started_balance: null, credit_limit: 500000, revolving: true, paid_off_on: null });
+  });
+
+  it('261123 (DD-04): a debt already paid off is added with its paid-off date; a balance above zero is refused', async () => {
+    const { fake, qc } = setup();
+    fake.respondWith(ok(debt({ id: 'id-2', version: 1, balance: 0, paid_off_on: '2025-02-01' })));
+    const { result } = await renderHook(() => useSaveGrowDebt(), { wrapper: wrapper(qc) });
+    const fields = {
+      name: 'Old car',
+      kind: 'loan' as const,
+      currency: 'USD',
+      balance: 0,
+      apr: '4.9',
+      started_balance: 1500000,
+      start_date: '2022-03-01',
+      paid_off_on: '2025-02-01',
+    };
+    expect(() => result.current.save({ ownerId: 'user-1', householdId: 'hh-1', fields: { ...fields, balance: 100 } })).toThrow(RangeError);
+    expect(() => result.current.save({ ownerId: 'user-1', householdId: 'hh-1', fields: { ...fields, start_date: '2022-3-1' } })).toThrow(RangeError);
+    result.current.save({ ownerId: 'user-1', householdId: 'hh-1', fields });
+    await waitFor(() => expect(insertUndoStep).toHaveBeenCalledTimes(1));
+    expect(insertArg(fake)).toMatchObject({ balance: 0, paid_off_on: '2025-02-01', started_balance: 1500000, start_date: '2022-03-01' });
   });
 
   it('a card paid in full needs no rate or minimum; Not sure is kept as null', async () => {

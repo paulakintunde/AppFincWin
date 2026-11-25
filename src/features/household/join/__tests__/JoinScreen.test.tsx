@@ -18,7 +18,11 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 const mockReplace = jest.fn();
-jest.mock('expo-router', () => ({ router: { replace: (...a: unknown[]) => mockReplace(...a), push: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { replace: (...a: unknown[]) => mockReplace(...a), push: jest.fn() },
+  // Quick 261124-2bs: the waiting phase re-checks on focus; these tests drive the re-check through planInviteFlows instead.
+  useFocusEffect: jest.fn(),
+}));
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 jest.mock('@/features/plans/store/purchasesClient', () => require('@/features/plans/store/fakeStore'));

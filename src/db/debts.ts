@@ -27,7 +27,9 @@ export interface DebtRow {
   due_day?: number | null; // 05.4 FIN-04: day of the month the payment is due, 1..31 (20261103000200)
   paid_off_on?: string | null; // 05.2 owner addition 2026-10-28: the local date the debt was paid off; Decide stops counting its minimum from this date (05.2-48)
   // 06 Grow (20261106000100): optional so rows cached before the update still type-check.
-  started_balance?: number | null; // balance when the debt was first recorded, for the paid-off progress bar
+  started_balance?: number | null; // a fixed loan's original amount (261123 DD-02); older rows: the balance when first recorded
+  credit_limit?: number | null; // 261123 (DD-03): a revolving debt's limit (20261125001100)
+  revolving?: boolean | null; // 261123 (DD-03): card or line of credit (true), fixed loan or money owed (false); null on older rows
   payoff_order?: 'rate' | 'balance' | null;
   payoff_extra?: number; // read-only here: written only by save_debt_plan
   extra_series_id?: string | null; // read-only here: written only by save_debt_plan
@@ -41,7 +43,7 @@ export interface DebtRow {
 }
 
 export const DEBT_COLUMNS =
-  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, pays_in_full, paid_off_on, due_day, started_balance, payoff_order, payoff_extra, extra_series_id, is_housing, is_sample, deleted_at, version, updated_by, created_at, updated_at';
+  'id, household_id, account_id, check_id, series_id, name, kind, currency, balance, apr, minimum_payment, secured, term_months, start_date, min_percent, min_interest_added, min_floor, paid_in_full, pays_in_full, paid_off_on, due_day, started_balance, payoff_order, payoff_extra, extra_series_id, credit_limit, revolving, is_housing, is_sample, deleted_at, version, updated_by, created_at, updated_at';
 
 export type NewDebt = Pick<
   DebtRow,
@@ -66,6 +68,9 @@ export type NewDebt = Pick<
   | 'due_day'
   | 'started_balance'
   | 'payoff_order'
+  | 'paid_off_on'
+  | 'credit_limit'
+  | 'revolving'
 >;
 
 export type DebtPatch = Partial<
@@ -88,6 +93,9 @@ export type DebtPatch = Partial<
     | 'due_day'
     | 'started_balance'
     | 'payoff_order'
+    | 'start_date'
+    | 'credit_limit'
+    | 'revolving'
     | 'is_housing'
     | 'deleted_at'
   >
@@ -115,6 +123,9 @@ export const DEBT_INSERT_KEYS = [
   'due_day',
   'started_balance',
   'payoff_order',
+  'paid_off_on', // 261123 (DD-04)
+  'credit_limit', // 261123 (DD-03)
+  'revolving', // 261123 (DD-03)
 ] as const satisfies readonly (keyof NewDebt)[];
 
 export const DEBT_PATCH_KEYS = [
@@ -135,9 +146,22 @@ export const DEBT_PATCH_KEYS = [
   'due_day',
   'started_balance',
   'payoff_order',
+  'start_date', // 261123 (DD-02)
+  'credit_limit', // 261123 (DD-03)
+  'revolving', // 261123 (DD-03)
   'is_housing',
   'deleted_at',
 ] as const satisfies readonly (keyof DebtPatch)[];
+
+/**
+ * 261123 (DD-02, DD-03): a fixed loan (instalments: loan, money owed) rather than revolving debt (card, line of credit). Uses
+ * `revolving` when stored; an older row without it is fixed only when it is a loan.
+ */
+export function debtIsFixed(row: Pick<DebtRow, 'kind' | 'revolving'>): boolean {
+  if (row.revolving === true) return false;
+  if (row.revolving === false) return true;
+  return row.kind === 'loan';
+}
 
 const ENTITY = 'debts' as const;
 const UNIQUE_VIOLATION = '23505';

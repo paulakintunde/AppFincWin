@@ -15,6 +15,19 @@ function row(state: PlanServerState, over: Partial<PlanStateRow> = {}): PlanStat
   };
 }
 
+describe('toPlanView left_at', () => {
+  it('maps left_at and left_home_name', () => {
+    const v = toPlanView(row('active', { left_at: '2026-11-18T10:00:00Z', left_home_name: 'Maple' }));
+    expect(v.leftAt).toBe('2026-11-18T10:00:00Z');
+    expect(v.leftHomeName).toBe('Maple');
+  });
+  it('maps missing keys (an older cached row) to null', () => {
+    const v = toPlanView(row('active'));
+    expect(v.leftAt).toBeNull();
+    expect(v.leftHomeName).toBeNull();
+  });
+});
+
 describe('toPlanView status mapping', () => {
   it("maps 'prelaunch' to tester, prelaunch, writable", () => {
     const v = toPlanView(row('prelaunch'));

@@ -42,6 +42,25 @@ export function dueDateOf(today: string, dueDay: number, index: number): string 
   return `${y}-${pad(m)}-${pad(dayOf(y, m))}`;
 }
 
+/**
+ * 261123 (DD-01): the rate the payoff maths runs on. An unknown rate (no stored rate, "I don't know") runs without interest
+ * and the screens flag every figure built from it (DebtLine.rateUnknown), so "interest not counted" is never shown as
+ * interest-free. No rate is invented (D-07).
+ */
+export function rateForMathsOf(line: { point: { apr: Percent | null } }): Percent {
+  return line.point.apr ?? ZERO_PERCENT;
+}
+
+/**
+ * 261123 (DD-01, DD-09): a carried debt with no stored rate is "rate unknown" (the "I don't know the rate" answer), not 0%.
+ * A card paid in full each month is exempt (Phase 6 D-15): it needs no rate. 0% is stored as '0' and is a known rate.
+ * The single rule for "rate unknown" (Grow's read model). Decide's Debts setup can use it once its row wording is signed off.
+ */
+export function rateUnknownOf(row: Pick<DebtSourceRow, 'kind' | 'apr' | 'pays_in_full'>): boolean {
+  const paysFull = row.kind === 'card' && row.pays_in_full === 'yes';
+  return !paysFull && (row.apr == null || row.apr === '');
+}
+
 /** One debt as Grow shows it: its payoff date from the next due date at the minimum plus any extra, and its total interest. */
 export function debtPointOf(row: DebtSourceRow, today: string): DebtPoint {
   const apr = row.apr ? percent(row.apr) : null;

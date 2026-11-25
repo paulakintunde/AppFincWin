@@ -24,6 +24,10 @@ export const queryKeys = {
   // transaction invalidation refreshes them too.
   transactionMonths: (householdId: string) => ['transactions', householdId, 'months'] as const,
   accountBalances: (householdId: string) => ['transactions', householdId, 'balances'] as const,
+  // 07 D-32, D-33: a fellow member's categories on shared lines, and the caller's own picks on shared lines. Under
+  // transactionsRoot so any line write (share, make private, recategorise) refreshes them.
+  sharedLineCategories: (householdId: string) => ['transactions', householdId, 'shared-line-categories'] as const,
+  myLineCategories: (householdId: string, userId: string) => ['transactions', householdId, 'my-line-categories', userId] as const,
   householdMembers: (householdId: string) => ['household-members', householdId] as const,
   // 08-13: the household row, its notices, the caller's read marker and the owner's open invites
   // full member rows; nested under householdMembers so invalidating that prefix refreshes both reads

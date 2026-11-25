@@ -1,5 +1,5 @@
 import { ACCENTS } from '../accents';
-import { colors, pageTint, pageTintBar, stateColors, stateMuted } from '../tokens';
+import { chartPalette, chartPaletteNames, colors, memberColors, pageTint, pageTintBar, stateColors, stateMuted } from '../tokens';
 import { contrastRatio } from '../contrast';
 
 describe('contrastRatio (WCAG 2.x relative luminance)', () => {
@@ -149,4 +149,43 @@ describe('06.2 D-27 page tints', () => {
       });
     });
   }
+});
+
+describe('07 D-24 chart palette', () => {
+  it('has six distinct upper-case hex colours and six names', () => {
+    expect(chartPalette).toHaveLength(6);
+    expect(chartPaletteNames).toHaveLength(6);
+    for (const hex of chartPalette) expect(hex).toMatch(/^#[0-9A-F]{6}$/);
+    expect(new Set(chartPalette).size).toBe(6);
+  });
+
+  const grounds: [string, string][] = [
+    ['surface', colors.surface],
+    ['canvas', colors.canvas],
+    ['fill1', colors.fill1],
+    ...Object.entries(pageTint).map(([k, v]): [string, string] => [`pageTint.${k}`, v]),
+  ];
+  describe.each(chartPalette.map((hex, i) => [chartPaletteNames[i], hex] as [string, string]))('%s', (_name, hex) => {
+    it.each(grounds)('reaches 3:1 on %s', (_g, ground) => {
+      expect(contrastRatio(hex, ground)).toBeGreaterThanOrEqual(3);
+    });
+  });
+
+  it('is chart-only: no palette hex equals any other token colour', () => {
+    const others = new Set<string>();
+    const add = (v: unknown): void => {
+      if (typeof v === 'string') others.add(v.toUpperCase());
+    };
+    Object.values(colors).forEach(add);
+    Object.values(ACCENTS).forEach(add);
+    Object.values(pageTint).forEach(add);
+    Object.values(stateColors).forEach((s) => {
+      add(s.color);
+      add(s.stroke);
+      add(s.tint);
+    });
+    add(stateMuted);
+    memberColors.forEach(add);
+    for (const hex of chartPalette) expect(others.has(hex)).toBe(false);
+  });
 });

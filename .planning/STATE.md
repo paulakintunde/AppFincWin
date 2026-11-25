@@ -5,13 +5,13 @@ milestone_name: milestone
 status: executing
 stopped_at: Phase 10 UI-SPEC approved
 last_updated: "2026-11-23T05:47:10.166Z"
-last_activity: 2026-11-23 -- Phase 10 execution started
+last_activity: 2026-11-25 -- Phase 10 resumed; main merged into feat/10-build (27/30 plans)
 progress:
-  total_phases: 31
-  completed_phases: 19
-  total_plans: 843
-  completed_plans: 819
-  percent: 97
+  total_phases: 33
+  completed_phases: 20
+  total_plans: 865
+  completed_plans: 832
+  percent: 96
 ---
 
 # Project State
@@ -37,11 +37,11 @@ Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
 Phase: 04 (decide-engine) — COMPLETE 2026-10-16; the v1 engine was deleted on purpose in 05.5 (04-VERIFICATION.md is historical).
 Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple enrolment).
-Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted, Play verification pending (PR #174). 00-20: first iOS build on the iPhone XR, waits on enrolment; needed before 2026-12-02.
+Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted (awaiting Apple review), Google Play developer verification approved 2026-11-21 (next: register package name com.fincwin.app). 00-20: first iOS build on the iPhone XR, waits on Apple enrolment; needed before 2026-12-02.
 Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
 Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
 Status: Executing Phase 10
-Last activity: 2026-11-23 -- Phase 10 execution started
+Last activity: 2026-11-25 -- Phase 10 resumed; main merged into feat/10-build (27/30 plans)
 
 ## Performance Metrics
 
@@ -157,7 +157,7 @@ Recent decisions affecting current work:
 
 - **Decide test flag in production** — count the accounts with `profiles.decide_v3` on (not yet checked; the auto-mode classifier blocked a read-only production query on 2026-11-02). First step of BO-06 in 05.4.
 - **Decide owner decisions** — fix plan section 11, question 10 is open (3, 4 and 5 were answered in 05.4-CONTEXT); question 12 (legal launch countries) is open; the Free vs Pro list is needed by APP-18 (05.5) as well as Phase 9; decide whether to insert the home-buying phase (FIN-30) and 06.1 into ROADMAP.
-- **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files (triggered by the D-U-N-S number, ETA 2026-10-13, then Apple enrolment).
+- **Phase 0 verification** — run the gsd-verifier for Phase 00 once 00-07 and 00-20 have SUMMARY files. As of 2026-11-19 the D-U-N-S is issued; Play developer verification approved 2026-11-21; waits now on Apple review of the submitted enrolment (see `docs/dependency-register.md`).
 - **Phase 0 code review fixes** — `00-REVIEW.md`: 2 critical (CR-01 a malformed `min_supported_version` blanks the app for every user; CR-02 the device is only wiped on the sign-out button, not when a session ends another way) and 20 warnings. Run `/gsd-code-review-fix 0`.
 - **Phase 0 security** — `00-SECURITY.md`: 2 open, neither high (T-00-01-03 no DMARC on fincwin.com; T-00-03-04 DB password shorter than declared). Add the DMARC record and rotate or accept, then re-run `/gsd-secure-phase 0`. Also: remove leftover `POSTHOG_CLI_*` vars from the EAS preview env and revoke that key; disable the unused Supabase email provider and fix `site_url` (still localhost); purge production test accounts before launch (AR-11 drift).
 - **Public repo privacy** — a personal test Gmail address is committed in `docs/acceptance/phase-00-android.md` and `docs/acceptance/phase-01-money-core.md`; the repo is public.
@@ -226,8 +226,10 @@ Recent decisions affecting current work:
 | 261118-u83 | ASO re-check: 4 new "can I afford it" apps (incl. Verdict Money), hard-paywall copy fixes, features to compete on; LAUNCH-POSITIONING §4/§5 updated | 2026-11-18 | (this PR) | [261118-u83-aso-re-check-2026-11-18](./quick/261118-u83-aso-re-check-2026-11-18/) |
 | 261119-as7 | Close 05.4-45 nightly evidence; trim 08.1 to 18 plans (16-18 out; reading test, freeze, compliance and carry-over audit to 08.2; wording sign-off stays) | 2026-11-19 | 72b035dc | [261119-as7-close-05-4-45-evidence-and-trim-08-1-pla](./quick/261119-as7-close-05-4-45-evidence-and-trim-08-1-pla/) |
 | 261119-rvf | Whole-app review fixes: ROADMAP/STATE match the code (08.1 6/18 and Phase 9 26/26 on branches; Decide open to testers), remove unused DECIDE_SETUP_VISIBLE, YouScreen comment | 2026-11-19 | (this PR) | [261119-rvf-review-fixes-doc-tidy](./quick/261119-rvf-review-fixes-doc-tidy/) |
+| 261119-vjo | Phase 0 enrolment status: D-U-N-S issued, Apple submitted, Play verification approved (2026-11-21), third-party stores declined | 2026-11-19 | 998a63f8 | [261119-vjo-phase-0-enrolment-status](./quick/261119-vjo-phase-0-enrolment-status/) |
 | 261120-nmr | Naming round 2 research saved: Kint dropped, 90 names screened, deep check of Domla/Plenny/Tavva/Hommi | 2026-11-20 | — | [261120-nmr-naming-research](./quick/261120-nmr-naming-research/) |
 | 261122-m82 | Merge Phase 08.2 (Decide re-audit) into Phase 11 as its final audit; Insights and System run in parallel after 08.1 | 2026-11-22 | (this PR) | [261122-m82-merge-08-2-into-phase-11](./quick/261122-m82-merge-08-2-into-phase-11/) |
+| 261124-2bs | Phase 9 code gaps (09-HUMAN-UAT C2 rows 1-5): plan_state returns left_at/left_home_name (migration 20261125001200, pgTAP 120; production push after owner approval); sample answer gets the stage word and "Based on sample figures"; trial reminder tap routes on a cold start; invite waiting screen re-checks and shows the expired line; B7 marked pass | 2026-11-24 | 723599cf | [261124-2bs-phase-9-code-gaps](./quick/261124-2bs-phase-9-code-gaps/) |
 
 ## Deferred Items
 
@@ -239,6 +241,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-22T20:54:00.711Z
-Stopped at: Phase 10 UI-SPEC approved
-Resume file: .planning/phases/10-system/10-UI-SPEC.md
+Last session: 2026-11-25T04:49:49.674Z
+Stopped at: Phase 10.2 UI-SPEC approved
+Resume file: .planning/phases/10.2-envelope-rollover/10.2-UI-SPEC.md

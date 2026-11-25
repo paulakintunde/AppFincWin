@@ -3,7 +3,7 @@
 // Labels and subs come from copy keys features.items.<id>.label|sub (plan 09-12).
 import type { IconName } from '@/ui/icons/iconData';
 
-export type FeatureArea = 'Recording' | 'Accounts' | 'Planning' | 'Grow' | 'System' | 'Sharing';
+export type FeatureArea = 'Recording' | 'Accounts' | 'Planning' | 'Grow' | 'Insight' | 'System' | 'Sharing';
 export type Level = 1 | 2 | 3 | 4;
 
 export interface FeatureDef {
@@ -48,6 +48,9 @@ export const FEATURES = [
   { id: 'lots', area: 'Grow', minLevel: 4, needsHousehold: false, holdsData: 'holdingLots', glyph: 'acctPension' },
   { id: 'growthIllustration', area: 'Grow', minLevel: 3, needsHousehold: false, holdsData: null, glyph: 'stateUp' },
   { id: 'calculators', area: 'Grow', minLevel: 3, needsHousehold: false, holdsData: null, glyph: 'view' },
+  { id: 'insights', area: 'Insight', minLevel: 2, needsHousehold: false, holdsData: null, glyph: 'categories' }, // 07-05 (D-16)
+  { id: 'netWorthTrend', area: 'Insight', minLevel: 3, needsHousehold: false, holdsData: null, glyph: 'history' }, // 07-05 (D-16)
+  { id: 'healthScore', area: 'Insight', minLevel: 3, needsHousehold: false, holdsData: null, glyph: 'health' }, // 07-05 (D-16)
   { id: 'import', area: 'System', minLevel: 3, needsHousehold: false, holdsData: 'importedLines', glyph: 'import' },
   { id: 'pdfImport', area: 'System', minLevel: 3, needsHousehold: false, holdsData: null, glyph: 'download' },
   { id: 'undoHistory', area: 'System', minLevel: 4, needsHousehold: false, holdsData: null, glyph: 'somethingChanged' },

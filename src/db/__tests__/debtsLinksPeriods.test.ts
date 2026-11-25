@@ -109,9 +109,9 @@ describe('debts', () => {
     }
   });
 
-  it('paid_off_on is patchable but not insertable (column update grant only)', async () => {
+  it('paid_off_on is patchable, and insertable since 261123 (DD-04: a debt already paid off can be added)', async () => {
     expect(DEBT_PATCH_KEYS).toContain('paid_off_on');
-    expect(DEBT_INSERT_KEYS).not.toContain('paid_off_on');
+    expect(DEBT_INSERT_KEYS).toContain('paid_off_on');
     const client = createFakeSupabase();
     client.respondWith({ data: [debtRow({ version: 2 })], error: null, status: 200 });
     await updateDebt(client, 'd1', 1, { paid_off_on: '2026-10-01' });

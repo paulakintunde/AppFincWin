@@ -2,7 +2,7 @@
 // rule, and the "about" rounding. Whole-number rounding, half up, integers only (no floats for money).
 import { currencyExponent, minorUnits } from '@/engine/money';
 import { estimatedCardMinimum, percent, strategy, ZERO_PERCENT, type PayoffOrder, type PlanDebt } from '@/engine/payoff';
-import { dueDateOf } from '../connect/debtPoint';
+import { dueDateOf, rateForMathsOf } from '../connect/debtPoint';
 import type { DebtLine } from './useDebtsRead';
 
 export interface DebtLineModel {
@@ -48,7 +48,8 @@ export function soonerSpan(months: number): { years: number; months: number } {
 export function firstClearedDate(lines: readonly DebtLine[], extra: number, order: PayoffOrder, today: string): string | null {
   const inPlan = lines.filter((l) => l.inPlan);
   if (inPlan.length < 2) return null;
-  const debts: PlanDebt[] = inPlan.map((l) => ({ id: l.id, balance: l.point.balance, apr: l.point.apr ?? ZERO_PERCENT, minimum: l.point.minimum }));
+  // 261123 (DD-01): an unknown rate runs without interest; the plan card names those debts (rateUnknownInPlan).
+  const debts: PlanDebt[] = inPlan.map((l) => ({ id: l.id, balance: l.point.balance, apr: rateForMathsOf(l), minimum: l.point.minimum }));
   const result = strategy(debts, minorUnits(extra), order);
   let first: { id: string; month: number } | null = null;
   for (const d of result.debts) {

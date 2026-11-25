@@ -49,6 +49,9 @@ Columns: feature id, area, label, one-line sub, level it appears at, needs a hou
 | lots | Grow | Cost basis and lots | Every buy, sale, dividend and fee, with gain and loss | 4 | no | exists holding_lots row not deleted | investments answer is lots: on | src/db/holdingLots.ts |
 | growthIllustration | Grow | Growth illustration | See what a saving or holding could grow to | 3 | no | none | none | app/(app)/grow/calculators/illustration.tsx |
 | calculators | Grow | Calculators | Loan, savings, payoff and growth maths | 3 | no | none | none | app/(app)/grow/calculators/index.tsx |
+| insights | Insight | Insights | Money in and out, spending by category, and month against month | 2 | no | none | none | src/features/insights/InsightsScreen.tsx |
+| netWorthTrend | Insight | Net worth over time | Your net worth month by month, from your records | 3 | no | none | none | src/features/insights/sections/NetWorthSection.tsx |
+| healthScore | Insight | Score | One number for this month, from the figures Decide reads | 3 | no | none | none | src/features/insights/sections/ScoreCard.tsx |
 | import | System | Import and paste | Bring in a list or a statement | 3 | no | exists import profile or imported line | none | src/features/record/import/PasteSheet.tsx |
 | pdfImport | System | Read a PDF statement | Bring in a statement from a PDF | 3 | no | none | none | src/services/statementPdf/readPdf.ts |
 | undoHistory | System | Undo history | Roll back one of your recent changes | 4 | no | none | none | src/data/mutations/undo.ts |
@@ -68,12 +71,12 @@ How the level is worked out (prototype `levelFor`, with tax removed): "Keep trac
 
 ## 3. Counts (the Features screen reads these)
 
-33 features are listed. A level turns on every feature at that level or below.
+36 features are listed. A level turns on every feature at that level or below.
 
-- Basics: 5 of 33 on
-- Everyday: 19 of 33 on
-- Full picture: 29 of 33 on
-- Everything: 33 of 33 on
+- Basics: 5 of 36 on
+- Everyday: 20 of 36 on
+- Full picture: 32 of 36 on
+- Everything: 36 of 36 on
 
 The five household rows count at Everyday. Without a household they show "Not on for your household" and stay off, so a person with no household sees fewer on than the count.
 
@@ -106,16 +109,20 @@ These prototype features have no clear built version. Answer each. A "no" means 
    Owner answer (2026-11-19): Yes. Reconcile stays as one row at Full picture.
 4. Chart modes (bars, share, blocks) on Insights. Only partly there. List them? (yes / no)
    Owner answer (2026-11-19): No.
+   Amended 2026-11-22 (07-CONTEXT D-16): Yes. Built in Phase 7; see the Insight rows in section 2 (chart modes are bars and left-each-month only; Share and Blocks stay out).
 5. Health score, one figure for the month. Not found. List it? (yes / no)
    Owner answer (2026-11-19): No.
+   Amended 2026-11-22 (07-CONTEXT D-16): Yes. Built in Phase 7; see the Insight rows in section 2.
 6. Envelope rollover, unspent money carried to next month. Not found. List it? (yes / no)
    Owner answer (2026-11-19): No.
 7. Forecast, where the month ends if nothing changes. Decide owns this. Leave it out of Features? (yes / no)
    Owner answer (2026-11-19): Yes. Forecast stays in Decide, not a Features row.
 8. Compare months. Not found. List it? (yes / no)
    Owner answer (2026-11-19): No.
+   Amended 2026-11-22 (07-CONTEXT D-16): Yes. Built in Phase 7; see the Insight rows in section 2.
 9. Cash flow by month. Not found. List it? (yes / no)
    Owner answer (2026-11-19): No.
+   Amended 2026-11-22 (07-CONTEXT D-16): Yes. Built in Phase 7; see the Insight rows in section 2.
 10. Extra views (by week, running balance, calendar). Not found. List it? (yes / no)
    Owner answer (2026-11-19): No.
 11. Year calendar. Not found. List it? (yes / no)

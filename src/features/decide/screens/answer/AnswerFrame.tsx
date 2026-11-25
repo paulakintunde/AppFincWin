@@ -115,6 +115,11 @@ export interface AnswerFrameProps {
   answeredRows?: ReadonlySet<string>;
   /** 09-24 (UI-SPEC 4): content above the notices and verdict (the sample look-around's SampleAnswerIntro). Absent = none. */
   intro?: React.ReactNode;
+  /**
+   * 09-UI-SPEC 4 / quick 261124-2bs: the pre-trial look-around. The top bar shows the first-read stage word, the basis line is
+   * 'Based on sample figures', and the StageLine import link is hidden (import is a write; the Sample bar is the way in).
+   */
+  sample?: boolean;
 }
 
 const NO_ROWS: readonly ReadinessFixRow[] = [];
@@ -179,6 +184,7 @@ export function AnswerFrame({
   answeredRows,
   householdNote,
   intro,
+  sample = false,
 }: AnswerFrameProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -198,7 +204,7 @@ export function AnswerFrame({
     when: check.when,
     dateText: check.dateText ?? null,
     paydayText: check.paydayText ?? null,
-    stage: reading?.stage ?? null,
+    stage: sample ? 'first_read' : (reading?.stage ?? null),
     scopeLabel: check.scopeLabel ?? null,
     onBack: () => onAction({ kind: 'back' }),
     onNewCheck: () => onAction({ kind: 'newCheck' }),
@@ -305,9 +311,9 @@ export function AnswerFrame({
         ) : null}
         {householdNote}
         <LegalBlock
-          basis={lines.basis}
+          basis={sample ? { key: 'onboarding.sample.basis', text: t('onboarding.sample.basis'), code: 'sample_basis' } : lines.basis}
           payWindow={lines.payWindow}
-          stageLine={reading !== null ? <StageLine reading={reading} onImport={onImport} /> : null}
+          stageLine={reading !== null && !sample ? <StageLine reading={reading} onImport={onImport} /> : null}
           caveat={lines.caveat} caveatFigures={lines.caveatFigures}
           onCantSee={onCantSee}
         />

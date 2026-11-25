@@ -64,6 +64,7 @@ jest.mock('@/features/onboarding/useFirstRunPending', () => ({ useFirstRunPendin
 jest.mock('@/features/record/useRecordContext', () => ({ useRecordContext: () => mockUseStore(() => mockStore.rc) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => mockUseStore(() => mockStore.accounts) }));
 jest.mock('@/data/queries/decideV3', () => ({ DecideV3Scope: ({ children }: { children: unknown }) => children }));
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: true }) })); // 07-11: GatedTabBar
 jest.mock('@/features/record/history/UndoToastHost', () => ({ UndoToastHost: () => null, SheetToastOverlay: () => null }));
 jest.mock('@/features/record/entry/ShellEntryHost', () => ({ ShellEntryHost: () => null }));
 jest.mock('@/features/decide/DecideShellHost', () => ({ DecideShellHost: () => null }));
@@ -114,6 +115,7 @@ async function mountAt(url: string) {
       '(app)/(tabs)/activity': leaf('activity-root'),
       '(app)/(tabs)/decide': counted('decide'),
       '(app)/(tabs)/grow': leaf('grow-root'),
+      '(app)/(tabs)/insights': leaf('insights-root'),
       '(app)/setup/account': leaf('setup-account'),
       '(app)/you': leaf('you-root'),
       '(app)/consent': leaf('consent-root'),
