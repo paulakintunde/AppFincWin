@@ -27,6 +27,7 @@ import type {
   FxLatestRow,
   NewTransaction,
   PaymentType,
+  StoredPart,
   TransactionPatch,
   TransactionRow,
   TransactionStatus,
@@ -220,6 +221,7 @@ export function registerTransactionMutations(qc: QueryClient): void {
         // (recurring_series_id, occurrence_date, updated_by) start null on an optimistic row.
         name: vars.row.name ?? null,
         category_id: vars.row.category_id ?? null,
+        category_parts: vars.row.category_parts ?? null, // 10.1-24: a scanned line shows its parts at once
         payment_type: vars.row.payment_type ?? null,
         status: vars.row.status ?? 'paid', // D-01: hand-entered rows default to paid
         deleted_at: null,
@@ -491,6 +493,8 @@ export interface AddTransactionInput {
   isAutomatic?: boolean;
   /** 05-34 (D-29): Record's "One-off, won't recur"; left out of Decide's averages. */
   isOneOff?: boolean;
+  /** 10.1-24 (D-13): a scanned line is inserted with its category parts (insert-only; later edits go through set_category_parts). */
+  categoryParts?: StoredPart[] | null;
   undo?: Omit<UndoCapture, 'ownerId'>;
 }
 
@@ -524,6 +528,7 @@ export function useAddTransaction(): { add(input: AddTransactionInput): string }
         ...(input.isRefund === undefined ? {} : { is_refund: input.isRefund }),
         ...(input.isAutomatic === undefined ? {} : { is_automatic: input.isAutomatic }),
         ...(input.isOneOff === undefined ? {} : { one_off: input.isOneOff }),
+        ...(input.categoryParts ? { category_parts: input.categoryParts } : {}),
       };
 
       mutation.mutate({

@@ -40,11 +40,21 @@ export const scan = {
     stop: 'Stop reading',
     discardTitle: 'Discard this receipt?',
     keepEditing: 'Keep editing',
+    // 10.1-24: the line's name when no store was read; a missing header value; the discount word on an extra row.
+    defaultName: 'Receipt',
+    notRead: 'Not read',
+    discount: 'Discount',
   },
   item: {
     chooseCategory: 'Choose a category',
     likelyCategory: 'Likely category',
     remove: 'Remove {{name}}',
+    // 10.1-24: the item row's fields and its spoken summary (UI-SPEC Accessibility).
+    name: 'Item name',
+    price: 'Price of {{name}}',
+    unnamed: 'Unnamed item',
+    done: 'Done',
+    a11y: '{{name}}, {{amount}}, {{category}}',
   },
   byItem: {
     toggle: 'Split items between people',
