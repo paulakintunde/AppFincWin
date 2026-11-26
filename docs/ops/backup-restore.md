@@ -38,6 +38,7 @@ Run once by hand (plan 10-29), then after any change to the dump flags. Uses the
 3. In a clean checkout run `npx supabase db start` (local stack, migrations from git applied).
 4. Load the data as `scripts/ops/backup/restore-check.sh` does: in one transaction set `session_replication_role = replica`, truncate the `public`, `auth` and `storage` tables, run `data.sql`, commit.
 5. Run `scripts/ops/backup/apply-deletion-log.sql` (triggers on). Never skip this (D-19).
+5a. Receipts (10.1 D-23): run production-restore step 5 (delete the `receipts` storage rows, then `select public.prune_receipt_rows_without_objects();`). The local stack holds no receipt files, so the returned count should equal `transaction_receipts` in `counts.json`, and `transaction_receipts` then counts 0. Step 6 compares the other tables.
 6. Run `scripts/ops/backup/counts.sql` and compare with `counts.json`. Tables may only be lower where a logged deletion cascaded.
 7. Spot-check three figures by hand (for example one account balance, one goal, one month total) against the app.
 8. Confirm the server major with `select version()` on production and record it; the CLI's dump image must match.
@@ -55,9 +56,14 @@ Only after a real loss. Backups are never edited in place; the restore is a copy
 2. Apply migrations from git (`npm run supabase:db:push`, which runs the preflight).
 3. Decrypt the chosen backup (see rehearsal steps 1 and 2) and load `data.sql` as in rehearsal step 4, against the new project's database URL.
 4. Run `scripts/ops/backup/apply-deletion-log.sql` against it **before re-opening the app**. Deleted people must not come back (D-19).
-5. Re-create the Vault secrets `alerts_deliver_url` and `alerts_deliver_secret`, and the function secrets (`EXPO_ACCESS_TOKEN`, `ALERTS_DELIVER_SECRET`, and the rest of the owner-setup list).
-6. Re-enable the auth providers and the `before_user_created` hook. Cron jobs come back with the migrations.
-7. Point the app's `SUPABASE_URL` and publishable key at the new project (OTA or rebuild), and refresh the GitHub secrets `SUPABASE_DB_URL_POOLER`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+5. **Receipt files are not in the backup (10.1 D-23).** The dump holds the database only. `data.sql` brings back the `storage.objects` rows of the private `receipts` bucket (file metadata), but not the files, so in a new project those rows point at nothing. Connected as `postgres` (service role), in one transaction:
+    1. `set local session_replication_role = replica;` then `delete from storage.objects where bucket_id = 'receipts';` (no receipt file exists in a new project). If the old project's storage survived (reset in place), open a few receipt paths with the Storage API first, and skip this delete when they open.
+    2. `select public.prune_receipt_rows_without_objects();` It deletes every `transaction_receipts` row whose file is gone and returns the count; record it. The trigger adds those paths to `receipt_purge_queue`, which is harmless (the purge job finds nothing to delete).
+
+    Lines come back without their receipts; their parts, categories and splits stay. Until the prune runs, the app shows "This file did not open." for a missing file. The privacy policy says a restore brings lines back without their receipt files.
+6. Re-create the Vault secrets `alerts_deliver_url` and `alerts_deliver_secret`, and the function secrets (`EXPO_ACCESS_TOKEN`, `ALERTS_DELIVER_SECRET`, and the rest of the owner-setup list).
+7. Re-enable the auth providers and the `before_user_created` hook. Cron jobs come back with the migrations.
+8. Point the app's `SUPABASE_URL` and publishable key at the new project (OTA or rebuild), and refresh the GitHub secrets `SUPABASE_DB_URL_POOLER`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 
 ## Residual gap
 
