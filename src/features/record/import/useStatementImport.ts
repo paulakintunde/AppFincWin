@@ -1411,9 +1411,13 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     [walletPlanBase]
   );
   const walletLookupRef = useRef({ all: lookup.all, builtinIds: lookup.builtinIds, t });
-  walletLookupRef.current = { all: lookup.all, builtinIds: lookup.builtinIds, t };
   const walletAccountsRef = useRef<ReadonlyMap<string, string>>(new Map());
-  walletAccountsRef.current = new Map((walletPlanBase?.targets ?? []).flatMap((x) => (x.accountId === null ? [] : [[x.currency, x.accountId] as const])));
+  // Refs are refreshed in an effect (not during render). Declared before the marks effect below, so in the
+  // same commit it runs first and the marks effect reads this render's values.
+  useEffect(() => {
+    walletLookupRef.current = { all: lookup.all, builtinIds: lookup.builtinIds, t };
+    walletAccountsRef.current = new Map((walletPlanBase?.targets ?? []).flatMap((x) => (x.accountId === null ? [] : [[x.currency, x.accountId] as const])));
+  });
   const [walletMarksState, setWalletMarksState] = useState<{ key: string | null; marks: WalletMarks }>({ key: null, marks: NO_WALLET_MARKS });
   const walletMarksReady = walletTargetKey !== null && walletMarksState.key === walletTargetKey;
   const walletMarksNow = walletMarksReady ? walletMarksState.marks : NO_WALLET_MARKS;
