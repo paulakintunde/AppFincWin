@@ -1,5 +1,5 @@
 // 10.1-27 (SCN-06; D-14; UI-SPEC 6): who shares one receipt item. One chip per household member: the avatar (28) and the name,
-// a 44-tall touch target, wrapping onto more lines at large font sizes. A selected chip carries the accent border AND the checkIt
+// a 44-tall touch target, wrapping onto more lines at large font sizes. A selected chip carries the accent border AND the tick
 // glyph (never colour alone); an unselected chip has the line2 border. Each chip is a checkbox with its state; the last person
 // on an item cannot be taken off (the model refuses it), so that chip is announced as disabled.
 import React from 'react';

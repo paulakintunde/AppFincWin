@@ -13,6 +13,7 @@ import {
   type ItemSplitItem,
 } from '@/db/itemSplit';
 import type { TransactionRow } from '@/db/rows';
+import type { SplitRule } from '@/db/transactionSplits';
 import type { Part } from '@/engine/parts';
 import { primaryCategory } from '@/engine/parts';
 import { mutationKeys, queryKeys, WRITE_SCOPE } from '@/data/keys';
@@ -147,4 +148,50 @@ export function useRestoreLineSplit() {
     mutationKey: mutationKeys.restoreLineSplit,
     scope: WRITE_SCOPE,
   });
+}
+
+/**
+ * 10.1-27 (D-17): the before-state this phone's own split by item got back from the server, when the line has not changed since
+ * (the result's version is the line's version now). Undo then puts the split, parts, category and item list back exactly.
+ */
+export function latestItemSplitBefore(qc: QueryClient, lineId: string, lineVersion: number): ItemSplitBefore | null {
+  const mine = qc
+    .getMutationCache()
+    .findAll({ mutationKey: mutationKeys.setSplitByItem, status: 'success' })
+    .filter((m) => (m.state.variables as SetSplitByItemVars | undefined)?.id === lineId)
+    .sort((a, b) => a.state.submittedAt - b.state.submittedAt);
+  const data = mine.at(-1)?.state.data as SetSplitByItemResult | undefined;
+  return data && data.version === lineVersion ? data.before : null;
+}
+
+const RULES: readonly SplitRule[] = ['even', 'weight', 'amount', 'mine'];
+
+/**
+ * 10.1-27 (D-17): Undo from the household event alone (someone else's phone). The event carries the split before the change
+ * (rule, participants, shares); the line keeps the parts and category it has now, and the item list is cleared, since the
+ * split no longer follows the items. Null when the event's before-state is not usable.
+ */
+export function itemSplitBeforeFromEvent(
+  raw: unknown,
+  line: Pick<TransactionRow, 'category_parts' | 'category_id'>
+): ItemSplitBefore | null {
+  if (raw === null || typeof raw !== 'object') return null;
+  const b = raw as { rule?: unknown; participants?: unknown; shares?: unknown };
+  const rule = RULES.find((r) => r === b.rule) ?? null;
+  if (rule === null || !Array.isArray(b.participants) || b.participants.length === 0) return null;
+  if (!b.participants.every((p) => typeof p === 'string')) return null;
+  if (b.shares === null || typeof b.shares !== 'object') return null;
+  const shares: Record<string, number> = {};
+  for (const [k, v] of Object.entries(b.shares as Record<string, unknown>)) {
+    if (typeof v !== 'number' || !Number.isInteger(v)) return null;
+    shares[k] = v;
+  }
+  return {
+    split: { rule, participants: [...(b.participants as string[])], shares },
+    rule,
+    manual: rule === 'amount',
+    parts: line.category_parts ?? null,
+    category_id: line.category_id ?? null,
+    item_split: null,
+  };
 }

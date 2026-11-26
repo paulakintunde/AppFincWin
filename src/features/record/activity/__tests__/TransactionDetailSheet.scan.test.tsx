@@ -17,7 +17,15 @@ jest.setTimeout(30000);
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 let mockReceiptsOn = true;
-jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: (id: string) => ({ visible: id === 'receipts' && mockReceiptsOn }) }));
+let mockItemSplitOn = false;
+jest.mock('@/features/levels/useFeatureAccess', () => ({
+  useFeatureAccess: (id: string) => ({ visible: (id === 'receipts' && mockReceiptsOn) || (id === 'hh.itemSplit' && mockItemSplitOn) }),
+}));
+// 10.1-27: a shared line's own detail block is not under test here.
+jest.mock('@/features/household/sharing/SharedLineDetail', () => ({
+  SharedLineDetail: () => null,
+  SharedActionGate: ({ children }: { children: React.ReactNode }) => children,
+}));
 jest.mock('@/features/record/split/CategorySplitSheet', () => ({ CategorySplitSheet: () => null }));
 jest.mock('@/features/record/receipt/useReceiptActions', () => ({
   useReceiptActions: () => ({
@@ -59,9 +67,11 @@ type Copies = { images: Img[]; temps: string[] };
 let mockCopies: Copies;
 const mockCopiesFor = jest.fn(async (_i: Img[]) => mockCopies);
 const mockDiscard = jest.fn();
+const mockReadingPages = jest.fn(async () => PAGES);
 jest.mock('@/features/record/receipt/scanFiles', () => ({
   copiesForReading: (i: Img[]) => mockCopiesFor(i),
   discardFiles: (u: string[]) => mockDiscard(u),
+  readingPages: () => mockReadingPages(),
 }));
 type ScanProps = { visible: boolean; mode: string; line?: { id: string }; householdId: string; images: Img[]; onClose(): void; onDone(id: string): void };
 const mockScan = jest.fn();
@@ -148,6 +158,7 @@ async function openAndRead() {
 beforeEach(() => {
   jest.clearAllMocks();
   mockReceiptsOn = true;
+  mockItemSplitOn = false;
   mockCopies = {
     images: [
       { uri: 'file:///cache/receipt-view/read-1.jpg', mime: 'image/jpeg' },
@@ -206,5 +217,56 @@ describe('TransactionDetailSheet: Read this receipt (10.1-25)', () => {
     const screen = await renderSheet();
     expect(screen.queryByLabelText(/^Receipt,/)).toBeNull();
     expect(scan()?.visible ?? false).toBe(false);
+  });
+});
+
+// 10.1-27 (D-14; T-10.1-27-02): "Split by item" on a shared line with a receipt.
+describe('TransactionDetailSheet: Split by item (10.1-27)', () => {
+  const saved = {
+    store: 'Corner Market',
+    date: '2026-09-20',
+    items: [{ name: 'Oat milk', price: 5000, discount: 0, c: 'c1', people: ['u1'] }],
+    extras: { tax: 0, tip: 0, discounts: 0 },
+    by: 'u1',
+    at: '2026-09-21T10:00:00Z',
+  };
+
+  it('reopens the saved items without reading', async () => {
+    mockItemSplitOn = true;
+    const screen = await renderSheet(tx({ is_shared: true, item_split: saved } as Partial<ActivityRowView>));
+    await fireEvent.press(screen.getByLabelText('Split by item'));
+    expect(scan()?.visible).toBe(true);
+    expect(scan()?.mode).toBe('existing');
+    expect((scan() as ScanProps & { prefill: unknown }).prefill).toEqual(saved);
+    expect(scan()?.images).toEqual([]);
+    expect(mockReadingPages).not.toHaveBeenCalled();
+    await act(async () => scan()!.onClose());
+    expect(scan()?.visible ?? false).toBe(false);
+  });
+
+  it('reads the receipt when no items were saved yet', async () => {
+    mockItemSplitOn = true;
+    const screen = await renderSheet(tx({ is_shared: true, item_split: null } as Partial<ActivityRowView>));
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText('Split by item'));
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(mockReadingPages).toHaveBeenCalled();
+    expect(mockCopiesFor).toHaveBeenCalledWith(PAGES);
+    expect(scan()?.visible).toBe(true);
+    expect(scan()?.images).toEqual(mockCopies.images);
+    expect((scan() as ScanProps & { prefill: unknown }).prefill).toBeNull();
+  });
+
+  it('has no Split by item row on a private line or with the feature off', async () => {
+    mockItemSplitOn = true;
+    const priv = await renderSheet(tx({ item_split: null } as Partial<ActivityRowView>));
+    expect(priv.queryByLabelText('Split by item')).toBeNull();
+    priv.unmount();
+    mockItemSplitOn = false;
+    const off = await renderSheet(tx({ is_shared: true } as Partial<ActivityRowView>));
+    expect(off.queryByLabelText('Split by item')).toBeNull();
   });
 });

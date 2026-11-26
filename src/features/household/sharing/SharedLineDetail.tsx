@@ -1,17 +1,26 @@
 // 08-19 (HH-04, D-14, D-15, D-18; UI-SPEC 4d): what the line detail adds for a shared line. Who is on it, who logged it, who
 // paid, the split (editable by any member while no settle-up covers the line), the viewer's own category, the change history,
 // and the stale-write card. Amount, date and note stay read-only unless the viewer logged the line or paid for it.
+// 10.1-27 (D-17, T-10.1-27-01): a split by item (split_changed with params.by_item) shows as a notice card everyone on the line
+// sees: "{name} split this line by item", each person's share before and after, and Undo (through restore_line_split) for
+// anyone who can still change the split; after Undo the card reads "{name} undid the split".
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { Text } from '@/ui/Text';
+import { ChangeRows, type ChangeRow } from '@/ui/ChangeRows';
+import { Glyph } from '@/ui/icons/Glyph';
+import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
 import { StatusBadge } from '@/ui/status/StatusBadge';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
-import { rowHeight, step } from '@/theme/layout';
+import { radii, rowHeight, space, step } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { useCategoryLookup } from '@/data/queries/categories';
 import { useHouseholdEvents } from '@/data/queries/household';
 import { useSetLineSplit, useSetMyLineCategory, splitUndoVars } from '@/data/mutations/householdSharing';
+import { itemSplitBeforeFromEvent, latestItemSplitBefore, useRestoreLineSplit } from '@/data/mutations/itemSplit';
+import type { HouseholdEventRow } from '@/db/householdEvents';
 import { fetchMyLineCategories } from '@/db/transactionSplits';
 import type { TransactionRow } from '@/db/rows';
 import { categoryName } from '@/features/record/categoryName';
@@ -92,6 +101,10 @@ export function SharedLineDetail({ row, onMakeChangeAgain }: SharedLineDetailPro
   const categories = useCategoryLookup(userId ?? undefined);
   const setSplit = useSetLineSplit();
   const setMyCategory = useSetMyLineCategory();
+  const restore = useRestoreLineSplit();
+  const qc = useQueryClient();
+  // Event shares are in the household currency (transaction_splits.share).
+  const shareMoney = useSharingMoney(row.household_currency ?? row.original_currency);
   const events = useHouseholdEvents(householdId, userId ?? undefined).events;
   const noticeFormat = useNoticeFormat(householdId, scope.name);
   const [splitOpen, setSplitOpen] = useState(false);
@@ -160,6 +173,13 @@ export function SharedLineDetail({ row, onMakeChangeAgain }: SharedLineDetailPro
 
   const undoFor = (e: (typeof lineEvents)[number]): (() => void) | undefined => {
     if (e.kind !== 'split_changed' || e.id !== latestSplitEventId || rights.cover !== null || householdId === null) return undefined;
+    if (e.params.by_item === true) {
+      // An Undo is not undone again from here (the notice then reads "undid the split").
+      if (e.params.undo === true) return undefined;
+      const before = latestItemSplitBefore(qc, row.id, row.version) ?? itemSplitBeforeFromEvent(e.params.before, row);
+      if (before === null) return undefined;
+      return () => restore.mutate({ householdId, month, id: row.id, expectedVersion: row.version, before });
+    }
     const before = e.params.before as { rule?: SplitRuleKey; participants?: string[]; shares?: Record<string, number> } | undefined;
     if (!before?.rule || !before.participants || before.participants.length === 0) return undefined;
     return () =>
@@ -241,16 +261,26 @@ export function SharedLineDetail({ row, onMakeChangeAgain }: SharedLineDetailPro
           <Text accessibilityRole="header" style={meta}>
             {t('household.sharing.changes')}
           </Text>
-          {lineEvents.map((e) => (
-            <ChangeLine
-              key={e.id}
-              householdId={householdId}
-              actorId={e.actor_id}
-              text={noticeFormat.text(e)}
-              at={noticeFormat.when(e.created_at)}
-              onUndo={undoFor(e)}
-            />
-          ))}
+          {lineEvents.map((e) =>
+            e.kind === 'split_changed' && e.params.by_item === true ? (
+              <ByItemNotice
+                key={e.id}
+                text={t(e.params.undo === true ? 'scan.byItem.undone' : 'scan.byItem.changed', { name: label(e.actor_id) })}
+                at={noticeFormat.when(e.created_at)}
+                rows={e.params.undo === true ? [] : shareChanges(e, label, shareMoney)}
+                onUndo={undoFor(e)}
+              />
+            ) : (
+              <ChangeLine
+                key={e.id}
+                householdId={householdId}
+                actorId={e.actor_id}
+                text={noticeFormat.text(e)}
+                at={noticeFormat.when(e.created_at)}
+                onUndo={undoFor(e)}
+              />
+            ),
+          )}
         </View>
       ) : null}
 
@@ -282,8 +312,59 @@ export function SharedLineDetail({ row, onMakeChangeAgain }: SharedLineDetailPro
   );
 }
 
+/** Each person's share before and after a split by item ("Alex $30.00 -> $24.50"), people on either side, after-order first. */
+function shareChanges(e: HouseholdEventRow, label: (id: string | null) => string, money: (minor: number) => string): ChangeRow[] {
+  const side = (raw: unknown): { participants: string[]; shares: Record<string, number> } => {
+    const o = (raw ?? {}) as { participants?: unknown; shares?: unknown };
+    const participants = Array.isArray(o.participants) ? o.participants.filter((p): p is string => typeof p === 'string') : [];
+    const shares: Record<string, number> = {};
+    if (o.shares && typeof o.shares === 'object') {
+      for (const [k, v] of Object.entries(o.shares as Record<string, unknown>)) if (typeof v === 'number') shares[k] = Math.abs(v);
+    }
+    return { participants, shares };
+  };
+  const before = side(e.params.before);
+  const after = side(e.params.after);
+  const ids = [...new Set([...after.participants, ...Object.keys(after.shares), ...before.participants, ...Object.keys(before.shares)])];
+  return ids.map((id) => ({ key: id, label: label(id), before: money(before.shares[id] ?? 0), after: money(after.shares[id] ?? 0) }));
+}
+
+/** D-17: the who-changed notice for a split by item (somethingChanged glyph, the sentence, the time, the before/after rows). */
+function ByItemNotice({ text, at, rows, onUndo }: { text: string; at: string; rows: ChangeRow[]; onUndo?: () => void }) {
+  const t = useT();
+  const { colors, pairing } = useTheme();
+  return (
+    <View style={[styles.notice, { backgroundColor: colors.fill1 }]} testID="byitem-notice">
+      <View style={styles.noticeHead}>
+        <Glyph name="somethingChanged" size={20} color={colors.ink} />
+        <View style={styles.noticeText} accessible accessibilityLabel={`${text}, ${at}`}>
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.ink }}>{text}</Text>
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{at}</Text>
+        </View>
+        {onUndo ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${t('scan.byItem.undo')}: ${text}`}
+            hitSlop={LINK_HIT_SLOP}
+            onPress={onUndo}
+            style={styles.undo}
+            testID="byitem-undo"
+          >
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('scan.byItem.undo')}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+      {rows.length > 0 ? <ChangeRows rows={rows} /> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   column: { gap: step.tight },
+  notice: { borderRadius: radii.card, padding: step.row, gap: step.hair, marginVertical: step.hair },
+  noticeHead: { flexDirection: 'row', alignItems: 'center', gap: step.row },
+  noticeText: { flex: 1, flexShrink: 1, gap: 2 },
+  undo: { minHeight: space.touchMin, minWidth: space.touchMin, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: step.row },
   avatars: { flexDirection: 'row', gap: step.hair },
 });

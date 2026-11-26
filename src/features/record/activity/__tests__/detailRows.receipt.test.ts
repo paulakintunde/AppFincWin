@@ -44,3 +44,25 @@ describe('detailRowsFor Receipt row', () => {
     expect(t('receipt.row.label')).toBe('Receipt');
   });
 });
+
+// 10.1-27 (D-14; T-10.1-27-02): "Split by item" on a shared line with a receipt, only with household split by item on.
+describe('detailRowsFor Split by item row', () => {
+  const shared = { ...row, is_shared: true } as TransactionRow;
+  const byItem = (over: Partial<Parameters<typeof detailRowsFor>[0]>) =>
+    detailRowsFor({ ...base, row: shared, receiptState: { count: 1, waiting: false }, itemSplitOn: true, ...over }).find((r) => r.key === 'byItem');
+
+  it('sits right after the Receipt row on a shared line with a receipt', () => {
+    const rows = detailRowsFor({ ...base, row: shared, receiptState: { count: 2, waiting: false }, itemSplitOn: true });
+    const at = rows.findIndex((r) => r.key === 'receipt');
+    expect(rows[at + 1]).toEqual({ key: 'byItem', labelKey: 'scan.byItem.row', value: null, action: 'byItem' });
+    expect(t('scan.byItem.row')).toBe('Split by item');
+  });
+
+  it('does not exist on a private line, without a receipt, with the feature off or with receipts off', () => {
+    expect(byItem({ row })).toBeUndefined();
+    expect(byItem({ receiptState: { count: 0, waiting: false } })).toBeUndefined();
+    expect(byItem({ itemSplitOn: false })).toBeUndefined();
+    expect(byItem({ itemSplitOn: undefined })).toBeUndefined();
+    expect(byItem({ receiptState: null })).toBeUndefined();
+  });
+});

@@ -19,7 +19,7 @@ import { ReceiptSheet } from '@/features/record/receipt/ReceiptSheet';
 import { ReceiptStrip } from '@/features/record/receipt/ReceiptStrip';
 import { ReceiptViewer } from '@/features/record/receipt/ReceiptViewer';
 import { ScanSheet } from '@/features/record/receipt/ScanSheet';
-import { copiesForReading, discardFiles, type ReadingImage } from '@/features/record/receipt/scanFiles';
+import { copiesForReading, discardFiles, readingPages, type ReadingImage } from '@/features/record/receipt/scanFiles';
 import { useReceiptActions, type ReceiptActions } from '@/features/record/receipt/useReceiptActions';
 import { WarningCard } from '@/ui/WarningCard';
 import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
@@ -29,7 +29,7 @@ import { categoryName } from '@/features/record/categoryName';
 import { useWriteGate } from '@/features/plans/useWriteGate';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { useRecordContext } from '@/features/record/useRecordContext';
-import type { TransactionRow } from '@/db/rows';
+import type { StoredItemSplit, TransactionRow } from '@/db/rows';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
@@ -124,6 +124,9 @@ function DetailBody({
   const linkedFees = useLinkedFees(ctx.householdId, row);
   const { v3 } = useDecideAccess();
   const splitOn = useFeatureAccess('splitLine').visible;
+  // 10.1-27 (D-14): "Split by item" on a shared line with a receipt (household split by item and receipts both on).
+  const itemSplitOn = useFeatureAccess('hh.itemSplit').visible;
+  const [prefill, setPrefill] = useState<StoredItemSplit | null>(null);
   // 10.1-20: the Categories row expands in place; the split sheet opens from Edit split or Place it (highlightGap).
   const [partsOpen, setPartsOpen] = useState(false);
   const [splitSheet, setSplitSheet] = useState<{ highlightGap: boolean } | null>(null);
@@ -162,6 +165,18 @@ function DetailBody({
     discardFiles(readingTemps.current);
     readingTemps.current = [];
     setReading(null);
+    setPrefill(null);
+  };
+  // 10.1-27: the saved items reopen as they were; with none saved yet, the line's receipt is read as "Read this receipt" does.
+  const openByItem = (line: TransactionRow) => {
+    if (line.item_split) {
+      setPrefill(line.item_split);
+      return;
+    }
+    if (receipts === null) return;
+    void readingPages(receipts.groups).then((pages) => {
+      if (alive.current && pages.length > 0) readReceipt(pages);
+    });
   };
 
   if (row === null) return null;
@@ -197,6 +212,7 @@ function DetailBody({
       receipts === null
         ? null
         : { count: receipts.groups.length, waiting: receipts.groups.some((g) => g.state !== 'stored') },
+    itemSplitOn,
     incomeTypeLabel: (row.income_kind ?? seriesRow?.income_kind) ? t(kindNameKey((row.income_kind ?? seriesRow?.income_kind)!)) : null,
     t: (key, params) => String(t(key as never, params as never)),
   });
@@ -363,6 +379,9 @@ function DetailBody({
             </View>
           );
         }
+        if (spec.action === 'byItem' && receipts !== null) {
+          return <LinkRow key={spec.key} label={label} value={null} a11y={label} onPress={() => gate.run(() => openByItem(row))} />;
+        }
         if (spec.action !== undefined && refundCallbacks !== undefined) {
           if (spec.action === 'refundOf') {
             return <RefundOfRow key={spec.key} row={row} formatter={formatter} callbacks={refundCallbacks} label={label} />;
@@ -386,11 +405,12 @@ function DetailBody({
         <>
           <ReceiptSheet visible={receiptSheetOpen} line={row} householdId={ctx.householdId} onClose={() => setReceiptSheetOpen(false)} onRead={readReceipt} />
           <ScanSheet
-            visible={reading !== null}
+            visible={reading !== null || prefill !== null}
             mode="existing"
             line={row}
             householdId={ctx.householdId}
             images={reading ?? []}
+            prefill={reading !== null ? null : prefill}
             onClose={endReading}
             onDone={endReading}
             onRetake={() => {

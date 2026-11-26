@@ -1,7 +1,8 @@
 // 10.1-25 (T-10.1-25-01): the phone copies a scan reads from. Picked files and downloaded copies of stored receipts live in
 // the cache folder only while the scan sheet is open; whoever opened the sheet deletes them when it closes. Files the upload
 // outbox owns are never deleted here. Nothing here logs links, paths or file names.
-import { defaultOpenReceiptDeps, type OpenReceiptDeps } from '@/services/receipts/openReceipt';
+import { defaultOpenReceiptDeps, signedUrlFor, type OpenReceiptDeps } from '@/services/receipts/openReceipt';
+import type { ReceiptGroup } from './receiptGroups';
 import { defaultOutboxDeps } from '@/services/receipts/outbox';
 
 export interface ReadingImage {
@@ -44,4 +45,23 @@ export async function copiesForReading(
     }
   }
   return { images: out, temps };
+}
+
+/**
+ * 10.1-27: the image pages of a line's receipts, as the Receipt sheet's "Read this receipt" hands them over (a page still in the
+ * outbox by its own file, a stored page by a signed link). PDFs are left out; a page with no link is skipped.
+ */
+export async function readingPages(
+  groups: readonly ReceiptGroup[],
+  sign: (objectPath: string) => Promise<string | null> = signedUrlFor,
+): Promise<ReadingImage[]> {
+  const images: ReadingImage[] = [];
+  for (const g of groups) {
+    for (const p of g.pages) {
+      if (!p.mime.startsWith('image/')) continue;
+      const uri = p.localUri ?? (p.objectPath !== null ? await sign(p.objectPath).catch(() => null) : null);
+      if (uri !== null) images.push({ uri, mime: p.mime });
+    }
+  }
+  return images;
 }

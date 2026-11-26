@@ -2,6 +2,7 @@
 // CONTEXT D-01). Rows gated off by level or by unbuilt features (Applies to, Entered as,
 // Tax deductible, household split) are omitted. 10.1-20: the Categories row of a split line exists now; 10.1-23 adds the Receipt row (level 2). "Automatic" is a label only: it never
 // changes the Status value, which always comes from rowTag (T-02.2-21-01).
+// 10.1-27 (D-14, UI-SPEC 6): a shared line with a receipt gains "Split by item" (household split by item and receipts both on).
 import { flowOf, rowTag, type RowTagTone } from '@/engine/activity';
 import type { TransactionRow } from '@/db/rows';
 import type { Part } from '@/engine/parts';
@@ -12,7 +13,7 @@ export interface DetailRowSpec {
   value: string | null;
   tone?: 'ink' | 'accent' | 'danger' | 'inkMuted';
   /** 05.2-33: rows the sheet renders itself (they open another sheet or need linked data). */
-  action?: 'refundOf' | 'incomeType' | 'refundsGroup' | 'parts' | 'receipt';
+  action?: 'refundOf' | 'incomeType' | 'refundsGroup' | 'parts' | 'receipt' | 'byItem';
 }
 
 export interface DetailRowsInput {
@@ -35,6 +36,8 @@ export interface DetailRowsInput {
    * upload. Null when receipts are off (below level 2): no Receipt row.
    */
   receiptState?: { count: number; waiting: boolean } | null;
+  /** 10.1-27: split by item is on for the household (hh.itemSplit visible). The row also needs a shared line and a receipt. */
+  itemSplitOn?: boolean;
   t: (key: string, params?: Record<string, unknown>) => string;
 }
 
@@ -99,6 +102,10 @@ export function detailRowsFor(input: DetailRowsInput): DetailRowSpec[] {
         ? t('receipt.row.none')
         : t('receipt.row.files', { count: receipts.count });
     rows.push({ key: 'receipt', labelKey: 'receipt.row.label', value, action: 'receipt' });
+    // Private lines never get it (T-10.1-27-02).
+    if (input.itemSplitOn === true && row.is_shared === true && receipts.count > 0) {
+      rows.push({ key: 'byItem', labelKey: 'scan.byItem.row', value: null, action: 'byItem' });
+    }
   }
   if (input.decideV3 === true) {
     // flowOf calls a linked refund 'out' (is_refund), so money in is read from the sign: a refund keeps its row.
