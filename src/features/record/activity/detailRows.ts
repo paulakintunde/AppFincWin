@@ -1,6 +1,6 @@
 // Pure row builder for the read-only transaction detail sheet (02.2-UI-SPEC section 5,
 // CONTEXT D-01). Rows gated off by level or by unbuilt features (Applies to, Entered as,
-// Tax deductible, household split) are omitted. 10.1-20: the Categories row of a split line exists now (a Receipt row follows in 10.1-23). "Automatic" is a label only: it never
+// Tax deductible, household split) are omitted. 10.1-20: the Categories row of a split line exists now; 10.1-23 adds the Receipt row (level 2). "Automatic" is a label only: it never
 // changes the Status value, which always comes from rowTag (T-02.2-21-01).
 import { flowOf, rowTag, type RowTagTone } from '@/engine/activity';
 import type { TransactionRow } from '@/db/rows';
@@ -12,7 +12,7 @@ export interface DetailRowSpec {
   value: string | null;
   tone?: 'ink' | 'accent' | 'danger' | 'inkMuted';
   /** 05.2-33: rows the sheet renders itself (they open another sheet or need linked data). */
-  action?: 'refundOf' | 'incomeType' | 'refundsGroup' | 'parts';
+  action?: 'refundOf' | 'incomeType' | 'refundsGroup' | 'parts' | 'receipt';
 }
 
 export interface DetailRowsInput {
@@ -30,6 +30,11 @@ export interface DetailRowsInput {
   /** 10.1-20 (D-05): the line's category parts (null when not split) and whether splits are on (level 3). Off or null: no Categories row. */
   parts?: readonly Part[] | null;
   splitOn?: boolean;
+  /**
+   * 10.1-23 (RCP-01, D-09): how many receipts the line has (stored plus still on the phone) and whether any is still waiting to
+   * upload. Null when receipts are off (below level 2): no Receipt row.
+   */
+  receiptState?: { count: number; waiting: boolean } | null;
   t: (key: string, params?: Record<string, unknown>) => string;
 }
 
@@ -86,6 +91,15 @@ export function detailRowsFor(input: DetailRowsInput): DetailRowSpec[] {
         : t('activity.detail.methodManual'),
   });
   rows.push({ key: 'note', labelKey: 'activity.detail.note', value: row.note });
+  const receipts = input.receiptState ?? null;
+  if (receipts !== null) {
+    const value = receipts.waiting
+      ? t('receipt.row.waiting')
+      : receipts.count === 0
+        ? t('receipt.row.none')
+        : t('receipt.row.files', { count: receipts.count });
+    rows.push({ key: 'receipt', labelKey: 'receipt.row.label', value, action: 'receipt' });
+  }
   if (input.decideV3 === true) {
     // flowOf calls a linked refund 'out' (is_refund), so money in is read from the sign: a refund keeps its row.
     const moneyIn = row.original_amount > 0;

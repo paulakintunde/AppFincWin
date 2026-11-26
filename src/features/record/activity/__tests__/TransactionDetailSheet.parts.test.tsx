@@ -15,7 +15,7 @@ jest.setTimeout(30000);
 jest.mock('@/services/supabase', () => ({ supabase: {} }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: false }) }));
 let mockSplitOn = true;
-jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: mockSplitOn }) }));
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: (id: string) => ({ visible: id === 'splitLine' && mockSplitOn }) })); // 10.1-23: receipts off here
 const mockSplitSheet = jest.fn((_p: unknown) => null);
 jest.mock('@/features/record/split/CategorySplitSheet', () => ({ CategorySplitSheet: (p: unknown) => mockSplitSheet(p) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [{ id: 'a1', name: 'Everyday' }] }) }));

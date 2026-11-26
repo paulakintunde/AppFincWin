@@ -34,7 +34,8 @@ export interface ReceiptActions {
   loading: boolean;
 }
 
-function errorFor(result: Extract<PickResult, { ok: false }>, source: ReceiptAddSource): ReceiptActionError | null {
+/** 10.1-23: shared with the entry sheet's capture choice. Null for a cancelled pick (nothing to say). */
+export function errorFor(result: Extract<PickResult, { ok: false }>, source: ReceiptAddSource): ReceiptActionError | null {
   switch (result.reason) {
     case 'cancelled':
       return null;
@@ -48,6 +49,11 @@ function errorFor(result: Extract<PickResult, { ok: false }>, source: ReceiptAdd
     default:
       return 'failed';
   }
+}
+
+/** 10.1-23: runs one capture (camera, library, file or scan); the files it returns are cache copies the caller owns. */
+export function pickReceipt(source: ReceiptAddSource): Promise<PickResult> {
+  return source === 'file' ? pickFile() : source === 'scan' ? scanDocument() : pickPhoto(source);
 }
 
 export function useReceiptActions(householdId: string, transactionId: string): ReceiptActions {
@@ -74,8 +80,7 @@ export function useReceiptActions(householdId: string, transactionId: string): R
       }
       setBusy(true);
       try {
-        const picked =
-          source === 'file' ? await pickFile() : source === 'scan' ? await scanDocument() : await pickPhoto(source);
+        const picked = await pickReceipt(source);
         if (!picked.ok) {
           setError(errorFor(picked, source));
           return;

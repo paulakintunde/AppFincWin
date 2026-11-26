@@ -3,7 +3,8 @@
 // step, then shows the Undo toast tied to that step (D-31). Form rules live in
 // transactionForm.ts (pure). Copy is declarative, never advice.
 import * as Crypto from 'expo-crypto';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { QueryClientContext } from '@tanstack/react-query';
 import { pushOnce } from '@/shell/navigation/pushOnce';
 import { AccessibilityInfo, Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -36,6 +37,10 @@ import { newStepId } from '@/data/mutations/undoCapture';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
 import { CategorySplitSheet } from '@/features/record/split/CategorySplitSheet';
+import { ReceiptSheet } from '@/features/record/receipt/ReceiptSheet';
+import { ReceiptCaptureSheet, type PickedReceipt } from '@/features/record/receipt/ReceiptCaptureSheet';
+import { lineHasReceipts } from '@/features/record/receipt/lineHasReceipts';
+import { defaultOutboxDeps, drainOutbox, enqueueReceipt } from '@/services/receipts/outbox';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
@@ -170,6 +175,13 @@ function TransferUnavailable({ text }: { text: string }) {
   );
 }
 
+/** 10.1-23 (T-10.1-23-02): deletes picked receipt files (cache copies) that will not be queued. Never logs their paths. */
+function discardPicks(picks: readonly PickedReceipt[]): void {
+  if (picks.length === 0) return;
+  const { remove } = defaultOutboxDeps();
+  for (const pick of picks) for (const f of pick.files) void remove(f.uri).catch(() => undefined);
+}
+
 function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) {
   const t = useT();
   const { colors, pairing } = useTheme();
@@ -213,6 +225,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [picker, setPicker] = useState<PickerKey>(null);
   const [submitted, setSubmitted] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // 10.1-23 (D-08): the delete confirmation of a line with receipts adds "Its receipts are deleted too."
+  const [deleteNote, setDeleteNote] = useState<string | null>(null);
+  const queryClient = useContext(QueryClientContext);
   const [repeats, setRepeats] = useState<RepeatsValue>({ freq: 'never' });
   const [scopePatch, setScopePatch] = useState<TransactionPatch | null>(null);
   // UI-SPEC 8: the keypad types into whichever amount is active; a text field hides it.
@@ -282,6 +297,61 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   const [splitOpen, setSplitOpen] = useState(false);
   const pair = mode.kind === 'edit-transfer' ? mode : null;
   const isNew = mode.kind === 'new';
+  // 10.1-23 (RCP-01, D-09; UI-SPEC section 3): receipts (level 2). A new entry keeps the picked files on the phone in this
+  // sheet's state and queues them with the line once it is saved (the line's id is made here, so they go straight into the
+  // outbox, which waits for the line to reach the server). Closing the sheet any other way deletes them (T-10.1-23-02).
+  // An existing line opens its Receipt sheet.
+  const receiptsOn = useFeatureAccess('receipts').visible;
+  const [receiptPicks, setReceiptPicks] = useState<PickedReceipt[]>([]);
+  const [captureOpen, setCaptureOpen] = useState(false);
+  const [receiptSheetOpen, setReceiptSheetOpen] = useState(false);
+  const picksRef = useRef<PickedReceipt[]>([]);
+  useEffect(() => {
+    picksRef.current = receiptPicks;
+  }, [receiptPicks]);
+  const picksTaken = useRef(false);
+  useEffect(
+    () => () => {
+      if (!picksTaken.current) discardPicks(picksRef.current);
+    },
+    []
+  );
+  /** Queues the picked files with the saved line; the originals (cache copies) go once the outbox holds its own copies. */
+  const queuePicks = (transactionId: string) => {
+    const picks = receiptPicks;
+    if (picks.length === 0) return;
+    picksTaken.current = true;
+    void (async () => {
+      for (const pick of picks) {
+        try {
+          await enqueueReceipt({ transactionId, kind: pick.kind, files: pick.files });
+        } catch {
+          // the line is saved; a file that could not be copied is dropped like a discarded one
+        }
+      }
+      discardPicks(picks);
+      void drainOutbox().catch(() => undefined);
+    })();
+  };
+  const askDelete = () => {
+    if (!receiptsOn || editRow === null || editRow.transfer_id !== null || rc.householdId === null) {
+      setConfirmDelete(true);
+      return;
+    }
+    // D-08: a line with receipts says they go with it; none, or not known offline, leaves the confirmation as it was.
+    const note = t('receipt.delete.note');
+    const show = (has: boolean | null) => {
+      setDeleteNote(has === true ? note : null);
+      setConfirmDelete(true);
+    };
+    const has = lineHasReceipts(queryClient, rc.householdId, editRow.id);
+    if (has instanceof Promise) void has.then(show);
+    else show(has);
+  };
+  const dropPicks = () => {
+    discardPicks(receiptPicks);
+    setReceiptPicks([]);
+  };
   // 10-13 (D-27, D-28): only a new entry is held back at 500 waiting changes; an edit or delete never is.
   const guard = useQueueGuard();
   const queueBlocked = isNew && guard.state === 'blocked';
@@ -468,6 +538,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     if (!validateCurrent()) return null;
     const item = itemFromForm(state, isTransfer ? { freq: 'never' } : repeats, parse, Crypto.randomUUID());
     if (!item || !list.add(item)) return null;
+    dropPicks(); // 10.1-23: receipts go with a single saved entry, not a list item
     setState(clearedAfterAdd);
     setAmountInManual(false);
     setRepeats({ freq: 'never' });
@@ -651,6 +722,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
         ownerId: rc.userId,
       });
       shareCommit({ id: newId, version: 1, month: monthOf(state.localDate) });
+      queuePicks(newId);
       markJustSaved([newId]);
       showToast({ kind: 'ordinary', text: undoLabelText('seriesCreated', { name }), stepId: seriesStep });
       if (!runCapCheck(seriesStep)) hapticTap();
@@ -663,6 +735,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
     const addedId = add({ ...input, undo: { stepId, labelKey: 'added', labelParams: { name } } });
     // 06.2 L02 / D-20: the new row washes once in Activity; one light tap (the cap warning stands for it instead).
     shareCommit({ id: addedId, version: 1, month: monthOf(state.localDate) });
+    queuePicks(addedId);
     markJustSaved([addedId]);
     showToast({ kind: 'ordinary', text: undoLabelText('added', { name }), stepId });
     if (!runCapCheck(stepId)) hapticTap();
@@ -852,7 +925,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   }
   const deleteBody = pair
     ? t('record.sheet.transferDeleteConfirm', { from: nameOf(pair.out.account_id), to: nameOf(pair.in.account_id) })
-    : t('record.sheet.confirmDelete');
+    : [t('record.sheet.confirmDelete'), deleteNote].filter((p): p is string => p !== null).join(' ');
 
   return (
     <Sheet visible onDismiss={isNew ? onAccidentalDismiss : onClose} dirty={editDirty} accessibilityLabel={titleText}>
@@ -965,6 +1038,18 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
                 chevron
                 onPress={() => setSplitOpen(true)}
               />
+            ) : null}
+            {receiptsOn && isNew && list.items.length === 0 ? (
+              <Row
+                label={t('receipt.entry.label')}
+                value={receiptPicks.length > 0 ? t('receipt.row.files', { count: receiptPicks.length }) : undefined}
+                dense
+                chevron
+                onPress={() => setCaptureOpen(true)}
+              />
+            ) : null}
+            {receiptsOn && editRow !== null && editRow.transfer_id === null && rc.householdId !== null ? (
+              <Row label={t('receipt.row.label')} dense chevron onPress={() => setReceiptSheetOpen(true)} />
             ) : null}
             {offer ? (
               <RuleOfferCard
@@ -1155,7 +1240,7 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
             onPress={save}
           />
         )}
-        {editRow || pair ? <Pill label={t('record.sheet.delete')} variant="danger" onPress={() => setConfirmDelete(true)} /> : null}
+        {editRow || pair ? <Pill label={t('record.sheet.delete')} variant="danger" onPress={askDelete} /> : null}
         {isNew ? (
           <EntryList
             items={list.items}
@@ -1201,6 +1286,18 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           pushOnce('/categories');
         }}
       />
+      <ReceiptCaptureSheet
+        visible={captureOpen}
+        count={receiptPicks.length}
+        onClose={() => setCaptureOpen(false)}
+        onPicked={(picked) => {
+          setReceiptPicks((p) => [...p, picked]);
+          setCaptureOpen(false);
+        }}
+      />
+      {receiptSheetOpen && editRow !== null && rc.householdId !== null ? (
+        <ReceiptSheet visible line={editRow} householdId={rc.householdId} onClose={() => setReceiptSheetOpen(false)} />
+      ) : null}
       {splitOpen && editRow !== null && rc.householdId !== null ? (
         <CategorySplitSheet
           visible

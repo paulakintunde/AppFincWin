@@ -15,6 +15,10 @@ import { monthOf } from '@/engine/time';
 import { toParts } from '@/db/categoryParts';
 import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
 import { CategorySplitSheet } from '@/features/record/split/CategorySplitSheet';
+import { ReceiptSheet } from '@/features/record/receipt/ReceiptSheet';
+import { ReceiptStrip } from '@/features/record/receipt/ReceiptStrip';
+import { ReceiptViewer } from '@/features/record/receipt/ReceiptViewer';
+import { useReceiptActions, type ReceiptActions } from '@/features/record/receipt/useReceiptActions';
 import { WarningCard } from '@/ui/WarningCard';
 import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
 import { currencyExponent, knownCurrencyExponent, money } from '@/engine/money';
@@ -77,7 +81,36 @@ export interface TransactionDetailSheetProps {
   refundCallbacks?: RefundDetailCallbacks;
 }
 
-export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatus, onEdit, onClone, onDelete, refundCallbacks }: TransactionDetailSheetProps) {
+/**
+ * 10.1-23 (RCP-01, D-09; UI-SPEC section 3): with receipts on (level 2) and a non-transfer line, the receipts of the line are
+ * read (stored ones and those still on the phone) and the body gains the Receipt row, the thumbnail strip, the Receipt sheet
+ * and the viewer. Below level 2 nothing about receipts is read or drawn.
+ */
+export function TransactionDetailSheet(props: TransactionDetailSheetProps) {
+  const receiptsOn = useFeatureAccess('receipts').visible;
+  const ctx = useRecordContext();
+  const row = props.row;
+  if (!receiptsOn || row === null || row.transfer_id !== null || ctx.householdId === null) return <DetailBody {...props} receipts={null} />;
+  return <DetailWithReceipts {...props} householdId={ctx.householdId} lineId={row.id} />;
+}
+
+function DetailWithReceipts({ householdId, lineId, ...props }: TransactionDetailSheetProps & { householdId: string; lineId: string }) {
+  const receipts = useReceiptActions(householdId, lineId);
+  return <DetailBody {...props} receipts={receipts} />;
+}
+
+function DetailBody({
+  row,
+  visible,
+  today,
+  onDismiss,
+  onStatus,
+  onEdit,
+  onClone,
+  onDelete,
+  refundCallbacks,
+  receipts,
+}: TransactionDetailSheetProps & { receipts: ReceiptActions | null }) {
   const t = useT();
   const gate = useWriteGate('editRecord'); // 09-17 (TIER-09): reading stays; changing a record names the lock
   const { colors, pairing } = useTheme();
@@ -92,6 +125,9 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
   // 10.1-20: the Categories row expands in place; the split sheet opens from Edit split or Place it (highlightGap).
   const [partsOpen, setPartsOpen] = useState(false);
   const [splitSheet, setSplitSheet] = useState<{ highlightGap: boolean } | null>(null);
+  // 10.1-23: the Receipt row opens the Receipt sheet; with files the detail shows the thumbnail strip and a thumbnail opens the viewer.
+  const [receiptSheetOpen, setReceiptSheetOpen] = useState(false);
+  const [viewerAt, setViewerAt] = useState<string | null>(null);
 
   if (row === null) return null;
   const parts = splitOn && row.transfer_id === null ? toParts(row.category_parts ?? null) : null;
@@ -122,6 +158,10 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
     decideV3: v3 && refundCallbacks !== undefined,
     parts,
     splitOn,
+    receiptState:
+      receipts === null
+        ? null
+        : { count: receipts.groups.length, waiting: receipts.groups.some((g) => g.state !== 'stored') },
     incomeTypeLabel: (row.income_kind ?? seriesRow?.income_kind) ? t(kindNameKey((row.income_kind ?? seriesRow?.income_kind)!)) : null,
     t: (key, params) => String(t(key as never, params as never)),
   });
@@ -268,6 +308,26 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
             </View>
           );
         }
+        if (spec.action === 'receipt' && receipts !== null) {
+          return (
+            <View key={spec.key}>
+              <LinkRow label={label} value={spec.value} a11y={`${label}, ${spec.value ?? ''}`} onPress={() => gate.run(() => setReceiptSheetOpen(true))} />
+              {receipts.groups.length > 0 ? (
+                <View style={styles.strip} testID="detail-receipt-strip">
+                  <ReceiptStrip
+                    groups={receipts.groups}
+                    showCents={ctx.showCents}
+                    onOpen={(groupId) => {
+                      // A failed upload's Try again / Remove live in the Receipt sheet; everything else opens the viewer.
+                      if (receipts.groups.find((g) => g.groupId === groupId)?.state === 'failed') gate.run(() => setReceiptSheetOpen(true));
+                      else setViewerAt(groupId);
+                    }}
+                  />
+                </View>
+              ) : null}
+            </View>
+          );
+        }
         if (spec.action !== undefined && refundCallbacks !== undefined) {
           if (spec.action === 'refundOf') {
             return <RefundOfRow key={spec.key} row={row} formatter={formatter} callbacks={refundCallbacks} label={label} />;
@@ -287,6 +347,18 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
         }
         return <DetailRow key={spec.key} label={label} value={spec.value} tone={spec.tone} emptyText={t('activity.detail.empty')} />;
       })}
+      {receipts !== null && ctx.householdId !== null ? (
+        <>
+          <ReceiptSheet visible={receiptSheetOpen} line={row} householdId={ctx.householdId} onClose={() => setReceiptSheetOpen(false)} />
+          <ReceiptViewer
+            visible={viewerAt !== null}
+            groups={receipts.groups}
+            startGroupId={viewerAt ?? undefined}
+            onClose={() => setViewerAt(null)}
+            onRemove={(groupId) => gate.run(() => void receipts.removeGroup(groupId))}
+          />
+        </>
+      ) : null}
       {isSplit && ctx.householdId !== null ? (
         <CategorySplitSheet
           visible={splitSheet !== null}
@@ -305,5 +377,6 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
 const styles = StyleSheet.create({
   fx: { gap: 2, paddingBottom: space.gapMd },
   gapCard: { gap: space.gapSm, paddingBottom: space.gapMd },
+  strip: { paddingBottom: space.gapMd },
   place: { minHeight: space.touchMin, justifyContent: 'center', alignSelf: 'flex-start' },
 });

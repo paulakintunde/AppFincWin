@@ -4,8 +4,11 @@ export const receipt = {
     label: 'Receipt',
     none: 'None',
     files: '{{count}} files',
+    files_one: '{{count}} file',
     waiting: 'Waiting to upload',
   },
+  // 10.1-23: the entry sheet's row (UI-SPEC section 3, prototype entryReceipt).
+  entry: { label: 'Add a receipt' },
   sheet: { title: 'Receipt' },
   photo: { label: 'Take a photo', sub: 'Opens the camera' },
   file: { label: 'Choose from files', sub: 'Image or PDF' },
@@ -37,6 +40,8 @@ export const receipt = {
   tooBig: 'That file is too big. Up to {{size}} MB.',
   badType: 'That file type isn’t supported. Use an image or a PDF.',
   waiting: 'Receipt waiting to upload',
+  /** 10.1-23 (D-09): the end of an Activity row's spoken label. */
+  waitingA11y: 'receipt waiting to upload',
   waitingShort: 'Waiting',
   uploadFailed: {
     label: 'Didn’t upload',
