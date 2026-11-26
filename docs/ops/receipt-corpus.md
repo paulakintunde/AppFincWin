@@ -43,3 +43,15 @@ Name them `r01.jpg`, `r02.jpg`, up to `r30.jpg`. JPEG or PNG, taken with the pho
 Plan 10.1-08 reads each photo on the Pixel 9 with the phone's own text reader and saves only the text. Before saving, it masks long digit runs, email addresses and phone numbers. The photos are never committed. The text files are committed under `src/engine/receipt/__tests__/fixtures/corpus/`.
 
 When you are done, tell Claude "dropped N", where N is the number of photos.
+
+## Spike results
+
+Run on the Pixel (55240DLAQ000EQ) on 2026-11-25, with a local debug development build (`gradlew assembleDebug`, arm64-v8a, from feat/10.1-build). EAS Android builds for the month were used up, so no EAS build id.
+
+| Check | Result | Notes |
+|---|---|---|
+| Camera (Try camera) | pass | Owner: "photo, 1 file" |
+| Gallery (Try gallery) | pass | Owner: "photo, 1 file" |
+| File (Choose a file) | not run | The dev screen has no file button; covered later by the Receipt sheet device check (10.1-29) |
+| Scan (Try scan, 3 pages) | pass | Owner: "scan, 3 files" |
+| Corpus read (Pick images) | pending | Waiting for the owner's photos in C:/dev/fincwin-private/receipts-corpus |
