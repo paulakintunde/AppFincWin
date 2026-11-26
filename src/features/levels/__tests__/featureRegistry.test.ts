@@ -37,7 +37,7 @@ describe('featureRegistry vs signed 09-LEVEL-MAP.md', () => {
   const rows = parseRows();
 
   it('parses the signed table', () => {
-    expect(rows).toHaveLength(36);
+    expect(rows).toHaveLength(39);
   });
 
   it('has the same ids in the same order', () => {
@@ -60,7 +60,6 @@ describe('featureRegistry vs signed 09-LEVEL-MAP.md', () => {
   it('contains none of the not-listed ids', () => {
     const ids = FEATURES.map((f) => f.id as string);
     for (const bad of [
-      'receipts',
       'roundUps',
       'widgets',
       'bankLink',
@@ -98,7 +97,7 @@ describe('featureRegistry vs signed 09-LEVEL-MAP.md', () => {
 
   it('matches the signed count lines', () => {
     const counts = ([1, 2, 3, 4] as const).map((l) => defaultOnAtLevel(l).length);
-    expect(counts).toEqual([5, 20, 32, 36]);
+    expect(counts).toEqual([5, 22, 35, 39]);
     const signed = ['Basics', 'Everyday', 'Full picture', 'Everything'].map((n) => {
       const m = new RegExp(`- ${n}: (\\d+) of (\\d+) on`).exec(MAP);
       return m ? Number(m[1]) : -1;

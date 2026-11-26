@@ -33,7 +33,9 @@ Columns: feature id, area, label, one-line sub, level it appears at, needs a hou
 | recurring | Recording | Repeating bills | Marks what comes back every month and spots new ones | 2 | no | exists recurring_series row not deleted | none | src/db/recurringSeries.ts |
 | cloneMonth | Recording | Clone a month | Copy last month's repeating lines into this one | 2 | no | none | none | src/features/record/activity/CloneMonthSheet.tsx |
 | refunds | Recording | Refunds | Money back on a purchase, netted off the category | 2 | no | exists refund link not deleted | none | src/data/mutations/refundLinks.ts |
+| receipts | Recording | Receipts | Attach photos and files to a line | 2 | no | exists receipt on a live line | none | src/features/record/receipt/ReceiptSheet.tsx |
 | bulkSelect | Recording | Select several | Tag, move or delete a batch at once | 3 | no | none | none | src/features/record/activity/BulkBar.tsx |
+| splitLine | Recording | Split a line | One purchase across several categories | 3 | no | exists live line with category parts | none | src/features/record/split/CategorySplitSheet.tsx |
 | searchAllMonths | Recording | Search every month | Look across the whole ledger, not just this month | 4 | no | none | none | app/(app)/history.tsx |
 | multiAccount | Accounts | Several accounts | Assign each line to an account | 2 | no | more than one active account | none | app/(app)/accounts/index.tsx |
 | transfers | Accounts | Transfers | Move money between your own accounts | 2 | no | exists transfer row not deleted | none | src/data/mutations/transfers.ts |
@@ -58,6 +60,7 @@ Columns: feature id, area, label, one-line sub, level it appears at, needs a hou
 | archive | System | Archive | Older months kept out of the way | 4 | no | none | none | src/features/archive/useArchiveState.ts |
 | hh.weightSplit | Sharing | Split by weight | Split a line by shares, such as 60 / 40 | 2 | yes | exists weight split on a line | sharing answer is not no: on | src/config/householdFeatures.ts |
 | hh.amountSplit | Sharing | Split by amount | Split a line by exact amounts | 2 | yes | exists amount split on a line | sharing answer is not no: on | src/config/householdFeatures.ts |
+| hh.itemSplit | Sharing | Split items between people | Give each item on a receipt to one person or several | 2 | yes | exists live shared line split by item | sharing answer is not no: on | src/features/record/receipt/ScanReview.tsx |
 | hh.categoryDefaults | Sharing | Category split rules | Groceries by weight, dining even, applied as you type | 2 | yes | exists category default split rule | sharing answer is not no: on | app/(app)/household/category-defaults.tsx |
 | hh.sharedAccounts | Sharing | Shared accounts | Accounts the household sees together | 2 | yes | exists shared account | sharing answer is not no: on | app/(app)/household/shared-accounts.tsx |
 | hh.settleUp | Sharing | Settle up | Writes the payment and locks the lines it covers | 2 | yes | exists settlement row | sharing answer is not no: on | src/db/settlements.ts |
@@ -71,20 +74,19 @@ How the level is worked out (prototype `levelFor`, with tax removed): "Keep trac
 
 ## 3. Counts (the Features screen reads these)
 
-36 features are listed. A level turns on every feature at that level or below.
+39 features are listed. A level turns on every feature at that level or below.
 
-- Basics: 5 of 36 on
-- Everyday: 20 of 36 on
-- Full picture: 32 of 36 on
-- Everything: 36 of 36 on
+- Basics: 5 of 39 on
+- Everyday: 22 of 39 on
+- Full picture: 35 of 39 on
+- Everything: 39 of 39 on
 
-The five household rows count at Everyday. Without a household they show "Not on for your household" and stay off, so a person with no household sees fewer on than the count.
+The six household rows count at Everyday. Without a household they show "Not on for your household" and stay off, so a person with no household sees fewer on than the count.
 
 ## 4. Not listed (and why)
 
 | Name | Reason |
 |---|---|
-| Receipts | Not built. Nothing to switch. |
 | Round-ups | Not built. |
 | Widgets | Not built. |
 | Bank link | Cut from v1, parked for v1.1 (Plaid). |
@@ -131,5 +133,7 @@ These prototype features have no clear built version. Answer each. A "no" means 
    Owner answer (2026-11-19): Everyday. The five household rows sit at level 2, gated by household eligibility.
 
 Owner answer (2026-11-19): levels accepted as drafted (Basics 5, Everyday 19, Full picture 29, Everything 32).
+
+Added 2026-11-24 (Phase 10.1, owner "ready" on the CONTEXT discretion defaults): receipts at Everyday, split a line at Full picture, split items between people with a household and receipts.
 
 Move any row above by editing its `minLevel`.

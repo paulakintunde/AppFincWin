@@ -14,15 +14,23 @@ export interface HoldsFlags {
   weightSplits: boolean;
   /** Any live shared line split by exact amounts. */
   amountSplits: boolean;
+  /** Any receipt on a line (10.1-19). RLS scopes the rows to the caller's households. */
+  receipts: boolean;
+  /** Any live line split across categories. */
+  splitLines: boolean;
+  /** Any live shared line split by item. */
+  itemSplits: boolean;
 }
 
-type Probe = keyof HoldsFlags;
+type Probe = 'transfers' | 'importedLines' | 'weightSplits' | 'amountSplits' | 'splitLines' | 'itemSplits';
 
 async function anyLine(client: DbClient, householdId: string, probe: Probe): Promise<boolean> {
   const base = client.from(ACTIVE_VIEW).select('id').eq('household_id', householdId);
   let q;
   if (probe === 'transfers') q = base.not('transfer_id', 'is', null);
   else if (probe === 'importedLines') q = base.not('import_batch_id', 'is', null);
+  else if (probe === 'splitLines') q = base.not('category_parts', 'is', null);
+  else if (probe === 'itemSplits') q = base.eq('is_shared', true).not('item_split', 'is', null);
   else q = base.eq('is_shared', true).eq('split_rule', probe === 'weightSplits' ? 'weight' : 'amount');
   const { data, error, status } = await q.limit(1);
   if (error) throw toDbError(error, status);
@@ -36,13 +44,23 @@ async function anyImportProfile(client: DbClient): Promise<boolean> {
   return ((data as unknown[] | null) ?? []).length > 0;
 }
 
+/** Any receipt the caller can see (RLS scopes the rows). */
+async function anyReceipt(client: DbClient): Promise<boolean> {
+  const { data, error, status } = await client.from('transaction_receipts').select('id').limit(1);
+  if (error) throw toDbError(error, status);
+  return ((data as unknown[] | null) ?? []).length > 0;
+}
+
 export async function fetchHoldsFlags(client: DbClient, householdId: string): Promise<HoldsFlags> {
-  const [transfers, importedLine, importProfile, weightSplits, amountSplits] = await Promise.all([
+  const [transfers, importedLine, importProfile, weightSplits, amountSplits, receipts, splitLines, itemSplits] = await Promise.all([
     anyLine(client, householdId, 'transfers'),
     anyLine(client, householdId, 'importedLines'),
     anyImportProfile(client),
     anyLine(client, householdId, 'weightSplits'),
     anyLine(client, householdId, 'amountSplits'),
+    anyReceipt(client),
+    anyLine(client, householdId, 'splitLines'),
+    anyLine(client, householdId, 'itemSplits'),
   ]);
-  return { transfers, importedLines: importedLine || importProfile, weightSplits, amountSplits };
+  return { transfers, importedLines: importedLine || importProfile, weightSplits, amountSplits, receipts, splitLines, itemSplits };
 }

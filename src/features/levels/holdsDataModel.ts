@@ -28,7 +28,16 @@ export interface HoldsSources {
   refunds?: readonly unknown[];
   splitDefaults?: readonly Pick<SplitDefaultRow, 'category_ref'>[];
   settlements?: readonly unknown[];
-  flags?: { transfers: boolean; importedLines: boolean; weightSplits: boolean; amountSplits: boolean };
+  flags?: {
+    transfers: boolean;
+    importedLines: boolean;
+    weightSplits: boolean;
+    amountSplits: boolean;
+    // 10.1-19: receipts on a line, lines split across categories, lines split by item
+    receipts: boolean;
+    splitLines: boolean;
+    itemSplits: boolean;
+  };
 }
 
 /** Pure: sources to probe answers. */
@@ -71,6 +80,9 @@ export function deriveHolds(src: HoldsSources): Record<HoldsDataProbeId, boolean
   out.importedLines = flags === undefined ? true : flags.importedLines;
   out.weightSplits = flags === undefined ? true : flags.weightSplits;
   out.amountSplits = flags === undefined ? true : flags.amountSplits;
+  out.receipts = flags === undefined ? true : flags.receipts;
+  out.splitLines = flags === undefined ? true : flags.splitLines;
+  out.itemSplits = flags === undefined ? true : flags.itemSplits;
   return out;
 }
 

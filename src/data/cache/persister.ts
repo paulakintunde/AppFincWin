@@ -52,7 +52,7 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // Quick 261123: debts select credit_limit and revolving (20261125001100) -- bumped 17 -> 18.
 // Merge of Phase 10 (10-03, 17: alert, archive and device shapes) with Phase 7 + quick 261123 (18) -- bumped 18 -> 19.
 // 10.1-11: transactions.category_parts and the receipts query -- bumped 19 -> 20. Signed receipt links are never in a query, so NEVER_PERSIST_ROOTS needs no entry.
-export const CACHE_SCHEMA_VERSION = '20';
+export const CACHE_SCHEMA_VERSION = '21';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's

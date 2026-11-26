@@ -4,7 +4,15 @@ import { FEATURES, type FeatureDef } from '../featureRegistry';
 import { deriveHolds, UNSOURCED, type HoldsDataProbeId, type HoldsSources } from '../holdsDataModel';
 
 const acct = { currency: 'USD', archived_at: null, deleted_at: null, is_shared: false, tombstone_of: null };
-const flags = { transfers: false, importedLines: false, weightSplits: false, amountSplits: false };
+const flags = {
+  transfers: false,
+  importedLines: false,
+  weightSplits: false,
+  amountSplits: false,
+  receipts: false,
+  splitLines: false,
+  itemSplits: false,
+};
 
 /** Everything loaded and empty: nothing is held. */
 const EMPTY: HoldsSources = {
@@ -43,6 +51,9 @@ const cases: Record<HoldsDataProbeId, HoldsSources> = {
   categoryDefaultSplits: { splitDefaults: [{ category_ref: 'builtin:groceries' }] },
   sharedAccounts: { accounts: [{ ...acct, is_shared: true }] },
   settlements: { settlements: [{}] },
+  receipts: { flags: { ...flags, receipts: true } },
+  splitLines: { flags: { ...flags, splitLines: true } },
+  itemSplits: { flags: { ...flags, itemSplits: true } },
 };
 
 describe('holds-data probes (09-22)', () => {

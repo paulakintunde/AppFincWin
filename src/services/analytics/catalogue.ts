@@ -37,6 +37,8 @@ export type Phase9FeatureId =
   | 'cloneMonth'
   | 'refunds'
   | 'bulkSelect'
+  | 'splitLine'
+  | 'receipts'
   | 'searchAllMonths'
   | 'multiAccount'
   | 'transfers'
@@ -61,6 +63,7 @@ export type Phase9FeatureId =
   | 'archive'
   | 'hh.weightSplit'
   | 'hh.amountSplit'
+  | 'hh.itemSplit'
   | 'hh.categoryDefaults'
   | 'hh.sharedAccounts'
   | 'hh.settleUp';
