@@ -48,6 +48,14 @@ tar -xzf "$WORK/db.tgz" -C "$WORK"
 
 # 4. Throwaway local stack (migrations applied from git), then load the data into it.
 cd "$REPO_ROOT"
+# 10-29: start production's auth version (recorded by dump.sh), as `supabase link` would. The CLI reads it from
+# supabase/.temp/gotrue-version. Older backups without it use the CLI default.
+auth_version="$(node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).auth_version||""))' "$WORK/counts.json")"
+if printf '%s' "$auth_version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+  mkdir -p supabase/.temp
+  printf '%s' "$auth_version" > supabase/.temp/gotrue-version
+  echo "auth image: $auth_version"
+fi
 supabase db start
 cat > "$WORK/prepare.sql" <<'SQL'
 do $$

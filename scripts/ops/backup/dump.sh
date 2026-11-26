@@ -19,6 +19,13 @@ mkdir -p "$OUT_DIR"
 # Row counts first, so a connection problem fails before any dump work.
 psql "$DB_URL" -X -At -v ON_ERROR_STOP=1 -f "$HERE/counts.sql" > "$WORK/counts.json"
 auth_users="$(node -e 'process.stdout.write(String(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).auth_users))' "$WORK/counts.json")"
+# 10-29: record production's auth (GoTrue) version, so the restore check starts the same auth image locally; an older
+# local image lacks newer auth columns and the data load fails. Optional: without the URL and key it is left out.
+if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_ANON_KEY:-}" ]; then
+  auth_version="$(curl -fsS --retry 3 "$SUPABASE_URL/auth/v1/health" -H "apikey: $SUPABASE_ANON_KEY" \
+    | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(String(JSON.parse(s).version||"")))')"
+  node -e 'const fs=require("fs");const p=process.argv[1];const j=JSON.parse(fs.readFileSync(p,"utf8"));j.auth_version=process.argv[2];fs.writeFileSync(p,JSON.stringify(j))' "$WORK/counts.json" "$auth_version"
+fi
 if [ "$auth_users" -eq 0 ]; then
   echo "FATAL: auth_users = 0, refusing to publish an empty backup" >&2
   exit 1
