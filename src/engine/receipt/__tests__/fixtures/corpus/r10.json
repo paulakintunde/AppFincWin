@@ -94,7 +94,7 @@
         }
       },
       {
-        "text": "TEL 647-555 - 4347",
+        "text": "TEL [phone]",
         "frame": {
           "left": 596,
           "top": 495,

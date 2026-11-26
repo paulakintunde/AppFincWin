@@ -6,7 +6,11 @@ import { basename, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
-const PHONE = /(?<![\d.,])(?:\+?\d{1,2}[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]?\d{3}[ .-]?\d{4}(?![\d])/g;
+// Separators may carry a stray OCR space on either side ("752 -555-8427").
+const PHONE = /(?<![\d.,])(?:\+?\d{1,2}(?: ?[.-] ?| )?)?(?:\(\d{3}\)|\d{3})(?: ?[.-] ?| )?\d{3}(?: ?[.-] ?| )?\d{4}(?![\d])/g;
+// Dates are kept as printed: 2026-10-28, 2026/10/28, 28-10-2026, 17.07.2026.
+const DATE = /(?<![\d.,])(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4})(?![\d])/g;
+const HOLD = /\u0000(\d+)\u0000/g;
 const LONG_RUN = /(?<![\d.,])\d(?:[ -]?\d){7,}(?![\d])(?![.,]\d)/g;
 const KEYWORD = /\b(auth|approval|ref|trace|terminal|card|visa|mastercard|amex|debit)\b.*\d{4,}/i;
 const SHORT_RUN = /(?<![\d.,])\d{4,}(?![\d]|[.,]\d)/g;
@@ -14,7 +18,9 @@ const SHORT_RUN = /(?<![\d.,])\d{4,}(?![\d]|[.,]\d)/g;
 const maskDigits = (s) => s.replace(/\d/g, 'X');
 
 export function scrubText(text) {
-  let t = text.replace(EMAIL, '[email]').replace(PHONE, '[phone]');
+  const dates = [];
+  let t = text.replace(DATE, (m) => `\u0000${dates.push(m) - 1}\u0000`);
+  t = t.replace(EMAIL, '[email]').replace(PHONE, '[phone]');
   t = t.replace(LONG_RUN, maskDigits);
   if (KEYWORD.test(t)) {
     t = t.replace(SHORT_RUN, (m, offset, whole) => {
@@ -23,7 +29,7 @@ export function scrubText(text) {
       return maskDigits(m);
     });
   }
-  return t;
+  return t.replace(HOLD, (_, i) => dates[Number(i)]);
 }
 
 export function splitDump(records, outDir, moduleName) {
