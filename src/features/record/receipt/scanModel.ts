@@ -2,8 +2,8 @@
 // writes anything: the draft only holds what the phone read and what the user changed, and every sum goes through the
 // engine's reconcile and itemsToParts. Amounts are positive integer minor units as printed (null = empty field); the line's
 // sign is applied only in toPrivateSave.
-import { itemsToParts, reconcile } from '@/engine/receipt';
-import type { Field, ParseOutcome, ReceiptFrame, Reconcile } from '@/engine/receipt';
+import { itemShares, itemsToParts, reconcile } from '@/engine/receipt';
+import type { Field, ItemSharesResult, ParseOutcome, ReceiptFrame, Reconcile } from '@/engine/receipt';
 import { primaryCategory } from '@/engine/parts';
 import type { Part } from '@/engine/parts';
 
@@ -18,6 +18,8 @@ export interface ReviewItem {
   /** In the page image's own pixels (the merged offset is taken off again), for the 96 x 96 crop. */
   frame: ReceiptFrame | null;
   page: number;
+  /** 10.1-26 (D-14): who shares this item, in household member order. Null on a private line (no people at all). */
+  people: string[] | null;
 }
 
 export interface ReviewExtra {
@@ -46,6 +48,17 @@ export interface ReviewDraft {
   totalChoice: 'receipt' | 'items' | null;
   taxTipCategoryId: string | null;
   images: ReviewImage[];
+  /** 10.1-26: the household's members on a shared line (who can be given an item); null on a private or new line. */
+  members: ReviewMember[] | null;
+  /** 10.1-26: the people of the line's usual split, which every item starts on (D-14); null when there are no people. */
+  usual: string[] | null;
+  /** 10.1-26: "Split items between people" is on; confirm then saves the split by item, not only the parts. */
+  byItem: boolean;
+}
+
+export interface ReviewMember {
+  id: string;
+  name: string;
 }
 
 /** Where each page starts in the merged reading (useReadReceipt stacks pages top to bottom). */
@@ -98,6 +111,7 @@ export function fromParsed(o: ParseOutcome | null, ctx: FromParsedContext): Revi
             unsure: it.unsure,
             frame: placed.frame,
             page: placed.page,
+            people: null,
           };
         })
       : [];
@@ -116,7 +130,15 @@ export function fromParsed(o: ParseOutcome | null, ctx: FromParsedContext): Revi
     totalChoice: null,
     taxTipCategoryId: ctx.lineCategoryId ?? null,
     images: ctx.images,
+    members: null,
+    usual: null,
+    byItem: false,
   };
+}
+
+/** The people a new item starts on: the usual split's, or null when the draft has no people. */
+function startPeople(d: ReviewDraft): string[] | null {
+  return d.members === null ? null : [...(d.usual ?? d.members.map((m) => m.id))];
 }
 
 // ---- edits -------------------------------------------------------------------------------------------------------------
@@ -161,6 +183,7 @@ export function addItem(d: ReviewDraft, name = ''): ReviewDraft {
     unsure: false,
     frame: null,
     page: 0,
+    people: startPeople(d),
   };
   return { ...d, items: [...d.items, item] };
 }
@@ -178,6 +201,70 @@ export function setExtraAmount(d: ReviewDraft, key: string, amount: number | nul
 export function removeExtra(d: ReviewDraft, key: string): ReviewDraft {
   if (!d.extras.some((x) => x.key === key)) return d;
   return { ...d, extras: d.extras.filter((x) => x.key !== key) };
+}
+
+// ---- people (10.1-26, D-14, D-15) ---------------------------------------------------------------------------------------
+
+/** Keeps the household's member order (the tie rule gives an odd cent in people order, the same order the server gets). */
+function inMemberOrder(d: ReviewDraft, ids: readonly string[]): string[] {
+  if (d.members === null) return [...ids];
+  const order = new Map(d.members.map((m, k) => [m.id, k] as const));
+  return [...new Set(ids)].filter((id) => order.has(id)).sort((a, b) => (order.get(a) as number) - (order.get(b) as number));
+}
+
+/**
+ * A shared line's people: the household's members, and the people of the line's usual split. Every item starts on the usual
+ * people and "Split items between people" starts on (UI-SPEC 6). A private line never calls this, so it has no people at all.
+ */
+export function withMembers(d: ReviewDraft, members: readonly ReviewMember[], usual: readonly string[]): ReviewDraft {
+  return withUsualPeople({ ...d, members: [...members], byItem: true }, usual);
+}
+
+/** Every item gets the usual participants (D-14). Unknown ids are dropped; with none left, every member is used. */
+export function withUsualPeople(d: ReviewDraft, usual: readonly string[]): ReviewDraft {
+  if (d.members === null) return d;
+  let people = inMemberOrder(d, usual);
+  if (people.length === 0) people = d.members.map((m) => m.id);
+  return { ...d, usual: people, items: d.items.map((i) => ({ ...i, people: [...people] })) };
+}
+
+/** "Back to the usual split": every item back on the usual people. */
+export function resetToUsual(d: ReviewDraft, usual: readonly string[]): ReviewDraft {
+  return withUsualPeople(d, usual);
+}
+
+/** Gives or takes one person on one item. At least one person stays on every item. */
+export function togglePerson(d: ReviewDraft, itemKey: string, memberId: string): ReviewDraft {
+  const item = d.items.find((i) => i.key === itemKey);
+  if (!item || item.people === null || d.members === null || !d.members.some((m) => m.id === memberId)) return d;
+  const on = item.people.includes(memberId);
+  if (on && item.people.length === 1) return d;
+  const people = on ? item.people.filter((p) => p !== memberId) : inMemberOrder(d, [...item.people, memberId]);
+  return patchItem(d, itemKey, { people });
+}
+
+/** Turns "Split items between people" on or off (a shared line only). */
+export function setByItem(d: ReviewDraft, on: boolean): ReviewDraft {
+  if (d.members === null) return d;
+  return { ...d, byItem: on };
+}
+
+function extrasSum(d: ReviewDraft, kind: ReviewExtra['kind']): number {
+  return d.extras.filter((x) => x.kind === kind).reduce((s, x) => s + (x.amount ?? 0), 0);
+}
+
+/**
+ * Each person's share as the items stand (D-15: tax, tip and discounts in proportion to each person's items). A preview only:
+ * the server works the shares out again on save (T-10.1-26-01), with the same maths (parity proven in 10.1-14).
+ */
+export function sharesPreview(d: ReviewDraft): ItemSharesResult {
+  return itemShares({
+    members: (d.members ?? []).map((m) => m.id),
+    items: d.items.map((i) => ({ price: i.price ?? 0, discount: i.discount, people: i.people ?? [] })),
+    tax: extrasSum(d, 'tax'),
+    tip: extrasSum(d, 'tip'),
+    discounts: extrasSum(d, 'discount'),
+  });
 }
 
 // ---- sums --------------------------------------------------------------------------------------------------------------
@@ -225,6 +312,7 @@ export function applyReceiptTotal(d: ReviewDraft, otherName = 'Other'): ReviewDr
       unsure: false,
       frame: null,
       page: 0,
+      people: startPeople(d),
     };
     return { ...d, items: [...d.items, item], totalChoice: 'receipt' };
   }
@@ -244,10 +332,9 @@ export function toPrivateSave(
   lineSign: 1 | -1,
   lineCategoryId: string | null,
 ): { total: number; parts: Part[] | null; categoryId: string | null } {
-  const sum = (kind: ReviewExtra['kind']) => d.extras.filter((x) => x.kind === kind).reduce((s, x) => s + (x.amount ?? 0), 0);
-  const tax = sum('tax');
-  const tip = sum('tip');
-  const discounts = sum('discount');
+  const tax = extrasSum(d, 'tax');
+  const tip = extrasSum(d, 'tip');
+  const discounts = extrasSum(d, 'discount');
   const items = d.items.map((i) => ({ price: i.price ?? 0, discount: i.discount, categoryId: i.categoryId }));
   const parts = itemsToParts({ lineSign, lineCategoryId, taxTipCategoryId: d.taxTipCategoryId, items, tax, tip, discounts });
   const total = d.total.value ?? reviewBalance(d).computed;
@@ -256,13 +343,38 @@ export function toPrivateSave(
   return { total, parts, categoryId };
 }
 
+export interface ItemSplitSave {
+  items: { name: string; price: number; discount: number; c: string | null; people: string[] }[];
+  extras: { tax: number; tip: number; discounts: number };
+  /** Signed like the line (with the 'Tax and tip' part, D-20); null when the items come to one category. */
+  parts: Part[] | null;
+  /** With null parts: the line's one category. */
+  category: string | null;
+  store: string | null;
+  date: string | null;
+}
+
+/** What a shared line's split by item sends: the items with their people, the extras, and the parts (D-14..D-17, D-20). */
+export function toItemSplitSave(d: ReviewDraft, lineSign: 1 | -1, lineCategoryId: string | null): ItemSplitSave {
+  const save = toPrivateSave(d, lineSign, lineCategoryId);
+  return {
+    items: d.items.map((i) => ({ name: i.name, price: i.price ?? 0, discount: i.discount, c: i.categoryId, people: [...(i.people ?? [])] })),
+    extras: { tax: extrasSum(d, 'tax'), tip: extrasSum(d, 'tip'), discounts: extrasSum(d, 'discount') },
+    parts: save.parts,
+    category: save.parts === null ? save.categoryId : null,
+    store: d.store.value,
+    date: d.date.value,
+  };
+}
+
 /** Whether the user changed anything since the draft was built (the sheet's discard prompt). */
 export function draftSignature(d: ReviewDraft): string {
   return JSON.stringify([
     d.store.value,
     d.date.value,
     d.total.value,
-    d.items.map((i) => [i.name, i.price, i.categoryId]),
+    d.items.map((i) => [i.name, i.price, i.categoryId, i.people]),
     d.extras.map((x) => [x.kind, x.amount]),
+    d.byItem,
   ]);
 }

@@ -3,9 +3,16 @@
 // 'Tax and tip' part) through the entry sheet's own add mutation, then the photos queued as one receipt for that id.
 // Existing line: the line's total changes only when the user chose "Use the items total"; then the parts are set through the
 // split save (version-checked; this device's own amount edit is chained by versionChain).
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+// 10.1-26 (D-14..D-17): a shared line with "Split items between people" on saves through set_split_by_item instead (the
+// server works out every share), with "Split saved" and Undo through restore_line_split. A version conflict names who changed
+// the line and keeps the draft so the user can review and save again.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAccounts } from '@/data/queries/accounts';
 import { useAddTransaction, useEditTransaction } from '@/data/mutations/transactions';
+import { restoreSplitVars, useRestoreLineSplit, useSetSplitByItem, type SetSplitByItemVars } from '@/data/mutations/itemSplit';
+import { HouseholdRejectedError } from '@/data/mutations/householdSharing';
+import { NotFoundError, VersionConflictError } from '@/db/errors';
+import { useMemberLabel } from '@/features/household/useMemberLabel';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { fromParts } from '@/db/categoryParts';
 import type { TransactionRow } from '@/db/rows';
@@ -19,9 +26,9 @@ import { markJustSaved } from '@/state/justSaved';
 import { showToast } from '@/state/undoToast';
 import { useSaveSplit } from '../split/useSaveSplit';
 import { useRecordContext } from '../useRecordContext';
-import { canConfirm, toPrivateSave, type ReviewDraft } from './scanModel';
+import { canConfirm, toItemSplitSave, toPrivateSave, type ReviewDraft } from './scanModel';
 
-export type ConfirmResult = { ok: true; lineId: string } | { ok: false; reason: string };
+export type ConfirmResult = { ok: true; lineId: string } | { ok: false; reason: string; updatedBy?: string | null };
 
 export interface ConfirmScanTarget {
   mode: 'new' | 'existing';
@@ -71,6 +78,20 @@ export function useConfirmScan(target: ConfirmScanTarget): { confirm(draft: Revi
       waiting.current = null;
     }
   }, [saver.conflict]);
+
+  // 10.1-26: split by item on a shared line.
+  const byItem = useSetSplitByItem();
+  const restore = useRestoreLineSplit();
+  const label = useMemberLabel(target.householdId);
+  const [byItemConflict, setByItemConflict] = useState<string | null>(null);
+  // Offline the write waits in the queue; the sheet does not hold the user until a connection comes back.
+  const byItemWaiting = useRef<((r: ConfirmResult) => void) | null>(null);
+  useEffect(() => {
+    if (byItem.isPaused && byItemWaiting.current && line) {
+      byItemWaiting.current({ ok: true, lineId: line.id });
+      byItemWaiting.current = null;
+    }
+  }, [byItem.isPaused, line]);
 
   const confirm = useCallback(
     async (draft: ReviewDraft): Promise<ConfirmResult> => {
@@ -126,6 +147,49 @@ export function useConfirmScan(target: ConfirmScanTarget): { confirm(draft: Revi
       if (draft.totalChoice === 'items' && save.total !== Math.abs(line.original_amount)) {
         edit({ id: line.id, householdId: target.householdId, month, expectedVersion: line.version, patch: { original_amount: sign * save.total } });
       }
+
+      // D-14..D-17: a shared line split by item. Only the items, people and extras go; the server works out the shares.
+      if (line.is_shared === true && draft.byItem && draft.members !== null) {
+        setByItemConflict(null);
+        const split = toItemSplitSave(draft, sign, line.category_id);
+        const vars: SetSplitByItemVars = {
+          householdId: target.householdId,
+          month,
+          id: line.id,
+          expectedVersion: line.version,
+          items: split.items,
+          extras: split.extras,
+          parts: split.parts,
+          category: split.category,
+          store: split.store,
+          date: split.date,
+        };
+        return new Promise<ConfirmResult>((resolve) => {
+          byItemWaiting.current = resolve;
+          const finish = (r: ConfirmResult) => {
+            if (byItemWaiting.current === resolve) byItemWaiting.current = null;
+            resolve(r);
+          };
+          byItem.mutate(vars, {
+            onSuccess: (res) => {
+              const undo = restoreSplitVars(vars, res);
+              showToast({ kind: 'ordinary', text: { key: 'scan.byItem.saved' }, onUndo: undo ? () => restore.mutate(undo) : null });
+              finish({ ok: true, lineId: line.id });
+            },
+            onError: (err) => {
+              if (err instanceof VersionConflictError) {
+                const updatedBy = (err.serverRow as { updated_by?: string | null } | null)?.updated_by ?? null;
+                setByItemConflict(t('scan.byItem.versionConflict', { name: label(updatedBy) }));
+                finish({ ok: false, reason: 'version_conflict', updatedBy });
+                return;
+              }
+              if (err instanceof HouseholdRejectedError) finish({ ok: false, reason: err.reason });
+              else if (err instanceof NotFoundError) finish({ ok: false, reason: 'not_found' });
+              else finish({ ok: false, reason: 'failed' });
+            },
+          });
+        });
+      }
       const hasParts = line.category_parts != null && line.category_parts.length >= 2;
       const done: ConfirmResult = { ok: true, lineId: line.id };
       if (!save.parts && !hasParts) {
@@ -144,8 +208,8 @@ export function useConfirmScan(target: ConfirmScanTarget): { confirm(draft: Revi
         else saver.remove(save.categoryId, { onDone });
       });
     },
-    [account, add, edit, line, rc.homeCurrency, rc.timeZone, rc.today, rc.userId, saver, t, target.householdId, target.mode],
+    [account, add, byItem, edit, label, line, rc.homeCurrency, rc.timeZone, rc.today, rc.userId, restore, saver, t, target.householdId, target.mode],
   );
 
-  return { confirm, conflict: saver.conflict };
+  return { confirm, conflict: byItemConflict ?? saver.conflict };
 }

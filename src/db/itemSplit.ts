@@ -1,5 +1,5 @@
 // 10.1-26 (SCN-06, SCN-07; D-14..D-17): split a shared line by its receipt items. The server owns the maths
-// (set_split_by_item recomputes every share from the items, people and extras; client shares are never sent, T-10.1-26-01),
+// (the split-by-item RPC recomputes every share from the items, people and extras; client shares are never sent, T-10.1-26-01),
 // and keeps the line's split, parts and item list as they were so Undo can put them back through restore_line_split.
 // A refusal comes back as { ok: false, reason, ... }; only a missing session or a transport failure throws.
 import type { Part } from '@/engine/parts';
@@ -23,7 +23,7 @@ export interface ItemSplitExtras {
   discounts: number;
 }
 
-/** What set_split_by_item hands back for Undo: the line's split, rule, hand-set flag, parts, category and item list. */
+/** What the split-by-item RPC hands back for Undo: the line's split, rule, hand-set flag, parts, category and item list. */
 export interface ItemSplitBefore {
   split: SplitSnapshot;
   rule: SplitRule | null;

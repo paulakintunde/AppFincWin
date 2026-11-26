@@ -18,6 +18,13 @@ jest.mock('@/data/mutations/transactions', () => ({
   useEditTransaction: () => ({ edit: mockEdit }),
 }));
 jest.mock('@/data/mutations/undoCapture', () => ({ newStepId: () => 'step-1' }));
+// 10.1-26: the split-by-item writes (covered in useConfirmScan.shared.test.ts) are never reached by these private lines.
+jest.mock('@/data/mutations/itemSplit', () => ({
+  useSetSplitByItem: () => ({ mutate: jest.fn(), isPaused: false }),
+  useRestoreLineSplit: () => ({ mutate: jest.fn() }),
+  restoreSplitVars: () => null,
+}));
+jest.mock('@/features/household/useMemberLabel', () => ({ useMemberLabel: () => (id: string | null) => id ?? '' }));
 const mockSave = jest.fn();
 const mockRemove = jest.fn();
 let mockConflict: string | null = null;
