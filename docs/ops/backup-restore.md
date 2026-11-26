@@ -45,7 +45,7 @@ Run once by hand (plan 10-29), then after any change to the dump flags. Uses the
 
 | Date | Dump object | Server version | auth.users | transactions | other table counts | transactions_original_amount_sum match | Spot checks (3 figures) | Flag changes | Result |
 |---|---|---|---|---|---|---|---|---|---|
-| | | | | | | | | | |
+| 2026-11-26 | daily/fincwin-2026-11-26.dump.age | PostgreSQL 17.6; local auth GoTrue v2.199.0 (matched to production) | 11 | match | 89 tables match counts.json | match | not done: CI rehearsal (owner-approved), first hand spot-check due at the next monthly run | restore-check skips tables postgres cannot truncate; starts production's auth version (PR #195) | PASS, CI run 45853146569 |
 
 ## Production restore (human-run)
 

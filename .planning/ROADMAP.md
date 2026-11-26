@@ -1703,7 +1703,7 @@ Plans:
 - [x] 10-28-PLAN.md — Wallet readers finalised on the owner's stripped real exports (owner 2026-11-26: no real exports; readers stay on public sample formats, real-file check open)
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 10-29-PLAN.md — [BLOCKING] Production rollout (schema push, functions, secrets, hook, reviewer accounts, first backup + rehearsal)
+- [x] 10-29-PLAN.md — [BLOCKING] Production rollout (schema push, functions, secrets, hook, reviewer accounts, first backup + rehearsal)
 
 **Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 10-30-PLAN.md — Phase gate: full suite, new builds, owner device session, validation sign-off
@@ -1850,7 +1850,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
-| 10. System | 28/30 | In Progress (10-29 needs owner OK) |  |
+| 10. System | 29/30 | In Progress (10-30 device checks next) |  |
 | 10.1 Split and receipts | 0/30 | Planned | - |
 | 10.2 Envelope rollover | 0/10 | Planned | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
