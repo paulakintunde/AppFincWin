@@ -34,6 +34,9 @@ jobs:
           DB_URL: ${{ secrets.SUPABASE_DB_URL_POOLER }}
           AGE_PUBLIC_KEY: ${{ vars.AGE_PUBLIC_KEY }}
           OUT_DIR: backup-out
+          # 10-29: only to read the auth version from /auth/v1/health (publishable key).
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       # R2 is S3-compatible: the US-jurisdiction endpoint lives in R2_ENDPOINT, region is always "auto".
       - name: Upload to R2
         run: |
