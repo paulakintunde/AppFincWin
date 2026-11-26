@@ -277,5 +277,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "WELLSPRING PHARMACY",
+    "date": "2026-10-05",
+    "total": 6863,
+    "itemCount": 6,
+    "tax": 523,
+    "tip": 0,
+    "currency": "USD"
+  }
 }

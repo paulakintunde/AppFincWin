@@ -277,5 +277,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "TIMBERLINE SUPPLY CO",
+    "date": "2026-09-19",
+    "total": 10869,
+    "itemCount": 7,
+    "tax": 828,
+    "tip": 0,
+    "currency": "USD"
+  }
 }

@@ -691,5 +691,13 @@
     "imageWidth": 989,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "MAPLE & OAK FRESH",
+    "date": "2026-11-01",
+    "total": 15459,
+    "itemCount": 28,
+    "tax": 1656,
+    "tip": 0,
+    "currency": "CAD"
+  }
 }

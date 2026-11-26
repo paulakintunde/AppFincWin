@@ -358,5 +358,13 @@
     "imageWidth": 1459,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "GREENLEAF MARKET",
+    "date": "2026-10-28",
+    "total": 5575,
+    "itemCount": 9,
+    "tax": 597,
+    "tip": 0,
+    "currency": "CAD"
+  }
 }

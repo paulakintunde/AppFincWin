@@ -223,5 +223,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "DAILY GRIND CAFE",
+    "date": "2026-07-17",
+    "total": 1725,
+    "itemCount": 4,
+    "tax": 0,
+    "tip": 0,
+    "currency": "EUR"
+  }
 }

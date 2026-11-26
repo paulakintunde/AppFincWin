@@ -66,7 +66,7 @@ describe('10.1-15 rowPrice', () => {
   it('joins a loose currency symbol or minus sign, and skips a trailing symbol', () => {
     expect(rowPrice('TOTAL $ 29.63', 2)?.amount).toBe(2963);
     expect(rowPrice('Gesamt 29,63 €', 2)).toEqual({ amount: 2963, negative: false, token: '29,63', ambiguous: false });
-    expect(rowPrice('COUPON - 1.50', 2)).toEqual({ amount: 150, negative: true, token: '-1.50', ambiguous: false });
+    expect(rowPrice('COUPON - 1.50', 2)).toEqual({ amount: 150, negative: true, token: '- 1.50', ambiguous: false });
     expect(rowPrice('COUPON -1.50', 2)?.negative).toBe(true);
   });
   it('is null when the row does not end in a price', () => {
@@ -81,5 +81,8 @@ describe('10.1-15 rowPrice', () => {
     expect(rowPrice('BREAD 12. 50', 2)).toEqual({ amount: 1250, negative: false, token: '12. 50', ambiguous: true });
     expect(rowPrice('BREAD 12 .50', 2)).toEqual({ amount: 1250, negative: false, token: '12 .50', ambiguous: true });
     expect(rowPrice('BREAD OO', 2)).toBeNull();
+    expect(rowPrice('TOTAL $40-00', 2)).toEqual({ amount: 4000, negative: false, token: '$40-00', ambiguous: true });
+    expect(rowPrice('Latte 0at 5-25', 2)?.amount).toBe(525);
+    expect(rowPrice('SIZE 1-1/4', 2)).toBeNull();
   });
 });

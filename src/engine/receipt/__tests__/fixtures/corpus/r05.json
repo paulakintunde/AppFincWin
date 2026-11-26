@@ -223,5 +223,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "CORNER CARE DRUGS",
+    "date": "2026-04-03",
+    "total": 2865,
+    "itemCount": 3,
+    "tax": 218,
+    "tip": 0,
+    "currency": "USD"
+  }
 }

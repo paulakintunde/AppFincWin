@@ -21,6 +21,10 @@ describe('10.1-15 findDate', () => {
     expect(findDate(['22 Aug 2026 13:05'], 'MDY')).toEqual({ value: '2026-08-22', unsure: false });
     expect(findDate(['14 September 2026'], 'MDY')).toEqual({ value: '2026-09-14', unsure: false });
   });
+  it('repairs l, I and O in a numeric date but flags it', () => {
+    expect(findDate(['2026-l1-24 19:54'], 'MDY')).toEqual({ value: '2026-11-24', unsure: true });
+    expect(findDate(['I7.O7.2026'], 'DMY')).toEqual({ value: '2026-07-17', unsure: true });
+  });
   it('YMD order reads a short leading year', () => {
     expect(findDate(['26/11/24'], 'YMD')).toEqual({ value: '2026-11-24', unsure: true });
     expect(findDate(['40/11/13'], 'YMD')).toEqual({ value: '2040-11-13', unsure: false });

@@ -214,5 +214,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "SMALL BATCH COFFEE",
+    "date": "2026-03-04",
+    "total": 1345,
+    "itemCount": 3,
+    "tax": 0,
+    "tip": 0,
+    "currency": "GBP"
+  }
 }

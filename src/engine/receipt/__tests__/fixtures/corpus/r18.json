@@ -232,5 +232,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "LUNA TRATTORIA",
+    "date": "2026-11-22",
+    "total": 4027,
+    "itemCount": 3,
+    "tax": 259,
+    "tip": 628,
+    "currency": "USD"
+  }
 }

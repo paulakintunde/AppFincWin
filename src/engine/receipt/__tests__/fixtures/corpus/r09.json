@@ -232,5 +232,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "NORTHSIDE FOODS",
+    "date": "2026-10-12",
+    "total": 6373,
+    "itemCount": 8,
+    "tax": 486,
+    "tip": 0,
+    "currency": "USD"
+  }
 }

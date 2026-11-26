@@ -565,5 +565,13 @@
     "imageWidth": 1136,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "HARVEST LANE GROCERY",
+    "date": "2026-10-21",
+    "total": 10047,
+    "itemCount": 22,
+    "tax": 0,
+    "tip": 0,
+    "currency": "GBP"
+  }
 }

@@ -259,5 +259,13 @@
     "imageWidth": 1500,
     "imageHeight": 2000
   },
-  "expected": null
+  "expected": {
+    "store": "THE COPPER KETTLE",
+    "date": "2026-11-08",
+    "total": 7009,
+    "itemCount": 5,
+    "tax": 696,
+    "tip": 963,
+    "currency": "CAD"
+  }
 }
