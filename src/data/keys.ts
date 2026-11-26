@@ -256,6 +256,9 @@ export const mutationKeys = {
   setMyLineCategory: ['household-sharing', 'my-category'] as const,
   // 10.1-11 (SPL-01): the parts of a line, queued like the other line writes.
   setCategoryParts: ['setCategoryParts'] as const,
+  // 10.1-26 (D-17): split a shared line by its receipt items, and its Undo; queued like the other line writes.
+  setSplitByItem: ['setSplitByItem'] as const,
+  restoreLineSplit: ['restoreLineSplit'] as const,
   // 10-03: alert switches and delivery preferences, month archive and restore.
   saveAlertSetting: ['save-alert-setting'] as const,
   saveAlertPrefs: ['save-alert-prefs'] as const,

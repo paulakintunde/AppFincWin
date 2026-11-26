@@ -49,6 +49,7 @@ import { registerGrowDebtMutations } from './growDebts';
 import { registerGrowHoldingMutations } from './growHoldings';
 import { registerHouseholdSharingMutations } from './householdSharing';
 import { registerCategoryPartsDefaults } from './categoryParts';
+import { registerItemSplitDefaults } from './itemSplit';
 import { registerUserSetupMutations } from './userSetup';
 import { registerArchivedMonthMutations } from './archivedMonths';
 import { registerAlertMutations } from './alertSettings';
@@ -139,6 +140,8 @@ function registerAll(qc: QueryClient): void {
   registerHouseholdSharingMutations(qc);
   // 10.1-11: save a line's category parts (queued, version-checked, undoable).
   registerCategoryPartsDefaults(qc);
+  // 10.1-26: split a shared line by its receipt items, and put the previous split back (Undo).
+  registerItemSplitDefaults(qc);
   // 09-13: the person's private level, answers and feature switches.
   registerUserSetupMutations(qc);
   // Phase 10 (10-03): archive and restore months; alert switches and delivery preferences.
