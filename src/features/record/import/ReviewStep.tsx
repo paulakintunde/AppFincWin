@@ -15,12 +15,15 @@ import { CategoryPicker } from '@/features/record/entry/pickers/CategoryPicker';
 import { categoryName } from '@/features/record/categoryName';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
+import { QueueNote } from '@/features/record/entry/QueueNote';
 import { Pill } from '@/ui/Pill';
 import { StatusBadge } from '@/ui/status/StatusBadge';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space } from '@/theme/layout';
 import { Actions, Heading, SuggestionCard, T, Tag, useDynamicT, useFormatAmount } from './importUi';
 import { DisclosureRow } from './ReconcileChoice';
+import { WalletReview } from './WalletReview';
 import { useExtrasDetail } from './ExtrasDetail';
 import { buildReviewItems, EXTRAS_PAGE, type ReviewItem } from './reconcileView';
 import type { DraftRowIssue } from '@/engine/statement';
@@ -86,8 +89,15 @@ function Reconciliation({ file }: { file: string | null }) {
   }
 }
 
+/** 10-26 (D-21): a recognised wallet file has its own preview; every other file keeps the generic one. */
 export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: () => void }) {
+  if ((state.wallet ?? null) !== null || (state.walletError ?? null) !== null) return <WalletReview state={state} />;
+  return <GenericReviewStep state={state} onClose={onClose} />;
+}
+
+function GenericReviewStep({ state, onClose }: { state: ImportState; onClose?: () => void }) {
   const t = useT();
+  const queueGuard = useQueueGuard();
   const tx = useDynamicT();
   const fmt = useFormatAmount();
   const rc = useRecordContext();
@@ -158,6 +168,7 @@ export function ReviewStep({ state, onClose }: { state: ImportState; onClose?: (
   const footer = (
     <View>
       {state.commitProblem === 'failed' ? <T tone="inkMuted">{t('importCsv.commitFailed')}</T> : null}
+      {state.commitProblem === 'queueFull' ? <QueueNote queued={queueGuard.queued} state="blocked" testID="import-queue-note" /> : null}
       {state.reviewGate.required ? (
         <Pressable
           accessibilityRole="checkbox"

@@ -34,6 +34,7 @@
     "expo-font": "~57.0.4",
     "expo-haptics": "~57.0.3",
     "expo-linking": "~57.0.10",
+    "expo-local-authentication": "~57.0.2",
     "expo-localization": "~57.0.2",
     "expo-notifications": "~57.0.23",
     "expo-router": "~57.0.22",
@@ -86,7 +87,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
-    "test:deno": "deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts supabase/functions/delete-account/delete.test.ts supabase/functions/_shared/revenuecat/subscriber.test.ts supabase/functions/plan-webhook/verify.test.ts supabase/functions/plan-webhook/sync.test.ts supabase/functions/plan-refresh/refresh.test.ts supabase/functions/plan-grant/grant.test.ts",
+    "test:deno": "deno test --allow-read --node-modules-dir=none supabase/functions/read-pdf-statement/unpdf_integration_test.ts supabase/functions/delete-account/delete.test.ts supabase/functions/_shared/revenuecat/subscriber.test.ts supabase/functions/plan-webhook/verify.test.ts supabase/functions/plan-webhook/sync.test.ts supabase/functions/plan-refresh/refresh.test.ts supabase/functions/plan-grant/grant.test.ts supabase/functions/alerts-deliver/schedule.test.ts supabase/functions/alerts-deliver/text.test.ts supabase/functions/alerts-deliver/deliver.test.ts supabase/functions/_shared/rateLimit.test.ts supabase/functions/reviewer-signin/signin.test.ts",
     "fixtures:pdf:snapshot": "deno run --allow-read --allow-write --node-modules-dir=none supabase/functions/_fixtures/tools/snapshot-pdf-extractions.ts",
     "start": "expo start",
     "android": "expo run:android",

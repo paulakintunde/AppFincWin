@@ -5,6 +5,7 @@
  * the server trigger refuses it regardless (T-09-57).
  */
 import { useCallback } from 'react';
+import { useArchivedMonthGate } from '@/features/archive/archivedMonthGate';
 import { useT } from '@/i18n';
 import { useLockedSheetOpener } from './lockedSheetContext';
 import type { LockActionId, LockVariant } from './lockTypes';
@@ -24,18 +25,27 @@ export function useWriteGate(action: LockActionId): WriteGate {
   const plan = usePlanState();
   const t = useT();
   const openSheet = useLockedSheetOpener();
+  const archivedScope = useArchivedMonthGate();
   // Never gate on a guess: until the first plan_state load answers, the button works (the server still decides).
   const gated = !plan.writable && !plan.loading;
-  const variant: LockVariant | null = gated ? (plan.status === 'sample' ? 'sample' : 'locked') : null;
+  const planVariant: LockVariant | null = gated ? (plan.status === 'sample' ? 'sample' : 'locked') : null;
+  // 10-24 (D-14): the plan lock keeps precedence; inside an archived month a write explains the restore step instead.
+  const archived = planVariant === null && archivedScope !== null;
+  const variant: LockVariant | null = planVariant ?? (archived ? 'archived' : null);
   const run = useCallback(
     (fn: () => void) => {
-      if (!gated || variant === null) {
+      if (variant === null) {
         fn();
+        return;
+      }
+      if (variant === 'archived') {
+        archivedScope?.openRestore();
         return;
       }
       openSheet?.({ action, variant });
     },
-    [gated, variant, openSheet, action],
+    [variant, archivedScope, openSheet, action],
   );
-  return { gated, variant, run, a11ySuffix: gated ? t('lock.accessibleSuffix') : null };
+  const a11ySuffix = gated ? t('lock.accessibleSuffix') : archived ? t('system.archive.a11ySuffix') : null;
+  return { gated: gated || archived, variant, run, a11ySuffix };
 }

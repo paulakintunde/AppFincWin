@@ -1,8 +1,11 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { deleteAccount, type DeleteDeps } from './delete.ts';
+import { hitRateLimit, tooManyRequests } from '../_shared/rateLimit.ts';
 
 // Same bucket and folder layout as read-pdf-statement: statement-uploads/<user id>/<file>.pdf.
 const STATEMENT_BUCKET = 'statement-uploads';
+
+const RATE_LIMIT = { limit: 3, windowSeconds: 3600 }; // ACC-13
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -25,11 +28,15 @@ Deno.serve(async (req) => {
   // The service role key lives only in the function's environment: never returned, never logged.
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
 
+  // Memoised so auth.getUser() runs once per request.
+  let callerPromise: Promise<string | null> | null = null;
+  const getCallerId = () => {
+    callerPromise ??= userClient.auth.getUser().then(({ data, error }) => (error || !data?.user ? null : data.user.id));
+    return callerPromise;
+  };
+
   const deps: DeleteDeps = {
-    getCallerId: async () => {
-      const { data, error } = await userClient.auth.getUser();
-      return error || !data?.user ? null : data.user.id;
-    },
+    getCallerId,
     listUserStorageObjects: async (userId) => {
       const { data, error } = await admin.storage.from(STATEMENT_BUCKET).list(userId, { limit: 1000 });
       if (error) throw new Error('storage');
@@ -47,6 +54,12 @@ Deno.serve(async (req) => {
       return { error: error ? 'delete_failed' : null };
     },
   };
+
+  const callerId = await getCallerId();
+  if (callerId) {
+    const rl = await hitRateLimit(admin, 'delete-account:' + callerId, RATE_LIMIT.limit, RATE_LIMIT.windowSeconds);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+  }
 
   const result = await deleteAccount({ method: req.method }, deps);
   return json(result.body, result.status);

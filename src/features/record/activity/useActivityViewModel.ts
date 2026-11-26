@@ -7,6 +7,7 @@ import { useAccounts } from '@/data/queries/accounts';
 import { useDebts } from '@/data/queries/decide';
 import { useDebtPayments } from '@/data/queries/growDebts';
 import { useAddMonth } from '@/data/mutations/addMonth';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
 import { useSeriesOffers } from '@/data/queries/offers';
 import {
   useMonthView,
@@ -36,7 +37,9 @@ import {
   type SortKey,
 } from '@/engine/activity';
 import { money } from '@/engine/money';
+import { withoutArchivedRows } from '@/engine/archive';
 import { monthOf } from '@/engine/time';
+import { useArchiveState } from '@/features/archive/useArchiveState';
 import type { EntryMode } from '@/features/record/entry/transactionForm';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { useT } from '@/i18n';
@@ -246,6 +249,11 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   // ACT-03: a 2+ character term in Every month scope is a server search; shorter terms leave
   // the month list alone. Month scope narrows the loaded month instantly.
   const search = useTransactionsSearch(rc.householdId, scope === 'all' ? term : '', rc.homeCurrency, rc.today);
+  // 10-24 (D-13, DAT-01): an archived month's rows leave the person's search results (a view filter only; the data and every
+  // money answer are untouched). Filtering here keeps src/data/queries free of archive state (10-16 import guard).
+  const archive = useArchiveState();
+  const searchRows = useMemo(() => withoutArchivedRows(search.rows, archive.archived), [search.rows, archive.archived]);
+  const visibleSearch = useMemo(() => ({ ...search, rows: searchRows }), [search, searchRows]);
   const flat = scope === 'all' && search.enabled;
   const searching = scope === 'month' ? term.trim() !== '' : flat;
   // 03.1 review WR-01 / D-61: while the search field is open every filter indicator (badge row,
@@ -255,11 +263,11 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   const appliedDebt = searchOpen ? null : debt;
   const filtering = isFilterActive(appliedFilter) || appliedDebt !== null;
   const narrowed = useMemo(() => {
-    let base: ActivityRowView[] = flat ? search.rows : monthView.rows;
+    let base: ActivityRowView[] = flat ? searchRows : monthView.rows;
     if (scope === 'month' && term.trim() !== '') base = base.filter((r) => matchesSearch(r, term));
     if (appliedDebt !== null) base = base.filter((r) => matchesDebt(r, appliedDebt));
     return filterRows(base, appliedFilter);
-  }, [flat, search.rows, monthView.rows, scope, term, appliedFilter, appliedDebt]);
+  }, [flat, searchRows, monthView.rows, scope, term, appliedFilter, appliedDebt]);
 
   // 03-CONTEXT D-34/D-35: projected bills join the Unpaid list so it matches Home's UNPAID;
   // other filters keep hiding projections.
@@ -433,8 +441,14 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   const hasEarlier = useMemo(() => [...counts].some(([m, n]) => m < month && n > 0), [counts, month]);
   const addMonth = addableMonth(rc.today, rc.horizonMonth ?? null);
   const { add: addMonthMutation } = useAddMonth();
+  const guard = useQueueGuard();
   const onAddMonth = () => {
     if (addMonth === null || rc.householdId === null || rc.userId === null) return;
+    // 10-13 (D-28): adding a month is one queued change; at 500 waiting it is refused with the same calm message.
+    if (!guard.canAdd(1)) {
+      showToast({ kind: 'info', text: { key: 'system.queue.fullBody', params: { count: guard.queued } } });
+      return;
+    }
     addMonthMutation({
       householdId: rc.householdId,
       ownerId: rc.userId,
@@ -477,7 +491,7 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
     debt,
     searching,
     flat,
-    search,
+    search: visibleSearch,
     view,
     setView,
     sort,

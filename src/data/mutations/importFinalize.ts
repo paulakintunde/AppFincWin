@@ -37,6 +37,7 @@ import { recordFailedWrite } from '@/data/sync/failedWrites';
 import { guardSession, markSession } from '@/data/sync/sessionEpoch';
 import { recordWrittenVersion, resolveExpectedVersion } from '@/data/sync/versionChain';
 import { writeClient } from './writeClient';
+import { newStepId } from './undoCapture';
 import { chunkKeepingPairs, useImportChunks } from './transactions';
 
 // Re-exported so downstream code can `import { chunkKeepingPairs } from
@@ -114,6 +115,17 @@ export interface ImportCommitInput {
   batchId: string;
   stepId: string;
   rows: NewTransaction[];
+  /**
+   * 10-26 (D-23): wallet fee expenses. Each is inserted in the same chunk flow as `rows` and so lands
+   * in the same undo step; fx_fee_of points at its payment row (null for a fee with no payment line).
+   */
+  walletFees?: { forRowId: string | null; row: NewTransaction }[];
+  /**
+   * 10-26 (IMP-06): wallet conversions. Both legs are inserted already sharing a transfer_id and the
+   * Transfer category (the pair rule is checked at commit, with both legs visible), so the one undo
+   * step removes both. Needs finalize.transferCategoryId.
+   */
+  walletPairs?: { fromRowId: string; toRowId: string }[];
   finalize: Omit<ImportFinalizeVars, 'householdId' | 'ownerId' | 'batchId' | 'stepId' | 'insertedIds'>;
 }
 
@@ -448,15 +460,35 @@ export function useImportCommit(): { commit(input: ImportCommitInput): void } {
         }
       }
 
+      // 10-26: a wallet conversion needs the Transfer category; refused before anything is enqueued.
+      const walletPairs = input.walletPairs ?? [];
+      if (walletPairs.length > 0 && !input.finalize.transferCategoryId) {
+        throw new TypeError('useImportCommit: transferCategoryId is required when wallet conversions are present');
+      }
+
       // C-IN-01: every line was de-duplicated away and nothing was accepted -- there is no
       // write and no undo step to record (an empty step would only fail as a spurious import).
       const { links, markPaid, limit } = input.finalize;
-      if (input.rows.length === 0 && links.length === 0 && markPaid.length === 0 && limit === null) return;
+      if (input.rows.length === 0 && (input.walletFees ?? []).length === 0 && links.length === 0 && markPaid.length === 0 && limit === null) return;
 
       // C-WR-09: every row this commit inserts belongs to this batch (REC-14 provenance,
       // dedupe by batch, History). Stamped here so it never depends on the caller setting the
       // optional field -- otherwise the optimistic row showed the batch and the saved one lost it.
-      const rows = input.rows.map((r) => ({ ...r, import_batch_id: input.batchId }));
+      const transferOf = new Map<string, string>();
+      for (const pair of walletPairs) {
+        const transferId = newStepId();
+        transferOf.set(pair.fromRowId, transferId);
+        transferOf.set(pair.toRowId, transferId);
+      }
+      const walletFeeRows = (input.walletFees ?? []).map((f) => (f.forRowId === null ? f.row : { ...f.row, fx_fee_of: f.forRowId }));
+      const rows = [...input.rows, ...walletFeeRows].map((r) => {
+        const transferId = transferOf.get(r.id);
+        return {
+          ...r,
+          import_batch_id: input.batchId,
+          ...(transferId === undefined ? {} : { transfer_id: transferId, category_id: input.finalize.transferCategoryId }),
+        };
+      });
       const insertedIds = rows.map((r) => r.id);
       enqueue({
         householdId: input.householdId,

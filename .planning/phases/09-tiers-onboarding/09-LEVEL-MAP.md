@@ -17,7 +17,7 @@ How to sign: move any feature to another level (change the `minLevel` number, 1 
 | 3 | Full picture | Adds debt payoff, investments, reconciliation and other currencies. |
 | 4 | Everything | Adds the archive, undo history and every part of Decide. |
 
-Level names are fixed (D-32). The sentences are drafts. "Alerts" and "the archive" are Phase 10 and are not rows yet, so the sentences for Everyday and Everything mention them for the day they land.
+Level names are fixed (D-32). The sentences are drafts. "Alerts" is Phase 10 and is not a row yet. The archive row landed in Phase 10 (10-16); the Everything sentence already mentioned it.
 
 ## 2. Feature table (every feature that is built in this repo)
 
@@ -55,6 +55,7 @@ Columns: feature id, area, label, one-line sub, level it appears at, needs a hou
 | import | System | Import and paste | Bring in a list or a statement | 3 | no | exists import profile or imported line | none | src/features/record/import/PasteSheet.tsx |
 | pdfImport | System | Read a PDF statement | Bring in a statement from a PDF | 3 | no | none | none | src/services/statementPdf/readPdf.ts |
 | undoHistory | System | Undo history | Roll back one of your recent changes | 4 | no | none | none | src/data/mutations/undo.ts |
+| archive | System | Archive | Older months kept out of the way | 4 | no | none | none | src/features/archive/useArchiveState.ts |
 | hh.weightSplit | Sharing | Split by weight | Split a line by shares, such as 60 / 40 | 2 | yes | exists weight split on a line | sharing answer is not no: on | src/config/householdFeatures.ts |
 | hh.amountSplit | Sharing | Split by amount | Split a line by exact amounts | 2 | yes | exists amount split on a line | sharing answer is not no: on | src/config/householdFeatures.ts |
 | hh.categoryDefaults | Sharing | Category split rules | Groceries by weight, dining even, applied as you type | 2 | yes | exists category default split rule | sharing answer is not no: on | app/(app)/household/category-defaults.tsx |
@@ -70,12 +71,12 @@ How the level is worked out (prototype `levelFor`, with tax removed): "Keep trac
 
 ## 3. Counts (the Features screen reads these)
 
-35 features are listed. A level turns on every feature at that level or below.
+36 features are listed. A level turns on every feature at that level or below.
 
-- Basics: 5 of 35 on
-- Everyday: 20 of 35 on
-- Full picture: 32 of 35 on
-- Everything: 35 of 35 on
+- Basics: 5 of 36 on
+- Everyday: 20 of 36 on
+- Full picture: 32 of 36 on
+- Everything: 36 of 36 on
 
 The five household rows count at Everyday. Without a household they show "Not on for your household" and stay off, so a person with no household sees fewer on than the count.
 
@@ -91,7 +92,6 @@ The five household rows count at Everyday. Without a household they show "Not on
 | Licence and devices | Not built, and not a feature the app offers. |
 | Coach | Parked as backlog 999.4 (D-25). Its Home quick action stays hidden. |
 | Alerts | Phase 10 builds them. The row appears then. |
-| Archive | Phase 10 builds it. The row appears then. |
 | Price feed | Not built. |
 | Read-only summary link | Deferred (HH-12). |
 | Export | Always open at every level and every plan (it is a You row, not a feature switch). |

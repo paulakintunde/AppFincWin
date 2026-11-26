@@ -28,6 +28,8 @@ import {
   REFUND_LOOKBACK_DAYS,
   type RefundPurchase,
   type StatementDraft,
+  type WalletDrafts,
+  type WalletKind,
   type ExtraLine,
   findExtras,
   statementPeriod,
@@ -51,6 +53,8 @@ import { useCustomCurrencies } from '@/data/queries/customCurrencies';
 import { useFxLatest } from '@/data/queries/fxLatest';
 import { latestPerEur } from '@/data/queries/homeAmount';
 import { useImportCommit } from '@/data/mutations/importFinalize';
+import { useAddCategory } from '@/data/mutations/categories';
+import { useQueueGuard } from '@/data/sync/useQueueGuard';
 import { useRecordStatementPeriod } from '@/data/mutations/decideLinks';
 import { suggestionToSeries, useCreateSeries } from '@/data/mutations/recurringSeries';
 import { newStepId } from '@/data/mutations/undoCapture';
@@ -66,6 +70,7 @@ import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
 import { hapticMilestone } from '@/ui/haptics';
 import { importExponentLookup, type ExponentLookup } from './currencyLookup';
+import { buildWalletCommit, FEES_CATEGORY_NAME, NO_WALLET_MARKS, walletMarks, walletPlan, type WalletMarks, type WalletPlan } from './walletModel';
 import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap';
 import { periodFullyImported } from './periodCoverage';
 import {
@@ -141,6 +146,18 @@ interface Machine {
   notation: NumberNotation | null;
   notationChosen: boolean;
   notationEdited: boolean;
+  // 10-26 (D-21..D-23): a recognised wallet file. Stage stays 'review'; the generic preview stays null.
+  wallet: WalletDrafts | null;
+  /** 10-28: a non-wallet file was picked before any account; the pick step asks for one. */
+  needAccount: boolean;
+  /** A named reader matched but a column is missing: the warning offers the generic import. */
+  walletError: WalletKind | null;
+  /** Currency -> the new-account switch (D-22: every switch starts off). */
+  walletCreate: ReadonlySet<string>;
+  /** Currency -> the account the person picked or just created. */
+  walletLink: ReadonlyMap<string, string>;
+  /** Conversions unlinked by the person, by outgoing line index. */
+  walletUnlinked: ReadonlySet<number>;
   // review and matches: every default is "not accepted" (D-48, D-52, D-55)
   preview: Preview | null;
   existingById: ReadonlyMap<string, ExistingInfo>;
@@ -190,7 +207,7 @@ const NONE = new Map<never, never>();
  * hold; transfers asked for while the transfer category is unknown; or the write was refused
  * before anything was queued. Each leaves the user's choices in place to adjust and retry.
  */
-export type CommitProblem = 'suggestionCap' | 'transfersUnavailable' | 'failed';
+export type CommitProblem = 'suggestionCap' | 'transfersUnavailable' | 'failed' | 'queueFull';
 
 /** The mapping roles whose cells decide the decimal mark (S-CR-06). */
 const AMOUNT_ROLES = ['amount', 'debit', 'credit', 'balance', 'limit'] as const;
@@ -217,6 +234,12 @@ function initialMachine(accountId: string | null): Machine {
     notation: null,
     notationChosen: false,
     notationEdited: false,
+    wallet: null,
+    needAccount: false,
+    walletError: null,
+    walletCreate: new Set<string>(),
+    walletLink: NONE,
+    walletUnlinked: new Set<number>(),
     preview: null,
     existingById: NONE,
     mode: null,
@@ -356,6 +379,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const fx = useFxLatest();
   const { balances } = useAccountBalances(ctx.householdId, accounts);
   const importCommit = useImportCommit();
+  const addCategory = useAddCategory();
   const recordPeriod = useRecordStatementPeriod();
   const createSeries = useCreateSeries();
 
@@ -364,6 +388,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const [commitProblem, setCommitProblem] = useState<CommitProblem | null>(null);
   const run = useRef(0); // bumped on every restart or cancel, so a late read is dropped
   const committing = useRef(false);
+  const queueGuard = useQueueGuard();
   // D-10 / D-16: the picked PDF's bytes and the server's text live only here, never in state, and
   // are dropped as soon as they are read, on any rejection, cancel, commit or unmount.
   const pdfBytes = useRef<Uint8Array | null>(null);
@@ -712,6 +737,11 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         return;
       }
       const p = prepared.prepared;
+      // 10-28: a wallet file picks its own accounts, so it may be chosen before any account; every other file needs one.
+      if (m.accountId === null && !(p.format === 'csv' && p.csv.wallet?.ok === true)) {
+        setM({ ...initialMachine(null), needAccount: true, stage: 'idle' });
+        return;
+      }
       if (p.format === 'pdf') {
         // D-06: offline stops here, before the notice; nothing is uploaded or queued.
         if (!onlineManager.isOnline()) {
@@ -730,6 +760,19 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
         next.reading = p.csv;
         next.dateFormat = p.csv.dateFormat;
         next.notation = p.csv.notation;
+        // 10-26 (D-21): a PayPal, Wise or Revolut file goes straight to its own preview.
+        const w = p.csv.wallet;
+        if (w !== undefined) {
+          if (w.ok) {
+            setM({ ...next, wallet: w.drafts, stage: 'review' });
+          } else if (w.error === 'missing-column') {
+            setM({ ...next, walletError: w.wallet, stage: 'review' });
+          } else {
+            track('import_file_rejected', { reason: 'unreadable' });
+            patch({ stage: 'rejected', rejectReason: 'unreadable' });
+          }
+          return;
+        }
       } else if (p.statements.length > 1) {
         setM({ ...next, stage: 'choose-statement' });
         return;
@@ -1350,9 +1393,202 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const acceptPayMatch = useCallback((index: number): void => answerPayMatch(index, true), [answerPayMatch]);
   const dismissPayMatch = useCallback((index: number): void => answerPayMatch(index, false), [answerPayMatch]);
 
+  // --- wallet files (10-26: IMP-06, D-21..D-23) -------------------------------------------
+
+  const planAccounts = useMemo(
+    () => accounts.map((a) => ({ id: a.id, name: a.name, currency: a.currency, archived: a.archived_at !== null })),
+    [accounts]
+  );
+  const walletPlanBase: WalletPlan | null = useMemo(
+    () => (m.wallet === null ? null : walletPlan(m.wallet, planAccounts, { create: m.walletCreate, link: m.walletLink, unlinked: m.walletUnlinked })),
+    [m.wallet, m.walletCreate, m.walletLink, m.walletUnlinked, planAccounts]
+  );
+  // D-34: the statement import's duplicate check and category guess, run over the wallet's lines once
+  // the accounts they land in are known. The Import pill waits for the check to finish, so a
+  // re-imported file can never slip through while the stored rows are still being read.
+  const walletTargetKey = useMemo(
+    () => (walletPlanBase === null ? null : walletPlanBase.targets.map((x) => `${x.currency}=${x.accountId ?? ''}`).join(',')),
+    [walletPlanBase]
+  );
+  const walletLookupRef = useRef({ all: lookup.all, builtinIds: lookup.builtinIds, t });
+  const walletAccountsRef = useRef<ReadonlyMap<string, string>>(new Map());
+  // Refs are refreshed in an effect (not during render). Declared before the marks effect below, so in the
+  // same commit it runs first and the marks effect reads this render's values.
+  useEffect(() => {
+    walletLookupRef.current = { all: lookup.all, builtinIds: lookup.builtinIds, t };
+    walletAccountsRef.current = new Map((walletPlanBase?.targets ?? []).flatMap((x) => (x.accountId === null ? [] : [[x.currency, x.accountId] as const])));
+  });
+  const [walletMarksState, setWalletMarksState] = useState<{ key: string | null; marks: WalletMarks }>({ key: null, marks: NO_WALLET_MARKS });
+  const walletMarksReady = walletTargetKey !== null && walletMarksState.key === walletTargetKey;
+  const walletMarksNow = walletMarksReady ? walletMarksState.marks : NO_WALLET_MARKS;
+  const walletPlanNow: WalletPlan | null = useMemo(
+    () =>
+      m.wallet === null
+        ? null
+        : walletPlan(m.wallet, planAccounts, { create: m.walletCreate, link: m.walletLink, unlinked: m.walletUnlinked, marks: walletMarksNow }),
+    [m.wallet, m.walletCreate, m.walletLink, m.walletUnlinked, planAccounts, walletMarksNow]
+  );
+
+  useEffect(() => {
+    const drafts = m.wallet;
+    const householdId = ctx.householdId;
+    const userId = ctx.userId;
+    if (drafts === null || walletTargetKey === null || householdId === null || userId === null) return;
+    let live = true;
+    const accountByCurrency = walletAccountsRef.current;
+    void (async () => {
+      const dates = drafts.drafts.flatMap((d) => d.rows.flatMap((r) => (r.localDate === null ? [] : [r.localDate]))).sort();
+      const range = { from: addDays(dates[0] ?? ctx.today, -2), toInclusive: addDays(dates[dates.length - 1] ?? ctx.today, 2) };
+      const accountIds = [...new Set(accountByCurrency.values())];
+      const [namesRead, rulesRead, ...reads] = await Promise.all([
+        attempt(() => fetchCategorisedNames(supabase, householdId, userId)),
+        attempt(() => fetchCategoryRules(supabase)),
+        ...accountIds.map((id) => attempt(() => fetchTransactionsInRange(supabase, householdId, { ...range, accountId: id }))),
+      ]);
+      if (!live) return;
+      const existingByAccount = new Map<string, ExistingRow[]>();
+      accountIds.forEach((id, i) => {
+        const read = reads[i];
+        // A failed read falls back to the cached month rows for this account, as the statement import does.
+        const stored: TransactionRow[] =
+          read !== undefined && read.ok
+            ? read.value
+            : cachedRows(
+                qc.getQueriesData<unknown[]>({ queryKey: queryKeys.transactionsRoot(householdId) }).flatMap(([, data]) => (Array.isArray(data) ? [data] : []))
+              ).filter((r) => r.account_id === id && r.local_date >= range.from && r.local_date <= range.toInclusive);
+        existingByAccount.set(
+          id,
+          stored
+            .filter((r) => r.status !== 'pending')
+            .map((r) => ({ id: r.id, localDate: r.local_date, amount: r.original_amount, name: r.name ?? null, externalId: r.external_id ?? null, importFormat: r.import_format ?? null }))
+        );
+      });
+      const names = namesRead.ok ? namesRead.value : [];
+      const resolvedRules = resolveRules((rulesRead.ok ? rulesRead.value : []).map(toStoredRule), memberCategoriesOf(walletLookupRef.current.all, walletLookupRef.current.t));
+      const marks = walletMarks(drafts, accountByCurrency, existingByAccount, {
+        learned: buildLearnedMap(names.map((n) => ({ name: n.name, categoryId: n.category_id, updatedAt: n.updated_at }))),
+        builtinIds: walletLookupRef.current.builtinIds,
+        personalRules: resolvedRules.personal,
+        sharedRules: resolvedRules.shared,
+      });
+      setWalletMarksState({ key: walletTargetKey, marks });
+    })();
+    return () => {
+      live = false;
+    };
+  }, [ctx.householdId, ctx.today, ctx.userId, m.wallet, qc, walletTargetKey]);
+
+  const setWalletCreate = useCallback((currency: string, on: boolean): void => {
+    setM((prev) => {
+      const next = new Set(prev.walletCreate);
+      if (on) next.add(currency);
+      else next.delete(currency);
+      return { ...prev, walletCreate: next };
+    });
+  }, []);
+
+  /** D-22: the person picked an existing account for a currency (or the card just created one). */
+  const linkWalletAccount = useCallback((currency: string, accountId: string): void => {
+    setM((prev) => {
+      const create = new Set(prev.walletCreate);
+      create.delete(currency);
+      return { ...prev, walletCreate: create, walletLink: new Map(prev.walletLink).set(currency, accountId) };
+    });
+  }, []);
+
+  const toggleWalletConversion = useCallback((fromIndex: number): void => {
+    setM((prev) => {
+      const next = new Set(prev.walletUnlinked);
+      if (next.has(fromIndex)) next.delete(fromIndex);
+      else next.add(fromIndex);
+      return { ...prev, walletUnlinked: next };
+    });
+  }, []);
+
+  /** Switches every new-account offer off: those lines stay held back (D-22 "Skip these lines"). */
+  const skipWalletLines = useCallback((): void => patch({ walletCreate: new Set<string>() }), [patch]);
+
+  /** The missing-column warning's action: the file goes through the generic column matcher instead. */
+  const matchWalletColumns = useCallback((): void => {
+    const next: Machine = { ...m, wallet: null, walletError: null, stage: 'format' };
+    setM(next);
+    if (next.accountId !== null) void derive(next, next.accountId);
+  }, [derive, m]);
+
+  const commitWallet = useCallback((): void => {
+    const drafts = m.wallet;
+    const plan = walletPlanNow;
+    const householdId = ctx.householdId;
+    const userId = ctx.userId;
+    if (m.stage !== 'review' || committing.current || !walletMarksReady || drafts === null || plan === null || householdId === null || userId === null) return;
+    // Nothing is guessed: a currency switched on but not yet created waits for its account.
+    if (plan.targets.some((x) => x.create && x.accountId === null)) return;
+    const accountByCurrency = new Map(plan.targets.flatMap((x) => (x.accountId === null ? [] : [[x.currency, x.accountId] as const])));
+    const batchId = newStepId();
+    const stepId = newStepId();
+    const existingFees = lookup.active.find((c) => c.builtin_key === null && (c.name ?? '').trim().toLowerCase() === FEES_CATEGORY_NAME.toLowerCase());
+    const build = (feesCategoryId: string | null) =>
+      buildWalletCommit({
+        drafts,
+        accountByCurrency,
+        householdId,
+        timeZone: ctx.timeZone,
+        batchId,
+        feesCategoryId,
+        transferCategoryId: lookup.transferCategoryId,
+        unlinked: m.walletUnlinked,
+        marks: walletMarksNow,
+        newId: newStepId,
+      });
+    const probe = build(existingFees?.id ?? null);
+    const total = probe.rows.length + probe.walletFees.length + (probe.walletFees.length > 0 && existingFees === undefined ? 1 : 0);
+    if (total === 0) return;
+    // D-27/D-28: the whole import is refused up front when it would pass the 500 waiting changes.
+    if (!queueGuard.canAdd(total)) {
+      setCommitProblem('queueFull');
+      return;
+    }
+    // D-23: the Fees category is created on first use and is the person's own.
+    let feesId = existingFees?.id ?? null;
+    if (probe.walletFees.length > 0 && feesId === null) {
+      feesId = addCategory.add({ ownerId: userId, name: FEES_CATEGORY_NAME, colorKey: 'slate' }).id;
+    }
+    const built = feesId === (existingFees?.id ?? null) ? probe : build(feesId);
+
+    committing.current = true;
+    try {
+      importCommit.commit({
+        householdId,
+        userId,
+        homeCurrency: ctx.homeCurrency,
+        batchId,
+        stepId,
+        rows: built.rows,
+        walletFees: built.walletFees,
+        walletPairs: built.walletPairs,
+        finalize: { transferCategoryId: lookup.transferCategoryId, links: [], markPaid: [], limit: null, profile: null },
+      });
+    } catch {
+      committing.current = false;
+      setCommitProblem('failed');
+      return;
+    }
+    setCommitProblem(null);
+    maybeRequestSampleClearPrompt(qc, { householdId, userId });
+    const count = built.rows.length + built.walletFees.length;
+    showToast({ kind: 'destructive', text: { key: 'undo.label.imported', params: { count, n: count } }, stepId });
+    hapticMilestone();
+    track('import_committed', { entry, size: sizeBand(count), format: 'csv', reconciliation: 'none_in_file' });
+    patch({ stage: 'done', suggestions: [], committedRows: [], committedCount: count, committedStepId: stepId });
+  }, [addCategory, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, importCommit, lookup.active, lookup.transferCategoryId, m.stage, m.wallet, m.walletUnlinked, patch, qc, queueGuard, walletMarksNow, walletMarksReady, walletPlanNow]);
+
   // --- commit ---------------------------------------------------------------------------
 
   const commit = useCallback((): void => {
+    if (m.wallet !== null) {
+      commitWallet();
+      return;
+    }
     const { preview, profile, draft } = m;
     const account = accountById(m.accountId);
     const householdId = ctx.householdId;
@@ -1398,6 +1634,12 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     );
     // Nothing included and nothing marked paid: there is nothing to write.
     if (built.rows.length === 0 && built.finalize.markPaid.length === 0) return;
+    // 10-13 (D-28): an import that would push the waiting changes past 500 is refused up front, before any write.
+    if (!queueGuard.canAdd(built.rows.length)) {
+      setCommitProblem('queueFull');
+      if (m.stage === 'review') patch({ stage: 'matches' });
+      return;
+    }
 
     // Held until the next start or cancel, so a double tap can never write the batch twice.
     committing.current = true;
@@ -1470,7 +1712,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
       committedCount: count,
       committedStepId: stepId,
     });
-  }, [accountById, accounts, clearPdf, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, recordPeriod, rowsChecked, transfersUnavailable]);
+  }, [accountById, accounts, clearPdf, commitWallet, ctx.homeCurrency, ctx.householdId, ctx.timeZone, ctx.userId, entry, exponentFor, gate.required, importCommit, isIncluded, lookup.transferCategoryId, m, overSuggestionCap, patch, qc, queueGuard, recordPeriod, rowsChecked, transfersUnavailable]);
 
   const acceptSuggestion = useCallback(
     (key: string): void => {
@@ -1520,9 +1762,12 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
   const back = useCallback((): void => {
     if (m.stage === 'mapping') patch({ stage: 'format' });
     else if (m.stage === 'choose-mode') patch({ stage: m.prepared?.format === 'csv' ? 'mapping' : 'format' });
-    else if (m.stage === 'review') patch({ stage: 'choose-mode' });
+    else if (m.stage === 'review') {
+      if (m.wallet !== null || m.walletError !== null) setM(initialMachine(m.accountId));
+      else patch({ stage: 'choose-mode' });
+    }
     else if (m.stage === 'matches') patch({ stage: 'review' });
-  }, [m.prepared, m.stage, patch]);
+  }, [m.accountId, m.prepared, m.stage, m.wallet, m.walletError, patch]);
 
   const cancel = useCallback((): void => {
     const at: AbandonStage | null =
@@ -1672,6 +1917,19 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     transfersUnavailable,
     // commit and what follows
     commit,
+    // wallet files (10-26)
+    wallet: m.wallet,
+    needAccount: m.needAccount,
+    walletError: m.walletError,
+    walletPlan: walletPlanNow,
+    walletMarks: walletMarksNow,
+    walletMarksReady,
+    walletUnlinked: m.walletUnlinked,
+    setWalletCreate,
+    linkWalletAccount,
+    toggleWalletConversion,
+    skipWalletLines,
+    matchWalletColumns,
     commitProblem,
     suggestions: m.suggestions,
     committedCount: m.committedCount,

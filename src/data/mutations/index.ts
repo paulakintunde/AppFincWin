@@ -49,6 +49,8 @@ import { registerGrowDebtMutations } from './growDebts';
 import { registerGrowHoldingMutations } from './growHoldings';
 import { registerHouseholdSharingMutations } from './householdSharing';
 import { registerUserSetupMutations } from './userSetup';
+import { registerArchivedMonthMutations } from './archivedMonths';
+import { registerAlertMutations } from './alertSettings';
 
 export function registerMutationDefaults(qc: QueryClient): void {
   // 09-25 (A2-W): every registered mutationFn passes the plan send guard, so a write restored from disk while the plan
@@ -136,4 +138,7 @@ function registerAll(qc: QueryClient): void {
   registerHouseholdSharingMutations(qc);
   // 09-13: the person's private level, answers and feature switches.
   registerUserSetupMutations(qc);
+  // Phase 10 (10-03): archive and restore months; alert switches and delivery preferences.
+  registerArchivedMonthMutations(qc);
+  registerAlertMutations(qc);
 }

@@ -10,6 +10,8 @@ import { useAccounts } from "@/data/queries/accounts";
 import { useMonthView } from "@/data/queries/activity";
 import { useCategoryLookup } from "@/data/queries/categories";
 import { usePasteLines } from "@/data/mutations/pasteLines";
+import { useQueueGuard } from "@/data/sync/useQueueGuard";
+import { QueueNote } from "@/features/record/entry/QueueNote";
 import { currencyExponent, money } from "@/engine/money";
 import type { ExistingRow } from "@/engine/statement";
 import { useGuessContext } from "@/features/record/useGuessContext";
@@ -66,6 +68,8 @@ export function PasteSheet({
     month,
   );
   const paste = usePasteLines();
+  const guard = useQueueGuard();
+  const [queueRefused, setQueueRefused] = useState(false);
   const title = t("importCsv.paste.title");
 
   const [text, setText] = useState("");
@@ -138,6 +142,7 @@ export function PasteSheet({
     setText("");
     setOverrides(NO_OVERRIDES);
     setEmptyNote(false);
+    setQueueRefused(false);
     setAccountId(null);
   };
   const close = () => {
@@ -178,6 +183,11 @@ export function PasteSheet({
       rc.userId === null
     )
       return;
+    // 10-13 (D-28): a paste that would push the waiting changes past 500 is refused up front, before any write.
+    if (!guard.canAdd(lines.length)) {
+      setQueueRefused(true);
+      return;
+    }
     const skippedNow = skipped.map((s) =>
       t("importCsv.paste.lineRef", { n: s.lineNo }),
     );
@@ -238,6 +248,7 @@ export function PasteSheet({
         onCancel={close}
       />
       <SheetScroll>
+        {queueRefused ? <QueueNote queued={guard.queued} state="blocked" testID="paste-queue-note" /> : null}
         <Text style={mutedStyle}>{t("importCsv.paste.helper")}</Text>
         <TextInput
           accessibilityLabel={t("importCsv.paste.fieldA11y")}

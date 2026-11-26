@@ -28,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: { bundleIdentifier: APP_ID, supportsTablet: false, usesAppleSignIn: true },
   android: {
     package: APP_ID,
+    googleServicesFile: './google-services.json', // 10-27 (ENV-19): FCM v1 for Expo push; identifiers only, not a secret (Firebase docs); gitleaks allow-listed by exact path
     // D-06 / 03-RESEARCH Pitfall 1: predictive back sends Android 13-15 back presses past BackHandler and Modal onRequestClose; off so the sheet -> history -> Home -> exit order runs.
     predictiveBackGestureEnabled: false,
     adaptiveIcon: {
@@ -39,6 +40,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     'expo-secure-store',
+    // 10-11 (ACC-08): Face ID usage string (draft copy, owner sign-off). Needs a new dev build; OTA cannot carry it.
+    ['expo-local-authentication', { faceIDPermission: 'FincWin uses Face ID to open the app.' }],
     'expo-font',
     'expo-apple-authentication',
     'expo-web-browser',

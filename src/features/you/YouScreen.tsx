@@ -5,7 +5,7 @@
 // row label itself is plain ink (00-UI-SPEC.md Color).
 // 06.2-15 (L04, D-06, D-21): groups Add, Money, Appearance, Alerts and feel, Privacy and data, Account. Every row has
 // one 36 accent tile (YOU_ROW_ICON) and its word, and shows its current setting where it has one. Only rows whose
-// feature exists are shown (no Face ID, PIN lock or Alerts row yet; Delete account is in the Account group).
+// feature exists are shown (10-27 adds Security, Alerts, Archive, Import from CSV and Diagnostic export; Delete account is in the Account group).
 import { useCallback, useRef, type ReactNode, type RefObject } from 'react';
 import { router, useLocalSearchParams, useNavigation, type Href } from 'expo-router';
 import { pushOnce } from '@/shell/navigation/pushOnce';
@@ -48,6 +48,15 @@ import { useHouseholdEvents } from '@/data/queries/household';
 import { useHouseholdScope } from '@/features/household/useHouseholdScope';
 import { EXPORT_HREF, FEATURES_HREF, FREE_HELP_HREF, SUBSCRIPTION_HREF } from '@/features/plans/routes';
 import { ExportYouRow, FeaturesYouRow, FreeHelpYouRow, SubscriptionYouRow } from './components/PlanYouRows';
+import { AlertsYouRow, ArchiveYouRow, DiagnosticYouRow, ImportCsvYouRow, SecurityYouRow } from './components/SystemYouRows';
+import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
+
+// 10-27: the Phase 10 screens, opened from You (UI-SPEC Navigation and Entry Points).
+const SECURITY_HREF = '/security' as Href;
+const ALERTS_HREF = '/alerts' as Href;
+const ARCHIVE_HREF = '/archive' as Href;
+const DATA_IMPORT_HREF = '/data-import' as Href;
+const DIAGNOSTIC_HREF = '/diagnostic' as Href;
 
 // Owner 2026-11-11: the old Pots screen is gone; the row opens the Grow goals segment.
 const GOALS_HREF = '/grow?segment=goals' as Href;
@@ -136,6 +145,8 @@ export function YouScreen() {
   const { goBack, history } = useBackHistory();
   const { quickActions } = useFab();
   const navigation = useNavigation();
+  // 10-27 (D-16): the Archive row shows only when the archive feature is on (level 4).
+  const archiveOn = useFeatureAccess('archive').on;
 
   // 05-116 (D-96): "Exchange rates" in the Needs a look sheet opens You with ?focus=currencies. From the row's layout
   // event (once), scroll the row into view and move screen-reader focus to it.
@@ -259,6 +270,7 @@ export function YouScreen() {
         )}
         {/* 09-15 (UI-SPEC section 11): Features, with its live level sublabel. */}
         <FeaturesYouRow tile={tileFor('features')} onPress={() => pushOnce(FEATURES_HREF)} />
+        {archiveOn ? <ArchiveYouRow tile={tileFor('archive')} onPress={() => pushOnce(ARCHIVE_HREF)} /> : null}
         {tiled('weekStart', <WeekStartRow />)}
         {tiled('homeCurrency', <HomeCurrencyRow rowRef={currencyRowRef} onRowLayout={onCurrencyRowLayout} />)}
         {tiled('region', <RegionRow rowRef={regionRowRef} onRowLayout={onRegionRowLayout} />)}
@@ -280,10 +292,13 @@ export function YouScreen() {
       </SettingsGroup>
 
       <SettingsGroup title={t('appLife.you.groups.alertsFeel')}>
+        {/* 10-27 (D-09): always shown, at every level, so bills due and goal reached are reachable. */}
+        <AlertsYouRow tile={tileFor('alerts')} onPress={() => pushOnce(ALERTS_HREF)} />
         <HapticsRow />
       </SettingsGroup>
 
       <SettingsGroup title={t('appLife.you.groups.privacyData')}>
+        <SecurityYouRow tile={tileFor('security')} onPress={() => pushOnce(SECURITY_HREF)} />
         {tiled(
           'analytics',
           // 06.2-15: the shared ToggleRow (as Haptics), so the whole row is the 44+ switch target. Same consent wiring.
@@ -305,6 +320,8 @@ export function YouScreen() {
         )}
         {/* 09-15 (D-03): Export stays open in every plan state; the screen is built by 09-18. */}
         <ExportYouRow tile={tileFor('export')} onPress={() => pushOnce(EXPORT_HREF)} />
+        <ImportCsvYouRow tile={tileFor('importCsv')} onPress={() => pushOnce(DATA_IMPORT_HREF)} />
+        <DiagnosticYouRow tile={tileFor('diagnostic')} onPress={() => pushOnce(DIAGNOSTIC_HREF)} />
       </SettingsGroup>
 
       <SettingsGroup title={t('appLife.you.groups.account')}>

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "36594855417",
+    "project_id": "fincwin",
+    "storage_bucket": "fincwin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36594855417:android:7bde80369225f3b624a128",
+        "android_client_info": {
+          "package_name": "com.fincwin.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "36594855417-nvq9ieq7pga1m0cvjvo93f394logj173.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdt0DAj1kXg6y3BFsRZiO9FeWGp3RQgnc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "36594855417-nvq9ieq7pga1m0cvjvo93f394logj173.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

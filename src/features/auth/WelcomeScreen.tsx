@@ -1,20 +1,24 @@
 // D-10, D-11, D-12: the first-launch, full-screen, non-dismissible welcome/sign-in screen.
-// There is no credential entry field of any kind on this screen (D-10) -- Apple and Google
-// are the two launch sign-in methods.
+// There is no credential entry field on this screen itself (D-10) -- Apple and Google are the two launch
+// sign-in methods. 10-25 (D-30): a small visible "App review sign-in" link opens a sheet for store reviewers.
+// It is a plain visible link, never a hidden gesture (Guideline 2.5.19).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, findNodeHandle, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, findNodeHandle, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useT } from '@/i18n';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { fontSize, textRole } from '@/theme/typography';
 import { Screen } from '@/ui/Screen';
+import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
 import { getEnv } from '@/config/env';
 import { captureError } from '@/services/errors';
 import { useAuth, type AuthContextValue } from './AuthProvider';
 import { AppleSignInButton } from './AppleSignInButton';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { RecentAccountTile } from './RecentAccountTile';
+import { ReviewerSignInSheet } from './ReviewerSignInSheet';
+import { consumeSignOutReason, lastSignOutReason, type SignOutReason } from './signOutReason';
 import {
   forgetRememberedAccount,
   loadRememberedAccounts,
@@ -36,6 +40,13 @@ export function WelcomeScreen() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const tileRefs = useRef<Record<string, View | null>>({});
   const buttonsRef = useRef<View | null>(null);
+  const [reviewerOpen, setReviewerOpen] = useState(false);
+  // Read without clearing (pure, safe if React runs it twice); the effect below clears it once shown.
+  const [reason] = useState<SignOutReason | null>(() => lastSignOutReason());
+
+  useEffect(() => {
+    consumeSignOutReason();
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -147,12 +158,30 @@ export function WelcomeScreen() {
             {t('auth.welcome.recentNote')}
           </Text>
         ) : null}
+        {reason === 'remote' || reason === 'deleted' ? (
+          <Text
+            accessibilityRole="alert"
+            style={[styles.note, { fontFamily: fonts.body[500], color: colors.inkMuted }]}
+          >
+            {reason === 'remote' ? t('system.security.signedOutRemote') : t('system.ownData.deleted')}
+          </Text>
+        ) : null}
         {error ? (
           <Text style={[styles.error, { fontFamily: fonts.body[600], color: colors.danger }]}>
             {t('auth.error.signInFailed')}
           </Text>
         ) : null}
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={t('system.reviewer.link')}
+          hitSlop={LINK_HIT_SLOP}
+          onPress={() => setReviewerOpen(true)}
+          style={styles.reviewerLink}
+        >
+          <Text style={[textRole(pairing, 'label'), { color: colors.inkMuted }]}>{t('system.reviewer.link')}</Text>
+        </Pressable>
       </View>
+      <ReviewerSignInSheet visible={reviewerOpen} onClose={() => setReviewerOpen(false)} />
     </Screen>
   );
 }
@@ -188,6 +217,12 @@ const styles = StyleSheet.create({
   buttons: {
     marginTop: 26,
     gap: space.gapMd,
+  },
+  reviewerLink: {
+    marginTop: 22,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   error: {
     marginTop: 12,

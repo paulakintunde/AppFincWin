@@ -40,6 +40,19 @@ jest.mock('./src/services/locale/deviceReadCache', () => {
   return actual;
 });
 
+// 10-13: create surfaces ask the queue guard, which reads the mutation cache. Most suites render them without a QueryClient, so the
+// guard is an empty queue everywhere; a suite sets the waiting count with setMockQueued(n) from '@/data/sync/useQueueGuard'.
+jest.mock('./src/data/sync/useQueueGuard', () => {
+  const cap = jest.requireActual<typeof import('./src/data/sync/queueCap')>('./src/data/sync/queueCap');
+  let queued = 0;
+  return {
+    setMockQueued: (n: number) => {
+      queued = n;
+    },
+    useQueueGuard: () => ({ state: cap.queueCap(queued), queued, canAdd: (n: number) => cap.canAdd(queued, n) }),
+  };
+});
+
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 require('react-native-reanimated').setUpTests();
 
@@ -84,3 +97,18 @@ jest.mock('lottie-react-native', () => {
     default: (p: Record<string, unknown>) => React.createElement(View, { testID: 'lottie-view', ...p }),
   };
 });
+
+// 10-11 (ACC-08): the biometric module is native. Virtual so suites run even before the package is installed.
+jest.mock(
+  'expo-local-authentication',
+  () => ({
+    hasHardwareAsync: jest.fn(() => Promise.resolve(true)),
+    isEnrolledAsync: jest.fn(() => Promise.resolve(true)),
+    supportedAuthenticationTypesAsync: jest.fn(() => Promise.resolve([2])),
+    getEnrolledLevelAsync: jest.fn(() => Promise.resolve(3)),
+    authenticateAsync: jest.fn(() => Promise.resolve({ success: true })),
+    AuthenticationType: { FINGERPRINT: 1, FACIAL_RECOGNITION: 2, IRIS: 3 },
+    SecurityLevel: { NONE: 0, SECRET: 1, BIOMETRIC_WEAK: 2, BIOMETRIC_STRONG: 3 },
+  }),
+  { virtual: true }
+);

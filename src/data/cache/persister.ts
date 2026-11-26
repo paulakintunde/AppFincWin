@@ -50,7 +50,8 @@ export const CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 // 08.1: decide outcomes, household spend rules, joint accounts, partner opt-ins and recurring series rows changed -- bumped 15 -> 16.
 // Phase 7: shared-line categories, account-balance error state and Insights month-so-far shapes -- bumped 16 -> 17.
 // Quick 261123: debts select credit_limit and revolving (20261125001100) -- bumped 17 -> 18.
-export const CACHE_SCHEMA_VERSION = '18';
+// Merge of Phase 10 (10-03, 17: alert, archive and device shapes) with Phase 7 + quick 261123 (18) -- bumped 18 -> 19.
+export const CACHE_SCHEMA_VERSION = '19';
 
 /**
  * IN-A05: when each query last got data *from the server*, keyed by queryHash. D-15's
@@ -109,7 +110,10 @@ const NEVER_PERSIST = new Set(['offer-history', 'search', 'refund-links', 'refun
 
 // 08.1 review C-WR-02: another member's shared figure is never written to disk. Switching sharing off is immediate on the server;
 // a copy on the viewer's phone would keep counting for as long as the cache lives (CACHE_MAX_AGE_MS).
-const NEVER_PERSIST_ROOTS = new Set(['partner-money']);
+const NEVER_PERSIST_ROOTS = new Set([
+  'partner-money',
+  'devices', // 10-03: sessions change server-side; never shown from an old copy
+]);
 
 export function isNeverPersisted(queryKey: readonly unknown[]): boolean {
   if (NEVER_PERSIST_ROOTS.has(String(queryKey[0]))) return true;

@@ -19,6 +19,9 @@ import { useGoAheadV3, type GoAheadV3Context } from '@/data/mutations/decideGoAh
 import type { EditTransferVars } from '@/data/mutations/transfers';
 import { clearVersionChains } from '@/data/sync/versionChain';
 import { recordFailedWrite } from '@/data/sync/failedWrites';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
+import { persistQueryClientRestore, persistQueryClientSave } from '@tanstack/react-query-persist-client';
+import { persistOptions, resumeRestoredMutations } from '@/data/cache/persister';
 /* eslint-enable import/first, @typescript-eslint/no-require-imports */
 
 let mockActiveClient: unknown;
@@ -49,11 +52,17 @@ class ServerSim {
   readonly rpcCalls: { name: string; stepId: string | null }[] = [];
   /** How many committing requests still commit and then lose their answer. */
   loseAnswers = 0;
+  /** How many committing requests commit and then never answer at all: the app is killed while they are on the wire. */
+  hangAnswers = 0;
   session = { access_token: 'fake-token' };
 
   auth = { getSession: async () => ({ data: { session: this.session }, error: null }) };
 
   private finish<T>(response: T): T | typeof LOST {
+    if (this.hangAnswers > 0) {
+      this.hangAnswers -= 1;
+      return new Promise<never>(() => undefined) as never;
+    }
     if (this.loseAnswers > 0) {
       this.loseAnswers -= 1;
       return LOST;
@@ -294,5 +303,58 @@ describe('timeout retry replays', () => {
       (recordFailedWrite as jest.Mock).mockClear();
       await run();
     }
+  });
+});
+
+// 10-13 (SYN-03): the kill-and-resume case. The first request commits on the server and the app dies before the answer
+// arrives; the next launch restores the queued write and replays it with the same client UUID. One server row results.
+describe('SYN-03', () => {
+  it('SYN-03: killed mid-flush then resumed writes one server row', async () => {
+    const { server, qc } = setup();
+    server.hangAnswers = 1;
+    const { result } = await renderHook(() => useAddTransaction(), { wrapper: wrapper(qc) });
+    const id = result.current.add({
+      householdId: 'h1',
+      accountId: 'acc1',
+      amount: 500 as never,
+      currency: 'USD',
+      homeCurrency: 'USD',
+      userId: 'user-1',
+      localDate: '2026-09-24',
+      timeZone: 'UTC',
+      undo: { stepId: 'step-kill', labelKey: 'added', labelParams: { name: 'Coffee' } },
+    });
+    // The server has the row; the phone has no answer and is "killed" with the write still pending.
+    await waitFor(() => expect(server.tables.transactions.filter((r) => r.id === id)).toHaveLength(1));
+    expect(qc.getMutationCache().getAll()[0]?.state.status).toBe('pending');
+
+    const backing = new Map<string, string>();
+    const disk = createAsyncStoragePersister({
+      storage: {
+        getItem: async (k: string) => backing.get(k) ?? null,
+        setItem: async (k: string, v: string) => {
+          backing.set(k, v);
+        },
+        removeItem: async (k: string) => {
+          backing.delete(k);
+        },
+      },
+      key: 'syn03',
+      throttleTime: 0,
+    });
+    await persistQueryClientSave({ queryClient: qc, persister: disk, buster: 'test', dehydrateOptions: persistOptions.dehydrateOptions });
+
+    // Next launch: a new client with the mutation defaults registered first, then the restored queue replays.
+    const restarted = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    registerMutationDefaults(restarted);
+    await persistQueryClientRestore({ queryClient: restarted, persister: disk, buster: 'test' });
+    expect(restarted.getMutationCache().getAll()).toHaveLength(1);
+    await resumeRestoredMutations(restarted);
+
+    await waitFor(() => expect(restarted.getMutationCache().getAll()[0]?.state.status).toBe('success'), { timeout: 10_000 });
+    expect(server.tables.transactions.filter((r) => r.id === id)).toHaveLength(1);
+    expect(server.tables.transactions).toHaveLength(1);
+    expect(server.tables.undo_log.filter((x) => x.id === 'step-kill')).toHaveLength(1);
+    expect(recordFailedWrite).not.toHaveBeenCalled();
   });
 });

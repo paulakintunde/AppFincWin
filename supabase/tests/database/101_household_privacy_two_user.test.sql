@@ -47,6 +47,10 @@
 -- household_spend_rules (114)
 -- user_setup (111)
 -- feature_switches (111)
+-- archived_months (120)
+-- alert_settings (120)
+-- alert_prefs (120)
+-- alert_log (120)
 -- end-export-tables
 
 begin;

@@ -48,6 +48,34 @@ function expectOk(r: ReturnType<typeof prepareImport>): PreparedImport {
   return r.prepared;
 }
 
+describe('prepareImport: wallet files (10-26, D-21)', () => {
+  const walletCsv = (header: string, rows: string[]): Uint8Array => enc([header, ...rows].join('\n') + '\n');
+  const REVOLUT_H = 'Type,Product,Started Date,Completed Date,Description,Amount,Fee,Currency,State,Balance';
+
+  it('a Revolut file is read by its own reader and still carries the generic reading for Match columns', () => {
+    const bytes = walletCsv(REVOLUT_H, ['CARD_PAYMENT,Current,2026-03-05 10:15:00,2026-03-05 10:15:00,Bakery,-12.50,0.00,EUR,COMPLETED,']);
+    const p = expectOk(prepareImport(bytes, { extension: 'csv' }, REGION, exponentFor));
+    if (p.format !== 'csv') throw new Error('expected csv');
+    expect(p.csv.wallet).toMatchObject({ ok: true });
+    expect(p.csv.wallet?.ok === true && p.csv.wallet.drafts.wallet).toBe('revolut');
+    expect(p.csv.header).toHaveLength(10);
+  });
+
+  it('a recognised wallet with a missing column reports the error and offers the generic path', () => {
+    const bytes = walletCsv('Type,Product,Started Date,Completed Date,Description,Fee,Currency,State', ['CARD_PAYMENT,Current,2026-03-05,2026-03-05,Bakery,0.00,EUR,COMPLETED']);
+    const p = expectOk(prepareImport(bytes, { extension: 'csv' }, REGION, exponentFor));
+    if (p.format !== 'csv') throw new Error('expected csv');
+    expect(p.csv.wallet).toEqual({ ok: false, wallet: 'revolut', error: 'missing-column' });
+    expect(p.csv.detected).toBeDefined();
+  });
+
+  it('any other CSV carries no wallet reading, so the column matcher runs as before', () => {
+    const p = expectOk(prepareImport(enc(CSV), { extension: 'csv' }, REGION, exponentFor));
+    if (p.format !== 'csv') throw new Error('expected csv');
+    expect(p.csv.wallet).toBeUndefined();
+  });
+});
+
 describe('prepareImport: CSV', () => {
   it('prepares a UTF-8 CSV with detected columns and a certain date format', () => {
     const p = expectOk(prepareImport(enc(CSV), { extension: 'csv' }, REGION, exponentFor));

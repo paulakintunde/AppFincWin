@@ -13,6 +13,8 @@ import {
   signInWithGoogle,
   type SignInResult,
 } from '@/services/auth';
+import { isLocalSignOutInProgress, setSignOutReason } from './signOutReason';
+import { performSignOut } from './signOut';
 import { identityFromUser, rememberAccount, type RememberedAccount } from './rememberedAccounts';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
@@ -61,7 +63,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         // ACC-14: remember the identity (name/email/provider only) for the Welcome tiles.
         if (newSession?.user) void rememberAccount(identityFromUser(newSession.user));
       }
-      else if (event === 'SIGNED_OUT') setStatus('signedOut');
+      else if (event === 'SIGNED_OUT') {
+        setStatus('signedOut');
+        // 10-12 (ACC-07): a SIGNED_OUT this phone did not start means another device ended the session.
+        // Wipe the phone copy once; performSignOut raises the local flag, so its own SIGNED_OUT is ignored.
+        if (!isLocalSignOutInProgress()) {
+          setSignOutReason('remote');
+          void performSignOut({ supabase });
+        }
+      }
     });
 
     return () => {

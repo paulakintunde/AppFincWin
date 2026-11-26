@@ -47,7 +47,8 @@ update public.households set reporting_currency = 'USD' where id = (select h fro
 -- households, household_members, household_events, household_event_reads, household_invites, member_departures,
 -- household_former_members, settlement_nudges = household admin and messaging, not records; household_plans, plan_events,
 -- plan_products, plan_settings, trial_ledger, household_leave_log, plan_join_requests = plan state itself (server only);
--- decide_shadow_runs = consent-gated telemetry insert, not a user record.
+-- decide_shadow_runs = consent-gated telemetry insert, not a user record;
+-- alert_settings, alert_prefs, archived_months (10-02) = per-user settings and view state, stay writable while locked like profiles.
 select extensions.is_empty($$
   select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public' and c.relkind = 'r' and c.relrowsecurity
@@ -59,7 +60,7 @@ select extensions.is_empty($$
      and c.relname not in ('profiles','user_setup','feature_switches','households','household_members','household_events',
        'household_event_reads','household_invites','member_departures','household_former_members','settlement_nudges',
        'plan_products','household_plans','plan_events','trial_ledger','household_leave_log','plan_join_requests',
-       'plan_settings','decide_shadow_runs')
+       'plan_settings','decide_shadow_runs','alert_settings','alert_prefs','archived_months')
 $$, 'every client-writable records table has the plan_lock trigger');
 
 -- Lock the household: launch date passed, no plan row.

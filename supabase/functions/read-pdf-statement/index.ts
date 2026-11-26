@@ -2,6 +2,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { STATEMENT_BUCKET } from './contract.ts';
 import { readStatement, type ReadDeps } from './read.ts';
 import { openPdf } from './unpdf.ts';
+import { hitRateLimit, tooManyRequests } from '../_shared/rateLimit.ts';
+
+const RATE_LIMIT = { limit: 30, windowSeconds: 3600 }; // ACC-13
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -44,6 +47,13 @@ Deno.serve(async (req) => {
     now: () => performance.now(),
     log: (l) => console.log(l),
   };
+
+  // Caller id comes from the verified token, never the body.
+  const callerId = await deps.userId();
+  if (callerId) {
+    const rl = await hitRateLimit(admin, 'read-pdf-statement:' + callerId, RATE_LIMIT.limit, RATE_LIMIT.windowSeconds);
+    if (!rl.ok) return tooManyRequests(rl.retryAfter);
+  }
 
   let body: unknown;
   try {

@@ -176,10 +176,23 @@ jest.mock('@/data/queries/household', () => ({
 // 09-15: the Subscription and Features rows read plan state and feature access; stubbed so this screen test needs no providers.
 let mockPlan: Record<string, unknown> = { status: 'sample' };
 jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => mockPlan }));
+// 10-27: the Archive row shows only when the archive feature is on.
+let mockArchiveOn = false;
 jest.mock('@/features/levels/useFeatureAccess', () => ({
+  useFeatureAccess: () => ({ on: mockArchiveOn }),
   useAllFeatureAccess: () => [{ on: true }, { on: true }, { on: false }],
   useUserSetup: () => ({ data: { level: 2 }, loading: false }),
 }));
+
+// 10-27: the Security, Alerts and Archive rows read their own live values; stubbed so this screen test needs no providers.
+let mockLock: { enabled: boolean; lockMethod: 'device' | 'appPin'; timing: string } = { enabled: false, lockMethod: 'device', timing: 'oneMinute' };
+jest.mock('@/services/lock/lockStore', () => ({
+  loadLockState: () => Promise.resolve({ settings: mockLock, hasPin: false, wrongTries: 0, lockUntil: null, backgroundedAt: null }),
+}));
+let mockAlertSettings: { enabled: boolean }[] | undefined;
+jest.mock('@/data/queries/alerts', () => ({ useAlertSettings: () => ({ data: mockAlertSettings }) }));
+jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ user: { id: 'u1' } }) }));
+jest.mock('@/features/archive/useArchiveState', () => ({ useArchiveState: () => ({ count: 3 }) }));
 
 jest.setTimeout(60000);
 
@@ -209,6 +222,9 @@ beforeEach(() => {
   mockConsent = 'declined';
   mockHousehold = { name: 'Flat 4B', members: [{}, {}, {}], householdId: 'h1', userId: 'u1' };
   mockUnread = 0;
+  mockArchiveOn = false;
+  mockLock = { enabled: false, lockMethod: 'device', timing: 'oneMinute' };
+  mockAlertSettings = undefined;
   mockPlan = { status: 'sample' };
   mockSyncStatus = { isOnline: false, queued: 3, failed: 0, conflicts: 0, lastSyncedAt: null };
   mockCheckConnection.mockResolvedValue({ ok: true, latencyMs: 42 });
@@ -743,4 +759,76 @@ describe('YouScreen Phase 9 rows (09-15)', () => {
     expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/free-help')).toHaveLength(1);
     expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/export')).toHaveLength(1);
   });
+});
+
+describe('YouScreen Phase 10 rows (10-27)', () => {
+  const SLOW = 30_000;
+  const rowOrder = (labels: string[], root: { toJSON: () => unknown }): number[] => {
+    const json = JSON.stringify(root.toJSON());
+    return labels.map((l) => json.indexOf(`"${l}"`));
+  };
+
+  it('Privacy and data lists Security, analytics, connection, Export, Import from CSV, Diagnostic export in order', async () => {
+    const r = await renderScreen();
+    const idx = rowOrder(['Security', 'Share anonymous usage', 'Export your data', 'Import from CSV', 'Diagnostic export'], r);
+    expect(idx.every((i) => i >= 0)).toBe(true);
+    expect([...idx].sort((a, b) => a - b)).toEqual(idx);
+  }, SLOW);
+
+  it('Security says Lock off, then names the method and timing, and opens /security', async () => {
+    const r = await renderScreen();
+    await waitFor(() => expect(r.getByText('Lock off')).toBeTruthy());
+    await act(async () => {
+      fireEvent.press(r.getByText('Security'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/security')).toHaveLength(1);
+  }, SLOW);
+
+  it('Security shows the lock method and timing when the lock is on', async () => {
+    mockLock = { enabled: true, lockMethod: 'appPin', timing: 'fiveMinutes' };
+    const r = await renderScreen();
+    await waitFor(() => expect(r.getByText('FincWin PIN · after 5 minutes')).toBeTruthy());
+  }, SLOW);
+
+  it('Alerts sits above Haptics at every level, counts the switches that are on, and opens /alerts', async () => {
+    mockAlertSettings = [{ enabled: true }, { enabled: true }, { enabled: false }];
+    const r = await renderScreen();
+    expect(r.getByText('2 on')).toBeTruthy();
+    const idx = rowOrder(['Alerts', 'Haptics'], r);
+    expect(idx[0]).toBeGreaterThanOrEqual(0);
+    expect(idx[0] ?? -1).toBeLessThan(idx[1] ?? -1);
+    await act(async () => {
+      fireEvent.press(r.getByText('Alerts'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/alerts')).toHaveLength(1);
+  }, SLOW);
+
+  it('Archive is hidden while the archive feature is off', async () => {
+    const off = await renderScreen();
+    expect(off.queryByText('3 months')).toBeNull();
+  }, SLOW);
+
+  it('Archive shows after Features when the archive feature is on, with its month count', async () => {
+    mockArchiveOn = true;
+    const on = await renderScreen();
+    expect(on.getByText('3 months')).toBeTruthy();
+    const idx = rowOrder(['Features', 'Archive'], on);
+    expect(idx[0] ?? -1).toBeLessThan(idx[1] ?? -1);
+    await act(async () => {
+      fireEvent.press(on.getByText('Archive'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/archive')).toHaveLength(1);
+  }, SLOW);
+
+  it('Import from CSV and Diagnostic export open their screens', async () => {
+    const r = await renderScreen();
+    await act(async () => {
+      fireEvent.press(r.getByText('Import from CSV'));
+    });
+    await act(async () => {
+      fireEvent.press(r.getByText('Diagnostic export'));
+    });
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/data-import')).toHaveLength(1);
+    expect(mockRouterPush.mock.calls.filter((c) => c[0] === '/diagnostic')).toHaveLength(1);
+  }, SLOW);
 });

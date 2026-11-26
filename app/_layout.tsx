@@ -11,6 +11,7 @@ import { FontScaleProvider } from '@/theme/FontScaleProvider';
 import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated';
 import { ThemeProvider, useTheme, useThemeFonts } from '@/theme';
 import { AuthProvider, useAuth } from '@/features/auth/AuthProvider';
+import { LockGate } from '@/features/lock/LockGate';
 import { useMinVersionGate } from '@/features/system/useMinVersionGate';
 import { resolveRoute, type Route } from '@/features/system/routeDecision';
 import { captureError } from '@/services/errors';
@@ -101,7 +102,9 @@ export default function RootLayout() {
             <QueryProvider>
               <AuthProvider>
                 <ReducedMotionConfig mode={ReduceMotion.System} />
-                <Gate />
+                <LockGate>
+                  <Gate />
+                </LockGate>
               </AuthProvider>
             </QueryProvider>
           </ThemeProvider>

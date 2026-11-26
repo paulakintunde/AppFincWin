@@ -2,6 +2,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
 import { fetchSubscriber, toSnapshot } from '../_shared/revenuecat/subscriber.ts';
 import { safeEqual } from '../plan-webhook/verify.ts';
 import { refreshForCaller, sweep, type RefreshDeps } from './refresh.ts';
+import { hitRateLimit, tooManyRequests } from '../_shared/rateLimit.ts';
+
+const RATE_LIMIT = { limit: 30, windowSeconds: 3600 }; // ACC-13, caller mode only
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -60,6 +63,9 @@ Deno.serve(async (req) => {
   });
   const { data, error } = await userClient.auth.getUser();
   if (error || !data?.user) return json({ ok: false, error: 'unauthorized' }, 401);
+
+  const rl = await hitRateLimit(admin, 'plan-refresh:' + data.user.id, RATE_LIMIT.limit, RATE_LIMIT.windowSeconds);
+  if (!rl.ok) return tooManyRequests(rl.retryAfter);
 
   const result = await refreshForCaller(deps, data.user.id);
   if (!result.ok) return json(result, 502);
