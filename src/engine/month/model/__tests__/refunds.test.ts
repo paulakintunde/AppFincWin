@@ -187,3 +187,33 @@ describe('withRedatedRefunds', () => {
     expect(out.months[1]?.lines).toEqual([]);
   });
 });
+
+describe('refund of a split purchase (10.1-09: the credit keeps the purchase parts, scaled)', () => {
+  const parts = [
+    { categoryId: 'A', amount: mu(600000) },
+    { categoryId: 'B', amount: mu(400000) },
+  ];
+  const split = line('p1', '2026-05-10', 1000000, 'spending', { categoryId: 'A', parts });
+
+  it('an everyday refund carries the purchase parts scaled to the credit', () => {
+    const out = run([refundLine('r1', '2026-07-05', 500000)], split);
+    const r = out[0]?.lines[1] as V3Line;
+    expect(r).toMatchObject({ id: 'r1', amount: 500000, categoryId: 'A' });
+    expect(r.parts).toEqual([
+      { categoryId: 'A', amount: 300000 },
+      { categoryId: 'B', amount: 200000 },
+    ]);
+  });
+
+  it('a plan day-one row keeps its parts scaled to what is left after the credit', () => {
+    const planSeries = { id: 's1', role: 'debt_payment', confirmed: true, status: 'active', endDate: null } as unknown as V3Series;
+    const dayOne = { ...split, seriesId: 's1' };
+    const out = redateRefunds([month('2026-05', [dayOne]), month('2026-07', [refundLine('r1', '2026-07-05', 250000)])], [planSeries]);
+    const row = out[0]?.lines[0] as V3Line;
+    expect(row).toMatchObject({ id: 'p1', amount: 750000 });
+    expect(row.parts).toEqual([
+      { categoryId: 'A', amount: 450000 },
+      { categoryId: 'B', amount: 300000 },
+    ]);
+  });
+});
