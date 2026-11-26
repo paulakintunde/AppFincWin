@@ -1,0 +1,281 @@
+{
+  "name": "r19",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "WELLSPRING PHARMACY",
+        "frame": {
+          "left": 475,
+          "top": 354,
+          "width": 558,
+          "height": 37
+        }
+      },
+      {
+        "text": "Oct 5, 2026 12 : 16",
+        "frame": {
+          "left": 319,
+          "top": 583,
+          "width": 388,
+          "height": 34
+        }
+      },
+      {
+        "text": "882 KING RD",
+        "frame": {
+          "left": 636,
+          "top": 427,
+          "width": 235,
+          "height": 28
+        }
+      },
+      {
+        "text": "Vitamin D 1000IU 90ct",
+        "frame": {
+          "left": 317,
+          "top": 687,
+          "width": 453,
+          "height": 31
+        }
+      },
+      {
+        "text": "TEL 585 -555 - 7339",
+        "frame": {
+          "left": 580,
+          "top": 480,
+          "width": 344,
+          "height": 28
+        }
+      },
+      {
+        "text": "Bandages Assorted",
+        "frame": {
+          "left": 320,
+          "top": 741,
+          "width": 363,
+          "height": 35
+        }
+      },
+      {
+        "text": "Hand Cream 75ml",
+        "frame": {
+          "left": 319,
+          "top": 794,
+          "width": 319,
+          "height": 29
+        }
+      },
+      {
+        "text": "Allergy Relief 30ct",
+        "frame": {
+          "left": 317,
+          "top": 846,
+          "width": 409,
+          "height": 35
+        }
+      },
+      {
+        "text": "Pain Relief 24 tab",
+        "frame": {
+          "left": 318,
+          "top": 898,
+          "width": 388,
+          "height": 30
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 318,
+          "top": 1058,
+          "width": 166,
+          "height": 28
+        }
+      },
+      {
+        "text": "Sunscreen SPF50",
+        "frame": {
+          "left": 318,
+          "top": 953,
+          "width": 322,
+          "height": 28
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 316,
+          "top": 1215,
+          "width": 141,
+          "height": 37
+        }
+      },
+      {
+        "text": "MEMBER DISCOUNT 10%",
+        "frame": {
+          "left": 316,
+          "top": 1110,
+          "width": 411,
+          "height": 29
+        }
+      },
+      {
+        "text": "SALES TAX 8.25%",
+        "frame": {
+          "left": 317,
+          "top": 1164,
+          "width": 323,
+          "height": 28
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 313,
+          "top": 1396,
+          "width": 236,
+          "height": 28
+        }
+      },
+      {
+        "text": "DEBIT *********** *2706",
+        "frame": {
+          "left": 315,
+          "top": 1340,
+          "width": 474,
+          "height": 30
+        }
+      },
+      {
+        "text": "ITEMS SOLD 6",
+        "frame": {
+          "left": 620,
+          "top": 1503,
+          "width": 255,
+          "height": 28
+        }
+      },
+      {
+        "text": "#30547",
+        "frame": {
+          "left": 1057,
+          "top": 588,
+          "width": 125,
+          "height": 27
+        }
+      },
+      {
+        "text": "12.99",
+        "frame": {
+          "left": 1079,
+          "top": 693,
+          "width": 105,
+          "height": 27
+        }
+      },
+      {
+        "text": "THANK YOU- PLEASE COME AGAIN",
+        "frame": {
+          "left": 447,
+          "top": 1551,
+          "width": 612,
+          "height": 38
+        }
+      },
+      {
+        "text": "5.99",
+        "frame": {
+          "left": 1101,
+          "top": 743,
+          "width": 80,
+          "height": 30
+        }
+      },
+      {
+        "text": "7.99",
+        "frame": {
+          "left": 1100,
+          "top": 798,
+          "width": 84,
+          "height": 28
+        }
+      },
+      {
+        "text": "18.99",
+        "frame": {
+          "left": 1079,
+          "top": 851,
+          "width": 103,
+          "height": 27
+        }
+      },
+      {
+        "text": "8.49",
+        "frame": {
+          "left": 1099,
+          "top": 901,
+          "width": 80,
+          "height": 31
+        }
+      },
+      {
+        "text": "15.99",
+        "frame": {
+          "left": 1078,
+          "top": 955,
+          "width": 102,
+          "height": 29
+        }
+      },
+      {
+        "text": "70.44",
+        "frame": {
+          "left": 1076,
+          "top": 1062,
+          "width": 107,
+          "height": 28
+        }
+      },
+      {
+        "text": "-7.04",
+        "frame": {
+          "left": 1079,
+          "top": 1115,
+          "width": 103,
+          "height": 27
+        }
+      },
+      {
+        "text": "5.23",
+        "frame": {
+          "left": 1098,
+          "top": 1166,
+          "width": 81,
+          "height": 28
+        }
+      },
+      {
+        "text": "$68.63",
+        "frame": {
+          "left": 1008,
+          "top": 1213,
+          "width": 168,
+          "height": 48
+        }
+      },
+      {
+        "text": "68.63",
+        "frame": {
+          "left": 1075,
+          "top": 1347,
+          "width": 104,
+          "height": 28
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

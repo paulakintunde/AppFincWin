@@ -1,0 +1,380 @@
+{
+  "name": "r21",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "TIMBERLINE SUPPLY CO",
+        "frame": {
+          "left": 447,
+          "top": 232,
+          "width": 534,
+          "height": 56
+        }
+      },
+      {
+        "text": "08/30/2026 12:11",
+        "frame": {
+          "left": 311,
+          "top": 436,
+          "width": 334,
+          "height": 44
+        }
+      },
+      {
+        "text": "CAULK WHITE 100Z",
+        "frame": {
+          "left": 306,
+          "top": 533,
+          "width": 315,
+          "height": 39
+        }
+      },
+      {
+        "text": "ZIP TIES 100PK",
+        "frame": {
+          "left": 305,
+          "top": 581,
+          "width": 274,
+          "height": 37
+        }
+      },
+      {
+        "text": "4 x 5.49",
+        "frame": {
+          "left": 342,
+          "top": 632,
+          "width": 156,
+          "height": 30
+        }
+      },
+      {
+        "text": "MASKING TAPE 1.5IN",
+        "frame": {
+          "left": 299,
+          "top": 677,
+          "width": 355,
+          "height": 40
+        }
+      },
+      {
+        "text": "352 MAIN ST",
+        "frame": {
+          "left": 604,
+          "top": 306,
+          "width": 215,
+          "height": 34
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 552,
+          "top": 351,
+          "width": 314,
+          "height": 39
+        }
+      },
+      {
+        "text": "PVC ELBOW 1/2IN",
+        "frame": {
+          "left": 299,
+          "top": 725,
+          "width": 294,
+          "height": 42
+        }
+      },
+      {
+        "text": "LED BULB A19 4PK",
+        "frame": {
+          "left": 299,
+          "top": 773,
+          "width": 311,
+          "height": 39
+        }
+      },
+      {
+        "text": "EXTENSION CORD 25FT",
+        "frame": {
+          "left": 296,
+          "top": 821,
+          "width": 372,
+          "height": 41
+        }
+      },
+      {
+        "text": "4 X 22.99",
+        "frame": {
+          "left": 331,
+          "top": 870,
+          "width": 177,
+          "height": 32
+        }
+      },
+      {
+        "text": "SANDPAPER ASST 10PK",
+        "frame": {
+          "left": 290,
+          "top": 916,
+          "width": 373,
+          "height": 41
+        }
+      },
+      {
+        "text": "WORK GLOVES L",
+        "frame": {
+          "left": 287,
+          "top": 965,
+          "width": 256,
+          "height": 35
+        }
+      },
+      {
+        "text": "UTILITY KNIFE",
+        "frame": {
+          "left": 286,
+          "top": 1012,
+          "width": 254,
+          "height": 36
+        }
+      },
+      {
+        "text": "WD LUBRICANT 110Z",
+        "frame": {
+          "left": 283,
+          "top": 1060,
+          "width": 335,
+          "height": 39
+        }
+      },
+      {
+        "text": "4 x 7.99",
+        "frame": {
+          "left": 321,
+          "top": 1110,
+          "width": 156,
+          "height": 31
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 276,
+          "top": 1252,
+          "width": 153,
+          "height": 31
+        }
+      },
+      {
+        "text": "DRILL BIT SET 15PC",
+        "frame": {
+          "left": 280,
+          "top": 1156,
+          "width": 353,
+          "height": 40
+        }
+      },
+      {
+        "text": "SALES TAX 8.25%",
+        "frame": {
+          "left": 274,
+          "top": 1299,
+          "width": 296,
+          "height": 38
+        }
+      },
+      {
+        "text": "BALANCE DUE",
+        "frame": {
+          "left": 273,
+          "top": 1350,
+          "width": 289,
+          "height": 44
+        }
+      },
+      {
+        "text": "VISA ***** *** **6263",
+        "frame": {
+          "left": 266,
+          "top": 1464,
+          "width": 412,
+          "height": 42
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 263,
+          "top": 1512,
+          "width": 217,
+          "height": 33
+        }
+      },
+      {
+        "text": "ITEMS SOLD 11",
+        "frame": {
+          "left": 528,
+          "top": 1619,
+          "width": 253,
+          "height": 35
+        }
+      },
+      {
+        "text": "#56524",
+        "frame": {
+          "left": 982,
+          "top": 466,
+          "width": 117,
+          "height": 30
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 367,
+          "top": 1660,
+          "width": 569,
+          "height": 49
+        }
+      },
+      {
+        "text": "6.49",
+        "frame": {
+          "left": 1019,
+          "top": 566,
+          "width": 73,
+          "height": 26
+        }
+      },
+      {
+        "text": "21.96",
+        "frame": {
+          "left": 995,
+          "top": 659,
+          "width": 95,
+          "height": 29
+        }
+      },
+      {
+        "text": "5.99",
+        "frame": {
+          "left": 1013,
+          "top": 708,
+          "width": 74,
+          "height": 26
+        }
+      },
+      {
+        "text": "1.29",
+        "frame": {
+          "left": 1010,
+          "top": 756,
+          "width": 75,
+          "height": 27
+        }
+      },
+      {
+        "text": "14.99",
+        "frame": {
+          "left": 989,
+          "top": 802,
+          "width": 95,
+          "height": 29
+        }
+      },
+      {
+        "text": "91.96",
+        "frame": {
+          "left": 984,
+          "top": 899,
+          "width": 96,
+          "height": 28
+        }
+      },
+      {
+        "text": "8.49",
+        "frame": {
+          "left": 1002,
+          "top": 949,
+          "width": 75,
+          "height": 27
+        }
+      },
+      {
+        "text": "11.99",
+        "frame": {
+          "left": 981,
+          "top": 995,
+          "width": 94,
+          "height": 27
+        }
+      },
+      {
+        "text": "13.99",
+        "frame": {
+          "left": 979,
+          "top": 1042,
+          "width": 95,
+          "height": 29
+        }
+      },
+      {
+        "text": "31.96",
+        "frame": {
+          "left": 974,
+          "top": 1138,
+          "width": 95,
+          "height": 29
+        }
+      },
+      {
+        "text": "24.99",
+        "frame": {
+          "left": 972,
+          "top": 1186,
+          "width": 94,
+          "height": 29
+        }
+      },
+      {
+        "text": "234.10",
+        "frame": {
+          "left": 948,
+          "top": 1281,
+          "width": 116,
+          "height": 30
+        }
+      },
+      {
+        "text": "19.31",
+        "frame": {
+          "left": 967,
+          "top": 1332,
+          "width": 94,
+          "height": 28
+        }
+      },
+      {
+        "text": "$253.41",
+        "frame": {
+          "left": 875,
+          "top": 1372,
+          "width": 181,
+          "height": 47
+        }
+      },
+      {
+        "text": "253.41",
+        "frame": {
+          "left": 938,
+          "top": 1492,
+          "width": 114,
+          "height": 30
+        }
+      }
+    ],
+    "imageWidth": 1366,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

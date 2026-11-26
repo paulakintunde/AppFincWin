@@ -54,4 +54,6 @@ Run on the Pixel (55240DLAQ000EQ) on 2026-11-25, with a local debug development 
 | Gallery (Try gallery) | pass | Owner: "photo, 1 file" |
 | File (Choose a file) | not run | The dev screen has no file button; covered later by the Receipt sheet device check (10.1-29) |
 | Scan (Try scan, 3 pages) | pass | Owner: "scan, 3 files" |
-| Corpus read (Pick images) | pending | Waiting for the owner's photos in C:/dev/fincwin-private/receipts-corpus |
+| Corpus read (Pick images) | pass | 26 read, 0 failed (0.3-3 s each). Synthetic set made at the owner's request (see fixtures README) |
+
+Module choice: OCR `@react-native-ml-kit/text-recognition@2.0.0` (first choice, keeps line frames); scanner `react-native-document-scanner-plugin@2.0.4` (first choice). No fallback needed.

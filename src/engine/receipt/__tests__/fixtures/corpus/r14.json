@@ -1,0 +1,227 @@
+{
+  "name": "r14",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "17.07.2026 15:32",
+        "frame": {
+          "left": 319,
+          "top": 662,
+          "width": 264,
+          "height": 38
+        }
+      },
+      {
+        "text": "Americano",
+        "frame": {
+          "left": 316,
+          "top": 771,
+          "width": 158,
+          "height": 35
+        }
+      },
+      {
+        "text": "Flat White",
+        "frame": {
+          "left": 318,
+          "top": 826,
+          "width": 147,
+          "height": 30
+        }
+      },
+      {
+        "text": "Latte Oat",
+        "frame": {
+          "left": 318,
+          "top": 879,
+          "width": 136,
+          "height": 30
+        }
+      },
+      {
+        "text": "Croissant",
+        "frame": {
+          "left": 318,
+          "top": 932,
+          "width": 138,
+          "height": 30
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 317,
+          "top": 1037,
+          "width": 171,
+          "height": 30
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 316,
+          "top": 1092,
+          "width": 142,
+          "height": 38
+        }
+      },
+      {
+        "text": "inkl. MwSt 10%",
+        "frame": {
+          "left": 316,
+          "top": 1162,
+          "width": 224,
+          "height": 32
+        }
+      },
+      {
+        "text": "DAILY GRIND CAFE",
+        "frame": {
+          "left": 548,
+          "top": 440,
+          "width": 406,
+          "height": 38
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 314,
+          "top": 1316,
+          "width": 206,
+          "height": 39
+        }
+      },
+      {
+        "text": "442 RUE DU PORT",
+        "frame": {
+          "left": 606,
+          "top": 510,
+          "width": 290,
+          "height": 32
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 613,
+          "top": 562,
+          "width": 271,
+          "height": 32
+        }
+      },
+      {
+        "text": "DEBIT *********** 7832",
+        "frame": {
+          "left": 317,
+          "top": 1264,
+          "width": 329,
+          "height": 38
+        }
+      },
+      {
+        "text": "ITEMS SOLD 4",
+        "frame": {
+          "left": 638,
+          "top": 1427,
+          "width": 224,
+          "height": 32
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 465,
+          "top": 1480,
+          "width": 565,
+          "height": 32
+        }
+      },
+      {
+        "text": "#65197",
+        "frame": {
+          "left": 1072,
+          "top": 665,
+          "width": 109,
+          "height": 36
+        }
+      },
+      {
+        "text": "3,50",
+        "frame": {
+          "left": 1120,
+          "top": 774,
+          "width": 62,
+          "height": 37
+        }
+      },
+      {
+        "text": "4,75",
+        "frame": {
+          "left": 1118,
+          "top": 826,
+          "width": 62,
+          "height": 38
+        }
+      },
+      {
+        "text": "5,25",
+        "frame": {
+          "left": 1120,
+          "top": 880,
+          "width": 60,
+          "height": 36
+        }
+      },
+      {
+        "text": "3,75",
+        "frame": {
+          "left": 1120,
+          "top": 932,
+          "width": 62,
+          "height": 38
+        }
+      },
+      {
+        "text": "17,25",
+        "frame": {
+          "left": 1102,
+          "top": 1038,
+          "width": 78,
+          "height": 36
+        }
+      },
+      {
+        "text": "17,25 €",
+        "frame": {
+          "left": 1038,
+          "top": 1094,
+          "width": 144,
+          "height": 44
+        }
+      },
+      {
+        "text": "1,57",
+        "frame": {
+          "left": 1121,
+          "top": 1165,
+          "width": 60,
+          "height": 37
+        }
+      },
+      {
+        "text": "17,25",
+        "frame": {
+          "left": 1102,
+          "top": 1270,
+          "width": 78,
+          "height": 36
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

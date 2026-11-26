@@ -1,0 +1,308 @@
+{
+  "name": "r13",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "Iced Tea",
+        "frame": {
+          "left": 325,
+          "top": 677,
+          "width": 169,
+          "height": 33
+        }
+      },
+      {
+        "text": "30/10/2026 18:21",
+        "frame": {
+          "left": 329,
+          "top": 519,
+          "width": 364,
+          "height": 42
+        }
+      },
+      {
+        "text": "THE COPPER KETTLE",
+        "frame": {
+          "left": 518,
+          "top": 292,
+          "width": 495,
+          "height": 52
+        }
+      },
+      {
+        "text": "House Red Glass",
+        "frame": {
+          "left": 325,
+          "top": 625,
+          "width": 321,
+          "height": 37
+        }
+      },
+      {
+        "text": "Fish Tacos",
+        "frame": {
+          "left": 324,
+          "top": 729,
+          "width": 212,
+          "height": 39
+        }
+      },
+      {
+        "text": "Pint Lager",
+        "frame": {
+          "left": 321,
+          "top": 833,
+          "width": 212,
+          "height": 45
+        }
+      },
+      {
+        "text": "Margherita Pizza",
+        "frame": {
+          "left": 334,
+          "top": 781,
+          "width": 330,
+          "height": 47
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 317,
+          "top": 995,
+          "width": 168,
+          "height": 31
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 318,
+          "top": 1050,
+          "width": 138,
+          "height": 38
+        }
+      },
+      {
+        "text": "Soup of the Day",
+        "frame": {
+          "left": 319,
+          "top": 887,
+          "width": 322,
+          "height": 44
+        }
+      },
+      {
+        "text": "403 HIGH STREET",
+        "frame": {
+          "left": 602,
+          "top": 367,
+          "width": 320,
+          "height": 39
+        }
+      },
+      {
+        "text": "VAT 20% INCL",
+        "frame": {
+          "left": 311,
+          "top": 1120,
+          "width": 259,
+          "height": 36
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 591,
+          "top": 422,
+          "width": 344,
+          "height": 36
+        }
+      },
+      {
+        "text": "AMEX ******",
+        "frame": {
+          "left": 309,
+          "top": 1229,
+          "width": 228,
+          "height": 28
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 307,
+          "top": 1280,
+          "width": 236,
+          "height": 32
+        }
+      },
+      {
+        "text": "TIP",
+        "frame": {
+          "left": 307,
+          "top": 1387,
+          "width": 60,
+          "height": 27
+        }
+      },
+      {
+        "text": "TOTAL WITH TIP",
+        "frame": {
+          "left": 304,
+          "top": 1438,
+          "width": 301,
+          "height": 34
+        }
+      },
+      {
+        "text": "k*6413",
+        "frame": {
+          "left": 650,
+          "top": 1235,
+          "width": 112,
+          "height": 30
+        }
+      },
+      {
+        "text": "ITEMS SOLD",
+        "frame": {
+          "left": 607,
+          "top": 1548,
+          "width": 223,
+          "height": 37
+        }
+      },
+      {
+        "text": "#10786",
+        "frame": {
+          "left": 1065,
+          "top": 539,
+          "width": 128,
+          "height": 30
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 420,
+          "top": 1595,
+          "width": 626,
+          "height": 50
+        }
+      },
+      {
+        "text": "11.00",
+        "frame": {
+          "left": 1086,
+          "top": 647,
+          "width": 105,
+          "height": 29
+        }
+      },
+      {
+        "text": "3.75",
+        "frame": {
+          "left": 1106,
+          "top": 698,
+          "width": 82,
+          "height": 29
+        }
+      },
+      {
+        "text": "17.95",
+        "frame": {
+          "left": 1083,
+          "top": 751,
+          "width": 103,
+          "height": 30
+        }
+      },
+      {
+        "text": "16.50",
+        "frame": {
+          "left": 1082,
+          "top": 805,
+          "width": 105,
+          "height": 29
+        }
+      },
+      {
+        "text": "7.50",
+        "frame": {
+          "left": 1101,
+          "top": 857,
+          "width": 83,
+          "height": 28
+        }
+      },
+      {
+        "text": "7.95",
+        "frame": {
+          "left": 1101,
+          "top": 910,
+          "width": 82,
+          "height": 29
+        }
+      },
+      {
+        "text": "64.65",
+        "frame": {
+          "left": 1077,
+          "top": 1016,
+          "width": 103,
+          "height": 28
+        }
+      },
+      {
+        "text": "£64.65",
+        "frame": {
+          "left": 1006,
+          "top": 1067,
+          "width": 170,
+          "height": 39
+        }
+      },
+      {
+        "text": "10.77",
+        "frame": {
+          "left": 1074,
+          "top": 1143,
+          "width": 104,
+          "height": 28
+        }
+      },
+      {
+        "text": "64.65",
+        "frame": {
+          "left": 1070,
+          "top": 1247,
+          "width": 104,
+          "height": 28
+        }
+      },
+      {
+        "text": "5.00",
+        "frame": {
+          "left": 1088,
+          "top": 1405,
+          "width": 83,
+          "height": 29
+        }
+      },
+      {
+        "text": "69.65",
+        "frame": {
+          "left": 1065,
+          "top": 1457,
+          "width": 104,
+          "height": 29
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

@@ -1,0 +1,362 @@
+{
+  "name": "r02",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "GARLIC",
+        "frame": {
+          "left": 309,
+          "top": 570,
+          "width": 124,
+          "height": 27
+        }
+      },
+      {
+        "text": "XXXX-XX-XX XX:14",
+        "frame": {
+          "left": 311,
+          "top": 468,
+          "width": 356,
+          "height": 27
+        }
+      },
+      {
+        "text": "3 x 4.49",
+        "frame": {
+          "left": 353,
+          "top": 673,
+          "width": 164,
+          "height": 27
+        }
+      },
+      {
+        "text": "GREENLEAF MARKET",
+        "frame": {
+          "left": 504,
+          "top": 244,
+          "width": 454,
+          "height": 34
+        }
+      },
+      {
+        "text": "HUMMUS CLASSIC",
+        "frame": {
+          "left": 310,
+          "top": 621,
+          "width": 292,
+          "height": 27
+        }
+      },
+      {
+        "text": "OATS ROLLED 1KG",
+        "frame": {
+          "left": 308,
+          "top": 724,
+          "width": 315,
+          "height": 27
+        }
+      },
+      {
+        "text": "GREEK YOGURT",
+        "frame": {
+          "left": 308,
+          "top": 826,
+          "width": 249,
+          "height": 28
+        }
+      },
+      {
+        "text": "ORANGE JUICE 1.75L",
+        "frame": {
+          "left": 308,
+          "top": 775,
+          "width": 377,
+          "height": 28
+        }
+      },
+      {
+        "text": "2 x 2.99",
+        "frame": {
+          "left": 352,
+          "top": 929,
+          "width": 165,
+          "height": 27
+        }
+      },
+      {
+        "text": "734 RUE DU PORT",
+        "frame": {
+          "left": 574,
+          "top": 314,
+          "width": 314,
+          "height": 28
+        }
+      },
+      {
+        "text": "LEMONS 4 PACK",
+        "frame": {
+          "left": 311,
+          "top": 878,
+          "width": 269,
+          "height": 27
+        }
+      },
+      {
+        "text": "TEL 722 -555-1788",
+        "frame": {
+          "left": 563,
+          "top": 362,
+          "width": 335,
+          "height": 36
+        }
+      },
+      {
+        "text": "PEANUT BUTTER",
+        "frame": {
+          "left": 310,
+          "top": 981,
+          "width": 270,
+          "height": 26
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 308,
+          "top": 1186,
+          "width": 165,
+          "height": 26
+        }
+      },
+      {
+        "text": "CHEDDAR BLOCK 400G",
+        "frame": {
+          "left": 308,
+          "top": 1032,
+          "width": 377,
+          "height": 27
+        }
+      },
+      {
+        "text": "GST 5%",
+        "frame": {
+          "left": 307,
+          "top": 1236,
+          "width": 126,
+          "height": 27
+        }
+      },
+      {
+        "text": "ONIONS YELLOW 3LB",
+        "frame": {
+          "left": 307,
+          "top": 1083,
+          "width": 357,
+          "height": 27
+        }
+      },
+      {
+        "text": "PST 7%",
+        "frame": {
+          "left": 309,
+          "top": 1287,
+          "width": 124,
+          "height": 28
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 307,
+          "top": 1339,
+          "width": 137,
+          "height": 35
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 306,
+          "top": 1514,
+          "width": 230,
+          "height": 27
+        }
+      },
+      {
+        "text": "MASTERCARD *****",
+        "frame": {
+          "left": 306,
+          "top": 1454,
+          "width": 324,
+          "height": 37
+        }
+      },
+      {
+        "text": "k*****3662",
+        "frame": {
+          "left": 679,
+          "top": 1454,
+          "width": 196,
+          "height": 39
+        }
+      },
+      {
+        "text": "ITEMS SOLD 9",
+        "frame": {
+          "left": 603,
+          "top": 1618,
+          "width": 249,
+          "height": 27
+        }
+      },
+      {
+        "text": "#6288",
+        "frame": {
+          "left": 1048,
+          "top": 470,
+          "width": 102,
+          "height": 26
+        }
+      },
+      {
+        "text": "THANK YOU- PLEASE COME AGAIN",
+        "frame": {
+          "left": 433,
+          "top": 1665,
+          "width": 599,
+          "height": 36
+        }
+      },
+      {
+        "text": "0.99",
+        "frame": {
+          "left": 1069,
+          "top": 569,
+          "width": 79,
+          "height": 31
+        }
+      },
+      {
+        "text": "13.47",
+        "frame": {
+          "left": 1050,
+          "top": 674,
+          "width": 98,
+          "height": 28
+        }
+      },
+      {
+        "text": "3.99",
+        "frame": {
+          "left": 1070,
+          "top": 726,
+          "width": 80,
+          "height": 27
+        }
+      },
+      {
+        "text": "5.29",
+        "frame": {
+          "left": 1070,
+          "top": 776,
+          "width": 79,
+          "height": 28
+        }
+      },
+      {
+        "text": "4.49",
+        "frame": {
+          "left": 1067,
+          "top": 826,
+          "width": 81,
+          "height": 29
+        }
+      },
+      {
+        "text": "5.98",
+        "frame": {
+          "left": 1070,
+          "top": 931,
+          "width": 80,
+          "height": 27
+        }
+      },
+      {
+        "text": "4.79",
+        "frame": {
+          "left": 1067,
+          "top": 980,
+          "width": 80,
+          "height": 29
+        }
+      },
+      {
+        "text": "7.29",
+        "frame": {
+          "left": 1069,
+          "top": 1034,
+          "width": 80,
+          "height": 26
+        }
+      },
+      {
+        "text": "3.49",
+        "frame": {
+          "left": 1069,
+          "top": 1085,
+          "width": 80,
+          "height": 27
+        }
+      },
+      {
+        "text": "49.78",
+        "frame": {
+          "left": 1046,
+          "top": 1188,
+          "width": 103,
+          "height": 26
+        }
+      },
+      {
+        "text": "2.49",
+        "frame": {
+          "left": 1068,
+          "top": 1237,
+          "width": 78,
+          "height": 28
+        }
+      },
+      {
+        "text": "3.48",
+        "frame": {
+          "left": 1069,
+          "top": 1290,
+          "width": 80,
+          "height": 27
+        }
+      },
+      {
+        "text": "$55.75",
+        "frame": {
+          "left": 981,
+          "top": 1338,
+          "width": 165,
+          "height": 45
+        }
+      },
+      {
+        "text": "55.75",
+        "frame": {
+          "left": 1047,
+          "top": 1465,
+          "width": 100,
+          "height": 27
+        }
+      }
+    ],
+    "imageWidth": 1459,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

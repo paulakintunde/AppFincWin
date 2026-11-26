@@ -1,0 +1,218 @@
+{
+  "name": "r11",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "Croissant",
+        "frame": {
+          "left": 320,
+          "top": 786,
+          "width": 191,
+          "height": 32
+        }
+      },
+      {
+        "text": "SMALL BATCH COFFEE",
+        "frame": {
+          "left": 495,
+          "top": 452,
+          "width": 522,
+          "height": 48
+        }
+      },
+      {
+        "text": "04/03/26 16: 16",
+        "frame": {
+          "left": 322,
+          "top": 682,
+          "width": 322,
+          "height": 35
+        }
+      },
+      {
+        "text": "Chai Latte",
+        "frame": {
+          "left": 319,
+          "top": 838,
+          "width": 213,
+          "height": 34
+        }
+      },
+      {
+        "text": "Flat White",
+        "frame": {
+          "left": 320,
+          "top": 891,
+          "width": 212,
+          "height": 33
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 316,
+          "top": 997,
+          "width": 168,
+          "height": 32
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 316,
+          "top": 1054,
+          "width": 140,
+          "height": 36
+        }
+      },
+      {
+        "text": "VAT 20% INCL",
+        "frame": {
+          "left": 312,
+          "top": 1123,
+          "width": 259,
+          "height": 35
+        }
+      },
+      {
+        "text": "VISA ***",
+        "frame": {
+          "left": 311,
+          "top": 1224,
+          "width": 169,
+          "height": 38
+        }
+      },
+      {
+        "text": "191 RUE DU PORT",
+        "frame": {
+          "left": 597,
+          "top": 529,
+          "width": 322,
+          "height": 32
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 309,
+          "top": 1283,
+          "width": 237,
+          "height": 31
+        }
+      },
+      {
+        "text": "TEL XX-XXX-XXXX",
+        "frame": {
+          "left": 584,
+          "top": 581,
+          "width": 344,
+          "height": 34
+        }
+      },
+      {
+        "text": "k**8623",
+        "frame": {
+          "left": 631,
+          "top": 1232,
+          "width": 133,
+          "height": 36
+        }
+      },
+      {
+        "text": "ITEMS SOLD 3",
+        "frame": {
+          "left": 614,
+          "top": 1394,
+          "width": 255,
+          "height": 30
+        }
+      },
+      {
+        "text": "#24384",
+        "frame": {
+          "left": 1058,
+          "top": 695,
+          "width": 129,
+          "height": 30
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 428,
+          "top": 1443,
+          "width": 626,
+          "height": 39
+        }
+      },
+      {
+        "text": "3.75",
+        "frame": {
+          "left": 1103,
+          "top": 803,
+          "width": 81,
+          "height": 27
+        }
+      },
+      {
+        "text": "4.95",
+        "frame": {
+          "left": 1099,
+          "top": 854,
+          "width": 84,
+          "height": 29
+        }
+      },
+      {
+        "text": "4.75",
+        "frame": {
+          "left": 1098,
+          "top": 907,
+          "width": 84,
+          "height": 28
+        }
+      },
+      {
+        "text": "13.45",
+        "frame": {
+          "left": 1077,
+          "top": 1013,
+          "width": 104,
+          "height": 28
+        }
+      },
+      {
+        "text": "£13.45",
+        "frame": {
+          "left": 1006,
+          "top": 1062,
+          "width": 170,
+          "height": 43
+        }
+      },
+      {
+        "text": "2.24",
+        "frame": {
+          "left": 1097,
+          "top": 1141,
+          "width": 84,
+          "height": 27
+        }
+      },
+      {
+        "text": "13.45",
+        "frame": {
+          "left": 1073,
+          "top": 1244,
+          "width": 103,
+          "height": 29
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

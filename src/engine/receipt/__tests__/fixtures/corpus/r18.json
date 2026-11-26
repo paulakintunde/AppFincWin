@@ -1,0 +1,236 @@
+{
+  "name": "r18",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "Pint Lager",
+        "frame": {
+          "left": 313,
+          "top": 775,
+          "width": 213,
+          "height": 36
+        }
+      },
+      {
+        "text": "11/22/2026 11:47",
+        "frame": {
+          "left": 312,
+          "top": 664,
+          "width": 362,
+          "height": 41
+        }
+      },
+      {
+        "text": "Pad Thai",
+        "frame": {
+          "left": 314,
+          "top": 825,
+          "width": 168,
+          "height": 33
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 318,
+          "top": 985,
+          "width": 167,
+          "height": 31
+        }
+      },
+      {
+        "text": "LUNA TRATTORIA",
+        "frame": {
+          "left": 537,
+          "top": 427,
+          "width": 403,
+          "height": 45
+        }
+      },
+      {
+        "text": "Soup of the Day",
+        "frame": {
+          "left": 315,
+          "top": 874,
+          "width": 319,
+          "height": 45
+        }
+      },
+      {
+        "text": "TIP 20%",
+        "frame": {
+          "left": 327,
+          "top": 1087,
+          "width": 140,
+          "height": 38
+        }
+      },
+      {
+        "text": "112 HIGH STREET",
+        "frame": {
+          "left": 579,
+          "top": 501,
+          "width": 319,
+          "height": 35
+        }
+      },
+      {
+        "text": "TEL XX-XXX-XXXX",
+        "frame": {
+          "left": 568,
+          "top": 554,
+          "width": 343,
+          "height": 36
+        }
+      },
+      {
+        "text": "SALES TAX 8. 25%",
+        "frame": {
+          "left": 318,
+          "top": 1032,
+          "width": 322,
+          "height": 38
+        }
+      },
+      {
+        "text": "AMEX",
+        "frame": {
+          "left": 322,
+          "top": 1272,
+          "width": 85,
+          "height": 29
+        }
+      },
+      {
+        "text": "AMOUNT DUE",
+        "frame": {
+          "left": 319,
+          "top": 1141,
+          "width": 287,
+          "height": 43
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 323,
+          "top": 1320,
+          "width": 236,
+          "height": 34
+        }
+      },
+      {
+        "text": "**4546",
+        "frame": {
+          "left": 650,
+          "top": 1262,
+          "width": 125,
+          "height": 31
+        }
+      },
+      {
+        "text": "ITEMS SOLD 3",
+        "frame": {
+          "left": 632,
+          "top": 1420,
+          "width": 254,
+          "height": 32
+        }
+      },
+      {
+        "text": "#2549",
+        "frame": {
+          "left": 1046,
+          "top": 654,
+          "width": 128,
+          "height": 30
+        }
+      },
+      {
+        "text": "7.50",
+        "frame": {
+          "left": 1093,
+          "top": 759,
+          "width": 83,
+          "height": 29
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 447,
+          "top": 1464,
+          "width": 624,
+          "height": 48
+        }
+      },
+      {
+        "text": "15.95",
+        "frame": {
+          "left": 1074,
+          "top": 811,
+          "width": 101,
+          "height": 31
+        }
+      },
+      {
+        "text": "7.95",
+        "frame": {
+          "left": 1096,
+          "top": 866,
+          "width": 82,
+          "height": 28
+        }
+      },
+      {
+        "text": "31.40",
+        "frame": {
+          "left": 1078,
+          "top": 970,
+          "width": 101,
+          "height": 29
+        }
+      },
+      {
+        "text": "2.59",
+        "frame": {
+          "left": 1100,
+          "top": 1023,
+          "width": 80,
+          "height": 29
+        }
+      },
+      {
+        "text": "6.28",
+        "frame": {
+          "left": 1101,
+          "top": 1075,
+          "width": 81,
+          "height": 29
+        }
+      },
+      {
+        "text": "$40.27",
+        "frame": {
+          "left": 1012,
+          "top": 1125,
+          "width": 169,
+          "height": 50
+        }
+      },
+      {
+        "text": "40.27",
+        "frame": {
+          "left": 1082,
+          "top": 1256,
+          "width": 106,
+          "height": 29
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

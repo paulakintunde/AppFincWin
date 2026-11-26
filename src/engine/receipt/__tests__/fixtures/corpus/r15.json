@@ -1,0 +1,290 @@
+{
+  "name": "r15",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "HARVEST LANE GROCERY",
+        "frame": {
+          "left": 450,
+          "top": 348,
+          "width": 580,
+          "height": 45
+        }
+      },
+      {
+        "text": "02.09.2026 21:26",
+        "frame": {
+          "left": 312,
+          "top": 585,
+          "width": 365,
+          "height": 32
+        }
+      },
+      {
+        "text": "Pasta Penne 500G",
+        "frame": {
+          "left": 315,
+          "top": 690,
+          "width": 340,
+          "height": 33
+        }
+      },
+      {
+        "text": "Spinach Baby 142G",
+        "frame": {
+          "left": 314,
+          "top": 740,
+          "width": 364,
+          "height": 43
+        }
+      },
+      {
+        "text": "Lemons 4 Pack",
+        "frame": {
+          "left": 317,
+          "top": 794,
+          "width": 275,
+          "height": 36
+        }
+      },
+      {
+        "text": "Tortilla Wraps",
+        "frame": {
+          "left": 315,
+          "top": 849,
+          "width": 300,
+          "height": 35
+        }
+      },
+      {
+        "text": "Tea Bags 80",
+        "frame": {
+          "left": 331,
+          "top": 901,
+          "width": 221,
+          "height": 38
+        }
+      },
+      {
+        "text": "Carrots 2Lb",
+        "frame": {
+          "left": 316,
+          "top": 954,
+          "width": 235,
+          "height": 34
+        }
+      },
+      {
+        "text": "TEL 209 -555-2798",
+        "frame": {
+          "left": 572,
+          "top": 473,
+          "width": 350,
+          "height": 39
+        }
+      },
+      {
+        "text": "Butter Salted",
+        "frame": {
+          "left": 318,
+          "top": 1005,
+          "width": 275,
+          "height": 34
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 319,
+          "top": 1116,
+          "width": 170,
+          "height": 28
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 319,
+          "top": 1171,
+          "width": 142,
+          "height": 35
+        }
+      },
+      {
+        "text": "499 ELM AVE",
+        "frame": {
+          "left": 624,
+          "top": 424,
+          "width": 233,
+          "height": 32
+        }
+      },
+      {
+        "text": "inkl. MwSt 10%",
+        "frame": {
+          "left": 321,
+          "top": 1240,
+          "width": 301,
+          "height": 32
+        }
+      },
+      {
+        "text": "AMEX *****",
+        "frame": {
+          "left": 319,
+          "top": 1338,
+          "width": 200,
+          "height": 42
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 320,
+          "top": 1398,
+          "width": 234,
+          "height": 31
+        }
+      },
+      {
+        "text": "****9193",
+        "frame": {
+          "left": 615,
+          "top": 1339,
+          "width": 156,
+          "height": 35
+        }
+      },
+      {
+        "text": "ITEMS SOLD 7",
+        "frame": {
+          "left": 628,
+          "top": 1502,
+          "width": 256,
+          "height": 30
+        }
+      },
+      {
+        "text": "#65955",
+        "frame": {
+          "left": 1049,
+          "top": 579,
+          "width": 125,
+          "height": 31
+        }
+      },
+      {
+        "text": "1,99",
+        "frame": {
+          "left": 1096,
+          "top": 684,
+          "width": 80,
+          "height": 36
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 443,
+          "top": 1547,
+          "width": 624,
+          "height": 42
+        }
+      },
+      {
+        "text": "3,99",
+        "frame": {
+          "left": 1096,
+          "top": 740,
+          "width": 80,
+          "height": 32
+        }
+      },
+      {
+        "text": "2,99",
+        "frame": {
+          "left": 1098,
+          "top": 792,
+          "width": 82,
+          "height": 34
+        }
+      },
+      {
+        "text": "3, 89",
+        "frame": {
+          "left": 1110,
+          "top": 840,
+          "width": 68,
+          "height": 40
+        }
+      },
+      {
+        "text": "4,59",
+        "frame": {
+          "left": 1096,
+          "top": 898,
+          "width": 82,
+          "height": 32
+        }
+      },
+      {
+        "text": "1,99",
+        "frame": {
+          "left": 1099,
+          "top": 947,
+          "width": 81,
+          "height": 37
+        }
+      },
+      {
+        "text": "5,99",
+        "frame": {
+          "left": 1099,
+          "top": 999,
+          "width": 80,
+          "height": 38
+        }
+      },
+      {
+        "text": "25,43",
+        "frame": {
+          "left": 1079,
+          "top": 1108,
+          "width": 104,
+          "height": 33
+        }
+      },
+      {
+        "text": "25,43 €",
+        "frame": {
+          "left": 982,
+          "top": 1157,
+          "width": 199,
+          "height": 52
+        }
+      },
+      {
+        "text": "2,31",
+        "frame": {
+          "left": 1101,
+          "top": 1233,
+          "width": 82,
+          "height": 36
+        }
+      },
+      {
+        "text": "25,43",
+        "frame": {
+          "left": 1082,
+          "top": 1341,
+          "width": 103,
+          "height": 33
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

@@ -1,0 +1,236 @@
+{
+  "name": "r16",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "XXXX-XX-XX XX:56",
+        "frame": {
+          "left": 331,
+          "top": 646,
+          "width": 365,
+          "height": 44
+        }
+      },
+      {
+        "text": "TIMBERLINE SUPPLY CO",
+        "frame": {
+          "left": 478,
+          "top": 421,
+          "width": 586,
+          "height": 59
+        }
+      },
+      {
+        "text": "WD LUBRICANT 110Z",
+        "frame": {
+          "left": 324,
+          "top": 751,
+          "width": 368,
+          "height": 43
+        }
+      },
+      {
+        "text": "WORK GLOVES L",
+        "frame": {
+          "left": 322,
+          "top": 804,
+          "width": 278,
+          "height": 38
+        }
+      },
+      {
+        "text": "UTILITY KNIFE",
+        "frame": {
+          "left": 320,
+          "top": 857,
+          "width": 278,
+          "height": 38
+        }
+      },
+      {
+        "text": "761 ELM AVE",
+        "frame": {
+          "left": 650,
+          "top": 501,
+          "width": 235,
+          "height": 36
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 594,
+          "top": 551,
+          "width": 345,
+          "height": 41
+        }
+      },
+      {
+        "text": "CAULK WHITE 100Z",
+        "frame": {
+          "left": 318,
+          "top": 908,
+          "width": 346,
+          "height": 43
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 314,
+          "top": 1014,
+          "width": 170,
+          "height": 34
+        }
+      },
+      {
+        "text": "HST 13%",
+        "frame": {
+          "left": 313,
+          "top": 1067,
+          "width": 150,
+          "height": 33
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 310,
+          "top": 1121,
+          "width": 142,
+          "height": 41
+        }
+      },
+      {
+        "text": "CASH",
+        "frame": {
+          "left": 305,
+          "top": 1247,
+          "width": 84,
+          "height": 29
+        }
+      },
+      {
+        "text": "CHANGE DUE",
+        "frame": {
+          "left": 303,
+          "top": 1299,
+          "width": 213,
+          "height": 36
+        }
+      },
+      {
+        "text": "ITEMS SOLD 4",
+        "frame": {
+          "left": 603,
+          "top": 1416,
+          "width": 259,
+          "height": 39
+        }
+      },
+      {
+        "text": "#65598",
+        "frame": {
+          "left": 1066,
+          "top": 676,
+          "width": 128,
+          "height": 32
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 416,
+          "top": 1458,
+          "width": 626,
+          "height": 60
+        }
+      },
+      {
+        "text": "7.99",
+        "frame": {
+          "left": 1106,
+          "top": 783,
+          "width": 83,
+          "height": 30
+        }
+      },
+      {
+        "text": "11.99",
+        "frame": {
+          "left": 1083,
+          "top": 835,
+          "width": 104,
+          "height": 31
+        }
+      },
+      {
+        "text": "13.99",
+        "frame": {
+          "left": 1081,
+          "top": 888,
+          "width": 104,
+          "height": 30
+        }
+      },
+      {
+        "text": "6.49",
+        "frame": {
+          "left": 1100,
+          "top": 941,
+          "width": 83,
+          "height": 30
+        }
+      },
+      {
+        "text": "40.46",
+        "frame": {
+          "left": 1073,
+          "top": 1046,
+          "width": 106,
+          "height": 30
+        }
+      },
+      {
+        "text": "5.26",
+        "frame": {
+          "left": 1094,
+          "top": 1098,
+          "width": 84,
+          "height": 31
+        }
+      },
+      {
+        "text": "$45.72",
+        "frame": {
+          "left": 1002,
+          "top": 1146,
+          "width": 171,
+          "height": 50
+        }
+      },
+      {
+        "text": "60.00",
+        "frame": {
+          "left": 1065,
+          "top": 1278,
+          "width": 105,
+          "height": 30
+        }
+      },
+      {
+        "text": "14.28",
+        "frame": {
+          "left": 1063,
+          "top": 1330,
+          "width": 105,
+          "height": 32
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

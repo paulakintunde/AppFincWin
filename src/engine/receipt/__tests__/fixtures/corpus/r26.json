@@ -1,0 +1,200 @@
+{
+  "name": "r26",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "XXXX-XX-XX XX:46",
+        "frame": {
+          "left": 322,
+          "top": 709,
+          "width": 365,
+          "height": 34
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 317,
+          "top": 972,
+          "width": 168,
+          "height": 32
+        }
+      },
+      {
+        "text": "CORNER CARE DRUGS",
+        "frame": {
+          "left": 509,
+          "top": 482,
+          "width": 495,
+          "height": 43
+        }
+      },
+      {
+        "text": "Vitamin D 1000IU 90ct",
+        "frame": {
+          "left": 317,
+          "top": 812,
+          "width": 454,
+          "height": 41
+        }
+      },
+      {
+        "text": "HST 13%",
+        "frame": {
+          "left": 315,
+          "top": 1025,
+          "width": 149,
+          "height": 29
+        }
+      },
+      {
+        "text": "Sunscreen SPF50",
+        "frame": {
+          "left": 318,
+          "top": 868,
+          "width": 323,
+          "height": 32
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 315,
+          "top": 1080,
+          "width": 142,
+          "height": 38
+        }
+      },
+      {
+        "text": "407 KING RD",
+        "frame": {
+          "left": 636,
+          "top": 557,
+          "width": 238,
+          "height": 30
+        }
+      },
+      {
+        "text": "CASH",
+        "frame": {
+          "left": 313,
+          "top": 1205,
+          "width": 83,
+          "height": 30
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 582,
+          "top": 609,
+          "width": 344,
+          "height": 32
+        }
+      },
+      {
+        "text": "CHANGE DUE",
+        "frame": {
+          "left": 312,
+          "top": 1258,
+          "width": 212,
+          "height": 30
+        }
+      },
+      {
+        "text": "ITEMS SOLD 2",
+        "frame": {
+          "left": 615,
+          "top": 1368,
+          "width": 256,
+          "height": 31
+        }
+      },
+      {
+        "text": "#71779",
+        "frame": {
+          "left": 1058,
+          "top": 723,
+          "width": 128,
+          "height": 28
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 429,
+          "top": 1417,
+          "width": 626,
+          "height": 39
+        }
+      },
+      {
+        "text": "12.99",
+        "frame": {
+          "left": 1080,
+          "top": 826,
+          "width": 104,
+          "height": 31
+        }
+      },
+      {
+        "text": "15.99",
+        "frame": {
+          "left": 1080,
+          "top": 881,
+          "width": 102,
+          "height": 28
+        }
+      },
+      {
+        "text": "28.98",
+        "frame": {
+          "left": 1078,
+          "top": 987,
+          "width": 104,
+          "height": 27
+        }
+      },
+      {
+        "text": "3.77",
+        "frame": {
+          "left": 1098,
+          "top": 1038,
+          "width": 82,
+          "height": 28
+        }
+      },
+      {
+        "text": "$32.75",
+        "frame": {
+          "left": 1008,
+          "top": 1088,
+          "width": 166,
+          "height": 44
+        }
+      },
+      {
+        "text": "40.00",
+        "frame": {
+          "left": 1072,
+          "top": 1219,
+          "width": 107,
+          "height": 28
+        }
+      },
+      {
+        "text": "7.25",
+        "frame": {
+          "left": 1093,
+          "top": 1270,
+          "width": 83,
+          "height": 29
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

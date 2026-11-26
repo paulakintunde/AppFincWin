@@ -1,0 +1,218 @@
+{
+  "name": "r22",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "SMALL BATCH COFFEE",
+        "frame": {
+          "left": 450,
+          "top": 454,
+          "width": 573,
+          "height": 55
+        }
+      },
+      {
+        "text": "2026-l1-24",
+        "frame": {
+          "left": 313,
+          "top": 698,
+          "width": 237,
+          "height": 33
+        }
+      },
+      {
+        "text": "Latte 0at",
+        "frame": {
+          "left": 315,
+          "top": 803,
+          "width": 213,
+          "height": 34
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 319,
+          "top": 963,
+          "width": 188,
+          "height": 31
+        }
+      },
+      {
+        "text": "Banana Bread",
+        "frame": {
+          "left": 316,
+          "top": 854,
+          "width": 288,
+          "height": 37
+        }
+      },
+      {
+        "text": "GST 57.",
+        "frame": {
+          "left": 319,
+          "top": 1015,
+          "width": 140,
+          "height": 32
+        }
+      },
+      {
+        "text": "PST 77.",
+        "frame": {
+          "left": 320,
+          "top": 1072,
+          "width": 143,
+          "height": 28
+        }
+      },
+      {
+        "text": "98 RUE DU PORT",
+        "frame": {
+          "left": 569,
+          "top": 531,
+          "width": 338,
+          "height": 37
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 546,
+          "top": 583,
+          "width": 388,
+          "height": 38
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 322,
+          "top": 1124,
+          "width": 150,
+          "height": 39
+        }
+      },
+      {
+        "text": "19:54",
+        "frame": {
+          "left": 610,
+          "top": 695,
+          "width": 113,
+          "height": 30
+        }
+      },
+      {
+        "text": "MASTERCARD ****",
+        "frame": {
+          "left": 325,
+          "top": 1243,
+          "width": 353,
+          "height": 37
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 326,
+          "top": 1300,
+          "width": 264,
+          "height": 33
+        }
+      },
+      {
+        "text": "#47184",
+        "frame": {
+          "left": 1032,
+          "top": 684,
+          "width": 138,
+          "height": 30
+        }
+      },
+      {
+        "text": "ITEMS SOLD 2",
+        "frame": {
+          "left": 614,
+          "top": 1397,
+          "width": 288,
+          "height": 35
+        }
+      },
+      {
+        "text": "5-25",
+        "frame": {
+          "left": 1084,
+          "top": 792,
+          "width": 92,
+          "height": 28
+        }
+      },
+      {
+        "text": "4.25",
+        "frame": {
+          "left": 1085,
+          "top": 840,
+          "width": 90,
+          "height": 33
+        }
+      },
+      {
+        "text": "9.50",
+        "frame": {
+          "left": 1087,
+          "top": 948,
+          "width": 90,
+          "height": 29
+        }
+      },
+      {
+        "text": "0.48",
+        "frame": {
+          "left": 1088,
+          "top": 1000,
+          "width": 90,
+          "height": 30
+        }
+      },
+      {
+        "text": "0.67",
+        "frame": {
+          "left": 1089,
+          "top": 1053,
+          "width": 90,
+          "height": 30
+        }
+      },
+      {
+        "text": "$10.65",
+        "frame": {
+          "left": 996,
+          "top": 1107,
+          "width": 184,
+          "height": 42
+        }
+      },
+      {
+        "text": "K**XXXX XX-XX",
+        "frame": {
+          "left": 832,
+          "top": 1233,
+          "width": 353,
+          "height": 37
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 404,
+          "top": 1444,
+          "width": 709,
+          "height": 45
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

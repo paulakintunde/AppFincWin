@@ -1,0 +1,569 @@
+{
+  "name": "r25",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "HARVEST LANE GROCERY",
+        "frame": {
+          "left": 341,
+          "top": 190,
+          "width": 443,
+          "height": 29
+        }
+      },
+      {
+        "text": "CARROTS 2LB",
+        "frame": {
+          "left": 236,
+          "top": 448,
+          "width": 179,
+          "height": 21
+        }
+      },
+      {
+        "text": "21/10/2026 08:37",
+        "frame": {
+          "left": 236,
+          "top": 363,
+          "width": 274,
+          "height": 29
+        }
+      },
+      {
+        "text": "EGGS LARGE 12",
+        "frame": {
+          "left": 238,
+          "top": 488,
+          "width": 210,
+          "height": 21
+        }
+      },
+      {
+        "text": "SOURDOUGH LOAF",
+        "frame": {
+          "left": 237,
+          "top": 527,
+          "width": 226,
+          "height": 22
+        }
+      },
+      {
+        "text": "JAM STRAWBERRY",
+        "frame": {
+          "left": 239,
+          "top": 564,
+          "width": 224,
+          "height": 26
+        }
+      },
+      {
+        "text": "PAPER TOWEL 6PK",
+        "frame": {
+          "left": 239,
+          "top": 607,
+          "width": 243,
+          "height": 22
+        }
+      },
+      {
+        "text": "TOMATO SAUCE",
+        "frame": {
+          "left": 238,
+          "top": 684,
+          "width": 192,
+          "height": 25
+        }
+      },
+      {
+        "text": "SPARKLING WATER 12",
+        "frame": {
+          "left": 238,
+          "top": 644,
+          "width": 291,
+          "height": 26
+        }
+      },
+      {
+        "text": "ONIONS YELLOW 3LB",
+        "frame": {
+          "left": 238,
+          "top": 727,
+          "width": 277,
+          "height": 22
+        }
+      },
+      {
+        "text": "POTATOES 10LB",
+        "frame": {
+          "left": 239,
+          "top": 764,
+          "width": 209,
+          "height": 26
+        }
+      },
+      {
+        "text": "BROCCOLI",
+        "frame": {
+          "left": 240,
+          "top": 845,
+          "width": 125,
+          "height": 24
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 432,
+          "top": 286,
+          "width": 261,
+          "height": 22
+        }
+      },
+      {
+        "text": "CEREAL HONEY OAT",
+        "frame": {
+          "left": 239,
+          "top": 806,
+          "width": 261,
+          "height": 23
+        }
+      },
+      {
+        "text": "DISH SOAP",
+        "frame": {
+          "left": 247,
+          "top": 882,
+          "width": 135,
+          "height": 30
+        }
+      },
+      {
+        "text": "RICE BASMATI 2KG",
+        "frame": {
+          "left": 241,
+          "top": 923,
+          "width": 258,
+          "height": 26
+        }
+      },
+      {
+        "text": "PEANUT BUTTER",
+        "frame": {
+          "left": 241,
+          "top": 964,
+          "width": 209,
+          "height": 24
+        }
+      },
+      {
+        "text": "779 MAIN ST",
+        "frame": {
+          "left": 473,
+          "top": 246,
+          "width": 179,
+          "height": 22
+        }
+      },
+      {
+        "text": "CHICKEN THIGHS",
+        "frame": {
+          "left": 240,
+          "top": 1003,
+          "width": 226,
+          "height": 26
+        }
+      },
+      {
+        "text": "GARLIC",
+        "frame": {
+          "left": 241,
+          "top": 1124,
+          "width": 94,
+          "height": 25
+        }
+      },
+      {
+        "text": "CHEDDAR BLOCK 400G",
+        "frame": {
+          "left": 241,
+          "top": 1046,
+          "width": 293,
+          "height": 22
+        }
+      },
+      {
+        "text": "ORANGE JUICE 1.75L",
+        "frame": {
+          "left": 240,
+          "top": 1083,
+          "width": 292,
+          "height": 25
+        }
+      },
+      {
+        "text": "BAGELS PLAIN 6",
+        "frame": {
+          "left": 242,
+          "top": 1166,
+          "width": 228,
+          "height": 22
+        }
+      },
+      {
+        "text": "FROZEN PEAS 750G",
+        "frame": {
+          "left": 244,
+          "top": 1206,
+          "width": 259,
+          "height": 22
+        }
+      },
+      {
+        "text": "PASTA PENNE 500G",
+        "frame": {
+          "left": 243,
+          "top": 1243,
+          "width": 258,
+          "height": 25
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 243,
+          "top": 1367,
+          "width": 129,
+          "height": 21
+        }
+      },
+      {
+        "text": "OATS ROLLED 1KG",
+        "frame": {
+          "left": 242,
+          "top": 1286,
+          "width": 245,
+          "height": 22
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 244,
+          "top": 1448,
+          "width": 107,
+          "height": 27
+        }
+      },
+      {
+        "text": "MEMBER DISCOUNT 10%",
+        "frame": {
+          "left": 243,
+          "top": 1402,
+          "width": 309,
+          "height": 26
+        }
+      },
+      {
+        "text": "VAT 20% INCL",
+        "frame": {
+          "left": 243,
+          "top": 1502,
+          "width": 194,
+          "height": 22
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 244,
+          "top": 1622,
+          "width": 179,
+          "height": 22
+        }
+      },
+      {
+        "text": "VISA ***********k*2009",
+        "frame": {
+          "left": 243,
+          "top": 1578,
+          "width": 342,
+          "height": 25
+        }
+      },
+      {
+        "text": "ITEMS SOLD 22",
+        "frame": {
+          "left": 468,
+          "top": 1700,
+          "width": 211,
+          "height": 22
+        }
+      },
+      {
+        "text": "#36386",
+        "frame": {
+          "left": 793,
+          "top": 362,
+          "width": 96,
+          "height": 24
+        }
+      },
+      {
+        "text": "1.99",
+        "frame": {
+          "left": 829,
+          "top": 444,
+          "width": 62,
+          "height": 21
+        }
+      },
+      {
+        "text": "4.99",
+        "frame": {
+          "left": 827,
+          "top": 484,
+          "width": 64,
+          "height": 21
+        }
+      },
+      {
+        "text": "5.49",
+        "frame": {
+          "left": 830,
+          "top": 524,
+          "width": 62,
+          "height": 21
+        }
+      },
+      {
+        "text": "3.89",
+        "frame": {
+          "left": 830,
+          "top": 564,
+          "width": 61,
+          "height": 21
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 336,
+          "top": 1736,
+          "width": 475,
+          "height": 27
+        }
+      },
+      {
+        "text": "11.49",
+        "frame": {
+          "left": 813,
+          "top": 601,
+          "width": 76,
+          "height": 24
+        }
+      },
+      {
+        "text": "6.99",
+        "frame": {
+          "left": 830,
+          "top": 644,
+          "width": 63,
+          "height": 21
+        }
+      },
+      {
+        "text": "2.79",
+        "frame": {
+          "left": 831,
+          "top": 684,
+          "width": 62,
+          "height": 20
+        }
+      },
+      {
+        "text": "3.49",
+        "frame": {
+          "left": 831,
+          "top": 724,
+          "width": 62,
+          "height": 20
+        }
+      },
+      {
+        "text": "6.99",
+        "frame": {
+          "left": 830,
+          "top": 764,
+          "width": 63,
+          "height": 20
+        }
+      },
+      {
+        "text": "5.49",
+        "frame": {
+          "left": 832,
+          "top": 804,
+          "width": 61,
+          "height": 21
+        }
+      },
+      {
+        "text": "2.49",
+        "frame": {
+          "left": 832,
+          "top": 844,
+          "width": 62,
+          "height": 20
+        }
+      },
+      {
+        "text": "3.29",
+        "frame": {
+          "left": 832,
+          "top": 884,
+          "width": 62,
+          "height": 20
+        }
+      },
+      {
+        "text": "8.99",
+        "frame": {
+          "left": 832,
+          "top": 923,
+          "width": 63,
+          "height": 21
+        }
+      },
+      {
+        "text": "4.79",
+        "frame": {
+          "left": 831,
+          "top": 963,
+          "width": 63,
+          "height": 21
+        }
+      },
+      {
+        "text": "11.84",
+        "frame": {
+          "left": 816,
+          "top": 1003,
+          "width": 80,
+          "height": 21
+        }
+      },
+      {
+        "text": "7.29",
+        "frame": {
+          "left": 832,
+          "top": 1043,
+          "width": 63,
+          "height": 21
+        }
+      },
+      {
+        "text": "5.29",
+        "frame": {
+          "left": 834,
+          "top": 1083,
+          "width": 61,
+          "height": 21
+        }
+      },
+      {
+        "text": "O.99",
+        "frame": {
+          "left": 833,
+          "top": 1123,
+          "width": 62,
+          "height": 21
+        }
+      },
+      {
+        "text": "4.29",
+        "frame": {
+          "left": 832,
+          "top": 1163,
+          "width": 64,
+          "height": 21
+        }
+      },
+      {
+        "text": "2.79",
+        "frame": {
+          "left": 834,
+          "top": 1203,
+          "width": 62,
+          "height": 21
+        }
+      },
+      {
+        "text": "1.99",
+        "frame": {
+          "left": 835,
+          "top": 1243,
+          "width": 61,
+          "height": 21
+        }
+      },
+      {
+        "text": "3.99",
+        "frame": {
+          "left": 835,
+          "top": 1283,
+          "width": 61,
+          "height": 21
+        }
+      },
+      {
+        "text": "111.63",
+        "frame": {
+          "left": 803,
+          "top": 1360,
+          "width": 91,
+          "height": 24
+        }
+      },
+      {
+        "text": "-11.16",
+        "frame": {
+          "left": 804,
+          "top": 1400,
+          "width": 92,
+          "height": 24
+        }
+      },
+      {
+        "text": "£100.47",
+        "frame": {
+          "left": 745,
+          "top": 1444,
+          "width": 151,
+          "height": 27
+        }
+      },
+      {
+        "text": "16.74",
+        "frame": {
+          "left": 820,
+          "top": 1499,
+          "width": 80,
+          "height": 21
+        }
+      },
+      {
+        "text": "100.47",
+        "frame": {
+          "left": 804,
+          "top": 1578,
+          "width": 94,
+          "height": 21
+        }
+      }
+    ],
+    "imageWidth": 1136,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

@@ -1,0 +1,263 @@
+{
+  "name": "r10",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "22 Aug 2026 09:53",
+        "frame": {
+          "left": 332,
+          "top": 592,
+          "width": 388,
+          "height": 48
+        }
+      },
+      {
+        "text": "Allergy Relief 30ct",
+        "frame": {
+          "left": 326,
+          "top": 693,
+          "width": 414,
+          "height": 55
+        }
+      },
+      {
+        "text": "CORNER CARE DRUGS",
+        "frame": {
+          "left": 525,
+          "top": 369,
+          "width": 496,
+          "height": 60
+        }
+      },
+      {
+        "text": "Hand Cream 75ml",
+        "frame": {
+          "left": 326,
+          "top": 751,
+          "width": 324,
+          "height": 42
+        }
+      },
+      {
+        "text": "Pain Relief 24 tab",
+        "frame": {
+          "left": 324,
+          "top": 802,
+          "width": 390,
+          "height": 50
+        }
+      },
+      {
+        "text": "Lip Balm",
+        "frame": {
+          "left": 322,
+          "top": 855,
+          "width": 172,
+          "height": 42
+        }
+      },
+      {
+        "text": "Shampoo 400ml",
+        "frame": {
+          "left": 320,
+          "top": 909,
+          "width": 277,
+          "height": 42
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 314,
+          "top": 1011,
+          "width": 171,
+          "height": 39
+        }
+      },
+      {
+        "text": "GST 5%",
+        "frame": {
+          "left": 314,
+          "top": 1070,
+          "width": 128,
+          "height": 30
+        }
+      },
+      {
+        "text": "178 HIGH STREET",
+        "frame": {
+          "left": 610,
+          "top": 445,
+          "width": 320,
+          "height": 42
+        }
+      },
+      {
+        "text": "TEL 647-555 - 4347",
+        "frame": {
+          "left": 596,
+          "top": 495,
+          "width": 351,
+          "height": 50
+        }
+      },
+      {
+        "text": "PST 7%",
+        "frame": {
+          "left": 312,
+          "top": 1120,
+          "width": 128,
+          "height": 32
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 310,
+          "top": 1175,
+          "width": 139,
+          "height": 40
+        }
+      },
+      {
+        "text": "DEBIT ******k*****5406",
+        "frame": {
+          "left": 304,
+          "top": 1298,
+          "width": 477,
+          "height": 46
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 301,
+          "top": 1353,
+          "width": 237,
+          "height": 36
+        }
+      },
+      {
+        "text": "ITEMS SOLD 5",
+        "frame": {
+          "left": 604,
+          "top": 1470,
+          "width": 254,
+          "height": 37
+        }
+      },
+      {
+        "text": "#96748",
+        "frame": {
+          "left": 1068,
+          "top": 623,
+          "width": 128,
+          "height": 32
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 415,
+          "top": 1511,
+          "width": 632,
+          "height": 60
+        }
+      },
+      {
+        "text": "18.99",
+        "frame": {
+          "left": 1088,
+          "top": 729,
+          "width": 104,
+          "height": 31
+        }
+      },
+      {
+        "text": "7.99",
+        "frame": {
+          "left": 1107,
+          "top": 782,
+          "width": 81,
+          "height": 31
+        }
+      },
+      {
+        "text": "8.49",
+        "frame": {
+          "left": 1105,
+          "top": 837,
+          "width": 83,
+          "height": 29
+        }
+      },
+      {
+        "text": "3.49",
+        "frame": {
+          "left": 1103,
+          "top": 888,
+          "width": 82,
+          "height": 30
+        }
+      },
+      {
+        "text": "8.99",
+        "frame": {
+          "left": 1100,
+          "top": 942,
+          "width": 83,
+          "height": 29
+        }
+      },
+      {
+        "text": "47.95",
+        "frame": {
+          "left": 1073,
+          "top": 1045,
+          "width": 106,
+          "height": 31
+        }
+      },
+      {
+        "text": "2.40",
+        "frame": {
+          "left": 1094,
+          "top": 1099,
+          "width": 83,
+          "height": 29
+        }
+      },
+      {
+        "text": "3.36",
+        "frame": {
+          "left": 1093,
+          "top": 1151,
+          "width": 82,
+          "height": 30
+        }
+      },
+      {
+        "text": "$53.71",
+        "frame": {
+          "left": 1000,
+          "top": 1197,
+          "width": 171,
+          "height": 48
+        }
+      },
+      {
+        "text": "53.71",
+        "frame": {
+          "left": 1065,
+          "top": 1330,
+          "width": 103,
+          "height": 31
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

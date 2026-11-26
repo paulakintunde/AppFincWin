@@ -1,0 +1,227 @@
+{
+  "name": "r05",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "COUPON",
+        "frame": {
+          "left": 365,
+          "top": 858,
+          "width": 127,
+          "height": 33
+        }
+      },
+      {
+        "text": "Lip Balm",
+        "frame": {
+          "left": 322,
+          "top": 910,
+          "width": 168,
+          "height": 37
+        }
+      },
+      {
+        "text": "CORNER CARE DRUGS",
+        "frame": {
+          "left": 523,
+          "top": 423,
+          "width": 495,
+          "height": 55
+        }
+      },
+      {
+        "text": "04/03/26 15:07",
+        "frame": {
+          "left": 328,
+          "top": 643,
+          "width": 325,
+          "height": 47
+        }
+      },
+      {
+        "text": "Sunscreen SPF50",
+        "frame": {
+          "left": 325,
+          "top": 752,
+          "width": 323,
+          "height": 40
+        }
+      },
+      {
+        "text": "Shampoo 400ml",
+        "frame": {
+          "left": 323,
+          "top": 804,
+          "width": 279,
+          "height": 42
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 314,
+          "top": 1014,
+          "width": 170,
+          "height": 35
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 310,
+          "top": 1121,
+          "width": 143,
+          "height": 41
+        }
+      },
+      {
+        "text": "TEL 877 -555-3930",
+        "frame": {
+          "left": 593,
+          "top": 548,
+          "width": 351,
+          "height": 48
+        }
+      },
+      {
+        "text": "SALES TAX 8. 25%",
+        "frame": {
+          "left": 312,
+          "top": 1066,
+          "width": 325,
+          "height": 41
+        }
+      },
+      {
+        "text": "376 ELM AVE",
+        "frame": {
+          "left": 651,
+          "top": 500,
+          "width": 234,
+          "height": 38
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 301,
+          "top": 1299,
+          "width": 237,
+          "height": 36
+        }
+      },
+      {
+        "text": "DEBIT ****** k*****4394",
+        "frame": {
+          "left": 305,
+          "top": 1244,
+          "width": 475,
+          "height": 51
+        }
+      },
+      {
+        "text": "ITEMS SOLD 3",
+        "frame": {
+          "left": 603,
+          "top": 1415,
+          "width": 257,
+          "height": 40
+        }
+      },
+      {
+        "text": "#76057",
+        "frame": {
+          "left": 1066,
+          "top": 676,
+          "width": 128,
+          "height": 32
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 416,
+          "top": 1458,
+          "width": 626,
+          "height": 60
+        }
+      },
+      {
+        "text": "15.99",
+        "frame": {
+          "left": 1085,
+          "top": 781,
+          "width": 105,
+          "height": 33
+        }
+      },
+      {
+        "text": "8.99",
+        "frame": {
+          "left": 1104,
+          "top": 836,
+          "width": 83,
+          "height": 30
+        }
+      },
+      {
+        "text": "-2.00",
+        "frame": {
+          "left": 1083,
+          "top": 889,
+          "width": 103,
+          "height": 30
+        }
+      },
+      {
+        "text": "3.49",
+        "frame": {
+          "left": 1101,
+          "top": 941,
+          "width": 82,
+          "height": 30
+        }
+      },
+      {
+        "text": "26.47",
+        "frame": {
+          "left": 1075,
+          "top": 1046,
+          "width": 104,
+          "height": 30
+        }
+      },
+      {
+        "text": "2.18",
+        "frame": {
+          "left": 1094,
+          "top": 1099,
+          "width": 83,
+          "height": 29
+        }
+      },
+      {
+        "text": "$28.65",
+        "frame": {
+          "left": 1001,
+          "top": 1146,
+          "width": 171,
+          "height": 50
+        }
+      },
+      {
+        "text": "28.65",
+        "frame": {
+          "left": 1065,
+          "top": 1278,
+          "width": 104,
+          "height": 31
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}

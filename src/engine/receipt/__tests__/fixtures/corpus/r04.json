@@ -1,0 +1,263 @@
+{
+  "name": "r04",
+  "module": "@react-native-ml-kit/text-recognition@2.0.0",
+  "ocr": {
+    "lines": [
+      {
+        "text": "Pint Lager",
+        "frame": {
+          "left": 312,
+          "top": 720,
+          "width": 213,
+          "height": 35
+        }
+      },
+      {
+        "text": "XXXX-XX-XX XX:39",
+        "frame": {
+          "left": 311,
+          "top": 611,
+          "width": 362,
+          "height": 35
+        }
+      },
+      {
+        "text": "Tiramisu",
+        "frame": {
+          "left": 314,
+          "top": 824,
+          "width": 167,
+          "height": 33
+        }
+      },
+      {
+        "text": "Caesar Salad",
+        "frame": {
+          "left": 312,
+          "top": 769,
+          "width": 255,
+          "height": 37
+        }
+      },
+      {
+        "text": "THE COPPER KETTLE",
+        "frame": {
+          "left": 490,
+          "top": 375,
+          "width": 492,
+          "height": 45
+        }
+      },
+      {
+        "text": "Garlic Bread",
+        "frame": {
+          "left": 314,
+          "top": 875,
+          "width": 255,
+          "height": 35
+        }
+      },
+      {
+        "text": "SUBTOTAL",
+        "frame": {
+          "left": 318,
+          "top": 1038,
+          "width": 171,
+          "height": 30
+        }
+      },
+      {
+        "text": "Burger & Fries",
+        "frame": {
+          "left": 317,
+          "top": 925,
+          "width": 297,
+          "height": 46
+        }
+      },
+      {
+        "text": "HST 13%",
+        "frame": {
+          "left": 319,
+          "top": 1089,
+          "width": 149,
+          "height": 32
+        }
+      },
+      {
+        "text": "TIP 18%",
+        "frame": {
+          "left": 319,
+          "top": 1141,
+          "width": 149,
+          "height": 32
+        }
+      },
+      {
+        "text": "TEL [phone]",
+        "frame": {
+          "left": 568,
+          "top": 501,
+          "width": 342,
+          "height": 35
+        }
+      },
+      {
+        "text": "TOTAL",
+        "frame": {
+          "left": 320,
+          "top": 1198,
+          "width": 140,
+          "height": 38
+        }
+      },
+      {
+        "text": "359 MAIN ST",
+        "frame": {
+          "left": 622,
+          "top": 449,
+          "width": 233,
+          "height": 34
+        }
+      },
+      {
+        "text": "AUTH XXXXXX",
+        "frame": {
+          "left": 323,
+          "top": 1372,
+          "width": 235,
+          "height": 34
+        }
+      },
+      {
+        "text": "VISA ************9283",
+        "frame": {
+          "left": 322,
+          "top": 1314,
+          "width": 451,
+          "height": 38
+        }
+      },
+      {
+        "text": "ITEMS SOLD 5",
+        "frame": {
+          "left": 631,
+          "top": 1472,
+          "width": 254,
+          "height": 33
+        }
+      },
+      {
+        "text": "#49442",
+        "frame": {
+          "left": 1046,
+          "top": 601,
+          "width": 126,
+          "height": 31
+        }
+      },
+      {
+        "text": "7.50",
+        "frame": {
+          "left": 1093,
+          "top": 708,
+          "width": 82,
+          "height": 29
+        }
+      },
+      {
+        "text": "THANK YOU - PLEASE COME AGAIN",
+        "frame": {
+          "left": 447,
+          "top": 1520,
+          "width": 624,
+          "height": 41
+        }
+      },
+      {
+        "text": "12.00",
+        "frame": {
+          "left": 1073,
+          "top": 762,
+          "width": 105,
+          "height": 28
+        }
+      },
+      {
+        "text": "9.00",
+        "frame": {
+          "left": 1095,
+          "top": 813,
+          "width": 82,
+          "height": 29
+        }
+      },
+      {
+        "text": "6.50",
+        "frame": {
+          "left": 1096,
+          "top": 868,
+          "width": 84,
+          "height": 28
+        }
+      },
+      {
+        "text": "18.50",
+        "frame": {
+          "left": 1077,
+          "top": 918,
+          "width": 100,
+          "height": 30
+        }
+      },
+      {
+        "text": "53.50",
+        "frame": {
+          "left": 1080,
+          "top": 1026,
+          "width": 104,
+          "height": 28
+        }
+      },
+      {
+        "text": "6.96",
+        "frame": {
+          "left": 1100,
+          "top": 1076,
+          "width": 82,
+          "height": 30
+        }
+      },
+      {
+        "text": "9.63",
+        "frame": {
+          "left": 1101,
+          "top": 1129,
+          "width": 82,
+          "height": 29
+        }
+      },
+      {
+        "text": "$70.09",
+        "frame": {
+          "left": 1013,
+          "top": 1180,
+          "width": 169,
+          "height": 48
+        }
+      },
+      {
+        "text": "70.09",
+        "frame": {
+          "left": 1083,
+          "top": 1310,
+          "width": 105,
+          "height": 29
+        }
+      }
+    ],
+    "imageWidth": 1500,
+    "imageHeight": 2000
+  },
+  "expected": null
+}
