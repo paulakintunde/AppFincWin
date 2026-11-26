@@ -131,15 +131,15 @@ Filled by you or by Claude from your reply. Claude checks names only (`gh secret
 
 | Step | What | Done | Date | Notes |
 | --- | --- | --- | --- | --- |
-| 1 | R2 bucket `fincwin-backups`, us, 30 days, two tokens | | | |
-| 2 | age keypair, offline copies, local file deleted | | | |
-| 3 | Session pooler URI, SUPABASE_URL, SUPABASE_ANON_KEY | | | |
-| 4 | GitHub secrets, `AGE_PUBLIC_KEY`, restore secrets (Path A or B) | | | |
-| 5 | Firebase project, google-services.json, FCM v1 key on EAS | | | |
-| 6 | gitleaks exact-path allow-list for google-services.json (yes/no) | | | |
-| 7 | Expo access token created, enhanced security left OFF | | | |
-| 8 | Wallet CSVs in `C:/dev/fincwin-private/wallet-exports` (name any missing wallet) | | | |
-| 9 | Reviewer emails and password in `.env.local` | | | |
+| 1 | R2 bucket `fincwin-backups`, us, 30 days, two tokens | yes | 2026-11-26 | owner confirmed; R2 secrets present |
+| 2 | age keypair, offline copies, local file deleted | yes | 2026-11-26 | first pair rotated after the private key reached chat via an IDE selection; new pair verified against GitHub |
+| 3 | Session pooler URI, SUPABASE_URL, SUPABASE_ANON_KEY | yes | 2026-11-26 | |
+| 4 | GitHub secrets, `AGE_PUBLIC_KEY`, restore secrets (Path A or B) | yes | 2026-11-26 | Path A; restore env and variable checked with gh; 7 repo secrets confirmed by owner (gh token cannot list repo secrets) |
+| 5 | Firebase project, google-services.json, FCM v1 key on EAS | yes | 2026-11-26 | project fincwin, package com.fincwin.app; FCM V1 upload owner-reported, proven by the 10-29/10-30 push test |
+| 6 | gitleaks exact-path allow-list for google-services.json (yes/no) | yes | 2026-11-26 | committed in 10-27 (c8c00062) |
+| 7 | Expo access token created, enhanced security left OFF | yes | 2026-11-26 | robot fincwin-push, Developer role |
+| 8 | Wallet CSVs in `C:/dev/fincwin-private/wallet-exports` (name any missing wallet) | no | 2026-11-26 | all three missing; readers stay on public sample formats; real-file check open |
+| 9 | Reviewer emails and password in `.env.local` | yes | 2026-11-26 | three names present (grep on names only) |
 
 ## Notes for later plans (not owner steps)
 

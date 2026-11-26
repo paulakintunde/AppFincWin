@@ -1667,7 +1667,7 @@ Plans:
 **Plans**: 30 plans in 6 waves
 Plans:
 **Wave 1**
-- [ ] 10-01-PLAN.md — Owner setup runbook and one owner sitting (R2, age key, GitHub secrets, Firebase/FCM, Expo token, wallet files, reviewer credentials)
+- [x] 10-01-PLAN.md — Owner setup runbook and one owner sitting (R2, age key, GitHub secrets, Firebase/FCM, Expo token, wallet files, reviewer credentials)
 - [x] 10-02-PLAN.md — System tables migration (devices, push tokens, alert settings/prefs/log, archived months) + RLS pgTAP
 - [x] 10-03-PLAN.md — Client data layer: db modules, keys, queued mutations, cache bump, export manifest entries
 - [x] 10-04-PLAN.md — Phase 10 copy catalogue (system.*), status keys, You row icons
@@ -1850,7 +1850,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
-| 10. System | 27/30 | In Progress |  |
+| 10. System | 28/30 | In Progress (10-29 needs owner OK) |  |
 | 10.1 Split and receipts | 0/30 | Planned | - |
 | 10.2 Envelope rollover | 0/10 | Planned | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
