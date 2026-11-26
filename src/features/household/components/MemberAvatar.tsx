@@ -11,7 +11,7 @@ import { fontSize, textRole } from '@/theme/typography';
 import { householdIcons } from '../glyphs';
 import { useMemberLabel, useMemberSeen } from '../useMemberLabel';
 
-export type MemberAvatarSize = 28 | 32 | 40;
+export type MemberAvatarSize = 28 | 32 | 36 | 40;
 
 export interface MemberAvatarProps {
   householdId: string | null | undefined;

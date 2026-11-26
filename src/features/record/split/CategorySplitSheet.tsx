@@ -18,7 +18,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radii, space, step } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { money as toMoney } from '@/engine/money';
-import { PARTS_MAX, primaryCategory } from '@/engine/parts';
+import { PARTS_MAX, primaryCategory, type Part } from '@/engine/parts';
 import { toParts } from '@/db/categoryParts';
 import type { CategoryRow, TransactionRow } from '@/db/rows';
 import { useCategoryLookup } from '@/data/queries/categories';
@@ -41,6 +41,10 @@ export interface CategorySplitSheetProps {
   onClose: () => void;
   /** D-03: opened from "Place it", so the balance line is outlined. */
   highlightGap?: boolean;
+  /** 10.1-27: "Edit parts" on a scan review opens with the parts built from the receipt items instead of the line's own. */
+  initialParts?: readonly Part[] | null;
+  /** 10.1-27: called once the parts are saved (before onClose), so the scan review knows the item split has stopped. */
+  onSaved?: () => void;
 }
 
 export function CategorySplitSheet(props: CategorySplitSheetProps) {
@@ -52,7 +56,7 @@ function signature(d: SplitDraft): string {
   return JSON.stringify(d.parts.map((p) => [p.categoryId, p.amount]));
 }
 
-function SplitBody({ line, householdId, month, currency, onClose, highlightGap = false }: CategorySplitSheetProps) {
+function SplitBody({ line, householdId, month, currency, onClose, highlightGap = false, initialParts, onSaved }: CategorySplitSheetProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const { user } = useAuth();
@@ -63,7 +67,7 @@ function SplitBody({ line, householdId, month, currency, onClose, highlightGap =
 
   const existing = useMemo(() => toParts(line.category_parts ?? null), [line.category_parts]);
   const editing = existing !== null;
-  const [initial] = useState(() => initDraft({ amount: line.original_amount, categoryId: line.category_id, parts: existing }));
+  const [initial] = useState(() => initDraft({ amount: line.original_amount, categoryId: line.category_id, parts: initialParts ?? existing }));
   const [draft, setDraft] = useState<SplitDraft>(initial);
   const [known] = useState(() => new Set(initial.parts.map((p) => p.key)));
   const [picker, setPicker] = useState<string | 'keepAs' | null>(null);
@@ -105,13 +109,23 @@ function SplitBody({ line, householdId, month, currency, onClose, highlightGap =
       return;
     }
     hapticTap();
-    saver.save(toSaveParts(draft), { onDone: onClose });
+    saver.save(toSaveParts(draft), {
+      onDone: () => {
+        onSaved?.();
+        onClose();
+      },
+    });
   };
 
   const confirmRemove = () => {
     setConfirming(false);
     hapticTap();
-    saver.remove(keepCategory, { onDone: onClose });
+    saver.remove(keepCategory, {
+      onDone: () => {
+        onSaved?.();
+        onClose();
+      },
+    });
   };
 
   const pickFor = picker !== null && picker !== 'keepAs' ? draft.parts.findIndex((p) => p.key === picker) : -1;

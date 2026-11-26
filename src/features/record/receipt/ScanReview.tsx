@@ -2,6 +2,10 @@
 // likely category each; tax, tip and discounts as their own rows; "Doesn't add up" with by how much, at the top and above the
 // button; the footer note. Nothing is saved here: the primary button only hands the draft to the sheet, and it stays disabled
 // until the list is complete and adds up (T-10.1-24-01).
+// 10.1-27 (SCN-06, SCN-07; D-14..D-17; UI-SPEC 6): on a shared line (draft.members set) "Split items between people" adds the
+// who-chips on every item, "Back to the usual split", the read-only extras note, "Each person's share" and "Where it goes".
+// "Save split by item" stays disabled until the shares and the parts both add up to the line total. A private line never
+// shows any people control (T-10.1-27-02).
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
@@ -9,6 +13,7 @@ import { Row } from '@/ui/Row';
 import { TextInput } from '@/ui/TextInput';
 import { MoneyInput } from '@/ui/MoneyInput';
 import { WarningCard } from '@/ui/WarningCard';
+import { ToggleRow } from '@/ui/ToggleRow';
 import { Glyph } from '@/ui/icons/Glyph';
 import { iconForCategory } from '@/ui/icons/iconFor';
 import { hapticWarn } from '@/ui/haptics';
@@ -27,14 +32,21 @@ import { categoryName } from '../categoryName';
 import { CategoryPicker } from '../entry/pickers/CategoryPicker';
 import { DateField } from '../entry/pickers/DateField';
 import { CROP_SIZE, ItemRow, type CropSource } from './ItemRow';
+import { PersonTotals } from './PersonTotals';
+import { WhereItGoes } from './WhereItGoes';
+import { WhoChips } from './WhoChips';
 import {
   addItem,
   applyItemsTotal,
   applyReceiptTotal,
+  byItemReady,
   canConfirm,
+  onUsual,
   removeExtra,
   removeItem,
+  resetToUsual,
   reviewBalance,
+  setByItem,
   setDate,
   setExtraAmount,
   setItemCategory,
@@ -42,6 +54,9 @@ import {
   setItemPrice,
   setStore,
   setTotal,
+  sharesPreview,
+  togglePerson,
+  toPrivateSave,
   type ReviewDraft,
   type ReviewExtra,
 } from './scanModel';
@@ -55,9 +70,35 @@ export interface ScanReviewProps {
   onTryAnother(): void;
   pending?: boolean;
   conflict?: string | null;
+  /** 10.1-27: the household (avatars on the chips and totals). */
+  householdId?: string | null;
+  /** 10.1-27: the line's sign and category, for the parts built from the items ("Where it goes"). */
+  lineSign?: 1 | -1;
+  lineCategoryId?: string | null;
+  /** 10.1-27: the line's usual rule as words inside "Split {rule} as usual" ("evenly"). */
+  ruleWord?: string;
+  /** 10.1-27: "Edit parts" (an existing line only). */
+  onEditParts?: () => void;
+  /** 10.1-27: the parts were edited by hand from here, so the item split has stopped (owner answer 12). */
+  partsEdited?: boolean;
 }
 
-export function ScanReview({ draft, currency, onChange, onConfirm, onDiscard, onTryAnother, pending = false, conflict = null }: ScanReviewProps) {
+export function ScanReview({
+  draft,
+  currency,
+  onChange,
+  onConfirm,
+  onDiscard,
+  onTryAnother,
+  pending = false,
+  conflict = null,
+  householdId = null,
+  lineSign = -1,
+  lineCategoryId = null,
+  ruleWord,
+  onEditParts,
+  partsEdited = false,
+}: ScanReviewProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const rc = useRecordContext();
@@ -173,8 +214,21 @@ export function ScanReview({ draft, currency, onChange, onConfirm, onDiscard, on
   };
 
   const pickFor = picker === null ? undefined : draft.items.find((i) => i.key === picker);
-  const primaryLabel = draft.mode === 'new' ? t('scan.review.addLine') : t('scan.review.use');
-  const blocked = !verdict.ok || pending;
+  // 10.1-27: people controls exist only when the draft has members (a shared line); private lines never get them (T-10.1-27-02).
+  const members = draft.members;
+  const byItem = members !== null && draft.byItem && !partsEdited;
+  const usualNow = onUsual(draft);
+  const total = draft.total.value ?? 0;
+  const preview = byItem ? sharesPreview(draft) : null;
+  const where = byItem ? toPrivateSave(draft, lineSign, lineCategoryId) : null;
+  const whereParts =
+    where === null
+      ? []
+      : where.parts !== null
+        ? where.parts.map((p) => ({ categoryId: p.categoryId, amount: Math.abs(p.amount), taxTip: p.label === 'taxTip' }))
+        : [{ categoryId: where.categoryId, amount: total }];
+  const primaryLabel = byItem ? t('scan.byItem.save') : draft.mode === 'new' ? t('scan.review.addLine') : t('scan.review.use');
+  const blocked = (byItem ? !byItemReady(draft, lineSign, lineCategoryId) : !verdict.ok) || pending;
   const firstImage = draft.images[0];
 
   return (
@@ -234,6 +288,20 @@ export function ScanReview({ draft, currency, onChange, onConfirm, onDiscard, on
         )}
       </View>
 
+      {members !== null && !partsEdited ? (
+        <View style={styles.toggle} testID="scan-byitem-toggle">
+          <Glyph name="household" size={20} color={colors.ink} />
+          <View style={styles.grow}>
+            <ToggleRow label={t('scan.byItem.toggle')} value={draft.byItem} onChange={(on) => onChange(setByItem(draft, on))} />
+          </View>
+        </View>
+      ) : null}
+      {members !== null && partsEdited ? (
+        <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }} testID="scan-parts-edited">
+          {t('scan.byItem.editPartsNote')}
+        </Text>
+      ) : null}
+
       <Text accessibilityRole="header" style={{ ...textRole(pairing, 'sheetTitle'), color: colors.ink }}>
         {t('scan.review.items')}
       </Text>
@@ -270,11 +338,39 @@ export function ScanReview({ draft, currency, onChange, onConfirm, onDiscard, on
                   onPickCategory={() => setPicker(item.key)}
                   onRemove={() => onChange(removeItem(draft, item.key))}
                 />
+                {byItem && members !== null ? (
+                  <View style={styles.people}>
+                    <WhoChips
+                      householdId={householdId}
+                      members={members}
+                      selected={item.people ?? []}
+                      itemName={item.name.trim() === '' ? t('scan.item.unnamed') : item.name}
+                      onToggle={(id) => onChange(togglePerson(draft, item.key, id))}
+                    />
+                    {i === 0 && usualNow && ruleWord ? (
+                      <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }} testID="scan-as-usual">
+                        {t('scan.byItem.asUsual', { rule: ruleWord })}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
             );
           })}
         </View>
       )}
+
+      {byItem && !usualNow ? (
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={LINK_HIT_SLOP}
+          onPress={() => onChange(resetToUsual(draft, draft.usual ?? []))}
+          style={styles.link}
+          testID="scan-reset-usual"
+        >
+          <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('scan.byItem.reset')}</Text>
+        </Pressable>
+      ) : null}
 
       <Pressable
         accessibilityRole="button"
@@ -296,6 +392,30 @@ export function ScanReview({ draft, currency, onChange, onConfirm, onDiscard, on
           <View style={[styles.card, { backgroundColor: colors.surface }]} testID="scan-extras">
             {draft.extras.map(extraRow)}
           </View>
+        </>
+      ) : null}
+
+      {byItem && members !== null ? (
+        <>
+          <View style={[styles.note, { backgroundColor: colors.fill1 }]} testID="scan-proportional">
+            <Glyph name="info" size={16} color={colors.inkMuted} />
+            <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, flex: 1 }}>{t('scan.byItem.proportional')}</Text>
+          </View>
+          <PersonTotals
+            householdId={householdId}
+            members={members}
+            shares={preview !== null && preview.ok ? preview.shares : []}
+            total={total}
+            money={money}
+            spoken={spoken}
+          />
+          <WhereItGoes
+            parts={whereParts}
+            categoryOf={(id) => (id === null ? undefined : lookup.byId.get(id))}
+            nameOf={(id) => nameOf(id) ?? t('split.uncategorised')}
+            money={money}
+            onEditParts={onEditParts}
+          />
         </>
       ) : null}
 
@@ -373,4 +493,8 @@ const styles = StyleSheet.create({
   },
   primary: { minHeight: 52, borderRadius: radii.pill, alignItems: 'center', justifyContent: 'center', paddingHorizontal: step.card, marginTop: step.tight },
   discard: { minHeight: space.touchMin, alignItems: 'center', justifyContent: 'center' },
+  toggle: { flexDirection: 'row', alignItems: 'center', gap: step.row },
+  grow: { flex: 1 },
+  people: { gap: step.hair, paddingBottom: step.row },
+  note: { flexDirection: 'row', alignItems: 'flex-start', gap: step.tight, padding: step.row, borderRadius: radii.card },
 });

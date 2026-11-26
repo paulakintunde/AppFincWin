@@ -6,6 +6,7 @@ import { itemShares, itemsToParts, reconcile } from '@/engine/receipt';
 import type { Field, ItemSharesResult, ParseOutcome, ReceiptFrame, Reconcile } from '@/engine/receipt';
 import { primaryCategory } from '@/engine/parts';
 import type { Part } from '@/engine/parts';
+import type { StoredItemSplit } from '@/db/rows';
 
 export interface ReviewItem {
   key: string;
@@ -136,6 +137,50 @@ export function fromParsed(o: ParseOutcome | null, ctx: FromParsedContext): Revi
   };
 }
 
+export interface FromStoredContext {
+  lineTotal: number;
+  lineCategoryId: string | null;
+  /** Translated names for the extras rows ("Tax", "Tip"); a discount row shows its own word. */
+  names: { tax: string; tip: string };
+}
+
+/**
+ * 10.1-27: a shared line's saved split by item (transactions.item_split) as a review draft, so "Split by item" reopens the
+ * saved items without reading the receipt again. The people stay null here; withMembers(..., { keepPeople: true }) adds them.
+ */
+export function fromStored(s: StoredItemSplit, ctx: FromStoredContext): ReviewDraft {
+  const items: ReviewItem[] = s.items.map((it) => ({
+    key: nextKey('item'),
+    name: it.name,
+    price: it.price,
+    discount: it.discount,
+    categoryId: it.c,
+    likely: false,
+    unsure: false,
+    frame: null,
+    page: 0,
+    people: [...it.people],
+  }));
+  const extras: ReviewExtra[] = [];
+  if (s.extras.tax > 0) extras.push({ key: nextKey('extra'), kind: 'tax', name: ctx.names.tax, amount: s.extras.tax, unsure: false });
+  if (s.extras.tip > 0) extras.push({ key: nextKey('extra'), kind: 'tip', name: ctx.names.tip, amount: s.extras.tip, unsure: false });
+  if (s.extras.discounts > 0) extras.push({ key: nextKey('extra'), kind: 'discount', name: '', amount: s.extras.discounts, unsure: false });
+  return {
+    mode: 'existing',
+    store: { value: s.store, unsure: false },
+    date: { value: s.date, unsure: false },
+    total: { value: Math.abs(ctx.lineTotal), unsure: false },
+    items,
+    extras,
+    totalChoice: null,
+    taxTipCategoryId: ctx.lineCategoryId,
+    images: [],
+    members: null,
+    usual: null,
+    byItem: false,
+  };
+}
+
 /** The people a new item starts on: the usual split's, or null when the draft has no people. */
 function startPeople(d: ReviewDraft): string[] | null {
   return d.members === null ? null : [...(d.usual ?? d.members.map((m) => m.id))];
@@ -216,8 +261,32 @@ function inMemberOrder(d: ReviewDraft, ids: readonly string[]): string[] {
  * A shared line's people: the household's members, and the people of the line's usual split. Every item starts on the usual
  * people and "Split items between people" starts on (UI-SPEC 6). A private line never calls this, so it has no people at all.
  */
-export function withMembers(d: ReviewDraft, members: readonly ReviewMember[], usual: readonly string[]): ReviewDraft {
-  return withUsualPeople({ ...d, members: [...members], byItem: true }, usual);
+export function withMembers(
+  d: ReviewDraft,
+  members: readonly ReviewMember[],
+  usual: readonly string[],
+  opts: { keepPeople?: boolean } = {},
+): ReviewDraft {
+  const started = withUsualPeople({ ...d, members: [...members], byItem: true }, usual);
+  if (opts.keepPeople !== true) return started;
+  // 10.1-27: a saved split by item reopens with its own people; ids no longer in the household are dropped, and an item left
+  // with nobody goes back to the usual people.
+  const fallback = started.usual ?? [];
+  return {
+    ...started,
+    items: started.items.map((item, k) => {
+      const own = d.items[k]?.people ?? null;
+      const kept = own === null ? [] : inMemberOrder(started, own);
+      return { ...item, people: kept.length > 0 ? kept : [...fallback] };
+    }),
+  };
+}
+
+/** Every item is on the usual split's people ("Split evenly as usual" shows; otherwise "Back to the usual split"). */
+export function onUsual(d: ReviewDraft): boolean {
+  if (d.usual === null) return true;
+  const usual = d.usual.join(',');
+  return d.items.every((i) => (i.people ?? []).join(',') === usual);
 }
 
 /** Every item gets the usual participants (D-14). Unknown ids are dropped; with none left, every member is used. */
@@ -365,6 +434,19 @@ export function toItemSplitSave(d: ReviewDraft, lineSign: 1 | -1, lineCategoryId
     store: d.store.value,
     date: d.date.value,
   };
+}
+
+/**
+ * 10.1-27 (D-17): "Save split by item" is enabled only when the list can be confirmed, every person's share adds up to the
+ * line total, and the category parts built from the items add up to it too.
+ */
+export function byItemReady(d: ReviewDraft, lineSign: 1 | -1, lineCategoryId: string | null): boolean {
+  if (!canConfirm(d).ok) return false;
+  const total = d.total.value ?? 0;
+  const preview = sharesPreview(d);
+  if (!preview.ok || preview.shares.reduce((s, p) => s + p.total, 0) !== total) return false;
+  const parts = toPrivateSave(d, lineSign, lineCategoryId).parts;
+  return parts === null || parts.reduce((s, p) => s + Math.abs(p.amount), 0) === total;
 }
 
 /** Whether the user changed anything since the draft was built (the sheet's discard prompt). */

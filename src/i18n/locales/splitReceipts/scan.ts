@@ -44,6 +44,9 @@ export const scan = {
     defaultName: 'Receipt',
     notRead: 'Not read',
     discount: 'Discount',
+    // 10.1-27: the extras rows of a saved split by item.
+    tax: 'Tax',
+    tip: 'Tip',
   },
   item: {
     chooseCategory: 'Choose a category',
@@ -63,7 +66,9 @@ export const scan = {
     reset: 'Back to the usual split',
     proportional: 'Tax, tip and discounts are shared in proportion to each person’s items.',
     shares: 'Each person’s share',
-    shareSub: '{{items}} items · {{extras}} tax, tip and discounts',
+    // 10.1-27: plural forms of the UI-SPEC's '{items} items · ...' so one item reads '1 item'.
+    shareSub_one: '{{count}} item · {{extras}} tax, tip and discounts',
+    shareSub_other: '{{count}} items · {{extras}} tax, tip and discounts',
     noItems: 'No items',
     needsItems: '{{name}} has no items.',
     where: 'Where it goes',
@@ -75,6 +80,14 @@ export const scan = {
     undone: '{{name}} undid the split',
     undo: 'Undo',
     versionConflict: '{{name}} changed this line. Review and save again.',
+    // 10.1-27: the usual rule as words inside asUsual, the zero-share value, and the spoken forms (UI-SPEC Accessibility).
+    rule: { even: 'evenly', weight: 'by weight', amount: 'by amount', mine: 'to one person' },
+    nothing: 'Nothing',
+    taxTipPart: 'Tax and tip',
+    chipA11y: '{{name}}, {{item}}',
+    personA11y_one: '{{name}}, {{amount}}, {{count}} item',
+    personA11y_other: '{{name}}, {{amount}}, {{count}} items',
+    shareA11y: '{{name}} {{amount}}',
   },
   checkThis: { a11y: 'Check this, the reading is unsure' },
 } as const;

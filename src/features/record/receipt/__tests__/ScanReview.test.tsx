@@ -55,6 +55,9 @@ jest.mock('@/engine/receipt', () => ({
 const mockConfirm = jest.fn();
 jest.mock('../useConfirmScan', () => ({ useConfirmScan: () => ({ confirm: mockConfirm, conflict: null }) }));
 jest.mock('@/data/queries/accounts', () => ({ useAccounts: () => ({ data: [{ id: 'a1', currency: 'USD', archived_at: null }] }) }));
+// 10.1-27: ScanSheet reads feature access and the shared line's people; these lines are private, so there are none.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: true }) }));
+jest.mock('../useScanPeople', () => ({ useScanPeople: () => null }));
 
 function receipt(over: Partial<ParsedReceipt> = {}): ParsedReceipt {
   return {
