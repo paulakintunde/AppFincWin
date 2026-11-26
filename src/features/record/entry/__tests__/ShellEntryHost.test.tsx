@@ -10,6 +10,8 @@ import { ShellEntryHost } from '../ShellEntryHost';
 jest.setTimeout(30000);
 
 // 09-17: the write gate reads the plan; these tests are about the screen, so the plan is writable.
+// 10.1-20: the split row / action reads the feature seam; these suites are not about levels, so splits are off.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: false, on: false }) }));
 jest.mock('@/features/plans/usePlanState', () => ({ usePlanState: () => ({ status: 'active', writable: true, loading: false }) }));
 jest.mock('@/features/auth/AuthProvider', () => ({ useAuth: () => ({ status: 'signedIn' }) }));
 jest.mock('expo-router', () => ({

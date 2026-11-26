@@ -1,9 +1,10 @@
 // Pure row builder for the read-only transaction detail sheet (02.2-UI-SPEC section 5,
 // CONTEXT D-01). Rows gated off by level or by unbuilt features (Applies to, Entered as,
-// Tax deductible, Receipt, household split) are omitted. "Automatic" is a label only: it never
+// Tax deductible, household split) are omitted. 10.1-20: the Categories row of a split line exists now (a Receipt row follows in 10.1-23). "Automatic" is a label only: it never
 // changes the Status value, which always comes from rowTag (T-02.2-21-01).
 import { flowOf, rowTag, type RowTagTone } from '@/engine/activity';
 import type { TransactionRow } from '@/db/rows';
+import type { Part } from '@/engine/parts';
 
 export interface DetailRowSpec {
   key: string;
@@ -11,7 +12,7 @@ export interface DetailRowSpec {
   value: string | null;
   tone?: 'ink' | 'accent' | 'danger' | 'inkMuted';
   /** 05.2-33: rows the sheet renders itself (they open another sheet or need linked data). */
-  action?: 'refundOf' | 'incomeType' | 'refundsGroup';
+  action?: 'refundOf' | 'incomeType' | 'refundsGroup' | 'parts';
 }
 
 export interface DetailRowsInput {
@@ -26,6 +27,9 @@ export interface DetailRowsInput {
   decideV3?: boolean;
   /** The income type name of a tagged money-in row, or null (the row then says it is not set). */
   incomeTypeLabel?: string | null;
+  /** 10.1-20 (D-05): the line's category parts (null when not split) and whether splits are on (level 3). Off or null: no Categories row. */
+  parts?: readonly Part[] | null;
+  splitOn?: boolean;
   t: (key: string, params?: Record<string, unknown>) => string;
 }
 
@@ -67,6 +71,9 @@ export function detailRowsFor(input: DetailRowsInput): DetailRowSpec[] {
   }
   if (row.one_off === true) {
     rows.push({ key: 'oneOff', labelKey: 'activity.detail.oneOff', value: t('activity.detail.oneOffValue') });
+  }
+  if (input.splitOn === true && input.parts != null && input.parts.length >= 2) {
+    rows.push({ key: 'parts', labelKey: 'split.detail.row', value: t('split.tag', { count: input.parts.length }), action: 'parts' });
   }
   rows.push({ key: 'paymentType', labelKey: 'activity.detail.paymentType', value: paymentTypeLabel });
   rows.push({ key: 'repeats', labelKey: 'activity.detail.repeats', value: repeatsLabel });

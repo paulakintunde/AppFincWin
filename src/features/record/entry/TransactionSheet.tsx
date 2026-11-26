@@ -34,6 +34,8 @@ import {
 import { useAddTransfer, useDeleteTransfer, useEditTransfer, type TransferLegRow } from '@/data/mutations/transfers';
 import { newStepId } from '@/data/mutations/undoCapture';
 import { useRecordContext } from '@/features/record/useRecordContext';
+import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
+import { CategorySplitSheet } from '@/features/record/split/CategorySplitSheet';
 import { categoryName } from '@/features/record/categoryName';
 import { useT } from '@/i18n';
 import { undoLabelText } from '@/i18n/undoLabel';
@@ -275,6 +277,9 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
   }, [accounts, awaitingAccount]);
 
   const editRow: TransactionRow | null = mode.kind === 'edit' ? mode.row : null;
+  // 10.1-20 (SPL-04): "Split across categories" in the edit state of a plain line (level 3). A new, unsaved line has no row to split yet.
+  const splitOn = useFeatureAccess('splitLine').visible;
+  const [splitOpen, setSplitOpen] = useState(false);
   const pair = mode.kind === 'edit-transfer' ? mode : null;
   const isNew = mode.kind === 'new';
   // 10-13 (D-27, D-28): only a new entry is held back at 500 waiting changes; an edit or delete never is.
@@ -952,6 +957,15 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
               chevron
               onPress={() => openPicker('category')}
             />
+            {splitOn && editRow !== null && editRow.transfer_id === null && rc.householdId !== null ? (
+              <Row
+                label={t('split.action')}
+                value={editRow.category_parts != null && editRow.category_parts.length >= 2 ? t('split.tag', { count: editRow.category_parts.length }) : undefined}
+                dense
+                chevron
+                onPress={() => setSplitOpen(true)}
+              />
+            ) : null}
             {offer ? (
               <RuleOfferCard
                 categoryName={categoryNameOf(offer.categoryId)}
@@ -1187,6 +1201,16 @@ function SheetBody({ mode, onClose }: { mode: EntryMode; onClose: () => void }) 
           pushOnce('/categories');
         }}
       />
+      {splitOpen && editRow !== null && rc.householdId !== null ? (
+        <CategorySplitSheet
+          visible
+          line={editRow}
+          householdId={rc.householdId}
+          month={monthOf(editRow.local_date)}
+          currency={editRow.original_currency}
+          onClose={() => setSplitOpen(false)}
+        />
+      ) : null}
       <AccountPicker
         visible={picker === 'account'}
         title={t(isTransfer ? 'record.sheet.field.fromAccount' : 'record.sheet.field.account')}

@@ -1,8 +1,8 @@
 // Read-only transaction detail sheet (ACT-13, CONTEXT D-01, UI-SPEC section 5). It never
 // writes: every button hands back to the screen, which owns the mutations and the
 // confirm / scope prompts.
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useAccounts } from '@/data/queries/accounts';
 import type { ActivityRowView } from '@/data/queries/activity';
@@ -10,6 +10,13 @@ import { useCategoryLookup } from '@/data/queries/categories';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useLinkedFees } from '@/data/queries/transactions';
 import { flowOf, rowTag } from '@/engine/activity';
+import { expandParts } from '@/engine/parts';
+import { monthOf } from '@/engine/time';
+import { toParts } from '@/db/categoryParts';
+import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
+import { CategorySplitSheet } from '@/features/record/split/CategorySplitSheet';
+import { WarningCard } from '@/ui/WarningCard';
+import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
 import { currencyExponent, knownCurrencyExponent, money } from '@/engine/money';
 import { impliedRate } from '@/engine/statement';
 import { categoryName } from '@/features/record/categoryName';
@@ -30,6 +37,7 @@ import { Pill } from '@/ui/Pill';
 import { RateAttribution } from '@/ui/RateAttribution';
 import { detailRowsFor, statusActionFor } from './detailRows';
 import { kindNameKey } from './IncomeTagChip';
+import { PartsView } from './PartsView';
 import { LinkRow, RefundOfRow, RefundsGroup, type RefundDetailCallbacks } from './RefundDetailRows';
 import { formatStatementMoney } from './statementMoney';
 
@@ -80,8 +88,15 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
   const series = useRecurringSeries(ctx.householdId ?? undefined);
   const linkedFees = useLinkedFees(ctx.householdId, row);
   const { v3 } = useDecideAccess();
+  const splitOn = useFeatureAccess('splitLine').visible;
+  // 10.1-20: the Categories row expands in place; the split sheet opens from Edit split or Place it (highlightGap).
+  const [partsOpen, setPartsOpen] = useState(false);
+  const [splitSheet, setSplitSheet] = useState<{ highlightGap: boolean } | null>(null);
 
   if (row === null) return null;
+  const parts = splitOn && row.transfer_id === null ? toParts(row.category_parts ?? null) : null;
+  const isSplit = parts !== null && parts.length >= 2;
+  const openSplit = (highlightGap: boolean) => gate.run(() => setSplitSheet({ highlightGap }));
 
   const accountName = (id: string | null) => (id === null ? null : (accounts.data?.find((a) => a.id === id)?.name ?? null));
   const isTransfer = row.transfer_id !== null;
@@ -105,6 +120,8 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
     paymentTypeLabel,
     repeatsLabel,
     decideV3: v3 && refundCallbacks !== undefined,
+    parts,
+    splitOn,
     incomeTypeLabel: (row.income_kind ?? seriesRow?.income_kind) ? t(kindNameKey((row.income_kind ?? seriesRow?.income_kind)!)) : null,
     t: (key, params) => String(t(key as never, params as never)),
   });
@@ -157,6 +174,38 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
 
   const action = statusActionFor(row);
 
+  // D-03: a split line whose parts no longer add up to its total (the total was edited) says so and offers to place the rest.
+  const gapRow = isSplit ? expandParts({ id: row.id, amount: row.original_amount, categoryId: row.category_id, parts }).find((r) => r.isGap) : undefined;
+  const fmtMinor = (minor: number) => formatter.formatMoney(money(minor, row.original_currency));
+  const partsSum = isSplit ? parts.reduce((sum, p) => sum + Math.abs(p.amount), 0) : 0;
+  const leftToPlace = Math.abs(row.original_amount) - partsSum;
+  const gapCard =
+    gapRow !== undefined && leftToPlace > 0 ? (
+      <View style={styles.gapCard} testID="parts-gap-card">
+        <WarningCard
+          tone="soft"
+          title={t('split.gap.badge')}
+          value={fmtMinor(leftToPlace)}
+          body={[
+            t('split.gap.info', {
+              parts: fmtMinor(partsSum),
+              total: fmtMinor(Math.abs(row.original_amount)),
+              amount: fmtMinor(leftToPlace),
+            }),
+          ]}
+        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t('split.gap.place')}
+          hitSlop={LINK_HIT_SLOP}
+          onPress={() => openSplit(true)}
+          style={styles.place}
+        >
+          <Text style={{ ...textRole(pairing, 'bodyStrong'), color: colors.accent }}>{t('split.gap.place')}</Text>
+        </Pressable>
+      </View>
+    ) : null;
+
   return (
     <DetailSheet
       visible={visible}
@@ -200,9 +249,25 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
         </>
       }
     >
+      {gapCard}
       {row.is_shared === true ? <SharedDetail row={row} onMakeChangeAgain={onEdit} /> : null}
       {specs.map((spec) => {
         const label = t(spec.labelKey as never);
+        if (spec.action === 'parts' && isSplit) {
+          return (
+            <View key={spec.key}>
+              <LinkRow
+                label={label}
+                value={spec.value}
+                a11y={`${label}, ${spec.value ?? ''}`}
+                onPress={() => setPartsOpen((o) => !o)}
+              />
+              {partsOpen ? (
+                <PartsView line={row} parts={parts} categories={categories} formatter={formatter} onEdit={() => openSplit(false)} />
+              ) : null}
+            </View>
+          );
+        }
         if (spec.action !== undefined && refundCallbacks !== undefined) {
           if (spec.action === 'refundOf') {
             return <RefundOfRow key={spec.key} row={row} formatter={formatter} callbacks={refundCallbacks} label={label} />;
@@ -222,10 +287,23 @@ export function TransactionDetailSheet({ row, visible, today, onDismiss, onStatu
         }
         return <DetailRow key={spec.key} label={label} value={spec.value} tone={spec.tone} emptyText={t('activity.detail.empty')} />;
       })}
+      {isSplit && ctx.householdId !== null ? (
+        <CategorySplitSheet
+          visible={splitSheet !== null}
+          line={row}
+          householdId={ctx.householdId}
+          month={monthOf(row.local_date)}
+          currency={row.original_currency}
+          highlightGap={splitSheet?.highlightGap ?? false}
+          onClose={() => setSplitSheet(null)}
+        />
+      ) : null}
     </DetailSheet>
   );
 }
 
 const styles = StyleSheet.create({
   fx: { gap: 2, paddingBottom: space.gapMd },
+  gapCard: { gap: space.gapSm, paddingBottom: space.gapMd },
+  place: { minHeight: space.touchMin, justifyContent: 'center', alignSelf: 'flex-start' },
 });

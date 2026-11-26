@@ -7,6 +7,8 @@ import { TransactionSheet } from '../TransactionSheet';
 
 // 06-37 D-39: the edit form's Paid chip on a goal's Expected line saves through the goal confirm (useGoalLinePay), so the
 // goal grows exactly once. Other edits in the same save are refused with a hint; a paid goal line may go back to Pending.
+// 10.1-20: the split row / action reads the feature seam; these suites are not about levels, so splits are off.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: false, on: false }) }));
 const mockGoalPay = jest.fn((..._a: unknown[]): boolean => true);
 jest.mock('@/features/household/sharing/SharedGroup', () => ({ SharedGroup: () => null, useSharedEntry: () => ({ commit: () => undefined }) })); // 08-19: the household data layer is not part of this test
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: mockGoalPay }) }));

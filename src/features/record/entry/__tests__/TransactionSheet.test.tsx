@@ -6,6 +6,15 @@ import { getToast, resetToastForTests } from '@/state/undoToast';
 import { TransactionSheet } from '../TransactionSheet';
 
 // 06-37: OccurrenceActions marks goal lines paid through useGoalLinePay; these sheets never open a goal line.
+// 10.1-20: the split row / action reads the feature seam; these suites are not about levels, so splits are off.
+let mockSplitOn = false;
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: mockSplitOn, on: mockSplitOn }) }));
+jest.mock('@/features/record/split/CategorySplitSheet', () => ({
+  CategorySplitSheet: (p: { line: { id: string } }) => {
+    const { Text } = require('react-native');
+    return require('react').createElement(Text, null, `split-sheet-open ${p.line.id}`);
+  },
+}));
 jest.mock('@/features/household/sharing/SharedGroup', () => ({ SharedGroup: () => null, useSharedEntry: () => ({ commit: () => undefined }) })); // 08-19: the household data layer is not part of this test
 jest.mock('@/features/grow/goals/useGoalLinePay', () => ({ useGoalLinePay: () => ({ pay: jest.fn(() => true) }) }));
 jest.mock('@/features/decide/useDecideAccess', () => ({ useDecideAccess: () => ({ v3: mockV3 }) })); // 05.2-44: OccurrenceActions gates on v3
@@ -210,6 +219,25 @@ describe('TransactionSheet: new and edit', () => {
     const inc = await open({ kind: 'new', direction: 'in' });
     expect(inc.getByText('New income')).toBeTruthy();
     expect(inc.getByText('Save income')).toBeTruthy();
+  });
+
+  it('offers "Split across categories" in edit state at level 3 and opens the split sheet for the line (10.1-20)', async () => {
+    mockSplitOn = true;
+    try {
+      const edit = await open({ kind: 'edit', row: row() });
+      expect(edit.queryByText('split-sheet-open t1')).toBeNull();
+      await fireEvent.press(edit.getByText('Split across categories'));
+      expect(edit.getByText('split-sheet-open t1')).toBeTruthy();
+      const fresh = await open({ kind: 'new', direction: 'out' });
+      expect(fresh.queryByText('Split across categories')).toBeNull();
+    } finally {
+      mockSplitOn = false;
+    }
+  });
+
+  it('hides the split action below level 3 (10.1-20)', async () => {
+    const edit = await open({ kind: 'edit', row: row() });
+    expect(edit.queryByText('Split across categories')).toBeNull();
   });
 
   it('names the title and the primary action for an edit', async () => {

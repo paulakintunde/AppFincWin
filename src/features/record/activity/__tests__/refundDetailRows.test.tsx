@@ -7,6 +7,8 @@ import { resetSheetStackForTests } from '@/state/sheetStack';
 import { detailRowsFor } from '../detailRows';
 import { TransactionDetailSheet } from '../TransactionDetailSheet';
 
+// 10.1-20: the split row / action reads the feature seam; these suites are not about levels, so splits are off.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: false, on: false }) }));
 let mockV3 = true;
 let mockLinks: { rowsById: Map<string, TransactionRow>; totals: Map<string, number>; refunds: TransactionRow[] } = {
   rowsById: new Map(),

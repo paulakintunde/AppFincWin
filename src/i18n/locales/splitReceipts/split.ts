@@ -28,6 +28,7 @@ export const split = {
       keep: 'Keep it',
     },
   },
+  action: 'Split across categories',
   tag: '{{count}} categories',
   partOf: 'Part of {{amount}}',
   detail: {
