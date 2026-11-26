@@ -9,7 +9,7 @@ Rules (CLAUDE.md "Supabase access"):
 - Supabase CLI 3: `--remote` means production; a command with no target runs against the local stack. Commands that change production need `--yes` when nobody is at the prompt.
 - Stop at the first failure. Never improvise schema changes on production.
 
-Owner approval: _pending (Task 2 checkpoint)_.
+Owner approval: 2026-11-26, "Yes, after Phase 10" (relayed by the orchestrator from an AskUserQuestion popup).
 
 ## Ordering with Phase 10
 
@@ -43,8 +43,8 @@ Phase 10.1 is built on top of Phase 10. Its branch (`feat/10.1-build`) carries t
 | # | Step | Command / where | Result |
 | --- | --- | --- | --- |
 | 0 | Local gate | In `C:/dev/fincwin-101`: `npx supabase db reset`, `npx supabase test db`, `npm run lint:migrations`, `npm run test:deno`, `npx jest supabase/functions/purge-receipts supabase/functions/delete-account --coverage=false` | PASS 2026-11-26: reset applied all migrations through `20261127000500`; pgTAP 142 files / 3766 tests, 0 failed (131-136 ok); lint OK (130 files, floor 0.2.0); deno 116 passed; jest 3 suites / 28 tests |
-| 1 | Phase 10 on production; push checkout holds the 10.1 files | "Ordering with Phase 10", points 1 and 3 (A or B) | |
-| 2 | Schema push | From the push checkout: `set -a && . C:/dev/fincwin/.env.local && set +a && npm run supabase:db:push -- --yes` (runs the preflight, then `supabase db push --remote --yes`). Expected: five migrations applied, `20261127000100_category_parts`, `000200_receipts`, `000300_category_parts_client_reads`, `000400_split_by_item`, `000500_series_category_parts` | |
+| 1 | Phase 10 on production; push checkout holds the 10.1 files | "Ordering with Phase 10", points 1 and 3 (A or B) | PASS 2026-11-26: option B, worktree C:/dev/fincwin-101-push at 490a467d (feat/10.1-build after merging main with #193). `migration list --linked` shows 20261126000100..0800 on remote and 20261127000100..0500 local only. The C:/dev/fincwin CLI is v2.117.0, so use `--linked`, not `--remote` |
+| 2 | Schema push | From the push checkout: `set -a && . C:/dev/fincwin/.env.local && set +a && npm run supabase:db:push -- --yes` (runs the preflight, then `supabase db push --remote --yes`). Expected: five migrations applied, `20261127000100_category_parts`, `000200_receipts`, `000300_category_parts_client_reads`, `000400_split_by_item`, `000500_series_category_parts` | BLOCKED 2026-11-26: preflight OK; `db push --linked --dry-run` listed exactly the five 10.1 migrations; the real push (`db push --linked --yes`) was refused by the agent's permission system before it ran. Production unchanged. |
 | 3 | Migrations listed (read-only) | `npx supabase migration list --remote` shows `20261127000100`..`20261127000500` with Local and Remote both filled | |
 | 4 | Functions deploy | `npx supabase functions deploy purge-receipts --no-verify-jwt --yes`, then `npx supabase functions deploy delete-account --yes` (after 10-29's function step) | |
 | 5 | Function secret | `RECEIPT_PURGE_SECRET`, set with `npx supabase secrets set ... --yes`. Recipe below; the value is never printed | |
