@@ -6,6 +6,7 @@ import type { IconName } from '@/ui/icons/iconData';
 
 export type YouRowId =
   | 'expense'
+  | 'scanReceipt'
   | 'income'
   | 'transfer'
   | 'importStatement'
@@ -37,6 +38,7 @@ export type YouRowId =
 
 export const YOU_ROW_ICON: Record<YouRowId, IconName> = {
   expense: 'add',
+  scanReceipt: 'scan', // 10.1-25
   income: 'add',
   transfer: 'transfer',
   importStatement: 'import',

@@ -2,7 +2,7 @@ import { QUICK_ACTION_ORDER, availableQuickActions, type QuickActionId } from '.
 
 describe('quickActions (D-11)', () => {
   it('keeps the D-11 order', () => {
-    expect(QUICK_ACTION_ORDER).toEqual(['addExpense', 'addIncome', 'transfer', 'newCheck', 'importStatement']);
+    expect(QUICK_ACTION_ORDER).toEqual(['addExpense', 'scanReceipt', 'addIncome', 'transfer', 'newCheck', 'importStatement']);
   });
   it('returns only registered entries in D-11 order', () => {
     expect(availableQuickActions(['importStatement', 'addExpense'])).toEqual(['addExpense', 'importStatement']);

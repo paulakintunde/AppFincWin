@@ -31,6 +31,9 @@ jest.mock('@/features/record/entry/TransactionSheet', () => ({ TransactionSheet:
 jest.mock('@/features/record/entry/SeriesStatusSheet', () => ({ SeriesStatusHost: () => null }));
 jest.mock('@/shell/backHistory/BackHistoryProvider', () => ({ useBackHistory: () => ({ current: null }) }));
 jest.mock('@/state/activityFocus', () => ({ requestActivityFocus: jest.fn() }));
+// 10.1-25: ShellEntryHost registers "Scan a receipt" at level 2 (receipts on); the scan flow itself is not under test here.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: true, on: true }) }));
+jest.mock('@/features/record/receipt/ScanEntryFlow', () => ({ ScanEntryFlow: () => null }));
 
 const mockProvided: Record<string, () => void> = {};
 let mockQuickActions: { id: string; label: string; run: () => void }[] = [];
@@ -72,6 +75,7 @@ describe('write gate wiring (09-17)', () => {
     ['addExpense'],
     ['addIncome'],
     ['transfer'],
+    ['scanReceipt'],
     ['default'],
   ])('locked: the %s quick action opens the adding sheet and does not open the entry', async (id) => {
     mockPlan = LOCKED;
@@ -149,6 +153,14 @@ describe('write gate wiring (09-17)', () => {
     expect(getByTestId('quick-menu-lock-addExpense', { includeHiddenElements: true })).toBeTruthy();
     expect(getByTestId('quick-menu-lock-newCheck', { includeHiddenElements: true })).toBeTruthy();
     expect(getByLabelText('Add expense, needs a plan')).toBeTruthy();
+  });
+
+  it('FAB menu: a locked Scan a receipt is marked like Add expense (10.1-25)', async () => {
+    mockPlan = LOCKED;
+    mockQuickActions = [{ id: 'scanReceipt', label: 'Scan a receipt', run: jest.fn() }];
+    const { getByTestId, getByLabelText } = await wrap(<FabQuickMenu />);
+    expect(getByTestId('quick-menu-lock-scanReceipt', { includeHiddenElements: true })).toBeTruthy();
+    expect(getByLabelText('Scan a receipt, needs a plan')).toBeTruthy();
   });
 
   it('FAB menu: writable rows have no lock mark', async () => {

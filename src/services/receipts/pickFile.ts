@@ -15,12 +15,13 @@ export interface PickFileDeps {
   prepare: typeof prepareImage;
 }
 
-export function defaultPickFileDeps(): PickFileDeps {
+/** 10.1-25: `types` narrows the system picker (the scan flow asks for images only, since a PDF cannot be read on the phone). */
+export function defaultPickFileDeps(types: readonly string[] = ['image/*', 'application/pdf']): PickFileDeps {
   return {
     pick: () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const dp = require('expo-document-picker') as typeof import('expo-document-picker');
-      return dp.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true, multiple: false });
+      return dp.getDocumentAsync({ type: [...types], copyToCacheDirectory: true, multiple: false });
     },
     prepare: prepareImage,
   };

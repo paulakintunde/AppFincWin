@@ -109,15 +109,18 @@ function HouseholdYouRow({ tile, onPress }: { tile: ReactNode; onPress: () => vo
 const ADD_ROWS: readonly {
   id: QuickActionId;
   icon: YouRowId;
-  label: 'you.add.expense' | 'you.add.income' | 'you.add.transfer' | 'you.add.importStatement' | 'you.add.newCheck';
+  label: 'you.add.expense' | 'you.add.scanReceipt' | 'you.add.income' | 'you.add.transfer' | 'you.add.importStatement' | 'you.add.newCheck';
   hint:
     | 'you.add.expenseHint'
+    | 'you.add.scanReceiptHint'
     | 'you.add.incomeHint'
     | 'you.add.transferHint'
     | 'you.add.importStatementHint'
     | 'you.add.newCheckHint';
 }[] = [
   { id: 'addExpense', icon: 'expense', label: 'you.add.expense', hint: 'you.add.expenseHint' },
+  // 10.1-25 (D-13): shown only while ShellEntryHost registers it (level 2, receipts on)
+  { id: 'scanReceipt', icon: 'scanReceipt', label: 'you.add.scanReceipt', hint: 'you.add.scanReceiptHint' },
   { id: 'addIncome', icon: 'income', label: 'you.add.income', hint: 'you.add.incomeHint' },
   { id: 'transfer', icon: 'transfer', label: 'you.add.transfer', hint: 'you.add.transferHint' },
   { id: 'importStatement', icon: 'importStatement', label: 'you.add.importStatement', hint: 'you.add.importStatementHint' },

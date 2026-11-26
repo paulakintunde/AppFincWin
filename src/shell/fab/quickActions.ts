@@ -2,7 +2,8 @@
 // The same entries are exposed as named screen-reader actions; each appears only once its
 // feature registers a handler (the D-02 availability idea).
 
-export const QUICK_ACTION_ORDER = ['addExpense', 'addIncome', 'transfer', 'newCheck', 'importStatement'] as const;
+// 10.1-25 (D-13): Scan a receipt starts an expense, so it follows Add expense.
+export const QUICK_ACTION_ORDER = ['addExpense', 'scanReceipt', 'addIncome', 'transfer', 'newCheck', 'importStatement'] as const;
 
 export type QuickActionId = (typeof QUICK_ACTION_ORDER)[number];
 

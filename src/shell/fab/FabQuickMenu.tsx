@@ -13,6 +13,7 @@ import { useFab } from './FabProvider';
 // 09-17 (TIER-09): which write action each quick entry is, for the lock mark and spoken suffix.
 const LOCK_ACTION: Record<string, LockActionId> = {
   addExpense: 'addTransaction',
+  scanReceipt: 'addTransaction', // 10.1-25: a scan creates a line, so a locked plan marks it like Add expense
   addIncome: 'addTransaction',
   transfer: 'addTransaction',
   newCheck: 'newDecideCheck',

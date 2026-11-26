@@ -468,7 +468,7 @@ describe('YouScreen Money section', () => {
     expect(queryByRole('button', { name: 'Add pot' })).toBeNull();
     expect(queryByRole('button', { name: 'Pots' })?.props.accessibilityHint).toBeUndefined();
     
-    expect(QUICK_ACTION_ORDER).toEqual(['addExpense', 'addIncome', 'transfer', 'newCheck', 'importStatement']);
+    expect(QUICK_ACTION_ORDER).toEqual(['addExpense', 'scanReceipt', 'addIncome', 'transfer', 'newCheck', 'importStatement']);
   });
 });
 
@@ -553,6 +553,30 @@ describe('YouScreen Add group (D-85)', () => {
     });
     expect(mockRuns.addExpense).toHaveBeenCalledTimes(1);
     expect(mockRemoveTransition).toHaveBeenCalled();
+  });
+
+  it('10.1-25 Scan a receipt sits after Add expense when registered and runs its quick action', async () => {
+    mockQuickIds = ['addExpense', 'scanReceipt', 'addIncome'];
+    mockRuns.scanReceipt = jest.fn();
+    mockHistory = [{ area: 'tab', tab: 'activity', href: '/activity' }];
+    const { getByRole, getAllByRole, getByTestId, getByText } = await renderScreen();
+    expect(getByRole('button', { name: 'Scan a receipt' }).props.accessibilityHint).toBe('Reads a receipt into a new line');
+    expect(getByTestId('you-tile-scanReceipt', { includeHiddenElements: true })).toBeTruthy();
+    const hints = getAllByRole('button').map((b) => b.props.accessibilityHint ?? '');
+    const first = hints.indexOf('Opens the entry sheet');
+    expect(hints.slice(first, first + 3)).toEqual(['Opens the entry sheet', 'Reads a receipt into a new line', 'Opens the entry sheet']);
+    await act(async () => {
+      fireEvent.press(getByText('Scan a receipt'));
+    });
+    await act(async () => {
+      mockTransitionListener?.({ data: { closing: true } });
+    });
+    expect(mockRuns.scanReceipt).toHaveBeenCalledTimes(1);
+  });
+
+  it('10.1-25 Scan a receipt is hidden while it is not registered (below level 2)', async () => {
+    const { queryByText } = await renderScreen();
+    expect(queryByText('Scan a receipt')).toBeNull();
   });
 
   it('D-85 a row without a handler is hidden', async () => {
