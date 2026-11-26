@@ -17,7 +17,7 @@ const TOK = 'ExponentPushToken[aaaaaaaaaaaaaaaa]';
 
 const row = (id: string, over: Partial<ClaimedRow> = {}): ClaimedRow => ({
   id, user_id: 'u1', log_id: 'log-' + id, kind: 'large_txn', params: { category: 'Shopping', amount_minor: 48000, currency: 'USD' }, attempts: 1,
-  prefs: { mode: 'instant', quiet_enabled: true, quiet_start: '22:00:00', quiet_end: '07:00:00', time_zone: 'America/Vancouver', last_digest_date: null },
+  prefs: { mode: 'instant', quiet_enabled: true, quiet_start: '22:00:00', quiet_end: '07:00:00', time_zone: 'America/Los_Angeles', last_digest_date: null },
   tokens: [TOK], ...over,
 });
 
@@ -130,7 +130,7 @@ run('partner text never carries a note or payee', async () => {
 });
 
 const digestUser = (over: Partial<DigestUser> = {}): DigestUser => ({
-  user_id: 'u1', prefs: { time_zone: 'America/Vancouver', last_digest_date: '2026-11-21' }, tokens: [TOK], counts: { bills_due: 2, over_cap: 1 }, ...over,
+  user_id: 'u1', prefs: { time_zone: 'America/Los_Angeles', last_digest_date: '2026-11-21' }, tokens: [TOK], counts: { bills_due: 2, over_cap: 1 }, ...over,
 });
 
 run('digest goes once at 08:00 local with the day summary', async () => {
@@ -147,7 +147,7 @@ run('digest users outside the window or already sent today are untouched', async
   const h = harness({ digest: [digestUser()] });
   await deliverPass(h.deps, NOW);
   const eight = new Date('2026-11-22T16:00:00Z');
-  const h2 = harness({ digest: [digestUser({ prefs: { time_zone: 'America/Vancouver', last_digest_date: '2026-11-22' } })] });
+  const h2 = harness({ digest: [digestUser({ prefs: { time_zone: 'America/Los_Angeles', last_digest_date: '2026-11-22' } })] });
   await deliverPass(h2.deps, eight);
   assertEquals(h.calls.concat(h2.calls), []);
   assertEquals(h.sent.length + h2.sent.length, 0);

@@ -26,7 +26,10 @@ export interface DeviceRowProps {
   onPress: () => void;
 }
 
-export function DeviceRow({ device, locale, now = Date.now(), onPress }: DeviceRowProps) {
+export function DeviceRow({ device, locale, now: nowProp, onPress }: DeviceRowProps) {
+  // Date.now() is impure, so it is read once at mount (lazy state init), not on every render.
+  const [mountedAt] = React.useState(Date.now);
+  const now = nowProp ?? mountedAt;
   const t = useT();
   const { colors } = useTheme();
   const name = deviceName(device, t('system.security.unnamedDevice'));

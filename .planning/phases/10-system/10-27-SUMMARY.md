@@ -48,12 +48,8 @@ Phase 10 is wired into the app: Security screen (lock, then devices, then the ap
 7. `expo-local-authentication` real install and new dev build: left to 10-29/10-30 (orchestrator, real-node_modules checkout).
 8. Double resume (`resumeRestoredMutations` and the online listener's `resumePausedMutations`): NOT changed. Not a safe one-line guard: a restored mutation can be both `pending` and `isPaused`, and a guard in either path risks dropping a real offline write. Harmless because writes use idempotent ids. Recorded for 10-29/30 verification.
 
-## Pending owner (10-01)
-Not done because `C:/dev/fincwin/google-services.json` does not exist and the gitleaks answer is outstanding:
-1. Copy `C:/dev/fincwin/google-services.json` to the repo root and commit it.
-2. In `app.config.ts` android block add: `googleServicesFile: './google-services.json', // 10-27 (ENV-19): FCM v1 for Expo push; identifiers only, not a secret (Firebase docs); gitleaks allow-listed by exact path`
-3. In `.gitleaks.toml` `[allowlist]` add an exact-path entry matching `''' ^google-services\.json$ '''` (no spaces; `paths = [...]`), only if the owner approves.
-Changing app.config.ts changes the native fingerprint; the phase-end build (10-30) is the new dev build.
+## Firebase part (done 2026-11-26, commit c8c00062)
+Owner placed google-services.json (project fincwin, package com.fincwin.app) and approved committing it. Root file committed; app.config.ts android has googleServicesFile; .gitleaks.toml allow-lists exactly ^google-services.json$; .gitignore now ignores only nested android/app copies. typecheck clean; expo config shows the field. Changing app.config.ts changes the native fingerprint; the phase-end build (10-30) is the new dev build.
 
 ## Copy gaps closed
 None. Every key already existed (`system.security.*`, `system.alerts.*`, `system.archive.*`, `system.ownData.*`).

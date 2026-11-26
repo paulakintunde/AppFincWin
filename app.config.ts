@@ -28,6 +28,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: { bundleIdentifier: APP_ID, supportsTablet: false, usesAppleSignIn: true },
   android: {
     package: APP_ID,
+    googleServicesFile: './google-services.json', // 10-27 (ENV-19): FCM v1 for Expo push; identifiers only, not a secret (Firebase docs); gitleaks allow-listed by exact path
     // D-06 / 03-RESEARCH Pitfall 1: predictive back sends Android 13-15 back presses past BackHandler and Modal onRequestClose; off so the sheet -> history -> Home -> exit order runs.
     predictiveBackGestureEnabled: false,
     // 10.1-02 (D-21, RCP-07): the Android system photo picker needs no storage permission, so these are blocked; CAMERA is the only new one.
