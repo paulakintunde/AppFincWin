@@ -10,6 +10,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { router, type Href } from 'expo-router';
 import { i18n, useT } from '@/i18n';
 import { supabase } from '@/services/supabase';
+import { exportReceiptFiles } from '@/services/receipts/exportReceipts';
 import { getAnalytics } from '@/services/analytics';
 import { showToast } from '@/state/undoToast';
 import { useLockedWrites } from '@/data/sync/lockedWrites';
@@ -51,6 +52,9 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
   const kept = useLockedWrites().length;
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  // 10.1-22 (D-08, RCP-06): the receipt files are a separate step; the records export above is unchanged.
+  const [receiptBusy, setReceiptBusy] = useState(false);
+  const [receiptNote, setReceiptNote] = useState<string | null>(null);
   const filtered = months !== undefined && months.length > 0;
   const files = useMemo(() => exportFileNames(months), [months]);
 
@@ -68,6 +72,28 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
       showToast({ kind: 'info', text: { key: 'sync.exportFailed' } });
     } finally {
       setBusy(false);
+    }
+  };
+
+  const runReceipts = async (): Promise<void> => {
+    if (receiptBusy) return;
+    hapticTap();
+    setReceiptBusy(true);
+    setReceiptNote(null);
+    try {
+      const result = await exportReceiptFiles();
+      if (result.ok) {
+        if (result.missing > 0) setReceiptNote(t('receipt.export.partial', { missing: result.missing }));
+        else showToast({ kind: 'info', text: { key: 'plans.export.done' } });
+      } else if (result.reason === 'none') {
+        setReceiptNote(t('receipt.export.none'));
+      } else if (result.reason !== 'cancelled') {
+        showToast({ kind: 'info', text: { key: 'sync.exportFailed' } });
+      }
+    } catch {
+      showToast({ kind: 'info', text: { key: 'sync.exportFailed' } });
+    } finally {
+      setReceiptBusy(false);
     }
   };
 
@@ -112,6 +138,18 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
           </View>
         ) : null}
         <Pill label={t('plans.export.button')} variant="primary" onPress={() => void run()} pending={busy} />
+        <View style={styles.receipts} testID="export-receipts">
+          <Text accessibilityRole="header" style={{ ...textRole(pairing, 'label'), color: colors.ink }}>
+            {t('receipt.export.title')}
+          </Text>
+          <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }}>{t('receipt.export.body')}</Text>
+          <Pill label={t('receipt.export.button')} variant="secondary" onPress={() => void runReceipts()} pending={receiptBusy} />
+          {receiptNote !== null ? (
+            <Text style={{ ...textRole(pairing, 'body'), color: colors.inkDim }} testID="export-receipts-note">
+              {receiptNote}
+            </Text>
+          ) : null}
+        </View>
         <Pressable accessibilityRole="link" onPress={() => router.push(DATA_IMPORT_HREF)} testID="export-import-link">
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('system.ownData.exportFiles.importLink')}</Text>
         </Pressable>
@@ -122,5 +160,6 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
 
 const styles = StyleSheet.create({
   back: { marginBottom: space.gapSm },
+  receipts: { gap: space.gapSm },
   column: { gap: space.groupGap, paddingBottom: space.sheetPadBottom },
 });
