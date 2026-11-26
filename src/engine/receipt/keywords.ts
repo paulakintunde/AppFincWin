@@ -2,7 +2,7 @@
 
 export type RowKind = 'total' | 'subtotal' | 'tax' | 'tip' | 'discount' | 'payment' | 'change' | 'item';
 
-const RULES: ReadonlyArray<readonly [RowKind, RegExp]> = [
+const RULES: readonly (readonly [RowKind, RegExp])[] = [
   ['subtotal', /\bsub[\s-]?total\b/i],
   ['change', /\bchange\b/i],
   ['total', /\b(?:total|amount\s+due|balance\s+due|to\s+pay)\b/i],

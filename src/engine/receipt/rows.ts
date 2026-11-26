@@ -17,7 +17,7 @@ function median(xs: number[]): number {
 
 /** The tilt that puts the most side-by-side line pairs on one baseline (first best wins, so level is preferred). */
 function bestSlope(ps: Placed[], tol: number): number {
-  const pairs: Array<[number, number]> = [];
+  const pairs: [number, number][] = [];
   for (const a of ps) for (const b of ps) if (a.f.left + a.f.width <= b.f.left) pairs.push([b.cx - a.cx, b.cy - a.cy]);
   let best = 0;
   let bestScore = 0;

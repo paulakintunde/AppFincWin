@@ -51,24 +51,31 @@ function asPrice(token: string, exponent: number, ambiguous: boolean, printed: s
 }
 
 /**
- * The price printed at the end of a row (a trailing currency symbol is skipped). A letter O read for a zero, or a
- * decimal split by a space, is repaired and marked ambiguous.
+ * The price printed at the end of a row (a trailing currency symbol is skipped). `token` is the price as printed in
+ * the row. A letter O read for a zero, a dash read for the decimal point, or a decimal split by a space, is repaired
+ * and marked ambiguous.
  */
 export function rowPrice(text: string, exponent: number): RowPrice | null {
   const toks = text.split(/\s+/).filter((t) => t !== '');
   while (toks.length > 0 && SYMBOL_ONLY.test(toks[toks.length - 1] as string)) toks.pop();
   let token = toks.pop();
   if (token === undefined) return null;
-  while (toks.length > 0 && LOOSE_SIGN.test(toks[toks.length - 1] as string)) token = `${toks.pop() as string}${token}`;
-  const strict = asPrice(token, exponent, false, token);
+  let printed = token;
+  while (toks.length > 0 && LOOSE_SIGN.test(toks[toks.length - 1] as string)) {
+    const sign = toks.pop() as string;
+    token = `${sign}${token}`;
+    printed = `${sign} ${printed}`;
+  }
+  const strict = asPrice(token, exponent, false, printed);
   if (strict) return strict;
-  if (/[Oo]/.test(token)) {
-    const repaired = asPrice(token.replace(/[Oo]/g, '0'), exponent, true, token);
+  // OCR slips: a letter O for a zero, a dash for the decimal point ('40-00').
+  if (/[Oo]|\d-\d/.test(token)) {
+    const repaired = asPrice(token.replace(/[Oo]/g, '0').replace(/(\d)-(\d+)$/, '$1.$2'), exponent, true, printed);
     if (repaired) return repaired;
   }
   const prev = toks[toks.length - 1];
   if (prev !== undefined && (/^[.,]\d+$/.test(token) || (/[.,]$/.test(prev) && /^\d+$/.test(token)))) {
-    return asPrice(`${prev}${token}`, exponent, true, `${prev} ${token}`);
+    return asPrice(`${prev}${token}`, exponent, true, `${prev} ${printed}`);
   }
   return null;
 }

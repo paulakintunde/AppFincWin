@@ -53,6 +53,9 @@ export function findDate(texts: readonly string[], order: DateOrder): Field<stri
     for (const token of text.split(/\s+/)) {
       const hit = numeric(token, order);
       if (hit) return hit;
+      // OCR slips (l or I for 1, O for 0): read, but always 'Check this'.
+      const fixed = numeric(token.replace(/[lI]/g, '1').replace(/[Oo]/g, '0'), order);
+      if (fixed) return { value: fixed.value, unsure: true };
     }
     const hit = named(text);
     if (hit) return hit;
