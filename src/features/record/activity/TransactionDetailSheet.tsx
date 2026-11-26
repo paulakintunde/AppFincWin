@@ -1,7 +1,7 @@
 // Read-only transaction detail sheet (ACT-13, CONTEXT D-01, UI-SPEC section 5). It never
 // writes: every button hands back to the screen, which owns the mutations and the
 // confirm / scope prompts.
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/ui/Text';
 import { useAccounts } from '@/data/queries/accounts';
@@ -18,6 +18,8 @@ import { CategorySplitSheet } from '@/features/record/split/CategorySplitSheet';
 import { ReceiptSheet } from '@/features/record/receipt/ReceiptSheet';
 import { ReceiptStrip } from '@/features/record/receipt/ReceiptStrip';
 import { ReceiptViewer } from '@/features/record/receipt/ReceiptViewer';
+import { ScanSheet } from '@/features/record/receipt/ScanSheet';
+import { copiesForReading, discardFiles, type ReadingImage } from '@/features/record/receipt/scanFiles';
 import { useReceiptActions, type ReceiptActions } from '@/features/record/receipt/useReceiptActions';
 import { WarningCard } from '@/ui/WarningCard';
 import { LINK_HIT_SLOP } from '@/ui/pressFeedback';
@@ -128,6 +130,39 @@ function DetailBody({
   // 10.1-23: the Receipt row opens the Receipt sheet; with files the detail shows the thumbnail strip and a thumbnail opens the viewer.
   const [receiptSheetOpen, setReceiptSheetOpen] = useState(false);
   const [viewerAt, setViewerAt] = useState<string | null>(null);
+  // 10.1-25 (D-13, T-10.1-25-01): "Read this receipt" copies the stored pages into the cache, closes the Receipt sheet and opens
+  // the scan sheet for this line. The downloaded copies are deleted when the scan closes, or when the detail goes away.
+  const [reading, setReading] = useState<ReadingImage[] | null>(null);
+  const readingTemps = useRef<string[]>([]);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+      discardFiles(readingTemps.current);
+      readingTemps.current = [];
+    };
+  }, []);
+  const readReceipt = (pages: ReadingImage[]) => {
+    setReceiptSheetOpen(false);
+    void copiesForReading(pages).then((copies) => {
+      if (!alive.current || copies.images.length === 0) {
+        discardFiles(copies.temps);
+        return;
+      }
+      discardFiles(readingTemps.current);
+      readingTemps.current = copies.temps;
+      // The Receipt sheet closes first; the scan opens on the next frame (02.3 Pattern 4).
+      requestAnimationFrame(() => {
+        if (alive.current) setReading(copies.images);
+      });
+    });
+  };
+  const endReading = () => {
+    discardFiles(readingTemps.current);
+    readingTemps.current = [];
+    setReading(null);
+  };
 
   if (row === null) return null;
   const parts = splitOn && row.transfer_id === null ? toParts(row.category_parts ?? null) : null;
@@ -349,7 +384,20 @@ function DetailBody({
       })}
       {receipts !== null && ctx.householdId !== null ? (
         <>
-          <ReceiptSheet visible={receiptSheetOpen} line={row} householdId={ctx.householdId} onClose={() => setReceiptSheetOpen(false)} />
+          <ReceiptSheet visible={receiptSheetOpen} line={row} householdId={ctx.householdId} onClose={() => setReceiptSheetOpen(false)} onRead={readReceipt} />
+          <ScanSheet
+            visible={reading !== null}
+            mode="existing"
+            line={row}
+            householdId={ctx.householdId}
+            images={reading ?? []}
+            onClose={endReading}
+            onDone={endReading}
+            onRetake={() => {
+              endReading();
+              requestAnimationFrame(() => setReceiptSheetOpen(true));
+            }}
+          />
           <ReceiptViewer
             visible={viewerAt !== null}
             groups={receipts.groups}
