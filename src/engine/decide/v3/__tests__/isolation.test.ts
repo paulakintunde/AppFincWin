@@ -40,7 +40,7 @@ function resolveFile(fromFile: string, spec: string): string | null {
   return null;
 }
 
-const ALLOWED_PREFIXES = ['money/', 'payoff/', 'time/', 'split/', 'guards/', 'month/']; // 05.5-08: the shared month folder
+const ALLOWED_PREFIXES = ['money/', 'payoff/', 'time/', 'split/', 'guards/', 'month/', 'parts/']; // 05.5-08: the shared month folder; 10.1-09: line parts (a leaf: money, split, v3 types only)
 const ALLOWED_EXACT = [
   'recurring/schedule',
   'decide/share',
