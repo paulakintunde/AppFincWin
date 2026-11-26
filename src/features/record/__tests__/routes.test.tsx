@@ -71,6 +71,7 @@ jest.mock('@/features/plans/usePlanState', () => ({
   usePlanState: () => ({ status: 'tester', writable: true, prelaunch: true, loading: false, isError: false }),
 }));
 jest.mock('@/features/household/leave/RemovedNoticeHost', () => ({ RemovedNoticeHost: () => null }));
+jest.mock('@/features/system/SystemHosts', () => ({ SystemHosts: () => null })); // Phase 10: SystemHosts reads useAuth; the shell test has no AuthProvider
 jest.mock('@/features/household/decide/PartnerFigurePublisher', () => ({ AppPartnerFigurePublisher: () => null }));
 jest.mock('@/features/record/samples/SampleClearPrompts', () => ({ SampleClearPrompts: () => null }));
 jest.mock('@/features/record/useRecordContext', () => ({
