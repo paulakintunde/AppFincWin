@@ -48,6 +48,7 @@ const cand = (n: number): CloneCandidate => ({
   accountId: 'acc-1',
   paymentType: 'card',
   isRefund: n === 2,
+  parts: null,
 });
 
 function newClient(): QueryClient {

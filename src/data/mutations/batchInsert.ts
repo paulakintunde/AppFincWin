@@ -117,6 +117,7 @@ export function optimisticTransactionRow(
     note: row.note,
     name: row.name ?? null,
     category_id: row.category_id ?? null,
+    category_parts: row.category_parts ?? null, // 10.1-30 (D-28)
     payment_type: row.payment_type ?? null,
     status: row.status ?? 'pending',
     deleted_at: null,

@@ -5,6 +5,7 @@ import * as Crypto from 'expo-crypto';
 import { useMutation } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import type { CloneCandidate } from '@/engine/recurring';
+import { fromParts } from '@/db/categoryParts';
 import { MAX_UNDO_OPS } from '@/engine/undo';
 import type { NewTransaction, PaymentType } from '@/db/rows';
 import { mutationKeys, WRITE_SCOPE } from '@/data/keys';
@@ -56,6 +57,7 @@ export function useCloneMonth(): {
         payment_type: c.paymentType as PaymentType | null,
         status: 'pending',
         is_refund: c.isRefund,
+        category_parts: c.parts ? fromParts(c.parts) : null, // 10.1-30 (D-28)
       }));
       const stepId = newStepId();
       mutation.mutate({

@@ -8,6 +8,7 @@ import { useMonthView } from '@/data/queries/activity';
 import { useCloneMonth } from '@/data/mutations/cloneMonth';
 import { useQueueGuard } from '@/data/sync/useQueueGuard';
 import { QueueNote } from '@/features/record/entry/QueueNote';
+import { toParts } from '@/db/categoryParts';
 import { cloneCandidates, type CloneSourceRow } from '@/engine/recurring';
 import { money } from '@/engine/money';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -62,6 +63,7 @@ export function CloneMonthSheet({ visible, targetMonth, onClose }: CloneMonthShe
             transfer_id: r.transfer_id,
             status: r.status,
             is_refund: r.is_refund,
+            parts: toParts(r.category_parts ?? null), // 10.1-30 (D-28)
           })
         ),
         currentRows: current.rows,

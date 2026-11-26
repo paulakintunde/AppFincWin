@@ -68,6 +68,7 @@ describe('cloneCandidates', () => {
       accountId: 'a1',
       paymentType: 'card',
       isRefund: true,
+      parts: null,
     });
   });
 
