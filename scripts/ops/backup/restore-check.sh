@@ -53,7 +53,11 @@ cat > "$WORK/prepare.sql" <<'SQL'
 do $$
 declare r record;
 begin
-  for r in select format('%I.%I', schemaname, tablename) as t from pg_tables where schemaname in ('public', 'auth', 'storage') loop
+  -- 10-29: skip tables postgres may not truncate (auth.schema_migrations is owned by supabase_auth_admin; it is
+  -- migration bookkeeping, not data, and the fresh local stack already has it right).
+  for r in select format('%I.%I', schemaname, tablename) as t from pg_tables
+           where schemaname in ('public', 'auth', 'storage')
+             and has_table_privilege(format('%I.%I', schemaname, tablename), 'TRUNCATE') loop
     execute 'truncate table ' || r.t || ' cascade';
   end loop;
 end $$;
