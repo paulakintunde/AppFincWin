@@ -367,6 +367,7 @@ export async function fetchTransferCandidates(
       .select(TRANSFER_CANDIDATE_COLUMNS, withCount ? { count: 'exact' } : undefined)
       .eq('household_id', householdId)
       .is('transfer_id', null)
+      .is('category_parts', null) // 10.1-30 (D-29): a split line is never offered as a transfer leg
       .neq('account_id', q.excludeAccountId)
       .gte('local_date', q.from)
       .lte('local_date', q.toInclusive)
