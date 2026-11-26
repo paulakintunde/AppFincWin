@@ -17,9 +17,11 @@ export interface EditScopePromptProps {
   onCancel: () => void;
   /** True when the series is not loaded, so a series-wide edit cannot be sent. */
   futureDisabled?: boolean;
+  /** 10.1-23 (D-08): "Its receipts are deleted too." when a line with receipts is being deleted. */
+  note?: string | null;
 }
 
-export function EditScopePrompt({ visible, onThisOne, onThisAndFuture, onCancel, futureDisabled = false }: EditScopePromptProps) {
+export function EditScopePrompt({ visible, onThisOne, onThisAndFuture, onCancel, futureDisabled = false, note: extra = null }: EditScopePromptProps) {
   const t = useT();
   const { colors, pairing } = useTheme();
   const heading = { ...textRole(pairing, 'sheetTitle'), color: colors.ink };
@@ -31,6 +33,7 @@ export function EditScopePrompt({ visible, onThisOne, onThisAndFuture, onCancel,
         <Text accessibilityRole="header" style={heading}>
           {t('record.recurring.scopeHeading')}
         </Text>
+        {extra !== null ? <Text style={note}>{extra}</Text> : null}
         <Pill label={t('record.recurring.scopeThisOne')} variant="secondary" onPress={onThisOne} />
         <Pill
           label={t('record.recurring.scopeThisAndFuture')}

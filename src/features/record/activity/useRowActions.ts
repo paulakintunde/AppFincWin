@@ -5,8 +5,11 @@
 //  - A transfer toggles Moved / Scheduled on BOTH legs in one bulk step, and deletes through
 //    the delete-both confirm (two entries go).
 //  - An occurrence of a repeating series asks "This one / This and future" before deleting.
+//  - 10.1-23 (D-08): a plain line that has receipts asks first, and every delete prompt of a line with receipts adds
+//    "Its receipts are deleted too." (deleteNote).
 // Row actions are off while bulk selection is active.
-import { useCallback, useMemo } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
+import { QueryClientContext } from '@tanstack/react-query';
 import type { ActivityRowView } from '@/data/queries/activity';
 import { useRecurringSeries } from '@/data/queries/recurringSeries';
 import { useBulkMarkUnpaid, useBulkPatch } from '@/data/mutations/patches';
@@ -22,6 +25,8 @@ import type { EntryMode } from '@/features/record/entry/transactionForm';
 import { undoLabelText } from '@/i18n/undoLabel';
 import { showToast } from '@/state/undoToast';
 import { useReadOnlyGate } from '@/features/plans/useReadOnlyGate';
+import { lineHasReceipts } from '@/features/record/receipt/lineHasReceipts';
+import { useT } from '@/i18n';
 
 export interface RowActionsContext {
   householdId: string | null;
@@ -31,9 +36,12 @@ export interface RowActionsContext {
   /** The loaded rows, so a transfer leg can find its partner. */
   rows?: readonly ActivityRowView[];
   accountName?: (accountId: string) => string;
+  /** 10.1-23 (D-08): receipts are on (level 2); only then is a line checked for receipts before it is deleted. */
+  receiptsOn?: boolean;
 }
 
-export type DeletePrompt = 'scope' | 'transferDelete';
+/** 10.1-23: 'lineDelete' is the confirm a plain line with receipts gets (a plain line otherwise goes at once, with Undo). */
+export type DeletePrompt = 'scope' | 'transferDelete' | 'lineDelete';
 
 export interface RowActions {
   enabled: boolean;
@@ -41,8 +49,13 @@ export interface RowActions {
   locked: boolean;
   pay(row: ActivityRowView): void;
   unpay(row: ActivityRowView): void;
-  /** Deletes a plain line at once; returns the prompt the screen must show otherwise. */
-  remove(row: ActivityRowView): { prompt: DeletePrompt } | null;
+  /** Deletes a plain line at once; returns the prompt the screen must show otherwise (a line with receipts always asks). */
+  remove(row: ActivityRowView, opts?: { hasReceipts?: boolean }): { prompt: DeletePrompt } | null;
+  /**
+   * 10.1-23 (D-08): the sentence a delete prompt adds when the line has receipts, or null. Answers at once when it can (receipts
+   * off, a transfer, the receipts cached, offline); otherwise asks the server for that one line.
+   */
+  deleteNote?(row: ActivityRowView): string | null | Promise<string | null>;
   /** Scope prompt answers and the delete-both confirm. */
   deleteThisOne(row: ActivityRowView): void;
   deleteThisAndFuture(row: ActivityRowView): void;
@@ -68,7 +81,9 @@ function pad2(n: number): string {
 }
 
 export function useRowActions(ctx: RowActionsContext): RowActions {
-  const { householdId, ownerId, today, selectionActive, rows, accountName } = ctx;
+  const { householdId, ownerId, today, selectionActive, rows, accountName, receiptsOn = false } = ctx;
+  const t = useT();
+  const qc = useContext(QueryClientContext);
   const enabled = !selectionActive && householdId !== null && ownerId !== null;
   // 09-25 (A2-W): one gate for every row action here (swipes, the detail sheet, Home's Pay). The central guard stops the
   // write regardless; this keeps the screen from showing a success toast for a change that was not made.
@@ -162,11 +177,23 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
     [ownerId, removeTransaction]
   );
 
+  const deleteNote = useCallback(
+    (row: ActivityRowView): string | null | Promise<string | null> => {
+      if (!receiptsOn || householdId === null || row.transfer_id !== null) return null;
+      const note = t('receipt.delete.note');
+      const has = lineHasReceipts(qc, householdId, row.id);
+      if (has instanceof Promise) return has.then((h) => (h === true ? note : null));
+      return has === true ? note : null;
+    },
+    [receiptsOn, householdId, qc, t]
+  );
+
   const remove = useCallback(
-    (row: ActivityRowView): { prompt: DeletePrompt } | null => {
+    (row: ActivityRowView, opts?: { hasReceipts?: boolean }): { prompt: DeletePrompt } | null => {
       if (!enabled) return null;
       if (row.transfer_id !== null) return { prompt: 'transferDelete' };
       if (row.recurring_series_id !== null) return { prompt: 'scope' };
+      if (opts?.hasReceipts === true) return { prompt: 'lineDelete' };
       deleteLine(row);
       return null;
     },
@@ -247,18 +274,19 @@ export function useRowActions(ctx: RowActionsContext): RowActions {
       locked,
       pay: (row: ActivityRowView) => run(() => pay(row)),
       unpay: (row: ActivityRowView) => run(() => unpay(row)),
-      remove: (row: ActivityRowView): { prompt: DeletePrompt } | null => {
+      remove: (row: ActivityRowView, opts?: { hasReceipts?: boolean }): { prompt: DeletePrompt } | null => {
         if (locked) {
           run(() => undefined);
           return null;
         }
-        return remove(row);
+        return remove(row, opts);
       },
+      deleteNote,
       deleteThisOne: (row: ActivityRowView) => run(() => deleteThisOne(row)),
       deleteThisAndFuture: (row: ActivityRowView) => run(() => deleteThisAndFuture(row)),
       deleteTransfer: (row: ActivityRowView) => run(() => deleteTransfer(row)),
       cloneMode,
     }),
-    [enabled, locked, run, pay, unpay, remove, deleteThisOne, deleteThisAndFuture, deleteTransfer, cloneMode]
+    [enabled, locked, run, pay, unpay, remove, deleteNote, deleteThisOne, deleteThisAndFuture, deleteTransfer, cloneMode]
   );
 }

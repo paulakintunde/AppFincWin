@@ -16,6 +16,8 @@ export const HOUSEHOLD_CHANNEL_TABLES = [
   'household_events',
   'household_former_members',
   'member_departures',
+  // 10.1-23 (D-07): a partner's new or removed receipt on a shared line; RLS sends only receipts of lines the viewer can see.
+  'transaction_receipts',
 ] as const;
 
 export type ChannelStatus = 'SUBSCRIBED' | 'CHANNEL_ERROR' | 'TIMED_OUT' | 'CLOSED';

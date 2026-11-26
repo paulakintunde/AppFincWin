@@ -166,6 +166,19 @@ function applyHouseholdEvent(qc: QueryClient, ctx: ApplyContext, row: Record<str
   return 'invalidate';
 }
 
+/**
+ * 10.1-23 (D-07): a receipt was added to or removed from a line. Only that line's receipts are refetched; nothing else in the
+ * cache changes (a receipt never moves a figure). A DELETE carries only the primary key unless the old row is sent in full, so
+ * without the line id every cached receipts list of the household is refetched.
+ */
+function applyReceiptEvent(qc: QueryClient, hid: string, payload: RealtimePayload): ApplyAction {
+  const txId = payload.new.transaction_id ?? payload.old.transaction_id;
+  void qc.invalidateQueries({
+    queryKey: typeof txId === 'string' ? queryKeys.receipts(hid, txId) : (['receipts', hid] as const),
+  });
+  return 'invalidate';
+}
+
 /** Applies one event and reports what was done. Unknown tables and other-household events are dropped. */
 export function applyRealtimeEvent(qc: QueryClient, payload: RealtimePayload, ctx: ApplyContext): ApplyAction {
   const hid = ctx.activeHouseholdId;
@@ -191,6 +204,8 @@ export function applyRealtimeEvent(qc: QueryClient, payload: RealtimePayload, ct
       case 'household_events':
         void qc.invalidateQueries({ queryKey: queryKeys.householdEvents(hid) });
         return 'invalidate';
+      case 'transaction_receipts':
+        return applyReceiptEvent(qc, hid, payload);
       default:
         return 'drop';
     }
@@ -215,6 +230,8 @@ export function applyRealtimeEvent(qc: QueryClient, payload: RealtimePayload, ct
       return 'invalidate';
     case 'household_events':
       return payload.eventType === 'INSERT' ? applyHouseholdEvent(qc, ctx, row) : 'drop';
+    case 'transaction_receipts':
+      return applyReceiptEvent(qc, hid, payload);
     default:
       return 'drop';
   }

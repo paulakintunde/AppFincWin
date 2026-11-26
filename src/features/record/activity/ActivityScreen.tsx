@@ -130,6 +130,7 @@ export function ActivityScreen({
     selectionActive: selection.active,
     rows: itemRows,
     accountName,
+    receiptsOn: vm.receiptsOn,
   });
   const flow = useRowFlow(rowActions, month);
   // 06.1-71 (FQ10): arriving from Decide opens the month it names, once per arrival (Activity stays mounted as a tab, so a route
@@ -336,6 +337,7 @@ export function ActivityScreen({
       overCapBy={overCap.get(row.id) ?? null}
       splitOn={vm.splitOn}
       filteredAmount={vm.filteredAmountFor(row)}
+      receiptWaiting={vm.receiptWaitingFor(row.id)}
       yourShare={vm.sharing && row.is_shared === true ? (vm.shareById.get(row.id) ?? null) : null}
       balanceNote={vm.balanceNotes.get(row.id)}
       incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey, seriesById) : null}
@@ -718,8 +720,19 @@ export function ActivityScreen({
       />
       <EditScopePrompt
         visible={flow.pendingDelete?.prompt === 'scope'}
+        note={flow.pendingDelete?.note ?? null}
         onThisOne={() => flow.answerDelete('one')}
         onThisAndFuture={() => flow.answerDelete('future')}
+        onCancel={() => flow.answerDelete('cancel')}
+      />
+      {/* 10.1-23 (D-08): a plain line with receipts asks before it goes, and says the receipts go with it. */}
+      <ConfirmSheet
+        visible={flow.pendingDelete?.prompt === 'lineDelete'}
+        body={[t('record.sheet.confirmDelete'), flow.pendingDelete?.note ?? null].filter((p): p is string => p !== null).join(' ')}
+        cancelLabel={t('record.sheet.confirmDeleteCancel')}
+        confirmLabel={t('record.sheet.confirmDeleteProceed')}
+        destructive
+        onConfirm={() => flow.answerDelete('one')}
         onCancel={() => flow.answerDelete('cancel')}
       />
       <ConfirmSheet

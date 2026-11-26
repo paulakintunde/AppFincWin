@@ -25,6 +25,7 @@ import { textRole } from '@/theme/typography';
 import { shadows, type CategorySwatchKey, type colors as ThemeColours } from '@/theme/tokens';
 import { useDecideAccess } from '@/features/decide/useDecideAccess';
 import { CategoryGlyph } from '@/ui/CategoryGlyph';
+import { Glyph } from '@/ui/icons/Glyph';
 import { iconForCategory } from '@/ui/icons/iconFor';
 import { StatusBadge } from '@/ui/status/StatusBadge';
 import type { StatusKey } from '@/ui/status/statusMap';
@@ -123,6 +124,8 @@ export interface ActivityRowProps {
   splitOn?: boolean;
   /** 10.1-20 (D-05): with a category filter on, the matching part's amount in the line's own currency (signed); null shows the full amount. */
   filteredAmount?: number | null;
+  /** 10.1-23 (D-09): a receipt of this line is still on the phone (waiting to upload or failed); level 2 and up. */
+  receiptWaiting?: boolean;
 }
 
 function letterOf(name: string): string {
@@ -169,6 +172,7 @@ export function ActivityRow({
   yourShare = null,
   splitOn = false,
   filteredAmount = null,
+  receiptWaiting = false,
 }: ActivityRowProps) {
   const t = useT();
   const { v3 } = useDecideAccess();
@@ -262,7 +266,9 @@ export function ActivityRow({
   const shareSpoken = shareText === null ? null : t('activity.row.yourShareA11y', { amount: shareText });
   const splitSpoken = isSplit ? t('split.tag', { count: partCount }) : null;
   const partOfSpoken = partShown ? t('split.partOf', { amount: fullAmountText }) : null;
-  const spoken = [name, amountText, partOfSpoken, splitSpoken, stmtSpoken, homeText, ...tagTexts, shareSpoken]
+  // 10.1-23 (D-09): spoken last, so the row's label ends with ", receipt waiting to upload".
+  const receiptSpoken = receiptWaiting ? t('receipt.waitingA11y') : null;
+  const spoken = [name, amountText, partOfSpoken, splitSpoken, stmtSpoken, homeText, ...tagTexts, shareSpoken, receiptSpoken]
     .filter((p): p is string => p !== null && p !== '')
     .join(', ');
 
@@ -342,6 +348,14 @@ export function ActivityRow({
             <Text style={{ color: colors.accent }}>{` · ${t('activity.tag.refund')}`}</Text>
           ) : null}
         </Text>
+        {receiptWaiting ? (
+          <View testID={`activity-receipt-waiting-${row.id}`} style={styles.waiting}>
+            <Glyph name="savedOffline" size={16} color={colors.inkMuted} />
+            <Text numberOfLines={1} style={[{ ...textRole(pairing, 'label'), color: colors.inkMuted }, styles.waitingText]}>
+              {t('receipt.waiting')}
+            </Text>
+          </View>
+        ) : null}
         {partShown ? (
           <Text testID={`activity-partof-${row.id}`} numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
             {t('split.partOf', { amount: fullAmountText })}
@@ -363,7 +377,10 @@ export function ActivityRow({
   );
 
   const card = (
-    <View testID={`activity-card-${row.id}`} style={[styles.card, cardStyle(cardPosition, colors), shareText !== null ? { minHeight: rowHeight.two } : null]}>
+    <View
+      testID={`activity-card-${row.id}`}
+      style={[styles.card, cardStyle(cardPosition, colors), shareText !== null || receiptWaiting ? { minHeight: rowHeight.two } : null]}
+    >
       {/* 06.2 L02: inside a NewRowWash the fits tint sits under the content and clears; elsewhere nothing. */}
       <WashUnderlay style={cardCorners(cardPosition)} />
       {extras === null ? (
@@ -556,6 +573,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: space.gapSm,
   },
+  waiting: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  waitingText: { flexShrink: 1 },
   tag: {
     borderRadius: radii.pill,
     paddingHorizontal: space.gapSm,

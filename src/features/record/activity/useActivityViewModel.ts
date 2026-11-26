@@ -41,6 +41,7 @@ import { withoutArchivedRows } from '@/engine/archive';
 import { monthOf } from '@/engine/time';
 import { amountInCategories } from '@/engine/parts';
 import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
+import { useOutboxLineIds } from '@/features/record/receipt/useOutboxLineIds';
 import { useArchiveState } from '@/features/archive/useArchiveState';
 import type { EntryMode } from '@/features/record/entry/transactionForm';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -94,7 +95,22 @@ export function useRowFlow(rowActions: RowActions, month: string) {
   const [entryMode, setEntryMode] = useState<EntryMode | null>(null);
   const [detailRow, setDetailRow] = useState<ActivityRowView | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<{ row: ActivityRowView; prompt: DeletePrompt } | null>(null);
+  // 10.1-23 (D-08): `note` is "Its receipts are deleted too." when the line has receipts, shown in whichever prompt asks.
+  const [pendingDelete, setPendingDelete] = useState<{ row: ActivityRowView; prompt: DeletePrompt; note: string | null } | null>(null);
+  // A line is checked for receipts before the delete runs (at once when the answer is known, else after one read); a locked
+  // plan goes straight to the locked sheet.
+  const startDelete = useCallback(
+    (row: ActivityRowView) => {
+      const decide = (note: string | null) => {
+        const prompt = rowActions.remove(row, { hasReceipts: note !== null });
+        if (prompt !== null) setPendingDelete({ row, prompt: prompt.prompt, note });
+      };
+      const note = rowActions.locked ? null : (rowActions.deleteNote?.(row) ?? null);
+      if (note instanceof Promise) void note.then(decide, () => decide(null));
+      else decide(note);
+    },
+    [rowActions]
+  );
 
   const openDetail = useCallback((row: ActivityRowView) => {
     setDetailRow(row);
@@ -120,17 +136,10 @@ export function useRowFlow(rowActions: RowActions, month: string) {
     onDelete: () => {
       setDetailOpen(false);
       if (detailRow === null) return;
-      const prompt = rowActions.remove(detailRow);
-      if (prompt !== null) setPendingDelete({ row: detailRow, prompt: prompt.prompt });
+      startDelete(detailRow);
     },
   };
-  const requestDelete = useCallback(
-    (row: ActivityRowView) => {
-      const prompt = rowActions.remove(row);
-      if (prompt !== null) setPendingDelete({ row, prompt: prompt.prompt });
-    },
-    [rowActions]
-  );
+  const requestDelete = startDelete;
   const answerDelete = (answer: 'one' | 'future' | 'transfer' | 'cancel') => {
     const target = pendingDelete;
     setPendingDelete(null);
@@ -266,6 +275,10 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   const filtering = isFilterActive(appliedFilter) || appliedDebt !== null;
   // 10.1-20 (D-05): split lines show as one row; under a category filter the row shows only that category's part.
   const splitOn = useFeatureAccess('splitLine').visible;
+  // 10.1-23 (D-09): rows with a receipt still on the phone say so (level 2); below it the outbox is not read.
+  const receiptsOn = useFeatureAccess('receipts').visible;
+  const outboxLineIds = useOutboxLineIds(receiptsOn);
+  const receiptWaitingFor = useCallback((id: string): boolean => outboxLineIds.has(id), [outboxLineIds]);
   const partFilterIds = appliedFilter.categoryIds;
   const filteredAmountFor = useCallback(
     (r: ActivityRowView): number | null => {
@@ -506,6 +519,8 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
     filtering,
     splitOn,
     filteredAmountFor,
+    receiptsOn,
+    receiptWaitingFor,
     debt,
     searching,
     flat,
