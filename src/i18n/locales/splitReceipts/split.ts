@@ -8,6 +8,7 @@ export const split = {
     countsAsSaving: 'Counts as saving',
     countsAsTransfer: 'Counts as a move between your accounts',
     needsAmount: 'Every part needs an amount.',
+    amountFor: 'Amount for part {{n}}',
   },
   add: 'Add another part',
   balance: {

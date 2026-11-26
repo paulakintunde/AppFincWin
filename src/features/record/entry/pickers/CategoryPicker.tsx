@@ -25,9 +25,11 @@ export interface CategoryPickerProps {
   onManage?: () => void;
   /** REC-27: hides the 'Uncategorised' row (a rule must name a real category). */
   hideUncategorised?: boolean;
+  /** 10.1-18: a different title, e.g. 'Category for part 2'. Defaults to 'Category'. */
+  title?: string;
 }
 
-export function CategoryPicker({ visible, categories, selectedId, onSelect, onClose, usage, formatMinor, onManage, hideUncategorised = false }: CategoryPickerProps) {
+export function CategoryPicker({ visible, categories, selectedId, onSelect, onClose, usage, formatMinor, onManage, hideUncategorised = false, title: titleOverride }: CategoryPickerProps) {
   const t = useT();
   const fmt = formatMinor ?? String;
   const ordered = usage
@@ -45,7 +47,7 @@ export function CategoryPicker({ visible, categories, selectedId, onSelect, onCl
     }
     return usageSubLabel(u, fmt, t);
   };
-  const title = t('record.sheet.field.category');
+  const title = titleOverride ?? t('record.sheet.field.category');
   return (
     <Sheet visible={visible} onDismiss={onClose} accessibilityLabel={title}>
       <SheetHeader title={title} cancelLabel={t('record.sheet.cancel')} onCancel={onClose} />
