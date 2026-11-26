@@ -26,7 +26,7 @@ describe('10.1-15 findDate', () => {
     expect(findDate(['40/11/13'], 'YMD')).toEqual({ value: '2040-11-13', unsure: false });
   });
   it('skips impossible dates and non-dates', () => {
-    expect(findDate(['WOOD SCREWS 1-1/4IN', '31/02/2026', '2026-13-01', 'Foo 40, 2026', 'Nov 31, 2026', '1-1/4/26'], 'MDY')).toEqual({ value: null, unsure: true });
+    expect(findDate(['WOOD SCREWS 1-1/4IN', '31/02/2026', '2026-13-01', 'Foo 40, 2026', 'Nov 31, 2026', '1-1/4/26', '2026/11/2026', '123/11/26', '11/12/5', '11/12/202'], 'MDY')).toEqual({ value: null, unsure: true });
     expect(findDate([], 'MDY')).toEqual({ value: null, unsure: true });
     expect(findDate(['TEL 555', '01/02/1890', 'x 02/29/2028'], 'MDY')).toEqual({ value: '2028-02-29', unsure: false });
   });

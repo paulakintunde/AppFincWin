@@ -41,6 +41,8 @@ describe('10.1-15 parsePriceToMinor', () => {
     ['1.2KG', 2],
     ['12.5', 2],
     ['1234567890123.45', 2],
+    ['1234,567', 0],
+    ['1.234,567', 0],
   ])('%s at exponent %i is not a price', (token, exp) => {
     expect(parsePriceToMinor(token, exp)).toBeNull();
   });

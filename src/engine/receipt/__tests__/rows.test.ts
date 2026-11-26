@@ -31,6 +31,9 @@ describe('10.1-15 groupRows', () => {
       expect(groupRows({ lines: [...names, ...prices], imageWidth: 1000, imageHeight: 600 }).map((r) => r.text)).toEqual(want);
     }
   });
+  it('no lines, no rows', () => {
+    expect(groupRows({ lines: [], imageWidth: null, imageHeight: null })).toEqual([]);
+  });
   it('a single framed line is one row', () => {
     expect(groupRows({ lines: [ln('ONLY', 5, 5)], imageWidth: 10, imageHeight: 10 })).toEqual([{ text: 'ONLY', frame: { left: 5, top: 5, width: 100, height: 30 }, lineIndexes: [0] }]);
   });
