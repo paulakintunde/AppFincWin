@@ -72,6 +72,7 @@ export const receipt = {
   },
   kind: { photo: 'photo', file: 'file', scan: 'scan', pdf: 'PDF' },
   pages: '{{count}} pages',
+  addFailed: 'That receipt could not be added. Try again.',
   tooManyFiles: 'This line already has {{max}} receipts. Remove one to add another.',
   export: {
     title: 'Receipt files',
