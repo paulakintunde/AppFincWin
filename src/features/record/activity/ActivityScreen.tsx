@@ -334,6 +334,8 @@ export function ActivityScreen({
       onSwipeDelete={() => flow.requestDelete(row)}
       cardPosition={cardPosition}
       overCapBy={overCap.get(row.id) ?? null}
+      splitOn={vm.splitOn}
+      filteredAmount={vm.filteredAmountFor(row)}
       yourShare={vm.sharing && row.is_shared === true ? (vm.shareById.get(row.id) ?? null) : null}
       balanceNote={vm.balanceNotes.get(row.id)}
       incomeChip={v3 && isIncomeRow(row) ? incomeChipState(row, rulesByKey, seriesById) : null}

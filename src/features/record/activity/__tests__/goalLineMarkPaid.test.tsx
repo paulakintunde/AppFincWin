@@ -11,6 +11,8 @@ import { queryKeys } from '@/data/keys';
 import { getToast, resetToastForTests } from '@/state/undoToast';
 import { useRowActions } from '../useRowActions';
 
+// 10.1-20: the split row / action reads the feature seam; these suites are not about levels, so splits are off.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: false, on: false }) }));
 const mockMarkPaid = jest.fn((): string | null => 'paid-step');
 const mockConfirm = jest.fn((): string => 'confirm-step');
 const mockGoalToast = jest.fn();

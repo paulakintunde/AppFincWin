@@ -30,6 +30,7 @@ import { StatusBadge } from '@/ui/status/StatusBadge';
 import type { StatusKey } from '@/ui/status/statusMap';
 import { SwipeRow, type SwipeAction } from '@/ui/SwipeRow';
 import type { MoneyFormatter } from '@/ui/money/useMoneyFormatter';
+import { CategoryTag } from '@/features/record/split/CategoryTag';
 import { IncomeTagChip, type IncomeChipState } from './IncomeTagChip';
 import { RefundTag, type RefundTagModel } from './RefundTag';
 import { WashUnderlay } from './NewRowWash';
@@ -118,6 +119,10 @@ export interface ActivityRowProps {
   overCapBy?: number | null;
   /** 08.1-04 (D-04): the viewer's share of a shared line (home currency, signed like the line) in a household of 2+; null shows no share line. */
   yourShare?: number | null;
+  /** 10.1-20 (D-05): level 3 and up; below it a split line reads like an unsplit one under its largest part's category. */
+  splitOn?: boolean;
+  /** 10.1-20 (D-05): with a category filter on, the matching part's amount in the line's own currency (signed); null shows the full amount. */
+  filteredAmount?: number | null;
 }
 
 function letterOf(name: string): string {
@@ -162,6 +167,8 @@ export function ActivityRow({
   onRefundTagPress,
   overCapBy = null,
   yourShare = null,
+  splitOn = false,
+  filteredAmount = null,
 }: ActivityRowProps) {
   const t = useT();
   const { v3 } = useDecideAccess();
@@ -186,13 +193,19 @@ export function ActivityRow({
     name = row.is_settlement === true ? (row.name ?? t('household.settle.settled')) : (row.name ?? categoryLabel);
   }
 
-  const swatchKey: CategorySwatchKey = (category?.color_key as CategorySwatchKey | undefined) ?? 'slate';
+  // 10.1-20 (D-05): a split line is one row; the tag and the categories tile stand in for a single category.
+  const partCount = !isTransfer && splitOn && row.parts != null && row.parts.length >= 2 ? row.parts.length : 0;
+  const isSplit = partCount > 0;
+  const partsGap = isSplit ? row.original_amount - (row.parts ?? []).reduce((s, p) => s + p.amount, 0) !== 0 : false;
+  const swatchKey: CategorySwatchKey = isSplit ? 'slate' : ((category?.color_key as CategorySwatchKey | undefined) ?? 'slate');
   const letter = letterOf(isTransfer ? t('activity.transferOther') : name || categoryLabel);
 
-  const metaParts = [isTransfer ? '' : categoryLabel, accountName(row.account_id), formatter.formatDate(row.local_date, 'short')];
+  const metaParts = [isTransfer || isSplit ? '' : categoryLabel, accountName(row.account_id), formatter.formatDate(row.local_date, 'short')];
   const meta = metaParts.filter((p) => p !== '').join(' · ');
 
-  const amountText = formatter.formatMoney(money(row.original_amount, row.original_currency));
+  const fullAmountText = formatter.formatMoney(money(row.original_amount, row.original_currency));
+  const partShown = isSplit && filteredAmount !== null;
+  const amountText = partShown ? formatter.formatMoney(money(filteredAmount, row.original_currency)) : fullAmountText;
   // D-33: what the statement showed in the foreign currency, unsigned; stored figures only (D-31).
   const stmtText =
     !isTransfer && row.stmt_orig_amount != null && row.stmt_orig_currency != null
@@ -223,6 +236,7 @@ export function ActivityRow({
   if (tag.kind === 'overdue') badge = { status: 'overdue', word: tagWord };
   else if (!isTransfer && overCapBy !== null && overCapBy > 0)
     badge = { status: 'overCap', word: t('appLife.status.overCapBy', { amount: formatter.formatMoney(money(overCapBy, homeCurrency)) }) };
+  else if (partsGap) badge = { status: 'tight', word: t('split.gap.badge') };
   else if (tag.kind === 'due') badge = { status: 'due', word: tagWord };
   else if (pendingOutflowLater) badge = { status: 'due', word: t('appLife.status.dueOn', { date: formatter.formatDate(row.local_date, 'short') }) };
   else if (tag.kind === 'expected') badge = { status: 'pending', word: tagWord };
@@ -246,7 +260,9 @@ export function ActivityRow({
       ? null
       : (yourShare > 0 ? '+' : '') + formatter.formatMoney(money(yourShare, homeCurrency));
   const shareSpoken = shareText === null ? null : t('activity.row.yourShareA11y', { amount: shareText });
-  const spoken = [name, amountText, stmtSpoken, homeText, ...tagTexts, shareSpoken]
+  const splitSpoken = isSplit ? t('split.tag', { count: partCount }) : null;
+  const partOfSpoken = partShown ? t('split.partOf', { amount: fullAmountText }) : null;
+  const spoken = [name, amountText, partOfSpoken, splitSpoken, stmtSpoken, homeText, ...tagTexts, shareSpoken]
     .filter((p): p is string => p !== null && p !== '')
     .join(', ');
 
@@ -315,7 +331,7 @@ export function ActivityRow({
           {selected ? <View style={[styles.checkDot, { backgroundColor: colors.surface }]} /> : null}
         </View>
       ) : null}
-      <CategoryGlyph colorKey={swatchKey} icon={iconForCategory(category)} letter={letter} testID={`activity-tile-${row.id}`} />
+      <CategoryGlyph colorKey={swatchKey} icon={isSplit ? 'categories' : iconForCategory(category)} letter={letter} testID={`activity-tile-${row.id}`} />
       <View style={styles.text}>
         <Text numberOfLines={1} style={{ ...textRole(pairing, 'bodyStrong'), color: nameColor }}>
           {name}
@@ -326,12 +342,18 @@ export function ActivityRow({
             <Text style={{ color: colors.accent }}>{` · ${t('activity.tag.refund')}`}</Text>
           ) : null}
         </Text>
+        {partShown ? (
+          <Text testID={`activity-partof-${row.id}`} numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
+            {t('split.partOf', { amount: fullAmountText })}
+          </Text>
+        ) : null}
         {shareText !== null ? (
           <Text testID={`activity-share-${row.id}`} numberOfLines={1} style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
             {t('activity.row.yourShare', { amount: shareText })}
           </Text>
         ) : null}
         <View style={styles.tags}>
+          {isSplit ? <CategoryTag count={partCount} /> : null}
           {row.pending ? <Tag label={t('sync.pendingRow')} /> : null}
           {showTag ? <Tag tone={tag.tone} faint={tag.kind === 'moved'} label={tagWord} /> : null}
           {badge !== null ? <StatusBadge status={badge.status} label={badge.word} testID={`activity-badge-${row.id}`} /> : null}

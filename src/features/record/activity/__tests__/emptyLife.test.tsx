@@ -16,6 +16,8 @@ import { EmptyState } from '@/ui/EmptyState';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 
+// 10.1-20: the split row / action reads the feature seam; these suites are not about levels, so splits are off.
+jest.mock('@/features/levels/useFeatureAccess', () => ({ useFeatureAccess: () => ({ visible: false, on: false }) }));
 jest.mock('@/features/household/sharing/BulkShare', () => ({ BulkShare: () => null })); // 08-19: the household data layer is not part of this test
 jest.mock('react-native-safe-area-context', () => ({
   ...jest.requireActual('react-native-safe-area-context'),

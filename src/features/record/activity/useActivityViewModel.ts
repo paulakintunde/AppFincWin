@@ -39,6 +39,8 @@ import {
 import { money } from '@/engine/money';
 import { withoutArchivedRows } from '@/engine/archive';
 import { monthOf } from '@/engine/time';
+import { amountInCategories } from '@/engine/parts';
+import { useFeatureAccess } from '@/features/levels/useFeatureAccess';
 import { useArchiveState } from '@/features/archive/useArchiveState';
 import type { EntryMode } from '@/features/record/entry/transactionForm';
 import { useRecordContext } from '@/features/record/useRecordContext';
@@ -262,6 +264,20 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
   const appliedFilter = searchOpen ? EMPTY_FILTER : filter;
   const appliedDebt = searchOpen ? null : debt;
   const filtering = isFilterActive(appliedFilter) || appliedDebt !== null;
+  // 10.1-20 (D-05): split lines show as one row; under a category filter the row shows only that category's part.
+  const splitOn = useFeatureAccess('splitLine').visible;
+  const partFilterIds = appliedFilter.categoryIds;
+  const filteredAmountFor = useCallback(
+    (r: ActivityRowView): number | null => {
+      if (!splitOn || partFilterIds === null || r.parts == null || r.parts.length < 2) return null;
+      return amountInCategories(
+        { id: r.id, amount: r.original_amount, categoryId: r.category_id, parts: r.parts },
+        r.original_amount,
+        partFilterIds
+      );
+    },
+    [splitOn, partFilterIds]
+  );
   const narrowed = useMemo(() => {
     let base: ActivityRowView[] = flat ? searchRows : monthView.rows;
     if (scope === 'month' && term.trim() !== '') base = base.filter((r) => matchesSearch(r, term));
@@ -488,6 +504,8 @@ export function useActivityViewModel({ initialMonth, supportedViews, debtId = nu
     filter,
     setFilter,
     filtering,
+    splitOn,
+    filteredAmountFor,
     debt,
     searching,
     flat,
