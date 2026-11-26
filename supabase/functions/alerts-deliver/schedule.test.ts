@@ -11,8 +11,9 @@ function assertEquals(actual: unknown, expected: unknown, msg = ''): void {
   }
 }
 
-const VAN = 'America/Vancouver';
-// 2026-11-21 local Vancouver (PST, UTC-8)
+// Los Angeles, not Vancouver: newer tzdata keeps B.C. on UTC-7 all year, which made this test depend on the runner's tz version.
+const VAN = 'America/Los_Angeles';
+// 2026-11-21 local Los Angeles (PST, UTC-8)
 const at = (h: number, m: number) => new Date(Date.UTC(2026, 10, 21, h + 8, m));
 
 run('localParts reads the person own date and minutes', () => {

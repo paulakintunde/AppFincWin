@@ -90,7 +90,7 @@ describe('categories.icon_key shape', () => {
     expect(CATEGORY_INSERT_KEYS).toContain('icon_key');
     expect(CATEGORY_PATCH_KEYS).toContain('icon_key');
     expect(EXPORT_MANIFEST.categories).toContain('icon_key');
-    expect(CACHE_SCHEMA_VERSION).toBe('18');
+    expect(CACHE_SCHEMA_VERSION).toBe('19'); // 19 in Phase 10
   });
 
   it('assertIconKey allows null and names in our set, and refuses emoji, free text and unknown names', () => {

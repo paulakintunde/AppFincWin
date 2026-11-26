@@ -48,6 +48,7 @@ describe('haptic names (06.2 D-20)', () => {
       .sort();
     expect(callers).toEqual([
       'data/mutations/pasteLines.ts',
+      'features/dataImport/DataImportScreen.tsx', // 10: data import done
       'features/grow/debts/DebtClearedMoment.tsx',
       'features/grow/goals/ReachedMoment.tsx',
       'features/record/import/useStatementImport.ts',
