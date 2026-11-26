@@ -1699,8 +1699,8 @@ Plans:
 - [x] 10-26-PLAN.md — Wallet import preview and commit (per-currency accounts, fees, conversions)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 10-27-PLAN.md — Wiring: Security screen, You rows, boot hosts, FCM config, CI Deno tests
-- [ ] 10-28-PLAN.md — Wallet readers finalised on the owner's stripped real exports
+- [x] 10-27-PLAN.md — Wiring: Security screen, You rows, boot hosts, FCM config, CI Deno tests
+- [x] 10-28-PLAN.md — Wallet readers finalised on the owner's stripped real exports (owner 2026-11-26: no real exports; readers stay on public sample formats, real-file check open)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 10-29-PLAN.md — [BLOCKING] Production rollout (schema push, functions, secrets, hook, reviewer accounts, first backup + rehearsal)

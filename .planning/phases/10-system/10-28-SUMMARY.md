@@ -22,7 +22,7 @@ key-files:
 requirements: [IMP-06]
 metrics:
   completed: 2026-11-25
-  status: PARTIAL - D-34 amendment and stripper done; real-export tasks blocked on owner files
+  status: COMPLETE (owner 2026-11-26) - D-34 and stripper done; no real exports, readers stay on synthetic coverage, real-file check open
 ---
 
 # Phase 10 Plan 28: Wallet real-layout finalisation Summary (partial)
