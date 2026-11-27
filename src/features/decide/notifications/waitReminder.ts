@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { i18n } from '@/i18n';
 import { registerWipeHandler } from '@/services/storage/wipe';
+import { withExternalActivity } from '@/services/lock/externalActivity';
 
 export const REMINDER_CHANNEL = 'decide-reminders';
 export const REMINDER_STORAGE_KEY = 'fincwin:decide-reminders';
@@ -103,7 +104,7 @@ export async function requestReminderPermission(): Promise<boolean> {
   try {
     await ensureChannel();
     let perm = await Notifications.getPermissionsAsync();
-    if (!perm.granted) perm = await Notifications.requestPermissionsAsync();
+    if (!perm.granted) perm = await withExternalActivity(() => Notifications.requestPermissionsAsync()); // 10-review (L-6)
     return perm.granted;
   } catch {
     return false;
@@ -118,7 +119,7 @@ async function scheduleAt(
 ): Promise<ScheduleResult> {
   await ensureChannel();
   let perm = await Notifications.getPermissionsAsync();
-  if (!perm.granted && requestPermission) perm = await Notifications.requestPermissionsAsync();
+  if (!perm.granted && requestPermission) perm = await withExternalActivity(() => Notifications.requestPermissionsAsync()); // 10-review (L-6)
   if (!perm.granted) return { scheduled: false };
   await cancelKey(keyOf(kind, checkId));
   const cooling = kind === 'cooling_off';

@@ -5,6 +5,10 @@
 //    a sign-in again with Apple or Google. The same person keeps the phone copy and sets a new PIN; a different person
 //    gets the normal sign-out wipe (D-29).
 // Wrong tries are ink text with no shake and no red. Nothing here shows a balance, name or amount.
+// 10-review (L-2): signing in again as the same person is not enough on its own to set a new PIN (on Android, Google
+// one-tap needs no typing). The phone's own lock must open too; a phone with no lock gets the sign-out wipe instead.
+// 10-review (L-7): the write queue is held for the whole sign-in again, so nothing queued is sent under a session that
+// may belong to someone else; a different person's wipe clears it before the hold lifts.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BackHandler, ScrollView, StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, ReduceMotion } from 'react-native-reanimated';
@@ -16,14 +20,18 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { AppleSignInButton } from '@/features/auth/AppleSignInButton';
 import { GoogleSignInButton } from '@/features/auth/GoogleSignInButton';
 import { performSignOut, requestSignOut } from '@/features/auth/signOut';
+import { bumpSessionEpoch } from '@/data/sync/sessionEpoch';
+import { holdWrites, releaseWrites } from '@/data/sync/writeHold';
+import { captureError } from '@/services/errors';
 import { PlanLink } from '@/features/plans/components/NoticeCard';
 import {
   authenticateBiometric,
   authenticateDevice,
   biometricKind,
+  deviceLockAvailable,
   type BiometricKind,
 } from '@/services/lock/biometric';
-import { checkPin, clearTries, loadLockState, type LockSettings } from '@/services/lock/lockStore';
+import { checkPin, clampLockUntil, clearTries, loadLockState, type LockSettings } from '@/services/lock/lockStore';
 import { PIN_LENGTH } from '@/services/lock/pin';
 import { decideAfterReauth } from '@/services/lock/reauth';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -66,6 +74,8 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
   const [reauthed, setReauthed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [signInFailed, setSignInFailed] = useState(false);
+  const [deviceNeeded, setDeviceNeeded] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [unsentCount, setUnsentCount] = useState<number | null>(null);
@@ -120,16 +130,20 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
       return;
     }
     void (async () => {
-      const [state, k] = await Promise.all([loadLockState(), biometricKind()]);
+      // 10-review (L-3): an unreadable secure store still shows the pad (and Sign out), never an unhandled error.
+      const [state, k] = await Promise.all([loadLockState().catch(() => null), biometricKind()]);
       if (!alive.current) return;
       setKind(k);
+      if (state === null) return;
       const t0 = Date.now();
       if (state.wrongTries >= 10) {
         setView('reauth');
         return;
       }
-      if (state.lockUntil !== null && state.lockUntil > t0) {
-        setUntil(state.lockUntil);
+      // 10-review (L-5): a wait stored before the clock moved back is cut to the longest step of the ladder.
+      const lockUntil = clampLockUntil(state.lockUntil, t0);
+      if (lockUntil !== null && lockUntil > t0) {
+        setUntil(lockUntil);
         setNow(t0);
         setView('wait');
         return;
@@ -153,9 +167,19 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
     return () => clearInterval(id);
   }, [view, until]);
 
+  // 10-review (L-4): one check at a time; the pad is off until it answers.
   const submit = useCallback(
     async (pin: string) => {
-      const res = await checkPin(pin, Date.now());
+      setChecking(true);
+      let res: Awaited<ReturnType<typeof checkPin>>;
+      try {
+        res = await checkPin(pin, Date.now());
+      } catch {
+        if (alive.current) setDigits('');
+        return;
+      } finally {
+        if (alive.current) setChecking(false);
+      }
       if (!alive.current) return;
       if (res.ok) {
         unlocked();
@@ -179,7 +203,7 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
   );
 
   const onDigit = (d: string): void => {
-    if (digits.length >= PIN_LENGTH) return;
+    if (checking || digits.length >= PIN_LENGTH) return;
     const next = digits + d;
     setDigits(next);
     if (next.length === PIN_LENGTH) void submit(next);
@@ -187,31 +211,63 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
 
   const handleSignIn = async (fn: () => Promise<{ status: 'signedIn' | 'cancelled' }>): Promise<void> => {
     setSignInFailed(false);
+    setDeviceNeeded(false);
     setBusy(true);
+    holdWrites();
     try {
       const r = await fn();
       if (r.status !== 'signedIn') return;
       const uid = await currentUserId();
       if (uid === null) return;
-      if (decideAfterReauth(settings.ownerUserId, uid) === 'keep') {
+      let decision = decideAfterReauth(settings.ownerUserId, uid);
+      if (decision === 'keep') {
+        if (await deviceLockAvailable()) {
+          const proof = await authenticateDevice(t('system.appLock.verifyTurnOff'), t('system.appLock.promptCancel'));
+          if (proof !== 'ok') {
+            if (alive.current) setDeviceNeeded(true);
+            return;
+          }
+        } else {
+          // No phone lock to prove the phone is theirs: sign out and clear this phone; the account is untouched.
+          decision = 'wipe';
+        }
+      }
+      if (decision === 'keep') {
         await clearTries();
         if (!alive.current) return;
         setReauthed(true);
         setSetupOpen(true);
       } else {
+        bumpSessionEpoch();
         await performSignOut({ resetTheme: theme.reset });
       }
-    } catch {
+    } catch (e) {
+      captureError(e, { area: 'auth' });
       if (alive.current) setSignInFailed(true);
     } finally {
+      releaseWrites();
       if (alive.current) setBusy(false);
     }
   };
 
+  // 10-review (L-8): a failed sign-out is reported, not dropped.
   const confirmSignOut = async (): Promise<void> => {
     setSignOutOpen(false);
-    const r = await requestSignOut({ resetTheme: theme.reset });
-    if (r.needsConfirm && alive.current) setUnsentCount(r.count ?? 0);
+    try {
+      const r = await requestSignOut({ resetTheme: theme.reset });
+      if (r.needsConfirm && alive.current) setUnsentCount(r.count ?? 0);
+    } catch (e) {
+      captureError(e, { area: 'auth' });
+    }
+  };
+
+  const signOutAnyway = async (): Promise<void> => {
+    setUnsentCount(null);
+    try {
+      await performSignOut({ resetTheme: theme.reset });
+    } catch (e) {
+      captureError(e, { area: 'auth' });
+    }
   };
 
   const remaining = Math.max(0, until - now);
@@ -268,6 +324,11 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
               </View>
             )}
             {signInFailed ? <Text style={label}>{t('auth.error.signInFailed')}</Text> : null}
+            {deviceNeeded ? (
+              <Text style={label} accessibilityLiveRegion="polite" testID="lock-device-needed">
+                {t('system.appLock.reauthDeviceNeeded')}
+              </Text>
+            ) : null}
             <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted, textAlign: 'center' }}>
               {t('system.appLock.tenFooter')}
             </Text>
@@ -317,7 +378,7 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
             </Text>
             <PinDots filled={digits.length} />
             <PinPad
-              disabled={view === 'wait'}
+              disabled={view === 'wait' || checking}
               onDigit={onDigit}
               onBackspace={() => setDigits((d) => d.slice(0, -1))}
             />
@@ -350,10 +411,7 @@ export function LockScreen({ settings, onUnlock }: LockScreenProps): React.JSX.E
         confirmLabel={t('signOut.confirm.proceed')}
         cancelLabel={t('signOut.confirm.cancel')}
         destructive
-        onConfirm={() => {
-          setUnsentCount(null);
-          void performSignOut({ resetTheme: theme.reset });
-        }}
+        onConfirm={() => void signOutAnyway()}
         onCancel={() => setUnsentCount(null)}
       />
       <ConfirmSheet

@@ -41,7 +41,7 @@ jest.mock('@/services/auth', () => ({
   signInWithDifferentGoogleAccount: (...args: unknown[]) => mockSignInWithDifferentGoogleAccount(...args),
 }));
 
-jest.mock('../signOut', () => ({ performSignOut: jest.fn(async () => undefined) }));
+jest.mock('../signOut', () => ({ performSignOut: jest.fn(async () => undefined), registeredThemeReset: () => () => undefined }));
 
 jest.mock('../rememberedAccounts', () => ({
   ...jest.requireActual('../rememberedAccounts'),

@@ -27,6 +27,7 @@ export function PinCheckSheet({ visible, onClose, onVerified }: PinCheckSheetPro
   const { colors, pairing } = useTheme();
   const [digits, setDigits] = useState('');
   const [line, setLine] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
   const alive = useRef(true);
 
   useEffect(() => {
@@ -44,8 +45,18 @@ export function PinCheckSheet({ visible, onClose, onVerified }: PinCheckSheetPro
     }
   }, [visible]);
 
+  // 10-review (L-4): one check at a time; the pad is off until it answers.
   const submit = async (pin: string): Promise<void> => {
-    const res = await checkPin(pin, Date.now());
+    setChecking(true);
+    let res: Awaited<ReturnType<typeof checkPin>>;
+    try {
+      res = await checkPin(pin, Date.now());
+    } catch {
+      if (alive.current) setDigits('');
+      return;
+    } finally {
+      if (alive.current) setChecking(false);
+    }
     if (!alive.current) return;
     if (res.ok) {
       onVerified();
@@ -59,7 +70,7 @@ export function PinCheckSheet({ visible, onClose, onVerified }: PinCheckSheetPro
   };
 
   const onDigit = (d: string): void => {
-    if (digits.length >= PIN_LENGTH) return;
+    if (checking || digits.length >= PIN_LENGTH) return;
     const next = digits + d;
     setDigits(next);
     if (next.length === PIN_LENGTH) void submit(next);
@@ -73,7 +84,7 @@ export function PinCheckSheet({ visible, onClose, onVerified }: PinCheckSheetPro
           {line ?? t('system.appLock.enterPin')}
         </Text>
         <PinDots filled={digits.length} />
-        <PinPad onDigit={onDigit} onBackspace={() => setDigits((d) => d.slice(0, -1))} />
+        <PinPad disabled={checking} onDigit={onDigit} onBackspace={() => setDigits((d) => d.slice(0, -1))} />
       </View>
     </Sheet>
   );
