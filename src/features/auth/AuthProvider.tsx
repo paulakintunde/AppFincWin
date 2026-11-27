@@ -14,7 +14,8 @@ import {
   type SignInResult,
 } from '@/services/auth';
 import { isLocalSignOutInProgress, setSignOutReason } from './signOutReason';
-import { performSignOut } from './signOut';
+import { captureError } from '@/services/errors';
+import { performSignOut, registeredThemeReset } from './signOut';
 import { identityFromUser, rememberAccount, type RememberedAccount } from './rememberedAccounts';
 
 export type AuthStatus = 'loading' | 'signedOut' | 'signedIn';
@@ -69,7 +70,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }): React
         // Wipe the phone copy once; performSignOut raises the local flag, so its own SIGNED_OUT is ignored.
         if (!isLocalSignOutInProgress()) {
           setSignOutReason('remote');
-          void performSignOut({ supabase });
+          // 10-review (L-8, L-9): resets the theme like the other sign-out paths, and a failure is reported, not dropped.
+          performSignOut({ supabase, resetTheme: registeredThemeReset() }).catch((e: unknown) =>
+            captureError(e, { area: 'auth' }),
+          );
         }
       }
     });

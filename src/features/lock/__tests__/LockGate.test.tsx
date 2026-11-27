@@ -10,6 +10,10 @@ import * as lockStore from '@/services/lock/lockStore';
 import * as biometric from '@/services/lock/biometric';
 import { hapticTap, hapticWarn } from '@/ui/haptics';
 import { performSignOut, requestSignOut } from '@/features/auth/signOut';
+import { beginExternalActivity } from '@/services/lock/externalActivity';
+import { holdWrites, releaseWrites } from '@/data/sync/writeHold';
+import { bumpSessionEpoch } from '@/data/sync/sessionEpoch';
+import { captureError } from '@/services/errors';
 
 jest.setTimeout(30000);
 
@@ -25,7 +29,11 @@ jest.mock('@/config/env', () => ({ getEnv: () => ({ appleSignInEnabled: true }) 
 jest.mock('@/features/auth/signOut', () => ({
   performSignOut: jest.fn(() => Promise.resolve()),
   requestSignOut: jest.fn(() => Promise.resolve({ needsConfirm: false })),
+  registerThemeReset: jest.fn(() => () => undefined),
 }));
+jest.mock('@/data/sync/writeHold', () => ({ holdWrites: jest.fn(), releaseWrites: jest.fn() }));
+jest.mock('@/data/sync/sessionEpoch', () => ({ bumpSessionEpoch: jest.fn() }));
+jest.mock('@/services/errors', () => ({ captureError: jest.fn() }));
 jest.mock('@/features/auth/AppleSignInButton', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { Pressable: P, Text: T } = require('react-native');
@@ -63,6 +71,7 @@ jest.mock('../LockSetupSheet', () => {
 jest.mock('@/services/lock/lockStore', () => ({
   ...jest.requireActual('@/services/lock/lockStore'),
   loadLockState: jest.fn(),
+  readLockSettings: jest.fn(),
   checkPin: jest.fn(),
   clearTries: jest.fn(() => Promise.resolve()),
   markBackgrounded: jest.fn(() => Promise.resolve()),
@@ -81,6 +90,8 @@ const checkPin = lockStore.checkPin as jest.Mock;
 const clearTries = lockStore.clearTries as jest.Mock;
 const authDevice = biometric.authenticateDevice as jest.Mock;
 const authBio = biometric.authenticateBiometric as jest.Mock;
+const deviceAvail = biometric.deviceLockAvailable as jest.Mock;
+const readSettings = lockStore.readLockSettings as jest.Mock;
 
 const state = (over: Partial<lockStore.LockSettings> = {}, extra: Partial<lockStore.LockState> = {}): lockStore.LockState => ({
   settings: { ...lockStore.DEFAULT_LOCK_SETTINGS, enabled: true, ownerUserId: 'u1', ...over },
@@ -117,6 +128,7 @@ beforeEach(() => {
   mockAuth.status = 'signedIn';
   authDevice.mockResolvedValue('cancel');
   authBio.mockResolvedValue('cancel');
+  deviceAvail.mockResolvedValue(true);
   jest.spyOn(AppState, 'addEventListener').mockImplementation(((_: string, h: (s: string) => void) => {
     appStateHandler = h;
     return { remove: jest.fn() };
@@ -193,8 +205,9 @@ describe('LockGate, app-PIN mode', () => {
     expect(key.props.accessibilityState?.disabled ?? key.props['aria-disabled']).toBeTruthy();
   });
 
-  it('10th wrong: Sign in again; the same person keeps the phone copy and sets a new PIN', async () => {
+  it('10th wrong: Sign in again; the same person who also opens the phone lock keeps the phone copy and sets a new PIN', async () => {
     checkPin.mockResolvedValue({ ok: false, backoff: { kind: 'reauth' }, wrongTries: 10 });
+    authDevice.mockResolvedValue('ok');
     mockAuth.signInWithApple.mockResolvedValue({ status: 'signedIn' });
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     const r = await show();
@@ -206,6 +219,74 @@ describe('LockGate, app-PIN mode', () => {
     await waitFor(() => expect(r.getByTestId('setup-open')).toBeTruthy());
     expect(clearTries).toHaveBeenCalled();
     expect(performSignOut).not.toHaveBeenCalled();
+    expect(authDevice).toHaveBeenCalledTimes(1);
+  });
+
+  it('10-review (L-2): the same person who does not open the phone lock gets no new PIN', async () => {
+    load.mockResolvedValue(state({ lockMethod: 'appPin' }, { wrongTries: 10 }));
+    mockAuth.signInWithGoogle.mockResolvedValue({ status: 'signedIn' });
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    authDevice.mockResolvedValue('cancel');
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('lock-reauth')).toBeTruthy());
+    await fireEvent.press(r.getByTestId('google'));
+    await waitFor(() => expect(r.getByTestId('lock-device-needed')).toBeTruthy());
+    expect(r.queryByTestId('setup-open')).toBeNull();
+    expect(r.queryByText('Set a new PIN')).toBeNull();
+    expect(clearTries).not.toHaveBeenCalled();
+    expect(performSignOut).not.toHaveBeenCalled();
+    expect(r.queryByTestId('app-content')).toBeNull();
+  });
+
+  it('10-review (L-2): with no phone lock, the same person is signed out and the phone cleared instead', async () => {
+    load.mockResolvedValue(state({ lockMethod: 'appPin' }, { wrongTries: 10 }));
+    mockAuth.signInWithGoogle.mockResolvedValue({ status: 'signedIn' });
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    deviceAvail.mockResolvedValue(false);
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('lock-reauth')).toBeTruthy());
+    await fireEvent.press(r.getByTestId('google'));
+    await waitFor(() => expect(performSignOut).toHaveBeenCalledTimes(1));
+    expect(authDevice).not.toHaveBeenCalled();
+    expect(clearTries).not.toHaveBeenCalled();
+    expect(r.queryByTestId('setup-open')).toBeNull();
+  });
+
+  it('10-review (L-7): the queue is held through sign-in again; a different person bumps the epoch before the wipe', async () => {
+    load.mockResolvedValue(state({ lockMethod: 'appPin' }, { wrongTries: 10 }));
+    const order: string[] = [];
+    (holdWrites as jest.Mock).mockImplementation(() => order.push('hold'));
+    (releaseWrites as jest.Mock).mockImplementation(() => order.push('release'));
+    (bumpSessionEpoch as jest.Mock).mockImplementation(() => order.push('bump'));
+    (performSignOut as jest.Mock).mockImplementation(async () => {
+      order.push('wipe');
+    });
+    mockAuth.signInWithGoogle.mockImplementation(async () => {
+      order.push('signIn');
+      return { status: 'signedIn' };
+    });
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'someone-else' } } } });
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('lock-reauth')).toBeTruthy());
+    await fireEvent.press(r.getByTestId('google'));
+    await waitFor(() => expect(releaseWrites).toHaveBeenCalledTimes(1));
+    expect(order).toEqual(['hold', 'signIn', 'bump', 'wipe', 'release']);
+  });
+
+  it('10-review (L-4): the pad is off while a check runs, so a seventh press starts no second check', async () => {
+    let answer: (v: unknown) => void = () => undefined;
+    checkPin.mockImplementation(() => new Promise((res) => (answer = res)));
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('pin-pad')).toBeTruthy());
+    await typePin(r, '123456');
+    const key = r.getByTestId('pin-key-1');
+    expect(key.props.accessibilityState?.disabled ?? key.props['aria-disabled']).toBeTruthy();
+    await fireEvent.press(r.getByTestId('pin-key-backspace'));
+    await typePin(r, '1');
+    expect(checkPin).toHaveBeenCalledTimes(1);
+    await act(async () => answer({ ok: false, backoff: { kind: 'none' }, wrongTries: 1 }));
+    const after = r.getByTestId('pin-key-1');
+    expect(after.props.accessibilityState?.disabled ?? after.props['aria-disabled']).toBeFalsy();
   });
 
   it('10th wrong: a different person gets the normal sign-out wipe', async () => {
@@ -225,6 +306,92 @@ describe('LockGate, app-PIN mode', () => {
     await fireEvent.press(r.getByText('Forgot PIN?'));
     await fireEvent.press(r.getByTestId('confirm-ok-Sign in agai'));
     await waitFor(() => expect(r.getByTestId('lock-reauth')).toBeTruthy());
+  });
+});
+
+describe('LockGate, 10-review lock host fixes', () => {
+  it('L-1: on return the lock is decided from memory, so the app never shows while the store is read', async () => {
+    load.mockResolvedValueOnce(state({ lockMethod: 'device', timing: 'now' }));
+    authDevice.mockResolvedValueOnce('ok');
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('app-content')).toBeTruthy());
+    load.mockImplementation(() => new Promise(() => undefined)); // the store never answers
+    await act(async () => appStateHandler('background'));
+    await act(async () => appStateHandler('active'));
+    expect(r.queryByTestId('app-content')).toBeNull();
+    expect(r.getByTestId('lock-device')).toBeTruthy();
+  });
+
+  it('L-1: with nothing in memory yet, the cover stays up until the store answers', async () => {
+    let first: (v: unknown) => void = () => undefined;
+    load.mockImplementationOnce(() => new Promise((res) => (first = res)));
+    const r = await show();
+    await act(async () => appStateHandler('background'));
+    let second: (v: unknown) => void = () => undefined;
+    load.mockImplementationOnce(() => new Promise((res) => (second = res)));
+    await act(async () => appStateHandler('active'));
+    expect(r.getByTestId('app-cover', { includeHiddenElements: true })).toBeTruthy();
+    await act(async () => first(state({ enabled: false })));
+    await act(async () => second(state({ enabled: false })));
+    expect(r.queryByTestId('app-cover', { includeHiddenElements: true })).toBeNull();
+    expect(r.getByTestId('app-content')).toBeTruthy();
+  });
+
+  it('L-3: an unreadable secure store on a cold start with the lock on shows the lock (fail closed)', async () => {
+    load.mockRejectedValue(new Error('keystore'));
+    readSettings.mockResolvedValue({ ...lockStore.DEFAULT_LOCK_SETTINGS, enabled: true, lockMethod: 'device' });
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('lock-device')).toBeTruthy());
+    expect(r.queryByTestId('app-content')).toBeNull();
+    expect(r.getByText('Sign out')).toBeTruthy();
+  });
+
+  it('L-3: an unreadable secure store with the lock off opens the app as before', async () => {
+    load.mockRejectedValue(new Error('keystore'));
+    readSettings.mockResolvedValue({ ...lockStore.DEFAULT_LOCK_SETTINGS, enabled: false });
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('app-content')).toBeTruthy());
+  });
+
+  it('L-3: an unreadable store on return still locks when the lock is on', async () => {
+    load.mockResolvedValueOnce(state({ lockMethod: 'device', timing: 'oneMinute' }));
+    authDevice.mockResolvedValueOnce('ok');
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('app-content')).toBeTruthy());
+    load.mockRejectedValue(new Error('keystore'));
+    readSettings.mockResolvedValue({ ...lockStore.DEFAULT_LOCK_SETTINGS, enabled: true, lockMethod: 'device' });
+    const now = Date.now();
+    const spy = jest.spyOn(Date, 'now').mockReturnValue(now);
+    await act(async () => appStateHandler('background'));
+    spy.mockReturnValue(now + 120_000);
+    await act(async () => appStateHandler('active'));
+    spy.mockRestore();
+    await waitFor(() => expect(r.getByTestId('lock-device')).toBeTruthy());
+    expect(r.queryByTestId('app-content')).toBeNull();
+  });
+
+  it('L-6: returning from a system screen the app opened keeps the app mounted, even with timing Right away', async () => {
+    load.mockResolvedValueOnce(state({ lockMethod: 'device', timing: 'now' }));
+    authDevice.mockResolvedValueOnce('ok');
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('app-content')).toBeTruthy());
+    load.mockResolvedValue(state({ lockMethod: 'device', timing: 'now' }));
+    const end = beginExternalActivity();
+    await act(async () => appStateHandler('background'));
+    end(); // the picker answers before AppState reports 'active'
+    await act(async () => appStateHandler('active'));
+    expect(r.getByTestId('app-content')).toBeTruthy();
+    expect(r.queryByTestId('lock-device')).toBeNull();
+  });
+
+  it('L-8: a failing sign-out from the lock screen is reported, not dropped', async () => {
+    load.mockResolvedValue(state({ lockMethod: 'device' }));
+    (requestSignOut as jest.Mock).mockRejectedValueOnce(new Error('wipe failed'));
+    const r = await show();
+    await waitFor(() => expect(r.getByTestId('lock-device')).toBeTruthy());
+    await fireEvent.press(r.getByText('Sign out'));
+    await fireEvent.press(r.getByTestId('confirm-ok-Sign out?'));
+    await waitFor(() => expect(captureError).toHaveBeenCalledWith(expect.any(Error), { area: 'auth' }));
   });
 });
 

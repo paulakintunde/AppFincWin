@@ -16,6 +16,9 @@ export type Backoff = { kind: 'none' } | { kind: 'wait'; ms: number } | { kind: 
 
 const WAITS_MS: Record<number, number> = { 5: 30_000, 6: 60_000, 7: 120_000, 8: 300_000, 9: 900_000 };
 
+/** 10-review (L-5): the longest wait the ladder can set. A stored wait further away than this means the clock moved back. */
+export const MAX_WAIT_MS = Math.max(...Object.values(WAITS_MS));
+
 /** D-03: tries 1-4 no wait; 5th 30 s, then 1, 2, 5, 15 minutes; the 10th needs a fresh sign-in. */
 export function backoffFor(wrongTries: number): Backoff {
   if (wrongTries >= 10) return { kind: 'reauth' };

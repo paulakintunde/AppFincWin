@@ -5,7 +5,7 @@ import { renderHook, waitFor, act } from '@testing-library/react-native';
 
 import { supabase } from '@/services/supabase';
 import { AuthProvider } from '../AuthProvider';
-import { performSignOut } from '../signOut';
+import { performSignOut, registerThemeReset } from '../signOut';
 import { consumeSignOutReason, lastSignOutReason, isLocalSignOutInProgress } from '../signOutReason';
 
 const mockGetSession = jest.fn();
@@ -41,6 +41,8 @@ jest.mock('@/services/storage/wipe', () => ({
   getPendingWriteCount: jest.fn(async () => 0),
   wipeDeviceData: () => mockWipe(),
 }));
+const mockCapture = jest.fn();
+jest.mock('@/services/errors', () => ({ captureError: (...a: unknown[]) => mockCapture(...a) }));
 jest.mock('@/services/analytics', () => ({
   getAnalytics: () => ({ disable: jest.fn(async () => undefined) }),
 }));
@@ -71,6 +73,28 @@ describe('remote sign-out', () => {
     expect(lastSignOutReason()).toBe('remote');
     expect(isLocalSignOutInProgress()).toBe(false);
     expect(result.current).toBeDefined();
+  });
+
+  it('10-review (L-9): the remote sign-out resets the theme registered from inside the ThemeProvider', async () => {
+    const reset = jest.fn();
+    const unregister = registerThemeReset(reset);
+    await renderHook(() => ({}), { wrapper });
+    await waitFor(() => expect(mockCallback).toBeDefined());
+    await act(async () => {
+      mockCallback?.('SIGNED_OUT', null);
+    });
+    await waitFor(() => expect(reset).toHaveBeenCalledTimes(1));
+    unregister();
+  });
+
+  it('10-review (L-8): a failing remote wipe is reported, not dropped', async () => {
+    mockWipe.mockRejectedValueOnce(new Error('wipe failed'));
+    await renderHook(() => ({}), { wrapper });
+    await waitFor(() => expect(mockCallback).toBeDefined());
+    await act(async () => {
+      mockCallback?.('SIGNED_OUT', null);
+    });
+    await waitFor(() => expect(mockCapture).toHaveBeenCalledWith(expect.any(Error), { area: 'auth' }));
   });
 
   it('records local and runs no extra wipe on a normal sign-out', async () => {
