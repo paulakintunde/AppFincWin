@@ -30,6 +30,30 @@ export async function hitRateLimit(
   return { ok: false, retryAfter };
 }
 
+// 10-review S-7: reads the counter without adding a hit (public.rate_limit_peek). Used where only failures count:
+// peek before the attempt, rate_limit_hit after a failure. Fails open, as hitRateLimit does.
+export async function peekRateLimit(
+  admin: RpcClient,
+  key: string,
+  limit: number,
+  windowSeconds: number,
+  now: () => number = () => Date.now()
+): Promise<RateResult> {
+  let res: { data: unknown; error: unknown };
+  try {
+    res = await admin.rpc('rate_limit_peek', { p_key: key, p_limit: limit, p_window_seconds: windowSeconds });
+  } catch {
+    res = { data: null, error: true };
+  }
+  if (res.error) {
+    console.log(JSON.stringify({ event: 'rate_limit_unavailable' }));
+    return { ok: true };
+  }
+  if (res.data === true) return { ok: true };
+  const nowSec = Math.floor(now() / 1000);
+  return { ok: false, retryAfter: Math.max(1, windowSeconds - (nowSec % windowSeconds)) };
+}
+
 export function tooManyRequests(retryAfter: number): Response {
   return new Response(JSON.stringify({ ok: false, error: 'rate_limited' }), {
     status: 429,

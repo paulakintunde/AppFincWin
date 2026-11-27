@@ -1,5 +1,5 @@
 // Runs under Deno (`npm run test:deno`) and under Jest (the default suite): no runner imports.
-import { reviewerSignIn, type SignInDeps } from './signin.ts';
+import { clientIp, reviewerSignIn, type SignInDeps } from './signin.ts';
 
 type Runner = (name: string, fn: () => void | Promise<void>) => void;
 const g = globalThis as unknown as { Deno?: { test: Runner }; test?: Runner };
@@ -26,6 +26,7 @@ function harness(over: Partial<SignInDeps> = {}) {
       return p === 'right-password' ? TOKENS : null;
     },
     rateLimit: async () => ({ ok: true }),
+    rateLimitPeek: async () => ({ ok: true }),
     sleep: async (ms) => {
       calls.push('sleep:' + ms);
     },
@@ -86,23 +87,58 @@ run('IP over the limit returns 429 with Retry-After', async () => {
   assertEquals(h.calls.includes('signin'), false);
 });
 
-run('email over the limit returns 429 with Retry-After', async () => {
-  const h = harness({ rateLimit: async (k) => (k.startsWith('reviewer-email:') ? { ok: false, retryAfter: 7 } : { ok: true }) });
+run('email over the failure limit returns 429 with Retry-After, before any password check', async () => {
+  const h = harness({ rateLimitPeek: async (k) => (k.startsWith('reviewer-email:') ? { ok: false, retryAfter: 7 } : { ok: true }) });
   const r = await reviewerSignIn(post({ email: 'review@example.test', password: 'right-password' }), h.deps);
   assertEquals(r.status, 429);
   assertEquals(r.retryAfter, 7);
+  assertEquals(h.calls.includes('signin'), false);
 });
 
-run('rate limit keys and limits', async () => {
-  const seen: string[] = [];
+// 10-review S-7: only failed attempts count toward the per-email limit.
+function counting() {
+  const hits: string[] = [];
+  const peeks: string[] = [];
   const h = harness({
     rateLimit: async (k, limit, win) => {
-      seen.push(`${k}|${limit}|${win}`);
+      hits.push(`${k}|${limit}|${win}`);
+      return { ok: true };
+    },
+    rateLimitPeek: async (k, limit, win) => {
+      peeks.push(`${k}|${limit}|${win}`);
       return { ok: true };
     },
   });
-  await reviewerSignIn(post({ email: 'Review@Example.test', password: 'x' }, '9.9.9.9'), h.deps);
-  assertEquals(seen, ['reviewer-ip:9.9.9.9|10|900', 'reviewer-email:review@example.test|5|900']);
+  return { h, hits, peeks };
+}
+
+run('a wrong password counts one failure for the email', async () => {
+  const c = counting();
+  await reviewerSignIn(post({ email: 'Review@Example.test', password: 'x' }, '9.9.9.9'), c.h.deps);
+  assertEquals(c.peeks, ['reviewer-email:review@example.test|5|900']);
+  assertEquals(c.hits, ['reviewer-ip:9.9.9.9|10|900', 'reviewer-email:review@example.test|5|900']);
+});
+
+run('an unlisted email counts one failure for that email', async () => {
+  const c = counting();
+  await reviewerSignIn(post({ email: 'stranger@example.test', password: 'x' }, '9.9.9.9'), c.h.deps);
+  assertEquals(c.hits, ['reviewer-ip:9.9.9.9|10|900', 'reviewer-email:stranger@example.test|5|900']);
+});
+
+run('a successful sign-in does not count toward the email limit', async () => {
+  const c = counting();
+  const r = await reviewerSignIn(post({ email: 'review@example.test', password: 'right-password' }, '9.9.9.9'), c.h.deps);
+  assertEquals(r.status, 200);
+  assertEquals(c.peeks, ['reviewer-email:review@example.test|5|900']);
+  assertEquals(c.hits, ['reviewer-ip:9.9.9.9|10|900']);
+});
+
+run('the client IP is the right-most X-Forwarded-For entry', () => {
+  assertEquals(clientIp('6.6.6.6, 10.0.0.1, 203.0.113.9'), '203.0.113.9');
+  assertEquals(clientIp('203.0.113.9'), '203.0.113.9');
+  assertEquals(clientIp(' 1.1.1.1 , '), '1.1.1.1');
+  assertEquals(clientIp(''), 'unknown');
+  assertEquals(clientIp(null), 'unknown');
 });
 
 run('GET returns 405', async () => {

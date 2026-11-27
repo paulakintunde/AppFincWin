@@ -78,28 +78,59 @@ SQL
   echo "commit;"
 } | psql "$LOCAL_DB" -X -q -v ON_ERROR_STOP=1 -o /dev/null
 
-# 5. D-19: re-apply deletions BEFORE any check (triggers on).
-psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1 -f "$HERE/apply-deletion-log.sql"
 
-# 6. Counts, then compare with the manifest taken at dump time.
-psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1 -f "$HERE/counts.sql" > "$WORK/restored.json"
+# 5. 10-review S-4: before the deletion log touches anything, the restored copy must hold exactly the rows the dump
+# held. dump.sh counts every COPY block of data.sql into the manifest (dump_tables), so a truncated or partial backup
+# fails here instead of hiding behind the shrink that the deletion log is allowed to cause later.
+psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1 -f "$HERE/counts.sql" > "$WORK/restored-raw.json"
+logged_present="$(psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1 -c "select count(*) from auth.users where id in (select user_id from public.account_deletion_log)")"
 node -e '
 const fs = require("fs");
 const dumped = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
-const restored = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-const logged = Number(dumped.deletion_log);
+const raw = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
 const problems = [];
+if (!dumped.dump_tables || typeof dumped.dump_tables !== "object") {
+  console.error("FAIL: the manifest has no dump_tables (backup made before the S-4 fix); take a new backup");
+  process.exit(1);
+}
+for (const [table, n] of Object.entries(dumped.dump_tables)) {
+  // counts.sql covers public and auth only (minus the tables the dump leaves out).
+  if (!/^(public|auth)\./.test(table)) continue;
+  const got = raw.tables[table];
+  if (got === undefined) { problems.push(`${table}: in the dump but missing after restore`); continue; }
+  if (Number(got) !== Number(n)) problems.push(`${table}: dump holds ${n}, restored ${got}`);
+}
 for (const [table, n] of Object.entries(dumped.tables)) {
-  const got = restored.tables[table];
-  if (got === undefined) { problems.push(`${table}: missing after restore`); continue; }
-  // Deleting a logged user cascades into auth.* and public.* rows, so with a non-empty log a table may only shrink.
-  const mayShrink = logged > 0 || table === "auth.users";
-  if (mayShrink ? Number(got) > Number(n) : Number(got) !== Number(n)) problems.push(`${table}: dumped ${n}, restored ${got}`);
+  if (Number(n) > 0 && !(table in dumped.dump_tables)) problems.push(`${table}: ${n} live rows but no COPY block in the dump`);
 }
-if (logged === 0 && restored.transactions_original_amount_sum !== dumped.transactions_original_amount_sum) {
-  problems.push(`transactions_original_amount_sum: dumped ${dumped.transactions_original_amount_sum}, restored ${restored.transactions_original_amount_sum}`);
+if (Number(raw.auth_users) === 0) problems.push("auth_users is 0 after restore");
+if (problems.length) { console.error("FAIL (before the deletion log):\n" + problems.join("\n")); process.exit(1); }
+' "$WORK/counts.json" "$WORK/restored-raw.json"
+
+# 6. D-19: re-apply deletions BEFORE any later check (triggers on).
+psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1 -f "$HERE/apply-deletion-log.sql"
+
+# 7. Counts after the log. Only the logged users' rows may be gone: auth.users drops by exactly the logged users that were
+# present, and with none present every table and the amount checksum must be unchanged.
+psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1 -f "$HERE/counts.sql" > "$WORK/restored.json"
+node -e '
+const fs = require("fs");
+const before = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+const after = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+const present = Number(process.argv[3]);
+const problems = [];
+for (const [table, n] of Object.entries(before.tables)) {
+  const got = after.tables[table];
+  if (got === undefined) { problems.push(`${table}: missing after the deletion log`); continue; }
+  if (present > 0 ? Number(got) > Number(n) : Number(got) !== Number(n)) problems.push(`${table}: before the log ${n}, after ${got}`);
 }
-if (Number(restored.auth_users) === 0) problems.push("auth_users is 0 after restore");
+if (Number(after.auth_users) !== Number(before.auth_users) - present) {
+  problems.push(`auth_users: ${before.auth_users} before the log, ${after.auth_users} after, ${present} logged users present`);
+}
+if (present === 0 && after.transactions_original_amount_sum !== before.transactions_original_amount_sum) {
+  problems.push(`transactions_original_amount_sum: ${before.transactions_original_amount_sum} before the log, ${after.transactions_original_amount_sum} after`);
+}
+if (Number(after.auth_users) === 0) problems.push("auth_users is 0 after restore");
 if (problems.length) { console.error("FAIL:\n" + problems.join("\n")); process.exit(1); }
-console.log(`restore check ok: ${process.argv[3]}, ${Object.keys(dumped.tables).length} tables, ${restored.auth_users} users`);
-' "$WORK/counts.json" "$WORK/restored.json" "$newest"
+console.log(`restore check ok: ${process.argv[4]}, ${Object.keys(before.tables).length} tables, ${after.auth_users} users, ${present} deletions re-applied`);
+' "$WORK/restored-raw.json" "$WORK/restored.json" "$logged_present" "$newest"

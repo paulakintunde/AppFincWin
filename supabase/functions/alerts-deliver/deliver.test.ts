@@ -26,13 +26,15 @@ function harness(over: Partial<DeliverDeps> & { rows?: ClaimedRow[]; digest?: Di
   const sent: ExpoMessage[][] = [];
   const deps: DeliverDeps = {
     claim: async () => over.rows ?? [],
-    finish: async (id, status, delivery, ids, toks) => void calls.push(`finish:${id}:${status}:${delivery}:${ids.join('|')}:${toks.join('|')}`),
-    hold: async (id, until) => void calls.push(`hold:${id}:${until.toISOString()}`),
+    finish: over.finish ?? (async (id, status, delivery, ids, toks) => void calls.push(`finish:${id}:${status}:${delivery}:${ids.join('|')}:${toks.join('|')}`)),
+    hold: over.hold ?? (async (id, until) => void calls.push(`hold:${id}:${until.toISOString()}`)),
     requeue: async (id, after) => void calls.push(`requeue:${id}:${after.toISOString()}`),
     digestUsers: async () => over.digest ?? [],
+    digestClaim: over.digestClaim ?? (async (u, d) => (calls.push(`digestClaim:${u}:${d}`), true)),
+    digestRelease: async (u, d, p) => void calls.push(`digestRelease:${u}:${d}:${p}`),
     digestDone: async (u, d) => void calls.push(`digestDone:${u}:${d}`),
     receiptsDue: async () => over.receipts ?? [],
-    receiptsDone: async (id) => void calls.push(`receiptsDone:${id}`),
+    receiptsDone: over.receiptsDone ?? (async (id) => void calls.push(`receiptsDone:${id}`)),
     dropToken: async (t) => void calls.push(`drop:${t}`),
     send: over.send ?? (async (m) => {
       sent.push(m);
@@ -97,7 +99,7 @@ run('DeviceNotRegistered drops the token and logs no_device', async () => {
   const h = harness({ rows: [row('r1')], tickets: () => ({ status: 'error', details: { error: 'DeviceNotRegistered' } }) });
   const c = await deliverPass(h.deps, NOW);
   assertEquals(c.tokensDropped, 1);
-  assertEquals(h.calls, [`drop:${TOK}`, 'finish:r1:dropped:no_device::']);
+  assertEquals(h.calls, ['finish:r1:dropped:no_device::', `drop:${TOK}`]);
 });
 
 run('a failed send is requeued, then logged failed after 3 attempts', async () => {
@@ -119,7 +121,7 @@ run('one dead token and one live token still counts as sent', async () => {
     tickets: (m) => (m.to === TOK ? { status: 'error', details: { error: 'DeviceNotRegistered' } } : { status: 'ok', id: 'live' }),
   });
   await deliverPass(h.deps, NOW);
-  assertEquals(h.calls, [`drop:${TOK}`, 'finish:r1:sent:sent:live:ExponentPushToken[bbbbbbbbbbbbbbbb]']);
+  assertEquals(h.calls, ['finish:r1:sent:sent:live:ExponentPushToken[bbbbbbbbbbbbbbbb]', `drop:${TOK}`]);
 });
 
 run('partner text never carries a note or payee', async () => {
@@ -140,7 +142,7 @@ run('digest goes once at 08:00 local with the day summary', async () => {
   assertEquals(c.digestsSent, 1);
   assertEquals(h.sent[0][0].body, 'Today: 2 bills due, 1 category over its cap.');
   assertEquals(h.sent[0][0].channelId, 'digest');
-  assertEquals(h.calls, ['digestDone:u1:2026-11-22']);
+  assertEquals(h.calls, ['digestClaim:u1:2026-11-22', 'digestDone:u1:2026-11-22']);
 });
 
 run('digest users outside the window or already sent today are untouched', async () => {
@@ -157,7 +159,108 @@ run('a transient digest failure leaves it for the next minute', async () => {
   const eight = new Date('2026-11-22T16:00:00Z');
   const h = harness({ digest: [digestUser()], send: async () => { throw new Error('network'); } });
   await deliverPass(h.deps, eight);
+  // The day was claimed, then given back (to the date it had) so the next minute retries.
+  assertEquals(h.calls, ['digestClaim:u1:2026-11-22', 'digestRelease:u1:2026-11-22:2026-11-21']);
+});
+
+// 10-review S-1: one failed write cannot abort the pass and leave sent rows in 'sending' to be sent again.
+run('a finish that throws for one row does not stop the other rows being finished', async () => {
+  const calls: string[] = [];
+  const h = harness({
+    rows: [row('r1'), row('r2'), row('r3')],
+    finish: async (id, status) => {
+      if (id === 'r2') throw new Error('alerts_finish');
+      calls.push(`finish:${id}:${status}`);
+    },
+  });
+  const c = await deliverPass(h.deps, NOW);
+  assertEquals(calls, ['finish:r1:sent', 'finish:r3:sent']);
+  assertEquals(c.sent, 2);
+  assertEquals(c.errors, 1);
+  assertEquals(h.sent.length, 1);
+});
+
+run('a hold or no-device write that throws does not stop the sends', async () => {
+  const night = new Date('2026-11-22T07:10:00Z');
+  const h = harness({
+    rows: [row('r1'), row('r2', { prefs: { mode: 'instant', quiet_enabled: false, quiet_start: '22:00', quiet_end: '07:00', time_zone: 'UTC', last_digest_date: null } })],
+    hold: async () => {
+      throw new Error('alerts_hold');
+    },
+  });
+  const c = await deliverPass(h.deps, night);
+  assertEquals(c.held, 0);
+  assertEquals(c.sent, 1);
+  assertEquals(c.errors, 1);
+});
+
+run('a dropToken that throws still finishes the row and drops the other tokens', async () => {
+  const dead = ['ExponentPushToken[d1]', 'ExponentPushToken[d2]'];
+  const h = harness({ rows: [row('r1', { tokens: dead })], tickets: () => ({ status: 'error', details: { error: 'DeviceNotRegistered' } }) });
+  const dropped: string[] = [];
+  h.deps.dropToken = async (t) => {
+    if (t === dead[0]) throw new Error('alerts_drop_token');
+    dropped.push(t);
+  };
+  const c = await deliverPass(h.deps, NOW);
+  assertEquals(h.calls, ['finish:r1:dropped:no_device::']);
+  assertEquals(dropped, [dead[1]]);
+  assertEquals(c.tokensDropped, 1);
+  assertEquals(c.errors, 1);
+});
+
+run('a digest already claimed by another run is not sent again', async () => {
+  const eight = new Date('2026-11-22T16:00:00Z');
+  const h = harness({ digest: [digestUser()], digestClaim: async () => false });
+  const c = await deliverPass(h.deps, eight);
+  assertEquals(c.digestsSent, 0);
+  assertEquals(h.sent.length, 0);
   assertEquals(h.calls, []);
+});
+
+run('a digest claim that throws skips that person and still serves the others', async () => {
+  const eight = new Date('2026-11-22T16:00:00Z');
+  const h = harness({
+    digest: [digestUser(), digestUser({ user_id: 'u2' })],
+    digestClaim: async (u) => {
+      if (u === 'u1') throw new Error('alerts_digest_claim');
+      return true;
+    },
+  });
+  const c = await deliverPass(h.deps, eight);
+  assertEquals(c.digestsSent, 1);
+  assertEquals(c.errors, 1);
+  assertEquals(h.sent.flat().length, 1);
+  assertEquals(h.calls, ['digestDone:u2:2026-11-22']);
+});
+
+run('two overlapping runs send the 08:00 digest once', async () => {
+  const eight = new Date('2026-11-22T16:00:00Z');
+  const taken = new Set<string>();
+  const claim = async (u: string, d: string) => {
+    const k = `${u}:${d}`;
+    if (taken.has(k)) return false;
+    taken.add(k);
+    return true;
+  };
+  const a = harness({ digest: [digestUser()], digestClaim: claim });
+  const b = harness({ digest: [digestUser()], digestClaim: claim });
+  const [ca, cb] = await Promise.all([deliverPass(a.deps, eight), deliverPass(b.deps, eight)]);
+  assertEquals(ca.digestsSent + cb.digestsSent, 1);
+  assertEquals(a.sent.flat().length + b.sent.flat().length, 1);
+});
+
+run('receipts: a receiptsDone that throws does not stop the rest', async () => {
+  const h = harness({
+    receipts: [{ id: 'o1', ticket_ids: ['t1'], ticket_tokens: ['tokA'] }, { id: 'o2', ticket_ids: ['t2'], ticket_tokens: ['tokB'] }],
+    getReceipts: async () => ({ t1: { status: 'ok' }, t2: { status: 'error', details: { error: 'DeviceNotRegistered' } } }),
+    receiptsDone: async (id) => {
+      if (id === 'o1') throw new Error('alerts_receipts_done');
+    },
+  });
+  const r = await receiptsPass(h.deps, NOW);
+  assertEquals(r, { checked: 1, tokensDropped: 1 });
+  assertEquals(h.calls, ['drop:tokB']);
 });
 
 run('receipts: DeviceNotRegistered drops the token and checked rows are marked', async () => {
