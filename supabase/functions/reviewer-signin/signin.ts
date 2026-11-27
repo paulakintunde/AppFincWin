@@ -12,6 +12,8 @@ export interface SignInDeps {
   isListed(email: string): Promise<boolean>;
   signInWithPassword(email: string, password: string): Promise<SignInTokens | null>;
   rateLimit(key: string, limit: number, windowSeconds: number): Promise<RateResult>;
+  // 10-review S-7: reads a counter without counting (the per-email limit counts failed attempts only).
+  rateLimitPeek(key: string, limit: number, windowSeconds: number): Promise<RateResult>;
   sleep(ms: number): Promise<void>;
   // Optional; receives only event names, never the body.
   log?(line: unknown): void;
@@ -27,6 +29,13 @@ export const FIXED_DELAY_MS = 400;
 const IP_LIMIT = { limit: 10, windowSeconds: 900 };
 const EMAIL_LIMIT = { limit: 5, windowSeconds: 900 };
 const INVALID: SignInResult = { status: 401, body: { ok: false, error: 'invalid' } };
+
+// 10-review S-7: the client controls the left of X-Forwarded-For; the right-most entry is the one the platform's own
+// proxy appended, so that is the address the per-IP limit keys on.
+export function clientIp(forwardedFor: string | null): string {
+  const parts = (forwardedFor ?? '').split(',').map((s) => s.trim()).filter((s) => s.length > 0);
+  return parts.length > 0 ? parts[parts.length - 1] : 'unknown';
+}
 
 export async function reviewerSignIn(
   req: { method: string; ip: string; body: unknown },
@@ -50,8 +59,18 @@ export async function reviewerSignIn(
   const email = b.email.trim().toLowerCase();
   const password = b.password;
 
-  const emailHit = await deps.rateLimit('reviewer-email:' + email, EMAIL_LIMIT.limit, EMAIL_LIMIT.windowSeconds);
-  if (!emailHit.ok) return { status: 429, body: { ok: false, error: 'rate_limited' }, retryAfter: emailHit.retryAfter };
+  // Only failures count toward the per-email limit, so a reviewer signing in on several devices is never locked out
+  // by their own successful sign-ins. Peek first; a failure below adds the hit.
+  const emailKey = 'reviewer-email:' + email;
+  const emailPeek = await deps.rateLimitPeek(emailKey, EMAIL_LIMIT.limit, EMAIL_LIMIT.windowSeconds);
+  if (!emailPeek.ok) return { status: 429, body: { ok: false, error: 'rate_limited' }, retryAfter: emailPeek.retryAfter };
+  const failed = async () => {
+    try {
+      await deps.rateLimit(emailKey, EMAIL_LIMIT.limit, EMAIL_LIMIT.windowSeconds);
+    } catch {
+      // Counting is best effort; the refusal stands either way.
+    }
+  };
 
   let listed = false;
   try {
@@ -60,7 +79,7 @@ export async function reviewerSignIn(
     listed = false;
   }
   if (!listed) {
-    await deps.sleep(FIXED_DELAY_MS);
+    await Promise.all([failed(), deps.sleep(FIXED_DELAY_MS)]);
     deps.log?.({ event: 'reviewer_signin_refused' });
     return INVALID;
   }
@@ -73,6 +92,7 @@ export async function reviewerSignIn(
     tokens = null;
   }
   if (!tokens) {
+    await failed();
     deps.log?.({ event: 'reviewer_signin_refused' });
     return INVALID;
   }

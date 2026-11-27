@@ -47,11 +47,27 @@ test('dump.sh encrypts to the public key, shreds plaintext and checks size and u
 test('restore-check.sh restores without triggers, re-applies deletions before counting, checks 36 h', () => {
   assert.match(restore, /session_replication_role = replica/);
   const del = restore.indexOf('apply-deletion-log.sql');
-  const cnt = restore.indexOf('counts.sql');
-  assert.ok(del > 0 && cnt > 0 && del < cnt, 'deletion log must run before counts.sql');
+  const cnt = restore.lastIndexOf('counts.sql');
+  assert.ok(del > 0 && cnt > 0 && del < cnt, 'deletion log must run before the final counts.sql');
   assert.match(restore, /36 \* 3600/);
   assert.match(restore, /trap /);
   assert.match(restore, /chmod 600/);
+});
+
+// 10-review S-4: a truncated backup must not pass because the deletion log lets tables shrink.
+test('dump.sh records per-table row counts read from the dump itself', () => {
+  assert.match(dump, /\^COPY/);
+  assert.match(dump, /dump_tables/);
+  assert.ok(dump.indexOf('dump_tables') < dump.indexOf('tar -czf'), 'dump counts must be in the manifest before packing');
+});
+
+test('restore-check.sh requires exact dump counts before the deletion log, then only the logged shrink', () => {
+  const exact = restore.indexOf('dump_tables');
+  const del = restore.indexOf('apply-deletion-log.sql');
+  assert.ok(exact > 0 && exact < del, 'exact dump counts must be checked before the deletion log');
+  assert.match(restore, /Number\(got\) !== Number\(n\)/);
+  assert.match(restore, /logged_present/);
+  assert.match(restore, /before\.auth_users\) - present/);
 });
 
 test('apply-deletion-log.sql deletes the logged users in one transaction', () => {

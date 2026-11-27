@@ -35,6 +35,14 @@ Deno.serve(async (req) => {
       await call('alerts_requeue', { p_id: id, p_after: after.toISOString() });
     },
     digestUsers: () => call('alerts_digest_users'),
+    digestClaim: async (userId, localDate) => {
+      const { data, error } = await admin.rpc('alerts_digest_claim', { p_user: userId, p_local_date: localDate });
+      if (error) throw new Error('alerts_digest_claim');
+      return data === true;
+    },
+    digestRelease: async (userId, localDate, previous) => {
+      await call('alerts_digest_release', { p_user: userId, p_local_date: localDate, p_previous: previous });
+    },
     digestDone: async (userId, localDate) => {
       await call('alerts_digest_done', { p_user: userId, p_local_date: localDate });
     },

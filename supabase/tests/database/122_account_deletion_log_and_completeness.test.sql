@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(14);
+select extensions.plan(17);
 
 insert into auth.users (id, instance_id, aud, role, email, raw_user_meta_data, created_at, updated_at) values
   ('20000000-0000-4000-8000-0000000000a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'a122@test.local', '{"full_name":"A"}', now(), now()),
@@ -36,6 +36,11 @@ insert into public.recurring_series (id, household_id, created_by, account_id, n
   values ('e1220000-0000-4000-8000-000000000001', (select h from ids), '20000000-0000-4000-8000-0000000000a1', 'a1220000-0000-4000-8000-00000000000a', 'A bill', -500, 'USD', 'monthly', current_date - 10, 'UTC');
 insert into public.debts (id, household_id, created_by, name, kind, currency)
   values ('d2220000-0000-4000-8000-000000000001', (select h from ids), '20000000-0000-4000-8000-0000000000a1', 'Loan', 'loan', 'USD');
+-- 10-review S-3: store webhook events keyed by A (text id), one naming A only inside the payload, and one for B.
+insert into public.plan_events (rc_event_id, type, app_user_id, environment, payload) values
+  ('ev122-a', 'INITIAL_PURCHASE', '20000000-0000-4000-8000-0000000000a1', 'SANDBOX', '{"event":{"app_user_id":"20000000-0000-4000-8000-0000000000a1"}}'),
+  ('ev122-t', 'TRANSFER', null, 'SANDBOX', '{"event":{"transferred_from":["20000000-0000-4000-8000-0000000000a1"],"transferred_to":["x"]}}'),
+  ('ev122-b', 'INITIAL_PURCHASE', '20000000-0000-4000-8000-0000000000a2', 'SANDBOX', '{"event":{"app_user_id":"20000000-0000-4000-8000-0000000000a2"}}');
 
 -- 1. Log table: shape and privacy ---------------------------------------------------------------------------------
 select extensions.has_table('public', 'account_deletion_log', 'account_deletion_log exists');
@@ -79,6 +84,31 @@ select extensions.lives_ok($$
   end
   $d$
 $$, 'no public person column still names A');
+
+-- 10-review S-3: text columns can hold a user id too (plan_events.app_user_id is the store's text id).
+select extensions.lives_ok($$
+  do $d$
+  declare
+    r record;
+    n bigint;
+  begin
+    for r in
+      select c.table_name, c.column_name
+        from information_schema.columns c
+        join information_schema.tables t on t.table_schema = c.table_schema and t.table_name = c.table_name and t.table_type = 'BASE TABLE'
+       where c.table_schema = 'public' and c.data_type in ('text', 'character varying')
+    loop
+      execute format('select count(*) from public.%I where %I = $1', r.table_name, r.column_name)
+        into n using '20000000-0000-4000-8000-0000000000a1';
+      if n > 0 then
+        raise exception 'completeness: %.% (text) still names the deleted user (% rows)', r.table_name, r.column_name, n;
+      end if;
+    end loop;
+  end
+  $d$
+$$, 'no public text column still holds A''s id');
+select extensions.is(public.t122_val('select count(*) from public.plan_events where rc_event_id in (''ev122-a'', ''ev122-t'')'), '0', 'store events naming A are gone, including one naming A only in its payload');
+select extensions.is(public.t122_val('select count(*) from public.plan_events where rc_event_id = ''ev122-b'''), '1', 'B''s store event stays');
 
 select extensions.is(public.t122_val('select owner_id::text from public.households where id = (select h from ids)'), '20000000-0000-4000-8000-0000000000a2', 'ownership passed to B');
 select extensions.is(public.t122_val('select count(*) from public.transactions where name = ''J1 joint'' and created_by is null'), '1', 'the shared line stays as Former member');
