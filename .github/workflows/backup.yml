@@ -25,6 +25,9 @@ jobs:
       # Plan 10-29 confirms the server major with `select version()`; the CLI picks the matching image.
       - name: Install age and the Postgres client
         run: |
+          # 10-30 review: a broken third-party apt source on the runner image (packages.microsoft.com 403, 2026-11-27)
+          # stopped apt-get update and so the backup. We need only Ubuntu packages, so drop the extra sources first.
+          sudo rm -f /etc/apt/sources.list.d/microsoft*.list /etc/apt/sources.list.d/microsoft*.sources
           sudo apt-get update -qq
           sudo apt-get install -y -qq age postgresql-client
       # GitHub-hosted runners are IPv4-only, so DB_URL is the session pooler (port 5432), never the direct host.
