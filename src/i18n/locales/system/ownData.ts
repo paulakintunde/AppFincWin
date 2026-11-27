@@ -49,7 +49,8 @@ export const ownData = {
     currencyMissing: 'Currency missing',
     alreadyExists: 'Already exists',
     importAnyway: 'Import anyway',
-    tooManyDecimals: 'More decimals than {{currency}} allows',
+    // 10-review (D-1): amounts in an import file are whole numbers in the smallest unit, as Export writes them
+    decimalAmount: 'Amounts are in the smallest unit, such as cents, with no decimal point, as Export writes them: 25.00 is 2500',
     importRows: 'Import {{count}} rows',
     addedToast: '{{count}} {{kind}} added',
     unreadable: 'This file could not be read. Check that it is a CSV saved from FincWin or the template.',

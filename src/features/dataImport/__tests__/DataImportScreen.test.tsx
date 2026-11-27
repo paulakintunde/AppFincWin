@@ -22,8 +22,9 @@ jest.mock('@/ui/haptics', () => ({
 jest.mock('@/features/record/useRecordContext', () => ({
   useRecordContext: () => ({ householdId: 'hh', userId: 'me', homeCurrency: 'USD', today: '2026-11-23' }),
 }));
+let mockAccountsData: { id: string; name: string }[] | undefined = [{ id: 'a-1', name: 'Savings' }];
 jest.mock('@/data/queries/accounts', () => ({
-  useAccounts: () => ({ data: [{ id: 'a-1', name: 'Savings' }] }),
+  useAccounts: () => ({ data: mockAccountsData }),
 }));
 jest.mock('@/data/queries/decide', () => ({ useDebts: () => ({ data: [] }) }));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: [{ id: 'g-1', name: 'Holiday' }] }) }));
@@ -55,6 +56,25 @@ describe('DataImportScreen (10-18)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setMockQueued(0);
+    mockAccountsData = [{ id: 'a-1', name: 'Savings' }];
+  });
+
+  it('10-review (D-5): choosing a file waits until the existing lists have loaded', async () => {
+    mockAccountsData = undefined;
+    const { getByText } = await render(wrap());
+    await fireEvent.press(getByText('Choose a file'));
+    expect(mockPick).not.toHaveBeenCalled();
+  });
+
+  it('10-review (D-1): shows amounts as money and flags a decimal amount instead of re-scaling it', async () => {
+    pickText('name,kind,currency,opening_balance\nEveryday,checking,USD,150000\nSpare,cash,USD,1500.00\n');
+    const { getByText, findByTestId, getByTestId, queryByTestId } = await render(wrap());
+    await fireEvent.press(getByText('Choose a file'));
+    expect((await findByTestId('import-summary')).props.children).toBe('1 rows ready, 1 need a look');
+    expect(getByTestId('import-row-0-amount').props.children).toBe('$1,500');
+    expect(queryByTestId('import-row-1-amount')).toBeNull();
+    expect(getByTestId('import-row-1-check')).toBeTruthy();
+    expect(getByText('Amounts are in the smallest unit, such as cents, with no decimal point, as Export writes them: 25.00 is 2500')).toBeTruthy();
   });
 
   it('shows the template card and saves a template named for the segment', async () => {

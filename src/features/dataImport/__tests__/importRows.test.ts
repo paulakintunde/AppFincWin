@@ -1,5 +1,4 @@
 import { classifyRows, DATA_CSV_SCHEMAS, parseDataCsv, type DataTable } from '@/engine/dataCsv';
-import { currencyExponent } from '@/engine/money/currencyExponents';
 import { toCsv } from '@/features/export/csvSerialize';
 import { reportRows, toCreateInputs, type ImportContext } from '../importRows';
 import { buildTemplate, templateColumns } from '../templates';
@@ -8,7 +7,7 @@ const ctx: ImportContext = { householdId: 'hh', ownerId: 'me', homeCurrency: 'US
 const ID = '123e4567-e89b-42d3-a456-426614174000';
 
 function parse(table: DataTable, csv: string) {
-  const r = parseDataCsv(table, csv, currencyExponent);
+  const r = parseDataCsv(table, csv);
   if (!r.ok) throw new Error(`parse failed: ${r.error}`);
   return r.rows;
 }

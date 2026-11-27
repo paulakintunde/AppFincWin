@@ -1,6 +1,8 @@
 /**
  * 10-07 (DAT-03): pure import parsing for accounts, goals, debts and investments. Built on the statement tokenizer;
  * money is read as integer minor units and never rounded; the export's formula-injection apostrophe is reversed.
+ * 10-review (D-1): money cells have ONE unit, integer minor units as Export writes them. A cell with a decimal point is
+ * flagged 'decimal-amount' and never re-scaled, so a spreadsheet that re-saves 150000 as 150000.00 cannot import 100x.
  * No imports from db/, state/, services/, ui/ or react.
  */
 import { tokenize } from '../csv/tokenize';
@@ -11,7 +13,7 @@ export type DataRowIssue =
   | 'name-missing'
   | 'currency-missing'
   | 'bad-amount'
-  | 'too-many-decimals'
+  | 'decimal-amount'
   | 'bad-date'
   | 'bad-choice'
   | 'bad-id';
@@ -30,20 +32,23 @@ export type DataCsvResult =
       error: 'empty' | 'unreadable' | 'too-many-rows' | 'header-mismatch';
       missing?: string[];
       unknown?: string[];
+      /** 10-review (D-6): a column named more than once; which value wins would be a guess. */
+      duplicate?: string[];
     };
 
 export type RowMatch = 'new' | 'same-id' | 'same-name';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const WHOLE = /^-?\d+$/;
-const DECIMAL = /^(-?)(\d*)\.(\d+)$/;
+const DECIMAL = /^-?(\d+\.\d*|\.\d+)$/;
 const DATE = /^(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?$/;
 
 /**
  * Reverses the export's guard: one leading apostrophe is removed when apostrophes run up to = + - @.
  * 10-30: export adds one ' to any text matching ^'*[=+-@], so "'=!" round-trips as "''=!" and comes back intact.
+ * 10-review (D-8): a leading tab or carriage return is guarded too (OWASP CSV injection list), mirrored here.
  */
-const GUARDED = /^'+[=+\-@]/;
+const GUARDED = /^'+[=+\-@\t\r]/;
 export function unescapeCell(cell: string): string {
   return GUARDED.test(cell) ? cell.slice(1) : cell;
 }
@@ -59,32 +64,19 @@ function validDate(text: string): boolean {
   return d <= days;
 }
 
-type MoneyOutcome = { minor: number } | { issue: 'bad-amount' | 'too-many-decimals' };
+type MoneyOutcome = { minor: number } | { issue: 'bad-amount' | 'decimal-amount' };
 
-function readMoney(cell: string, exponent: number): MoneyOutcome {
-  let minor: number;
-  if (WHOLE.test(cell)) {
-    minor = Number.parseInt(cell, 10);
-  } else {
-    const m = DECIMAL.exec(cell);
-    if (!m) return { issue: 'bad-amount' };
-    const frac = m[3] as string;
-    if (frac.length > exponent) {
-      // A trailing run of zeros beyond the exponent is still more precision than the currency has.
-      return { issue: 'too-many-decimals' };
-    }
-    const digits = `${m[2] || '0'}${frac.padEnd(exponent, '0')}`;
-    minor = Number.parseInt(digits, 10) * (m[1] === '-' ? -1 : 1);
+function readMoney(cell: string): MoneyOutcome {
+  if (!WHOLE.test(cell)) {
+    // 10-review (D-1): "2500.00" is not read as major units; the person is asked to write it as minor units.
+    return { issue: DECIMAL.test(cell) ? 'decimal-amount' : 'bad-amount' };
   }
+  const minor = Number.parseInt(cell, 10);
   if (!Number.isSafeInteger(minor) || Math.abs(minor) > MAX_ABS_AMOUNT_MINOR) return { issue: 'bad-amount' };
   return { minor };
 }
 
-export function parseDataCsv(
-  table: DataTable,
-  text: string,
-  exponentOf: (currency: string) => number
-): DataCsvResult {
+export function parseDataCsv(table: DataTable, text: string): DataCsvResult {
   const schema = DATA_CSV_SCHEMAS[table];
   const tok = tokenize(text);
   if (!tok.ok) {
@@ -97,10 +89,12 @@ export function parseDataCsv(
   const allowed = new Set(schema.allowed);
   const missing = schema.required.filter((c) => !header.includes(c));
   const unknown = header.filter((c) => !allowed.has(c));
-  if (missing.length > 0 || unknown.length > 0) {
+  const duplicate = [...new Set(header.filter((c, i) => c !== '' && header.indexOf(c) !== i))];
+  if (missing.length > 0 || unknown.length > 0 || duplicate.length > 0) {
     const out: DataCsvResult = { ok: false, error: 'header-mismatch' };
     if (missing.length > 0) out.missing = [...missing];
     if (unknown.length > 0) out.unknown = unknown;
+    if (duplicate.length > 0) out.duplicate = duplicate;
     return out;
   }
 
@@ -128,7 +122,6 @@ export function parseDataCsv(
     if (currency === null || currency === undefined) add('currency-missing');
     if (values.id !== null && values.id !== undefined && !UUID.test(values.id)) add('bad-id');
 
-    const exponent = exponentOf(currency ?? '');
     const money: Record<string, number | null> = {};
     for (const col of header) {
       if (!moneyCols.has(col)) continue;
@@ -138,7 +131,7 @@ export function parseDataCsv(
         if (schema.required.includes(col)) add('bad-amount');
         continue;
       }
-      const out = readMoney(cell.trim(), exponent);
+      const out = readMoney(cell.trim());
       if ('issue' in out) {
         money[col] = null;
         add(out.issue);
@@ -161,17 +154,25 @@ export function parseDataCsv(
   return { ok: true, table, columns: header, rows };
 }
 
+/**
+ * 10-review (D-5): a name repeated inside the same file is 'same-name' to its earlier row, so two "Savings" rows are
+ * not both added silently; the person can still switch the later one on.
+ */
 export function classifyRows(
   rows: readonly DataCsvRow[],
   existing: readonly { id: string; name: string }[]
 ): RowMatch[] {
   const ids = new Set(existing.map((e) => e.id));
   const names = new Set(existing.map((e) => e.name.trim().toLowerCase()));
+  const seen = new Set<string>();
   return rows.map((row) => {
     const id = row.values.id;
-    if (id !== null && id !== undefined && ids.has(id)) return 'same-id';
     const name = row.values.name;
-    if (name !== null && name !== undefined && names.has(name.trim().toLowerCase())) return 'same-name';
+    const key = name !== null && name !== undefined ? name.trim().toLowerCase() : null;
+    const earlier = key !== null && seen.has(key);
+    if (key !== null) seen.add(key);
+    if (id !== null && id !== undefined && ids.has(id)) return 'same-id';
+    if (key !== null && (names.has(key) || earlier)) return 'same-name';
     return 'new';
   });
 }
