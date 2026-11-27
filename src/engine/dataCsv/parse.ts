@@ -39,10 +39,13 @@ const WHOLE = /^-?\d+$/;
 const DECIMAL = /^(-?)(\d*)\.(\d+)$/;
 const DATE = /^(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?$/;
 
-/** Reverses the export's guard: one leading apostrophe is removed only before = + - @. */
+/**
+ * Reverses the export's guard: one leading apostrophe is removed when apostrophes run up to = + - @.
+ * 10-30: export adds one ' to any text matching ^'*[=+-@], so "'=!" round-trips as "''=!" and comes back intact.
+ */
+const GUARDED = /^'+[=+\-@]/;
 export function unescapeCell(cell: string): string {
-  if (cell.length > 1 && cell[0] === "'" && '=+-@'.includes(cell[1] as string)) return cell.slice(1);
-  return cell;
+  return GUARDED.test(cell) ? cell.slice(1) : cell;
 }
 
 function validDate(text: string): boolean {

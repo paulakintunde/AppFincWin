@@ -7,6 +7,7 @@ const INJECTION_LEAD = /^[=+\-@]/;
 function escapeCell(value: string | number | null): string {
   let text = value === null ? '' : String(value);
   if (INJECTION_LEAD.test(text) && !(typeof value === 'number' || PLAIN_NUMBER.test(text))) text = `'${text}`;
+  else if (/^'+[=+\-@]/.test(text)) text = `'${text}`; // 10-30: keep leading 's that import would strip
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 function toCsvLike(cols: readonly string[], rows: Record<string, string | number | null>[]): string {
@@ -19,7 +20,7 @@ function toCsvLike(cols: readonly string[], rows: Record<string, string | number
 const nameArb = fc
   .oneof(
     fc.string({ minLength: 1, maxLength: 20 }),
-    fc.constantFrom('=SUM(A1)', '+1', '-x', '@a', 'a,b', 'q"q', 'l1\nl2', 'é日本', '-5', '+7.5')
+    fc.constantFrom('=SUM(A1)', '+1', '-x', '@a', 'a,b', 'q"q', 'l1\nl2', 'é日本', '-5', '+7.5', "'=!", "''+1", "'@a")
   )
   .filter((s) => s.trim() !== '' && s === s.trim() && !/[\r\u0000-\u0008]/.test(s));
 
