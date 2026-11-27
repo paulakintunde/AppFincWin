@@ -5,8 +5,10 @@
  */
 
 const PLAIN_NUMBER = /^-?\d+(\.\d+)?$/;
-const INJECTION_LEAD = /^[=+\-@]/;
-const ESCAPED_LEAD = /^'+[=+\-@]/;
+// 10-review (D-8): a leading tab or carriage return is a formula lead too (OWASP CSV injection list); the import side
+// (engine/dataCsv GUARDED) mirrors this set.
+const INJECTION_LEAD = /^[=+\-@\t\r]/;
+const ESCAPED_LEAD = /^'+[=+\-@\t\r]/;
 
 function cellText(value: unknown): string {
   if (value === null || value === undefined) return '';
