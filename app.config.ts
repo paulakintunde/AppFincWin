@@ -59,6 +59,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // it), not EU as originally decided — see docs/decisions/error-tracking.md.
     ['@sentry/react-native/expo', { organization: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT }],
     ['expo-splash-screen', { backgroundColor: '#F6F4EE', image: './assets/splash-icon.png', imageWidth: 160 }],
+    // 10-30 (D-04): Android keeps no app-switcher picture; the JS AppCover is drawn too late there.
+    './plugins/withRecentsCover',
     ...(googleIosUrlScheme
       ? ([['@react-native-google-signin/google-signin', { iosUrlScheme: googleIosUrlScheme }]] as [string, unknown][])
       : []),
