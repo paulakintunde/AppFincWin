@@ -41,6 +41,11 @@ export type DeliverDeps = {
   hold(id: string, until: Date): Promise<void>;
   requeue(id: string, after: Date): Promise<void>;
   digestUsers(): Promise<DigestUser[]>;
+  // 10-review S-1: takes today's digest for this person before anything is sent (last_digest_date written atomically).
+  // False means another run already took it, so this run sends nothing to them.
+  digestClaim(userId: string, localDate: string): Promise<boolean>;
+  // Gives the day back after a failure that may pass, so the next minute can try again.
+  digestRelease(userId: string, localDate: string, previous: string | null): Promise<void>;
   digestDone(userId: string, localDate: string): Promise<void>;
   receiptsDue(): Promise<ReceiptRow[]>;
   receiptsDone(id: string): Promise<void>;
@@ -60,7 +65,22 @@ export type DeliverCounts = {
   requeued: number;
   tokensDropped: number;
   digestsSent: number;
+  // Bookkeeping calls that failed. Each failure is logged and skipped, so one cannot stop the rest of the pass.
+  errors: number;
 };
+
+// 10-review S-1: every per-row write after a send runs on its own. A throw is logged (no ids, no text) and counted, and the
+// pass carries on, so the rows already sent are still finished and are not left in 'sending' to be sent again.
+async function step(deps: DeliverDeps, counts: { errors: number }, what: string, fn: () => Promise<void>): Promise<boolean> {
+  try {
+    await fn();
+    return true;
+  } catch (e) {
+    counts.errors++;
+    deps.log({ event: 'bookkeeping_failed', step: what, error: e instanceof Error ? e.message : 'error' });
+    return false;
+  }
+}
 
 const chunk = <T>(a: T[], n: number): T[][] => {
   const out: T[][] = [];
@@ -98,7 +118,7 @@ async function sendAll(deps: DeliverDeps, messages: ExpoMessage[]): Promise<Outc
 }
 
 export async function deliverPass(deps: DeliverDeps, now: Date): Promise<DeliverCounts> {
-  const counts: DeliverCounts = { claimed: 0, sent: 0, held: 0, digested: 0, noDevice: 0, failed: 0, requeued: 0, tokensDropped: 0, digestsSent: 0 };
+  const counts: DeliverCounts = { claimed: 0, sent: 0, held: 0, digested: 0, noDevice: 0, failed: 0, requeued: 0, tokensDropped: 0, digestsSent: 0, errors: 0 };
   const rows = await deps.claim(CLAIM_LIMIT);
   counts.claimed = rows.length;
 
@@ -106,18 +126,15 @@ export async function deliverPass(deps: DeliverDeps, now: Date): Promise<Deliver
   for (const row of rows) {
     const tz = safeZone(row.prefs.time_zone);
     if (row.prefs.mode === 'digest') {
-      await deps.finish(row.id, 'digest', null, [], []);
-      counts.digested++;
+      if (await step(deps, counts, 'finish', () => deps.finish(row.id, 'digest', null, [], []))) counts.digested++;
       continue;
     }
     if (inQuietHours(now, tz, row.prefs.quiet_enabled, row.prefs.quiet_start, row.prefs.quiet_end)) {
-      await deps.hold(row.id, quietEndsAt(now, tz, row.prefs.quiet_end));
-      counts.held++;
+      if (await step(deps, counts, 'hold', () => deps.hold(row.id, quietEndsAt(now, tz, row.prefs.quiet_end)))) counts.held++;
       continue;
     }
     if (row.tokens.length === 0) {
-      await deps.finish(row.id, 'dropped', 'no_device', [], []);
-      counts.noDevice++;
+      if (await step(deps, counts, 'finish', () => deps.finish(row.id, 'dropped', 'no_device', [], []))) counts.noDevice++;
       continue;
     }
     const body = pushText(row.kind, row.params);
@@ -144,38 +161,45 @@ export async function deliverPass(deps: DeliverDeps, now: Date): Promise<Deliver
       dropped.add(s.token);
     } else e.transient++;
   });
-  for (const token of dropped) {
-    await deps.dropToken(token);
-    counts.tokensDropped++;
-  }
 
+  // Rows first: once a message has gone out, recording that matters more than tidying tokens.
   for (const e of byRow.values()) {
     if (e.okIds.length > 0) {
-      await deps.finish(e.row.id, 'sent', 'sent', e.okIds, e.okTokens);
-      counts.sent++;
+      if (await step(deps, counts, 'finish', () => deps.finish(e.row.id, 'sent', 'sent', e.okIds, e.okTokens))) counts.sent++;
     } else if (e.transient === 0) {
       // Every token was dead: the log still says why nothing arrived.
-      await deps.finish(e.row.id, 'dropped', 'no_device', [], []);
-      counts.noDevice++;
+      if (await step(deps, counts, 'finish', () => deps.finish(e.row.id, 'dropped', 'no_device', [], []))) counts.noDevice++;
     } else if (e.row.attempts >= MAX_ATTEMPTS) {
-      await deps.finish(e.row.id, 'dropped', 'failed', [], []);
-      counts.failed++;
+      if (await step(deps, counts, 'finish', () => deps.finish(e.row.id, 'dropped', 'failed', [], []))) counts.failed++;
     } else {
-      await deps.requeue(e.row.id, new Date(now.getTime() + e.row.attempts * RETRY_MINUTES * 60000));
-      counts.requeued++;
+      const after = new Date(now.getTime() + e.row.attempts * RETRY_MINUTES * 60000);
+      if (await step(deps, counts, 'requeue', () => deps.requeue(e.row.id, after))) counts.requeued++;
     }
   }
+  for (const token of dropped) {
+    if (await step(deps, counts, 'drop_token', () => deps.dropToken(token))) counts.tokensDropped++;
+  }
 
-  counts.digestsSent = await digestPass(deps, now);
+  try {
+    counts.digestsSent = await digestPass(deps, now, counts);
+  } catch (e) {
+    counts.errors++;
+    deps.log({ event: 'digest_pass_failed', error: e instanceof Error ? e.message : 'error' });
+  }
   return counts;
 }
 
 // One summary per person per day at 08:00 local (D-11). Users outside the window are left alone.
-async function digestPass(deps: DeliverDeps, now: Date): Promise<number> {
+// 10-review S-1: each person's day is claimed in the database before sending, so two overlapping minute runs cannot both send it.
+async function digestPass(deps: DeliverDeps, now: Date, counts: { errors: number }): Promise<number> {
   const users = (await deps.digestUsers()).filter((u) => isDigestWindow(now, safeZone(u.prefs.time_zone), u.prefs.last_digest_date));
   const toSend: { user: DigestUser; token: string; message: ExpoMessage }[] = [];
   const done: DigestUser[] = [];
+  const dayOf = (u: DigestUser) => localParts(now, safeZone(u.prefs.time_zone)).date;
   for (const u of users) {
+    let mine = false;
+    if (!(await step(deps, counts, 'digest_claim', async () => void (mine = await deps.digestClaim(u.user_id, dayOf(u)))))) continue;
+    if (!mine) continue;
     if (u.tokens.length === 0) {
       done.push(u);
       continue;
@@ -185,6 +209,7 @@ async function digestPass(deps: DeliverDeps, now: Date): Promise<number> {
   }
   const outcomes = await sendAll(deps, toSend.map((s) => s.message));
   const state = new Map<string, { user: DigestUser; ok: boolean; transient: boolean }>();
+  const dead = new Set<string>();
   for (let i = 0; i < toSend.length; i++) {
     const s = toSend[i];
     const e = state.get(s.user.user_id) ?? { user: s.user, ok: false, transient: false };
@@ -192,18 +217,21 @@ async function digestPass(deps: DeliverDeps, now: Date): Promise<number> {
     const o = outcomes[i];
     if ('failed' in o) e.transient = true;
     else if (o.ticket.status === 'ok') e.ok = true;
-    else if (errorOf(o.ticket) === 'DeviceNotRegistered') await deps.dropToken(s.token);
+    else if (errorOf(o.ticket) === 'DeviceNotRegistered') dead.add(s.token);
     else e.transient = true;
   }
   let sent = 0;
   for (const e of state.values()) {
-    // Retry next minute (still inside the 15-minute window) only when nothing arrived and a failure may pass.
     if (e.ok || !e.transient) {
       done.push(e.user);
       if (e.ok) sent++;
+    } else {
+      // Nothing arrived and a failure may pass: give the day back so the next minute (still inside the window) retries.
+      await step(deps, counts, 'digest_release', () => deps.digestRelease(e.user.user_id, dayOf(e.user), e.user.prefs.last_digest_date));
     }
   }
-  for (const u of done) await deps.digestDone(u.user_id, localParts(now, safeZone(u.prefs.time_zone)).date);
+  for (const u of done) await step(deps, counts, 'digest_done', () => deps.digestDone(u.user_id, dayOf(u)));
+  for (const t of dead) await step(deps, counts, 'drop_token', () => deps.dropToken(t));
   return sent;
 }
 
@@ -219,6 +247,7 @@ export async function receiptsPass(deps: DeliverDeps, _now: Date): Promise<{ che
       deps.log({ event: 'receipts_failed', error: e instanceof Error ? e.message : 'receipts' });
     }
   }
+  const counts = { errors: 0 };
   let checked = 0;
   const dead = new Set<string>();
   for (const r of rows) {
@@ -228,11 +257,9 @@ export async function receiptsPass(deps: DeliverDeps, _now: Date): Promise<{ che
       if (!rc) complete = false;
       else if (errorOf(rc) === 'DeviceNotRegistered' && r.ticket_tokens[i]) dead.add(r.ticket_tokens[i]);
     });
-    if (complete) {
-      await deps.receiptsDone(r.id);
-      checked++;
-    }
+    if (complete && (await step(deps, counts, 'receipts_done', () => deps.receiptsDone(r.id)))) checked++;
   }
-  for (const t of dead) await deps.dropToken(t);
-  return { checked, tokensDropped: dead.size };
+  let dropped = 0;
+  for (const t of dead) if (await step(deps, counts, 'drop_token', () => deps.dropToken(t))) dropped++;
+  return { checked, tokensDropped: dropped };
 }

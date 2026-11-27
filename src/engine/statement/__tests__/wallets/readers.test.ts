@@ -1,5 +1,6 @@
 import { readWallet } from '../../wallets';
 import type { WalletRead } from '../../wallets';
+import { wiseFeeIncluded } from '../../wallets/wise';
 import {
   csv, PAYPAL_HEADER, paypalRow, REVOLUT_HEADER, revolutRow, SENTINELS, WISE_HEADER, wiseRow,
 } from './synthetic';
@@ -73,11 +74,60 @@ describe('Revolut reader', () => {
 });
 
 describe('Wise reader', () => {
-  it('reads Total fees into feeMinor and the running balance', () => {
-    const r = ok(csv(WISE_HEADER, [wiseRow({ id: 'CARD-9', amount: '-20.00', fees: '0.50', balance: '-3.00' })]));
+  it('reads Total fees into feeMinor and the running balance; with no evidence, Amount includes the fee (10-review D-3)', () => {
+    const r = ok(csv(WISE_HEADER, [wiseRow({ id: 'CARD-9', amount: '-20.50', fees: '0.50', balance: '-3.00' })]));
     expect(r.lines[0]).toMatchObject({
       currency: 'EUR', localDate: '2026-03-05', grossMinor: -2000, feeMinor: 50, netMinor: -2050,
       externalId: 'CARD-9', pairKey: null, balanceMinor: -300, kind: 'payment',
+    });
+  });
+
+  describe('10-review (D-3): the Running Balance decides whether Amount already includes Total fees', () => {
+    // Fee-inclusive (the usual Wise file): 100.00 -> 79.50 after a -20.50 card payment that carried a 0.50 fee.
+    const inclusiveRows = [
+      wiseRow({ id: 'A', amount: '100.00', balance: '100.00', date: '01-03-2026' }),
+      wiseRow({ id: 'B', amount: '-20.50', fees: '0.50', balance: '79.50', date: '02-03-2026' }),
+    ];
+    // Fee-exclusive: 100.00 -> 79.50 after a -20.00 payment plus a 0.50 fee taken on top.
+    const exclusiveRows = [
+      wiseRow({ id: 'A', amount: '100.00', balance: '100.00', date: '01-03-2026' }),
+      wiseRow({ id: 'B', amount: '-20.00', fees: '0.50', balance: '79.50', date: '02-03-2026' }),
+    ];
+    const check = (rows: string[][]) => {
+      const fee = ok(csv(WISE_HEADER, rows)).lines.find((l) => l.externalId === 'B');
+      expect(fee).toMatchObject({ grossMinor: -2000, feeMinor: 50, netMinor: -2050 });
+    };
+    it('fee-inclusive, oldest first and newest first', () => {
+      expect(wiseFeeIncluded([[...WISE_HEADER], ...inclusiveRows])).toBe(true);
+      expect(wiseFeeIncluded([[...WISE_HEADER], ...[...inclusiveRows].reverse()])).toBe(true);
+      check(inclusiveRows);
+      check([...inclusiveRows].reverse());
+    });
+    it('fee-exclusive, oldest first and newest first', () => {
+      expect(wiseFeeIncluded([[...WISE_HEADER], ...exclusiveRows])).toBe(false);
+      expect(wiseFeeIncluded([[...WISE_HEADER], ...[...exclusiveRows].reverse()])).toBe(false);
+      check(exclusiveRows);
+      check([...exclusiveRows].reverse());
+    });
+    it('keeps the balance exact either way: the balance moves by the net', () => {
+      for (const rows of [inclusiveRows, exclusiveRows]) {
+        const lines = ok(csv(WISE_HEADER, rows)).lines;
+        expect((lines[1]?.balanceMinor ?? 0) - (lines[0]?.balanceMinor ?? 0)).toBe(lines[1]?.netMinor);
+      }
+    });
+    it('rows of other currencies, blank or unreadable balances and rows that match neither reading give no evidence', () => {
+      const rows = [
+        wiseRow({ id: 'A', amount: '100.00', balance: '100.00' }),
+        wiseRow({ id: 'G', amount: '5.00', fees: '0.10', currency: 'GBP', balance: '5.00' }),
+        wiseRow({ id: 'N', amount: '-1.00', fees: '0.10', balance: '' }),
+        wiseRow({ id: 'U', amount: '-1.00', fees: '0.10', balance: 'n/a' }),
+        wiseRow({ id: 'X', amount: '-7.00', fees: '0.10', balance: '50.00' }),
+        wiseRow({ id: '', amount: '', balance: '50.00' }),
+      ];
+      expect(wiseFeeIncluded([[...WISE_HEADER], ...rows])).toBe(true);
+    });
+    it('a file without Total fees or Running Balance is read as fee-inclusive', () => {
+      expect(wiseFeeIncluded([WISE_HEADER.filter((h) => h !== 'Running Balance')])).toBe(true);
     });
   });
 
@@ -114,7 +164,7 @@ describe('Wise reader', () => {
     const r = ok(csv(header, [row, row2]));
     expect(r.skipped).toBe(1);
     expect(r.lines).toHaveLength(1);
-    const feeOnly = ok(csv(WISE_HEADER, [wiseRow({ amount: '0.00', fees: '0.40' })]));
+    const feeOnly = ok(csv(WISE_HEADER, [wiseRow({ amount: '-0.40', fees: '0.40' })]));
     expect(feeOnly.lines[0]).toMatchObject({ kind: 'fee-only', grossMinor: 0, feeMinor: 40, netMinor: -40 });
   });
 });
@@ -143,9 +193,9 @@ describe('PayPal reader', () => {
   it('gives two currency conversion rows sharing a Reference Txn ID one pairKey', () => {
     const r = ok(
       csv(PAYPAL_HEADER, [
-        paypalRow({ type: 'General Currency Conversion', gross: '-100.00', fee: '0.00', currency: 'USD', ref: 'REF-1', id: 'C1' }),
-        paypalRow({ type: 'General Currency Conversion', gross: '92.00', fee: '0.00', currency: 'EUR', ref: 'REF-1', id: 'C2' }),
-        paypalRow({ type: 'General Currency Conversion', gross: '5.00', fee: '0.00', currency: 'EUR', ref: '', id: '' }),
+        paypalRow({ type: 'General Currency Conversion', gross: '-100.00', fee: '0.00', net: '-100.00', currency: 'USD', ref: 'REF-1', id: 'C1' }),
+        paypalRow({ type: 'General Currency Conversion', gross: '92.00', fee: '0.00', net: '92.00', currency: 'EUR', ref: 'REF-1', id: 'C2' }),
+        paypalRow({ type: 'General Currency Conversion', gross: '5.00', fee: '0.00', net: '5.00', currency: 'EUR', ref: '', id: '' }),
       ])
     );
     expect(r.lines.map((l) => l.pairKey)).toEqual(['REF-1', 'REF-1', null]);
@@ -153,9 +203,27 @@ describe('PayPal reader', () => {
     expect(r.lines.every((l) => l.kind === 'conversion')).toBe(true);
   });
 
-  it('keeps an inflow fee as a magnitude that reduces the net', () => {
+  it('keeps an inflow fee as a cost that reduces the net', () => {
     const r = ok(csv(PAYPAL_HEADER, [paypalRow({ gross: '100.00', fee: '-3.20', net: '96.80', impact: 'Credit' })]));
     expect(r.lines[0]).toMatchObject({ grossMinor: 10000, feeMinor: 320, netMinor: 9680 });
+    expect(r.lines[0]?.netMismatch).toBeUndefined();
+  });
+
+  it('10-review (D-2): a refund returns its fee, so net is Gross + Fee and no new expense appears', () => {
+    const r = ok(csv(PAYPAL_HEADER, [paypalRow({ type: 'Payment Refund', gross: '-10.00', fee: '0.30', net: '-9.70' })]));
+    expect(r.lines[0]).toMatchObject({ grossMinor: -1000, feeMinor: -30, netMinor: -970 });
+    expect(r.lines[0]?.netMismatch).toBeUndefined();
+  });
+
+  it('10-review (D-2): flags a row whose Gross + Fee is not its Net, and reads a blank Net as unchecked', () => {
+    const r = ok(
+      csv(PAYPAL_HEADER, [
+        paypalRow({ gross: '-50.00', fee: '-1.75', net: '-50.00' }),
+        paypalRow({ gross: '-50.00', fee: '-1.75', net: 'n/a' }),
+        paypalRow({ gross: '-50.00', fee: '-1.75', net: '' }),
+      ])
+    );
+    expect(r.lines.map((l) => l.netMismatch)).toEqual([true, true, undefined]);
   });
 
   it('works without the optional Balance Impact and Item Title columns', () => {

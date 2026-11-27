@@ -27,4 +27,8 @@ describe('toCsv', () => {
     const out = toCsv(['v'], [{ v: "'=!" }, { v: "''@a" }, { v: "it's" }, { v: "'plain" }]);
     expect(out).toBe("v\r\n''=!\r\n'''@a\r\nit's\r\n'plain\r\n");
   });
+  it('10-review (D-8): guards a leading tab or carriage return too', () => {
+    const out = toCsv(['v'], [{ v: '\tx' }, { v: '\rx' }, { v: "'\tx" }, { v: 'a\tb' }]);
+    expect(out).toBe("v\r\n'\tx\r\n\"'\rx\"\r\n''\tx\r\na\tb\r\n");
+  });
 });

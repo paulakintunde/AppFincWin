@@ -6,6 +6,8 @@
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { registerThemeReset } from '@/features/auth/signOut';
+import { useTheme } from '@/theme/ThemeProvider';
 import { registerLockWipe } from '@/services/lock/lockStore';
 import { AppCover } from './AppCover';
 import { subscribeLockChanged } from './lockEvents';
@@ -19,6 +21,10 @@ export function LockGate({ children }: { children: React.ReactNode }): React.JSX
   const { status } = useAuth();
   const c = useLockController();
   const { refresh } = c;
+  const { reset } = useTheme();
+
+  // 10-review (L-9): lets the remote sign-out (AuthProvider sits outside this tree's theme hooks) reset the theme too.
+  useEffect(() => registerThemeReset(reset), [reset]);
 
   useEffect(() => subscribeLockChanged(() => void refresh()), [refresh]);
   useEffect(() => {

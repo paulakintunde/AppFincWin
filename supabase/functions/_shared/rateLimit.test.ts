@@ -1,5 +1,5 @@
 // Runs under Deno (`npm run test:deno`) and under Jest (the default suite): no runner imports.
-import { hitRateLimit, tooManyRequests, type RpcClient } from './rateLimit.ts';
+import { hitRateLimit, peekRateLimit, tooManyRequests, type RpcClient } from './rateLimit.ts';
 
 type Runner = (name: string, fn: () => void | Promise<void>) => void;
 const g = globalThis as unknown as { Deno?: { test: Runner }; test?: Runner };
@@ -10,6 +10,21 @@ function assertEquals(actual: unknown, expected: unknown, msg = ''): void {
     throw new Error(`${msg} expected ${JSON.stringify(expected)} got ${JSON.stringify(actual)}`);
   }
 }
+
+// 10-review S-7: the peek calls rate_limit_peek (never rate_limit_hit) and reads the same way.
+run('peek calls rate_limit_peek and maps true / false / error', async () => {
+  const seen: string[] = [];
+  const spy = (data: unknown, error: unknown = null): RpcClient => ({
+    rpc: async (fn) => {
+      seen.push(fn);
+      return { data, error };
+    },
+  });
+  assertEquals(await peekRateLimit(spy(true), 'k:1', 5, 900), { ok: true });
+  assertEquals(await peekRateLimit(spy(false), 'k:1', 5, 900, () => 900_000 * 2 + 100_000), { ok: false, retryAfter: 800 });
+  assertEquals(await peekRateLimit(spy(null, { message: 'down' }), 'k:1', 5, 900), { ok: true });
+  assertEquals(seen, ['rate_limit_peek', 'rate_limit_peek', 'rate_limit_peek']);
+});
 
 const fake = (data: unknown, error: unknown = null): RpcClient => ({ rpc: async () => ({ data, error }) });
 

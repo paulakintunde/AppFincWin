@@ -20,7 +20,7 @@ export function alertText(entry: Pick<AlertLogEntry, 'kind' | 'params'>, t: Tran
     case 'bills_due': {
       const lead = typeof p.lead_days === 'number' ? p.lead_days : 1;
       const when = lead <= 0 ? t('system.push.whenToday') : lead === 1 ? t('system.push.whenTomorrow') : t('system.push.whenInDays', { count: lead });
-      return t('system.push.billsDue', { name: str(p.bill, 'Bill'), amount: money(p, 'amount_minor', formatMoney), when });
+      return t('system.push.billsDue', { name: str(p.bill, t('system.alerts.billFallback')), amount: money(p, 'amount_minor', formatMoney), when });
     }
     case 'over_cap':
       return t('system.push.overCap', { category: str(p.category), amount: money(p, 'over_minor', formatMoney) });

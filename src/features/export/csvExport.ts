@@ -12,6 +12,7 @@ import { EXPORT_MANIFEST } from '@/data/exportManifest';
 import { getLockedWrites, type LockedWrite } from '@/data/sync/lockedWrites';
 import { toCsv } from './csvSerialize';
 import { ARCHIVE_EXPORT_CHILD_TABLES, ARCHIVE_EXPORT_REFERENCE_TABLES, SERVER_RECORDS_FILE } from './exportFiles';
+import { withExternalActivity } from '@/services/lock/externalActivity';
 
 export { ARCHIVE_EXPORT_REFERENCE_TABLES, SERVER_RECORDS_FILE };
 
@@ -185,7 +186,7 @@ export async function exportCsv(client: DbClient, opts?: ExportOptions): Promise
     if (Platform.OS === 'android') {
       let target: Directory;
       try {
-        target = await Directory.pickDirectoryAsync();
+        target = await withExternalActivity(() => Directory.pickDirectoryAsync()); // 10-review (L-6)
       } catch {
         return 'cancelled';
       }
@@ -196,7 +197,7 @@ export async function exportCsv(client: DbClient, opts?: ExportOptions): Promise
     }
 
     for (const file of written) {
-      const result = await Share.share({ url: file.uri });
+      const result = await withExternalActivity(() => Share.share({ url: file.uri })); // 10-review (L-6)
       if (result.action === Share.dismissedAction) return 'cancelled';
     }
     return 'shared';

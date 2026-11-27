@@ -35,7 +35,9 @@ export type DraftRowIssue =
   | 'pdf-wrapped-description'
   | 'pdf-no-date'
   | 'pdf-ambiguous-column'
-  | 'pdf-ambiguous-date';
+  | 'pdf-ambiguous-date'
+  // 10-review (D-2): a wallet line whose Gross and Fee do not add up to the file's Net; never blocking, always reviewed
+  | 'net-mismatch';
 
 /** IMP-05 / D-30: a statement line's original foreign amount (magnitude, never signed). */
 export interface ForeignAmount {

@@ -40,6 +40,30 @@ supabase db dump --remote="$DB_URL" -f "$WORK/data.sql" --data-only --use-copy \
   -x public.devices -x public.push_tokens -x public.rate_limits -x public.alert_outbox \
   -x storage.buckets_vectors -x storage.vector_indexes
 
+# 10-review S-4: row counts read from the dump itself, so they describe exactly what the backup holds (the live counts
+# above are taken a moment earlier and can drift). One COPY row is one line (newlines inside values are escaped).
+awk '
+  /^COPY / { t = $2; gsub(/"/, "", t); n = 0; inb = 1; next }
+  inb && /^\\\.$/ { printf "%s\t%d\n", t, n; inb = 0; next }
+  inb { n++ }
+' "$WORK/data.sql" > "$WORK/dump_counts.tsv"
+if [ ! -s "$WORK/dump_counts.tsv" ]; then
+  echo "FATAL: no COPY blocks found in the data dump, refusing to publish" >&2
+  exit 1
+fi
+node -e '
+const fs = require("fs");
+const [manifest, tsv] = process.argv.slice(1);
+const j = JSON.parse(fs.readFileSync(manifest, "utf8"));
+j.dump_tables = {};
+for (const line of fs.readFileSync(tsv, "utf8").split("\n")) {
+  if (!line) continue;
+  const [t, n] = line.split("\t");
+  j.dump_tables[t] = Number(n);
+}
+fs.writeFileSync(manifest, JSON.stringify(j));
+' "$WORK/counts.json" "$WORK/dump_counts.tsv"
+
 tar -czf "$WORK/db.tgz" -C "$WORK" roles.sql schema.sql data.sql
 size="$(wc -c < "$WORK/db.tgz")"
 if [ "$size" -lt 51200 ]; then

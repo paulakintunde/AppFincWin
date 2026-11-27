@@ -30,6 +30,7 @@ import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
 import { buildDiagnostic, rowCountsFromCache } from './buildDiagnostic';
 import { DIAGNOSTIC_FIELDS, DIAGNOSTIC_ROWS, SUPPORT_EMAIL } from './diagnosticFields';
+import { withExternalActivity } from '@/services/lock/externalActivity';
 
 function deviceModel(): string {
   const constants = Platform.constants as { Model?: string; model?: string } | undefined;
@@ -89,7 +90,7 @@ export function DiagnosticScreen() {
   const saveCopy = async (): Promise<void> => {
     hapticTap();
     try {
-      await Share.share({ message: diagnostic.text });
+      await withExternalActivity(() => Share.share({ message: diagnostic.text })); // 10-review (L-6)
       setFailed(false);
     } catch {
       setFailed(true);

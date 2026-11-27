@@ -9,6 +9,7 @@ import { focusManager, onlineManager, type QueryClient } from '@tanstack/react-q
 import { getEnv } from '@/config/env';
 import { createOnlineGate, netClass, type OnlineGate } from './sync/connectivity';
 import { queueHead, recordOnlineChange } from './sync/queueDiagnostics';
+import { isWriteHeld, onWritesReleased } from './sync/writeHold';
 
 // 05.3-116 (UAT gap 34): whether a NetInfo report counts as offline is decided by the shared
 // online gate in sync/connectivity.ts. null means "not yet known" and never counts as offline; a
@@ -19,12 +20,15 @@ import { queueHead, recordOnlineChange } from './sync/queueDiagnostics';
 let started = false;
 let client: QueryClient | null = null;
 let gate: OnlineGate | null = null;
+let stopReleaseListener: (() => void) | null = null;
 
 /**
  * D-88: coming back (app focus or a reachable NetInfo state) sets online, replays the paused
  * writes in order and refetches the stale queries. Both run at once; neither waits for the other.
  */
 export function resumeAndRefetch(qc: QueryClient): void {
+  // 10-review (L-7): the lock screen's sign-in again holds the queue until it knows who signed in.
+  if (isWriteHeld()) return;
   onlineManager.setOnline(true);
   void qc.resumePausedMutations().catch(() => undefined);
   void qc.refetchQueries({ stale: true }).catch(() => undefined);
@@ -54,6 +58,8 @@ export function resetOnlineManagerForTests(): void {
   client = null;
   gate?.dispose();
   gate = null;
+  stopReleaseListener?.();
+  stopReleaseListener = null;
 }
 
 /**
@@ -78,7 +84,8 @@ export function startOnlineManager(qc?: QueryClient): void {
 
   onlineManager.setEventListener((setOnline) => {
     gate?.dispose();
-    const own = createOnlineGate(setOnline);
+    // 10-review (L-7): while the queue is held, a connection coming back does not lift the hold.
+    const own = createOnlineGate((online) => setOnline(online && !isWriteHeld()));
     gate = own;
     const unsubscribe = NetInfo.addEventListener((state) => {
       const online = own.update(state);
@@ -91,22 +98,29 @@ export function startOnlineManager(qc?: QueryClient): void {
     };
   });
 
+  // Ask NetInfo to re-check against Supabase now rather than trusting a stale offline flag.
+  const recheck = (source: 'focus' | 'release'): void => {
+    void NetInfo.refresh().then(
+      (net) => {
+        // Fed to the same gate, so an unreachable answer here gets the same 10 s grace.
+        const online = gate ? gate.update(net) : netClass(net) === 'online';
+        if (__DEV__) recordOnlineChange(source === 'focus' ? 'focus' : 'netinfo', net, online, client ? queueHead(client) : null);
+        if (online && netClass(net) === 'online' && client) resumeAndRefetch(client);
+      },
+      () => {
+        if (client) resumeAndRefetch(client);
+      },
+    );
+  };
+
+  // 10-review (L-7): when the lock screen lifts its hold, re-check the connection and resume the queue if online.
+  stopReleaseListener = onWritesReleased(() => recheck('release'));
+
   focusManager.setEventListener((handleFocus) => {
     const subscription = AppState.addEventListener('change', (state: AppStateStatus) => {
       handleFocus(state === 'active');
       if (state !== 'active') return;
-      // Ask NetInfo to re-check against Supabase now rather than trusting a stale offline flag.
-      void NetInfo.refresh().then(
-        (net) => {
-          // Fed to the same gate, so an unreachable answer here gets the same 10 s grace.
-          const online = gate ? gate.update(net) : netClass(net) === 'online';
-          if (__DEV__) recordOnlineChange('focus', net, online, client ? queueHead(client) : null);
-          if (online && netClass(net) === 'online' && client) resumeAndRefetch(client);
-        },
-        () => {
-          if (client) resumeAndRefetch(client);
-        },
-      );
+      recheck('focus');
     });
     return () => subscription.remove();
   });

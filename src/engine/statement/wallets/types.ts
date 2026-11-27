@@ -14,8 +14,11 @@ export interface WalletLine {
   localDate: string; // 'YYYY-MM-DD'
   description: string; // merchant/description cell only, never payer, payee, email, account or card digits
   grossMinor: number; // signed, outflow negative
-  feeMinor: number; // magnitude >= 0; a fee always reduces the balance
-  netMinor: number; // grossMinor - feeMinor
+  // 10-review (D-2): signed fee cost. > 0 a fee charged (reduces the balance); < 0 a fee returned (adds to it).
+  feeMinor: number;
+  netMinor: number; // grossMinor - feeMinor: the line's whole balance change
+  /** 10-review (D-2): the file's own Net does not equal gross less the fee; the line is flagged, never corrected. */
+  netMismatch?: true;
   externalId: string | null;
   pairKey: string | null;
   kind: 'payment' | 'conversion' | 'fee-only';
@@ -28,12 +31,13 @@ export type WalletRead =
   | { ok: true; wallet: WalletKind; lines: WalletLine[]; skipped: number }
   | { ok: false; wallet: WalletKind; error: WalletReadError; missing?: string[] };
 
-/** An expense in the "Fees" category tied to one wallet line. */
+/** An expense in the "Fees" category tied to one wallet line, or (10-review D-2) a returned fee, which adds money back. */
 export interface WalletFeeLine {
   forIndex: number; // WalletLine.index
   currency: string;
   localDate: string;
-  magnitude: number;
+  magnitude: number; // > 0
+  returned: boolean;
 }
 
 /** A currency conversion's two lines as one linked transfer. */

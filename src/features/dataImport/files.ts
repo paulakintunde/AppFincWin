@@ -6,6 +6,7 @@
 import { Platform, Share } from 'react-native';
 import { getDocumentAsync } from 'expo-document-picker';
 import { Directory, File, Paths } from 'expo-file-system';
+import { withExternalActivity } from '@/services/lock/externalActivity';
 
 const CSV_TYPES = ['text/csv', 'text/comma-separated-values', 'text/plain'];
 /** A CSV of 5000 rows is well under this; anything bigger is not one of ours. */
@@ -16,7 +17,7 @@ export type PickCsvResult = { kind: 'ok'; text: string } | { kind: 'canceled' } 
 export async function pickCsvText(): Promise<PickCsvResult> {
   let picked: Awaited<ReturnType<typeof getDocumentAsync>>;
   try {
-    picked = await getDocumentAsync({ type: CSV_TYPES, copyToCacheDirectory: true, multiple: false });
+    picked = await withExternalActivity(() => getDocumentAsync({ type: CSV_TYPES, copyToCacheDirectory: true, multiple: false })); // 10-review (L-6)
   } catch {
     return { kind: 'unreadable' };
   }
@@ -46,7 +47,7 @@ export async function saveTemplateFile(name: string, text: string): Promise<'sav
     if (Platform.OS === 'android') {
       let target: Directory;
       try {
-        target = await Directory.pickDirectoryAsync();
+        target = await withExternalActivity(() => Directory.pickDirectoryAsync()); // 10-review (L-6)
       } catch {
         return 'cancelled';
       }
@@ -56,7 +57,7 @@ export async function saveTemplateFile(name: string, text: string): Promise<'sav
     const file = new File(dir, name);
     if (!file.exists) file.create();
     file.write(text);
-    const result = await Share.share({ url: file.uri });
+    const result = await withExternalActivity(() => Share.share({ url: file.uri })); // 10-review (L-6)
     return result.action === Share.dismissedAction ? 'cancelled' : 'shared';
   } finally {
     try {

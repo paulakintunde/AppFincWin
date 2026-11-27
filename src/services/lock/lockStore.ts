@@ -4,7 +4,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import { registerWipeHandler, STORAGE_PREFIX } from '@/services/storage/wipe';
-import { backoffFor, constantTimeEqual, hashPin, isValidPin, LOCK_TIMING_MS, type Backoff, type LockTiming } from './pin';
+import {
+  backoffFor,
+  constantTimeEqual,
+  hashPin,
+  isValidPin,
+  LOCK_TIMING_MS,
+  MAX_WAIT_MS,
+  type Backoff,
+  type LockTiming,
+} from './pin';
 
 /** D-33: 'device' = the phone's own lock (biometric, passcode fallback); 'appPin' = the optional extra FincWin PIN. */
 export type LockMethod = 'device' | 'appPin';
@@ -53,6 +62,14 @@ async function readNumber(key: string): Promise<number | null> {
 
 async function writeNumber(key: string, n: number): Promise<void> {
   await SecureStore.setItemAsync(key, String(n), SECURE_OPTS);
+}
+
+/**
+ * 10-review (L-3): the settings alone, from AsyncStorage. The lock host reads these when the SecureStore read fails, so a
+ * lock that is on still shows the lock screen (fail closed) instead of opening the app.
+ */
+export async function readLockSettings(): Promise<LockSettings> {
+  return readSettings();
 }
 
 async function readSettings(): Promise<LockSettings> {
@@ -111,11 +128,30 @@ export async function clearPin(): Promise<void> {
   await clearTries();
 }
 
-export async function checkPin(
-  pin: string,
-  now: number
-): Promise<{ ok: true } | { ok: false; backoff: Backoff; wrongTries: number }> {
-  const [tries, lockUntil, salt, hash] = await Promise.all([
+/**
+ * 10-review (L-5): a stored wait further away than the longest step of the ladder means the phone's clock moved back, so
+ * it is cut to the longest wait from now. A clock moved forward ends the wait early; that is accepted, because the
+ * 10-try cap (then a fresh sign-in) still holds whatever the clock says.
+ */
+export function clampLockUntil(lockUntil: number | null, now: number): number | null {
+  if (lockUntil === null) return null;
+  return lockUntil - now > MAX_WAIT_MS ? now + MAX_WAIT_MS : lockUntil;
+}
+
+type CheckPinResult = { ok: true } | { ok: false; backoff: Backoff; wrongTries: number };
+
+// 10-review (L-4): one check at a time. Two checks started together would both read the same try count and the second
+// write would undo the first's; each check now waits for the one before it to finish.
+let pinCheckChain: Promise<unknown> = Promise.resolve();
+
+export function checkPin(pin: string, now: number): Promise<CheckPinResult> {
+  const run = pinCheckChain.then(() => checkPinNow(pin, now));
+  pinCheckChain = run.catch(() => undefined);
+  return run;
+}
+
+async function checkPinNow(pin: string, now: number): Promise<CheckPinResult> {
+  const [tries, storedUntil, salt, hash] = await Promise.all([
     readNumber(KEY_TRIES),
     readNumber(KEY_UNTIL),
     SecureStore.getItemAsync(KEY_SALT),
@@ -123,6 +159,8 @@ export async function checkPin(
   ]);
   const wrongTries = tries ?? 0;
   if (wrongTries >= 10) return { ok: false, backoff: { kind: 'reauth' }, wrongTries };
+  const lockUntil = clampLockUntil(storedUntil, now);
+  if (lockUntil !== storedUntil && lockUntil !== null) await writeNumber(KEY_UNTIL, lockUntil);
   if (lockUntil !== null && now < lockUntil) {
     return { ok: false, backoff: { kind: 'wait', ms: lockUntil - now }, wrongTries };
   }
@@ -145,7 +183,10 @@ export async function markBackgrounded(now: number): Promise<void> {
 export function shouldLockOnActive(s: LockState, now: number, coldStart: boolean): boolean {
   if (!s.settings.enabled) return false;
   if (coldStart || s.backgroundedAt === null) return true;
-  return now - s.backgroundedAt >= LOCK_TIMING_MS[s.settings.timing];
+  const away = now - s.backgroundedAt;
+  // 10-review (L-5): a negative time away means the clock moved back while the app was away; count it as elapsed.
+  if (away < 0) return true;
+  return away >= LOCK_TIMING_MS[s.settings.timing];
 }
 
 export async function clearLock(): Promise<void> {

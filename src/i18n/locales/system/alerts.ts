@@ -64,4 +64,9 @@ export const alerts = {
   leadGroup: 'Remind me',
   quietFromLabel: 'Quiet hours start',
   quietToLabel: 'Quiet hours end',
+  // 10-review (D-7): the bill name when an alert carried none, and the two Android notification channel names.
+  // Kept out of system.push, which must equal the Edge Function's TEMPLATES copy.
+  billFallback: 'Bill',
+  channelAlerts: 'Alerts',
+  channelDigest: 'Daily summary',
 } as const;
