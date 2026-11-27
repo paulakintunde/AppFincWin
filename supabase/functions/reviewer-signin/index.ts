@@ -2,8 +2,8 @@
 // verify_jwt = false (the caller has no session yet). Allow-list lives in public.reviewer_allowlist (server-only);
 // the before_user_created hook stops anyone else creating an email account. The body is never logged.
 import { createClient } from 'npm:@supabase/supabase-js@2.116.0';
-import { hitRateLimit, tooManyRequests } from '../_shared/rateLimit.ts';
-import { reviewerSignIn, type SignInDeps } from './signin.ts';
+import { hitRateLimit, peekRateLimit, tooManyRequests } from '../_shared/rateLimit.ts';
+import { clientIp, reviewerSignIn, type SignInDeps } from './signin.ts';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       body = null;
     }
   }
-  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'unknown';
+  const ip = clientIp(req.headers.get('x-forwarded-for'));
 
   const deps: SignInDeps = {
     isListed: async (email) => {
@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
       };
     },
     rateLimit: (key, limit, windowSeconds) => hitRateLimit(admin, key, limit, windowSeconds),
+    rateLimitPeek: (key, limit, windowSeconds) => peekRateLimit(admin, key, limit, windowSeconds),
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     log: (l) => console.log(JSON.stringify(l)),
   };
