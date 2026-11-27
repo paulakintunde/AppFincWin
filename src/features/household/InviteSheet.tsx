@@ -29,6 +29,7 @@ import { useMemberSeen } from './useMemberLabel';
 import { useHouseholdScope } from './useHouseholdScope';
 import { useNoticeFormat } from './noticeText';
 import { ownerReasonKey, type OwnerReasonKey } from './ownerReasons';
+import { withExternalActivity } from '@/services/lock/externalActivity';
 
 export interface InviteSheetProps {
   visible: boolean;
@@ -139,7 +140,7 @@ function InviteBody({ onClose, code, expiresAt }: Omit<InviteSheetProps, 'visibl
     if (!ready || !scope.online) return;
     const message = `${t('household.join.invite.shareMessage', { inviter, household: scope.name, code: ready.code })} ${inviteLink(ready.code)}`;
     try {
-      await Share.share({ message });
+      await withExternalActivity(() => Share.share({ message })); // 10-review (L-6)
     } catch {
       // the share sheet closing is not a failure
     }

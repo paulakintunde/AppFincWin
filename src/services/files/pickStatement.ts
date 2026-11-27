@@ -8,6 +8,7 @@
 // engine (decodeText).
 import { getDocumentAsync } from 'expo-document-picker';
 import { File } from 'expo-file-system';
+import { withExternalActivity } from '@/services/lock/externalActivity';
 import { MAX_PDF_BYTES } from '@/engine/statement/limits';
 
 export { MAX_STATEMENT_BYTES, MAX_PDF_BYTES } from '@/engine/statement/limits';
@@ -51,7 +52,9 @@ function removeCopy(file: File): void {
 export async function pickStatementBytes(): Promise<PickStatementResult> {
   let picked: Awaited<ReturnType<typeof getDocumentAsync>>;
   try {
-    picked = await getDocumentAsync({ type: [...STATEMENT_MIME_TYPES], copyToCacheDirectory: true, multiple: false });
+    picked = await withExternalActivity(() =>
+      getDocumentAsync({ type: [...STATEMENT_MIME_TYPES], copyToCacheDirectory: true, multiple: false }),
+    ); // 10-review (L-6)
   } catch {
     return { kind: 'rejected', reason: 'unreadable' };
   }
