@@ -22,4 +22,9 @@ describe('toCsv', () => {
     const out = toCsv(['v'], [{ v: '=SUM(A1)' }, { v: '+1+1' }, { v: '-cmd' }, { v: '@x' }, { v: -5 }, { v: '-12' }]);
     expect(out).toBe("v\r\n'=SUM(A1)\r\n'+1+1\r\n'-cmd\r\n'@x\r\n-5\r\n-12\r\n");
   });
+
+  it("keeps a leading apostrophe before = + - @ by adding one more (10-30), and leaves other apostrophes alone", () => {
+    const out = toCsv(['v'], [{ v: "'=!" }, { v: "''@a" }, { v: "it's" }, { v: "'plain" }]);
+    expect(out).toBe("v\r\n''=!\r\n'''@a\r\nit's\r\n'plain\r\n");
+  });
 });

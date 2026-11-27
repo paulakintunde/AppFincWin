@@ -15,7 +15,10 @@ describe('unescapeCell', () => {
     expect(unescapeCell("'+1")).toBe('+1');
     expect(unescapeCell("'-x")).toBe('-x');
     expect(unescapeCell("'@a")).toBe('@a');
-    expect(unescapeCell("''=x")).toBe("''=x");
+    // 10-30: export writes "'=x" as "''=x", so one apostrophe comes off a run before = + - @.
+    expect(unescapeCell("''=x")).toBe("'=x");
+    expect(unescapeCell("'''@a")).toBe("''@a");
+    expect(unescapeCell("''abc")).toBe("''abc");
     expect(unescapeCell("'abc")).toBe("'abc");
     expect(unescapeCell('-1200')).toBe('-1200');
     expect(unescapeCell('')).toBe('');
