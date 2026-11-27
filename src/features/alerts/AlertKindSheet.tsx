@@ -1,6 +1,6 @@
 // 10-22 (UI-SPEC section 5, item 3): the sheet behind a kind row. Amount kinds take a home-currency amount (integer minor
 // units through MoneyInput, saved on blur); bills due takes a lead time.
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
 import type { AlertKind, AlertSetting } from '@/db/alerts';
@@ -68,16 +68,26 @@ function Body({
   const t = useT();
   const { colors, pairing } = useTheme();
   const isAmount = kind === 'large_txn' || kind === 'low_balance';
-  const startMinor = setting.thresholdMinor ?? suggested?.minor ?? null;
+  // 10-review (D-4): a saved amount in another currency is not shown as if it were in the home currency; the field starts
+  // from the home-currency suggestion instead, and nothing is saved until the person changes it.
+  const savedInHome = setting.thresholdMinor !== null && setting.thresholdCurrency === homeCurrency;
+  const startMinor = savedInHome ? setting.thresholdMinor : (suggested?.minor ?? null);
   const [draft, setDraft] = useState<number | null>(startMinor);
+  const lastSaved = useRef<number | null>(startMinor);
   const title = t(KIND_NAME[kind] as never);
   const muted = { ...textRole(pairing, 'label'), color: colors.inkMuted };
 
   const saveAmount = (minor: number | null) => {
     if (minor === null || !Number.isSafeInteger(minor) || minor <= 0) return;
     if (minor === setting.thresholdMinor && setting.thresholdCurrency === homeCurrency) return;
+    lastSaved.current = minor;
     onSave(kind, { thresholdMinor: minor, thresholdCurrency: homeCurrency });
     showToast({ kind: 'info', text: { key: 'system.alerts.saved' } });
+  };
+
+  // 10-review (D-4): blur saves only a value the person changed.
+  const onBlur = () => {
+    if (draft !== lastSaved.current) saveAmount(draft);
   };
 
   let meta: string | null = null;
@@ -113,7 +123,7 @@ function Body({
               accessibilityLabel={`${title}, ${t('system.alerts.amountLabel')}`}
               boxed
               onChange={setDraft}
-              onBlur={() => saveAmount(draft)}
+              onBlur={onBlur}
             />
             {meta ? <Text style={muted}>{meta}</Text> : null}
             {suggested ? (
