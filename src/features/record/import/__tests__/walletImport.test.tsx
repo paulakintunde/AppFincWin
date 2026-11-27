@@ -63,7 +63,7 @@ type ImportState = ReturnType<typeof useStatementImport>;
 function wise(): WalletDrafts {
   const read = readWallet(
     csv(WISE_HEADER, [
-      wiseRow({ id: 'A', amount: '-10.00', currency: 'EUR', description: 'Coffee', fees: '0.30' }),
+      wiseRow({ id: 'A', amount: '-10.30', currency: 'EUR', description: 'Coffee', fees: '0.30' }), // fee-inclusive (10-review D-3)
       wiseRow({ id: 'B', amount: '25.00', currency: 'GBP', description: 'Refund' }),
     ])
   );

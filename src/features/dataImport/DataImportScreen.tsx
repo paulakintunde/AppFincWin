@@ -17,7 +17,6 @@ import { useSaveGrowDebt } from '@/data/mutations/growDebts';
 import { useAddHolding } from '@/data/mutations/growHoldings';
 import { useQueueGuard } from '@/data/sync/useQueueGuard';
 import { classifyRows, DATA_CSV_SCHEMAS, parseDataCsv, type DataCsvRow, type DataTable, type RowMatch } from '@/engine/dataCsv';
-import { currencyExponent } from '@/engine/money/currencyExponents';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { QueueNote } from '@/features/record/entry/QueueNote';
 import { BackButton } from '@/shell/header/BackButton';
@@ -68,6 +67,8 @@ export function DataImportScreen() {
   const goals = useSavingsGoalRows(userId, householdId).data;
   const debts = useDebts(householdId).data;
   const holdings = useHoldingRows(userId, householdId).data;
+  // 10-review (D-5): the same-name check needs all four lists; a list still loading would read as empty.
+  const listsReady = accounts !== undefined && goals !== undefined && debts !== undefined && holdings !== undefined;
   const addAccount = useAddAccount();
   const saveGoal = useSaveGoalPlan();
   const saveDebt = useSaveGrowDebt();
@@ -99,6 +100,7 @@ export function DataImportScreen() {
   };
 
   const pick = async (): Promise<void> => {
+    if (!listsReady) return;
     hapticTap();
     setBlocked(false);
     setOverrides(new Set());
@@ -109,7 +111,7 @@ export function DataImportScreen() {
       setUnreadable(true);
       return;
     }
-    const parsed = parseDataCsv(table, picked.text, currencyExponent);
+    const parsed = parseDataCsv(table, picked.text);
     if (!parsed.ok) {
       setLoaded(null);
       setUnreadable(true);
@@ -185,7 +187,7 @@ export function DataImportScreen() {
           </Text>
           <Pill label={t('system.ownData.dataImport.saveTemplate')} variant="secondary" onPress={() => void saveTemplate()} />
         </View>
-        <Pill label={t('system.ownData.dataImport.chooseFile')} variant="primary" onPress={() => void pick()} />
+        <Pill label={t('system.ownData.dataImport.chooseFile')} variant="primary" disabled={!listsReady} onPress={() => void pick()} />
         {unreadable ? (
           <View testID="import-unreadable">
             <WarningCard tone="soft" title={t('system.ownData.dataImport.unreadable')} value="" body={[]} />

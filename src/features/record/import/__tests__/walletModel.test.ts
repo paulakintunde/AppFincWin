@@ -2,12 +2,12 @@
 // and the rows, fee expenses and conversion pairs a commit writes. No React.
 import type { BuiltinCategoryKey } from '@/engine/categorize';
 import { readWallet, walletToDrafts, type ExistingRow, type WalletDrafts } from '@/engine/statement';
-import { csv, REVOLUT_HEADER, revolutRow, WISE_HEADER, wiseRow } from '@/engine/statement/__tests__/wallets/synthetic';
+import { csv, PAYPAL_HEADER, paypalRow, REVOLUT_HEADER, revolutRow, WISE_HEADER, wiseRow } from '@/engine/statement/__tests__/wallets/synthetic';
 import { buildWalletCommit, walletItems, walletLabel, walletMarks, walletPlan, type WalletItem } from '../walletModel';
 
 function wiseDrafts(): WalletDrafts {
   const text = csv(WISE_HEADER, [
-    wiseRow({ id: 'A', amount: '-10.00', currency: 'EUR', description: 'Coffee', fees: '0.30' }),
+    wiseRow({ id: 'A', amount: '-10.30', currency: 'EUR', description: 'Coffee', fees: '0.30' }), // fee-inclusive (10-review D-3)
     wiseRow({ id: 'B', amount: '25.00', currency: 'GBP', description: 'Refund' }),
     wiseRow({ id: 'C', amount: '40.00', currency: 'EUR', description: 'Gift' }),
   ]);
@@ -105,7 +105,7 @@ describe('walletItems', () => {
     expect(items.map((i) => i.kind)).toEqual(['conversion', 'line']);
     const conv = items[0] as Extract<WalletItem, { kind: 'conversion' }>;
     expect([conv.from.currency, conv.to.currency]).toEqual(['EUR', 'GBP']);
-    expect(conv.fee).toEqual({ magnitude: 50, currency: 'EUR' });
+    expect(conv.fee).toEqual({ magnitude: 50, currency: 'EUR', returned: false });
   });
 
   it('splits an unlinked conversion into two lines and offers to link it again', () => {
@@ -121,7 +121,7 @@ describe('walletItems', () => {
     const items = walletItems(d, walletPlan(d, [], { link: new Map([['EUR', 'e']]) }));
     const lines = items.filter((i): i is Extract<WalletItem, { kind: 'line' }> => i.kind === 'line');
     expect(lines.filter((l) => l.held).map((l) => l.row.currency)).toEqual(['GBP']);
-    expect(lines.find((l) => l.row.description === 'Coffee')?.fee).toEqual({ magnitude: 30, currency: 'EUR' });
+    expect(lines.find((l) => l.row.description === 'Coffee')?.fee).toEqual({ magnitude: 30, currency: 'EUR', returned: false });
   });
 });
 
@@ -170,6 +170,22 @@ describe('buildWalletCommit', () => {
     const one = buildWalletCommit({ ...base, drafts: d, accountByCurrency: new Map([['EUR', 'e']]), newId });
     expect(one.walletPairs).toEqual([]);
     expect(one.rows.every((r) => r.account_id === 'e')).toBe(true);
+  });
+
+  it('10-review (D-2): a returned fee is saved as money in under its own name, so the balance moves by Net', () => {
+    n = 0;
+    const read = readWallet(csv(PAYPAL_HEADER, [paypalRow({ type: 'Payment Refund', gross: '-10.00', fee: '0.30', net: '-9.70' })]));
+    if (read === null || !read.ok) throw new Error('fixture must read');
+    const d = walletToDrafts(read);
+    const out = buildWalletCommit({ ...base, drafts: d, accountByCurrency: new Map([['USD', 'u']]), newId });
+    expect(out.walletFees).toHaveLength(1);
+    expect(out.walletFees[0]?.row).toMatchObject({ original_amount: 30, name: 'PayPal fee returned', category_id: 'fees' });
+    const total = [...out.rows, ...out.walletFees.map((f) => f.row)].reduce((a, r) => a + r.original_amount, 0);
+    expect(total).toBe(-970);
+    const items = walletItems(d, walletPlan(d, [], { link: new Map([['USD', 'u']]) }));
+    expect((items[0] as Extract<WalletItem, { kind: 'line' }>).fee).toEqual({ magnitude: 30, currency: 'USD', returned: true });
+    const stored = { id: 's1', localDate: out.walletFees[0]!.row.local_date, amount: 30, name: 'PayPal fee returned', externalId: null, importFormat: 'csv' };
+    expect([...walletMarks(d, new Map([['USD', 'u']]), new Map([['u', [stored]]]), { learned: new Map(), builtinIds: new Map() }).duplicateFees]).toEqual([0]);
   });
 
   it('never imports a line whose currency has no account', () => {

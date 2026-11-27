@@ -51,10 +51,21 @@ describe('walletToDrafts', () => {
       ])
     );
     expect(out.feeLines).toEqual([
-      { forIndex: 0, currency: 'EUR', localDate: '2026-03-05', magnitude: 30 },
-      { forIndex: 1, currency: 'EUR', localDate: '2026-03-05', magnitude: 40 },
+      { forIndex: 0, currency: 'EUR', localDate: '2026-03-05', magnitude: 30, returned: false },
+      { forIndex: 1, currency: 'EUR', localDate: '2026-03-05', magnitude: 40, returned: false },
     ]);
     expect(out.drafts[0]?.rows.map((r) => r.index)).toEqual([0, 2]);
+  });
+
+  it('10-review (D-2): a returned fee is a returned fee line, and a net mismatch is a row issue', () => {
+    const out = walletToDrafts(
+      read([
+        line({ index: 0, grossMinor: -1000, feeMinor: -30 }),
+        line({ index: 1, grossMinor: -500, description: '', netMismatch: true }),
+      ])
+    );
+    expect(out.feeLines).toEqual([{ forIndex: 0, currency: 'EUR', localDate: '2026-03-05', magnitude: 30, returned: true }]);
+    expect(out.drafts[0]?.rows.map((r) => r.issues)).toEqual([[], ['empty-description', 'net-mismatch']]);
   });
 
   it('returns a linked transfer pair per clean conversion, with its fee line index or null', () => {
@@ -122,10 +133,10 @@ describe('walletToDrafts', () => {
       .record({
         currency: fc.constantFrom('EUR', 'GBP', 'USD'),
         gross: fc.integer({ min: -1_000_000, max: 1_000_000 }),
-        fee: fc.integer({ min: 0, max: 5_000 }),
+        fee: fc.integer({ min: -5_000, max: 5_000 }),
         date: fc.constantFrom('2026-03-01', '2026-03-15', '2026-04-02'),
       })
-      .filter((x) => x.gross !== 0 || x.fee > 0);
+      .filter((x) => x.gross !== 0 || x.fee !== 0);
     fc.assert(
       fc.property(fc.array(lineArb, { minLength: 1, maxLength: 40 }), (xs) => {
         const lines = xs.map((x, i) =>
@@ -137,7 +148,7 @@ describe('walletToDrafts', () => {
         const out = walletToDrafts(read(lines));
         for (const d of out.drafts) {
           const gross = d.rows.reduce((s, r) => s + (r.marker === 'minus' ? -1 : 1) * (r.magnitude as number), 0);
-          const fees = out.feeLines.filter((f) => f.currency === d.currency).reduce((s, f) => s + f.magnitude, 0);
+          const fees = out.feeLines.filter((f) => f.currency === d.currency).reduce((s, f) => s + (f.returned ? -f.magnitude : f.magnitude), 0);
           const net = lines.filter((l) => l.currency === d.currency).reduce((s, l) => s + l.netMinor, 0);
           if (gross - fees !== net) return false;
         }

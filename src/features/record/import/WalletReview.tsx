@@ -16,7 +16,7 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { Actions, Heading, T, useFormatAmount } from './importUi';
 import { WalletAccountsCard } from './WalletAccountsCard';
-import { FEES_CATEGORY_NAME, walletItems, walletLabel, type WalletItem } from './walletModel';
+import { feesCategoryName, walletItems, walletLabel, type WalletFeeView, type WalletItem } from './walletModel';
 import type { useStatementImport } from './useStatementImport';
 
 type ImportState = ReturnType<typeof useStatementImport>;
@@ -51,10 +51,14 @@ export function WalletReview({ state }: { state: ImportState }) {
   const items = walletItems(drafts, plan, state.walletUnlinked, state.walletMarks);
   const label = walletLabel(plan.wallet);
   const waiting = plan.targets.some((x) => x.create && x.accountId === null);
-  const feeText = (fee: { magnitude: number; currency: string }): string =>
-    t('system.ownData.walletImport.feeLine', { amount: fmt.amount(fee.magnitude, fee.currency), category: FEES_CATEGORY_NAME });
+  // 10-review (D-2): a returned fee reads as money back, not as another fee
+  const feeText = (fee: WalletFeeView): string =>
+    t(fee.returned ? 'system.ownData.walletImport.feeReturnedLine' : 'system.ownData.walletImport.feeLine', {
+      amount: fmt.amount(fee.magnitude, fee.currency),
+      category: feesCategoryName(),
+    });
 
-  const feeRow = (fee: { magnitude: number; currency: string }) => (
+  const feeRow = (fee: WalletFeeView) => (
     <View style={styles.feeRow}>
       <Glyph name="connected" size={16} color={colors.inkMuted} />
       <T role="label" tone="inkMuted">
@@ -129,6 +133,13 @@ export function WalletReview({ state }: { state: ImportState }) {
               {t('system.ownData.walletImport.heldBack')}
             </T>
             <Pill label={t('system.ownData.walletImport.choose')} variant="secondary" onPress={() => state.setWalletCreate(r.currency, true)} />
+          </View>
+        ) : null}
+        {r.issues.includes('net-mismatch') ? (
+          <View style={styles.feeRow}>
+            <T role="label" tone="inkMuted">
+              {t('system.ownData.walletImport.netMismatch')}
+            </T>
           </View>
         ) : null}
         {item.duplicate ? (

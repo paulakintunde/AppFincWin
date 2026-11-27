@@ -1,6 +1,7 @@
 // 10-22 (ENV-19, D-09): the two Android notification channels alerts use. Creating a channel never asks for permission.
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { i18n } from '@/i18n';
 
 export const ALERTS_CHANNEL = 'alerts';
 export const DIGEST_CHANNEL = 'digest';
@@ -13,11 +14,12 @@ export async function ensureAlertChannels(): Promise<void> {
   ensured = true;
   try {
     await Notifications.setNotificationChannelAsync(ALERTS_CHANNEL, {
-      name: 'Alerts',
+      // 10-review (D-7): channel names come from the locale files
+      name: i18n.t('system.alerts.channelAlerts'),
       importance: Notifications.AndroidImportance.HIGH,
     });
     await Notifications.setNotificationChannelAsync(DIGEST_CHANNEL, {
-      name: 'Daily summary',
+      name: i18n.t('system.alerts.channelDigest'),
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   } catch {

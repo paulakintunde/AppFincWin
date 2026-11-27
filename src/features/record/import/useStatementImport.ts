@@ -70,7 +70,7 @@ import { supabase } from '@/services/supabase';
 import { showToast } from '@/state/undoToast';
 import { hapticMilestone } from '@/ui/haptics';
 import { importExponentLookup, type ExponentLookup } from './currencyLookup';
-import { buildWalletCommit, FEES_CATEGORY_NAME, NO_WALLET_MARKS, walletMarks, walletPlan, type WalletMarks, type WalletPlan } from './walletModel';
+import { buildWalletCommit, feesCategoryName, NO_WALLET_MARKS, walletMarks, walletPlan, type WalletMarks, type WalletPlan } from './walletModel';
 import { acceptedSuggestionCount, maxAcceptedSuggestions } from './suggestionCap';
 import { periodFullyImported } from './periodCoverage';
 import {
@@ -1526,7 +1526,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     const accountByCurrency = new Map(plan.targets.flatMap((x) => (x.accountId === null ? [] : [[x.currency, x.accountId] as const])));
     const batchId = newStepId();
     const stepId = newStepId();
-    const existingFees = lookup.active.find((c) => c.builtin_key === null && (c.name ?? '').trim().toLowerCase() === FEES_CATEGORY_NAME.toLowerCase());
+    const existingFees = lookup.active.find((c) => c.builtin_key === null && (c.name ?? '').trim().toLowerCase() === feesCategoryName().toLowerCase());
     const build = (feesCategoryId: string | null) =>
       buildWalletCommit({
         drafts,
@@ -1551,7 +1551,7 @@ export function useStatementImport({ entry, accountId: initialAccountId = null }
     // D-23: the Fees category is created on first use and is the person's own.
     let feesId = existingFees?.id ?? null;
     if (probe.walletFees.length > 0 && feesId === null) {
-      feesId = addCategory.add({ ownerId: userId, name: FEES_CATEGORY_NAME, colorKey: 'slate' }).id;
+      feesId = addCategory.add({ ownerId: userId, name: feesCategoryName(), colorKey: 'slate' }).id;
     }
     const built = feesId === (existingFees?.id ?? null) ? probe : build(feesId);
 
