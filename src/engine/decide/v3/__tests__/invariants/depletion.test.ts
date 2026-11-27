@@ -9,10 +9,11 @@ import { evaluate } from '../../evaluate';
 import type { Fact, Result, V3Inputs } from '../../types';
 import { fcRuns } from '../helpers/fcRuns';
 import { checkArb, inputsArb, netInputsArb, withSafetyNet } from './arbitraries';
+import { TOP_LINES } from './topLines';
 
 const DEPLETION = new Set(['usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost', 'balanced_month_room', 'month_balance_gap']);
 // 08.1 D-06 / D-07: not_within_year and below_zero_without are their own lines near the top; this file reads the depletion block without them
-const D08 = new Set(['not_within_year', 'below_zero_without']);
+const D08 = TOP_LINES;
 const plainFacts = (r: Result): Fact[] => r.facts.filter((f) => !D08.has(f.code));
 const TIERS = ['month_already_short', 'month_short_small', 'month_short_moderate', 'month_short_moderate_extra'];
 const TIER_FACTS = new Set(['month_short_fits', 'money_lasts_shorter']);

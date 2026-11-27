@@ -1,5 +1,5 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Nightly engine properties (FC_RUNS=2000) red every night since 2026-11-23: safetyNet.test.ts I-D41 (need_net_line first) and depletion.test.ts I-D54 (depletion block leads); diagnose only"
 created: 2026-11-27
 updated: 2026-11-27
@@ -121,3 +121,6 @@ copy of `below_zero_later_without` when the net covers the gap.
 ## Resolution
 
 (pending owner approval of option 1)
+
+## Resolution (2026-11-27)
+Owner chose option 1: the tests were out of date, not the engine. `invariants/topLines.ts` holds one shared list of the top lines (not_within_year, below_zero_without, below_zero_later_without, below_zero_later_with) used by safetyNet.test.ts and depletion.test.ts. No engine or right-answer change. I-D41 and I-D54 pass at FC_RUNS=2000 locally (2 suites, 3 tests). The repro test is removed.

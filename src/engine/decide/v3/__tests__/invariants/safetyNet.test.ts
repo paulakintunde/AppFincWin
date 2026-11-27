@@ -9,6 +9,7 @@ import type { CheckV2, Fact, Result, V3Inputs } from '../../types';
 import { fcRuns } from '../helpers/fcRuns';
 import { checkOnce } from '../helpers/fixtures';
 import { PURPOSES, checkArb, checkOf, codeRank, inputsOfPerson, netInputsArb, priceArb, shapeArb, withSafetyNet, type NetTweak } from './arbitraries';
+import { TOP_LINES } from './topLines';
 
 const run = (inputs: V3Inputs, check: CheckV2): Result => evaluate(inputs, check).result;
 const asking = (...rs: Result[]): boolean => rs.some((r) => r.code === 'needs_input');
@@ -18,7 +19,7 @@ const NET_FACTS = new Set<string>(['emergency_untouched', 'net_used', 'net_left'
 /** 05.4 D-54 / D-63: the depletion lines lead the answer; the net's own lines start after them. */
 const DEPLETION = new Set<string>(['usual_month_short', 'depletion_payment', 'plan_makes_short', 'price_over_net', 'net_lasts', 'net_lasts_without', 'interest_is_a_cost', 'balanced_month_room', 'month_balance_gap']);
 // 08.1 D-06 / D-07: not_within_year and below_zero_without are their own lines near the top, ahead of the net's lines
-const D08 = new Set<string>(['not_within_year', 'below_zero_without']);
+const D08 = TOP_LINES;
 const afterDepletion = (facts: readonly Fact[]): readonly Fact[] => facts.filter((f) => !DEPLETION.has(f.code) && !D08.has(f.code));
 const otherFacts = (facts: readonly Fact[]): readonly Fact[] => facts.filter((f) => !NET_FACTS.has(f.code));
 const answer = (r: Result): unknown => ({ code: r.code, variant: r.variant, split: r.split, readyBy: r.readyBy, missing: r.missing, parts: r.parts, facts: otherFacts(r.facts), notices: r.notices });
