@@ -6,6 +6,7 @@
 import { DEFAULT_KEYWORD_RULES, guessCategory, type GuessContext } from '@/engine/categorize';
 import { findDuplicates, type DraftRow, type ExistingRow, type WalletDrafts, type WalletKind } from '@/engine/statement';
 import type { NewTransaction } from '@/db/rows';
+import { i18n } from '@/i18n';
 
 export interface WalletTarget {
   currency: string;
@@ -51,8 +52,25 @@ export function walletLabel(wallet: WalletKind): string {
   return LABELS[wallet];
 }
 
-/** The person's own category the fee lines go to; created on first use and theirs to rename (D-23). */
-export const FEES_CATEGORY_NAME = 'Fees';
+/**
+ * The person's own category the fee lines go to; created on first use and theirs to rename (D-23).
+ * 10-review (D-7): the name, the fee line names and the offered account name come from the locale files. Fee duplicate
+ * detection still matches a stored fee by its name (no stable marker exists on a stored fee row), so a fee saved under
+ * another language's name is not recognised as the same fee.
+ */
+export function feesCategoryName(): string {
+  return i18n.t('system.ownData.walletImport.feesCategory');
+}
+
+/** 10-review (D-2, D-7): a fee charged is "<Wallet> fee"; a returned fee has its own name and adds money back. */
+function feeName(wallet: WalletKind, returned: boolean): string {
+  return i18n.t(returned ? 'system.ownData.walletImport.feeReturnedName' : 'system.ownData.walletImport.feeName', { wallet: LABELS[wallet] });
+}
+
+/** 10-review (D-2): a fee's signed effect on the balance. */
+function feeAmount(f: { magnitude: number; returned: boolean }): number {
+  return f.returned ? f.magnitude : -f.magnitude;
+}
 
 function suggestAccount(wallet: WalletKind, currency: string, accounts: readonly WalletPlanAccount[]): string | null {
   const brand = LABELS[wallet].toLowerCase();
@@ -67,7 +85,7 @@ export function walletPlan(d: WalletDrafts, accounts: readonly WalletPlanAccount
     return {
       currency,
       accountId,
-      createName: accountId === null ? `${LABELS[d.wallet]} ${currency}` : null,
+      createName: accountId === null ? i18n.t('system.ownData.walletImport.accountName', { wallet: LABELS[d.wallet], currency }) : null,
       create,
     };
   });
@@ -161,7 +179,6 @@ export function walletMarks(
     }
   }
 
-  const feeName = `${LABELS[d.wallet]} fee`;
   const used = new Map<string, number>();
   const duplicateFees = new Set<number>();
   d.feeLines.forEach((f, position) => {
@@ -171,8 +188,9 @@ export function walletMarks(
     }
     const accountId = accountByCurrency.get(f.currency);
     const stored = accountId === undefined ? [] : (existingByAccount.get(accountId) ?? []);
-    const matching = stored.filter((e) => e.name === feeName && e.localDate === f.localDate && e.amount === -f.magnitude).length;
-    const key = `${accountId ?? ''}|${f.localDate}|${f.magnitude}`;
+    const name = feeName(d.wallet, f.returned);
+    const matching = stored.filter((e) => e.name === name && e.localDate === f.localDate && e.amount === feeAmount(f)).length;
+    const key = `${accountId ?? ''}|${f.localDate}|${feeAmount(f)}`;
     const seen = used.get(key) ?? 0;
     if (seen < matching) {
       used.set(key, seen + 1);
@@ -225,12 +243,12 @@ export function buildWalletCommit(input: WalletCommitInput): WalletCommit {
         id: input.newId(),
         household_id: input.householdId,
         account_id: accountId,
-        original_amount: -f.magnitude,
+        original_amount: feeAmount(f),
         original_currency: f.currency,
         local_date: f.localDate,
         time_zone: input.timeZone,
         note: null,
-        name: `${LABELS[d.wallet]} fee`,
+        name: feeName(d.wallet, f.returned),
         category_id: input.feesCategoryId,
         status: 'paid',
         import_batch_id: input.batchId,
@@ -263,6 +281,8 @@ export function buildWalletCommit(input: WalletCommitInput): WalletCommit {
 export interface WalletFeeView {
   magnitude: number;
   currency: string;
+  /** 10-review (D-2): a returned fee adds money back. */
+  returned: boolean;
 }
 
 export type WalletItem =
@@ -278,7 +298,7 @@ export function walletItems(d: WalletDrafts, plan: WalletPlan, unlinked: Readonl
   const rows = d.drafts.flatMap((x) => x.rows).sort((a, b) => a.index - b.index);
   const byIndex = new Map(rows.map((r) => [r.index, r] as const));
   const held = new Set(plan.heldBack);
-  const feeFor = new Map(d.feeLines.map((f) => [f.forIndex, { magnitude: f.magnitude, currency: f.currency }] as const));
+  const feeFor = new Map(d.feeLines.map((f) => [f.forIndex, { magnitude: f.magnitude, currency: f.currency, returned: f.returned }] as const));
   const pairOfFrom = new Map(d.transferPairs.map((p) => [p.fromIndex, p] as const));
   const pairedTo = new Map<number, number>();
   const items: WalletItem[] = [];
@@ -315,7 +335,7 @@ export function walletItems(d: WalletDrafts, plan: WalletPlan, unlinked: Readonl
 
   for (const f of d.feeLines) {
     if (!byIndex.has(f.forIndex) && plan.targets.some((x) => x.currency === f.currency && (x.accountId !== null || x.create))) {
-      items.push({ kind: 'feeOnly', key: `f${f.forIndex}`, localDate: f.localDate, fee: { magnitude: f.magnitude, currency: f.currency } });
+      items.push({ kind: 'feeOnly', key: `f${f.forIndex}`, localDate: f.localDate, fee: { magnitude: f.magnitude, currency: f.currency, returned: f.returned } });
     }
   }
   return items;

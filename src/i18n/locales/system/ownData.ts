@@ -23,6 +23,14 @@ export const ownData = {
     duplicatesSkipped: '{{count}} lines are already in your records and will be skipped.',
     choose: 'Choose',
     feeLine: 'Fee {{amount}} · {{category}}',
+    // 10-review (D-2): a fee the wallet gave back (for example on a refund) is saved as money in, not as a new expense
+    feeReturnedLine: 'Fee returned {{amount}} · {{category}}',
+    netMismatch: 'Gross and fee do not add up to the Net in the file. Check this line.',
+    // 10-review (D-7): names saved with imported records
+    feesCategory: 'Fees',
+    feeName: '{{wallet}} fee',
+    feeReturnedName: '{{wallet}} fee returned',
+    accountName: '{{wallet}} {{currency}}',
     feeMeta: 'Fees are saved as separate expenses in a Fees category. The account balance still matches the file.',
     conversion: 'Converted {{from}} to {{to}}',
     unlink: 'Keep as separate lines',
