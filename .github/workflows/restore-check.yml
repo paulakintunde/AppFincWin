@@ -26,6 +26,9 @@ jobs:
         with: { version: 3.1.0 }
       - name: Install age and the Postgres client
         run: |
+          # 10-30 review: a broken third-party apt source on the runner image (packages.microsoft.com 403, 2026-11-27)
+          # stopped apt-get update and so the backup. We need only Ubuntu packages, so drop the extra sources first.
+          sudo rm -f /etc/apt/sources.list.d/microsoft*.list /etc/apt/sources.list.d/microsoft*.sources
           sudo apt-get update -qq
           sudo apt-get install -y -qq age postgresql-client
       - name: Restore the newest backup and check it
