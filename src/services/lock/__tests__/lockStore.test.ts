@@ -4,12 +4,14 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Platform } from 'react-native';
 import {
   checkPin,
+  clampLockUntil,
   clearLock,
   clearPin,
   clearTries,
   DEFAULT_LOCK_SETTINGS,
   loadLockState,
   markBackgrounded,
+  readLockSettings,
   registerLockWipe,
   saveLockSettings,
   setPin,
@@ -18,6 +20,7 @@ import {
 } from '../lockStore';
 import { authenticateBiometric, authenticateDevice, biometricKind, deviceLockAvailable, isBiometricPending } from '../biometric';
 import { wipeDeviceData } from '@/services/storage/wipe';
+import { MAX_WAIT_MS } from '../pin';
 
 const mockSecure = new Map<string, string>();
 jest.mock('expo-secure-store', () => ({
@@ -107,6 +110,47 @@ describe('lockStore', () => {
     expect(after).toMatchObject({ ok: false, backoff: { kind: 'reauth' } });
   });
 
+  it('10-review (L-4): two checks at once are run one after the other, so each wrong try is counted', async () => {
+    await setPin('123456');
+    const [a, b] = await Promise.all([checkPin('000000', 1000), checkPin('111111', 1000)]);
+    expect(a).toMatchObject({ ok: false, wrongTries: 1 });
+    expect(b).toMatchObject({ ok: false, wrongTries: 2 });
+    expect((await loadLockState()).wrongTries).toBe(2);
+  });
+
+  it('10-review (L-4): a failed check does not block the next one', async () => {
+    await setPin('123456');
+    const get = SecureStore.getItemAsync as jest.Mock;
+    get.mockImplementationOnce(() => Promise.reject(new Error('keystore')));
+    await expect(checkPin('000000', 1000)).rejects.toThrow('keystore');
+    expect(await checkPin('123456', 1000)).toEqual({ ok: true });
+  });
+
+  it('10-review (L-5): a wait beyond the longest step (clock moved back) is cut to the longest step and stored', async () => {
+    await setPin('123456');
+    for (let i = 0; i < 5; i++) await checkPin('000000', 10_000_000);
+    // The clock jumps back an hour: the stored wait now looks over an hour away.
+    const back = 10_000_000 - 3_600_000;
+    const r = await checkPin('123456', back);
+    expect(r).toEqual({ ok: false, backoff: { kind: 'wait', ms: MAX_WAIT_MS }, wrongTries: 5 });
+    expect((await loadLockState()).lockUntil).toBe(back + MAX_WAIT_MS);
+  });
+
+  it('10-review (L-5): clampLockUntil leaves a normal wait and null alone', () => {
+    expect(clampLockUntil(null, 0)).toBeNull();
+    expect(clampLockUntil(30_000, 0)).toBe(30_000);
+    expect(clampLockUntil(MAX_WAIT_MS + 1, 0)).toBe(MAX_WAIT_MS);
+    expect(MAX_WAIT_MS).toBe(900_000);
+  });
+
+  it('10-review (L-3): readLockSettings reads the settings without the secure store', async () => {
+    await saveLockSettings({ enabled: true, lockMethod: 'appPin' });
+    // loadLockState makes four secure reads; each fails once.
+    for (let i = 0; i < 4; i++) (SecureStore.getItemAsync as jest.Mock).mockImplementationOnce(() => Promise.reject(new Error('keystore')));
+    await expect(loadLockState()).rejects.toThrow('keystore');
+    expect(await readLockSettings()).toMatchObject({ enabled: true, lockMethod: 'appPin' });
+  });
+
   it('keeps tries and lockUntil in SecureStore, so clearing AsyncStorage does not reset them', async () => {
     await setPin('123456');
     for (let i = 0; i < 5; i++) await checkPin('000000', 0);
@@ -182,6 +226,9 @@ describe('lockStore', () => {
     });
     it('timing now always locks', () => {
       expect(shouldLockOnActive(st({ timing: 'now' }, 1000), 1000, false)).toBe(true);
+    });
+    it('10-review (L-5): a clock moved back while away counts as elapsed and locks', () => {
+      expect(shouldLockOnActive(st({ timing: 'fifteenMinutes' }, 100_000), 40_000, false)).toBe(true);
     });
   });
 
