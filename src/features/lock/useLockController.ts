@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { isBiometricPending } from '@/services/lock/biometric';
 import { loadLockState, markBackgrounded, shouldLockOnActive, type LockState } from '@/services/lock/lockStore';
+import { setSecureWindow } from '@/services/lock/secureWindow';
 
 export interface LockController {
   ready: boolean;
@@ -25,6 +26,12 @@ export function useLockController(): LockController {
   const wentAway = useRef(false);
   const marking = useRef<Promise<void>>(Promise.resolve());
   const alive = useRef(true);
+
+  // 10-30 (D-04, owner 2026-11-27): with the lock on, the Android window is secure, so the live recents card is blank.
+  const lockOn = state?.settings.enabled === true;
+  useEffect(() => {
+    void setSecureWindow(lockOn);
+  }, [lockOn]);
 
   // A restored process counts as a cold start (UI-SPEC 1d): the first load locks whenever the lock is on.
   useEffect(() => {

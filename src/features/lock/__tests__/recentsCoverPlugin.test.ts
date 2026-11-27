@@ -27,8 +27,9 @@ describe('withRecentsCover (10-30, D-04)', () => {
   it('uses FLAG_SECURE only while paused, and only before Android 13', () => {
     const out = addRecentsCover(MAIN);
     expect(out).toContain('import android.view.WindowManager');
-    expect(out).toMatch(/override fun onPause\(\) \{\n\s*if \(Build\.VERSION\.SDK_INT < 33\) window\.addFlags\(WindowManager\.LayoutParams\.FLAG_SECURE\)/);
-    expect(out).toMatch(/override fun onResume\(\) \{\n\s*super\.onResume\(\)\n\s*if \(Build\.VERSION\.SDK_INT < 33\) window\.clearFlags/);
+    expect(out).toMatch(/override fun onPause\(\) \{[\s\S]*?Build\.VERSION\.SDK_INT < 33 && \(flags and WindowManager\.LayoutParams\.FLAG_SECURE\) == 0[\s\S]*?securedOnPause = true/);
+    // Clears only what onPause added, so the app's own secure window (lock on) is kept.
+    expect(out).toMatch(/override fun onResume\(\) \{\n\s*super\.onResume\(\)\n\s*if \(securedOnPause\) \{\n\s*window\.clearFlags/);
     expect(out).not.toMatch(/onCreate[\s\S]*addFlags\(WindowManager\.LayoutParams\.FLAG_SECURE\)[\s\S]*getMainComponentName/);
   });
 

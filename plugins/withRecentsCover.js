@@ -14,15 +14,25 @@ const ON_CREATE = `    ${MARK}: no app-switcher picture on Android 13+.
     if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)`;
 
 const PAUSE_RESUME = `
-  ${MARK}: before Android 13, hide the window only while paused.
+  ${MARK}: before Android 13, hide the window only while paused. Clear only what was added here, so a secure
+  // window set by the app (lock on, src/services/lock/secureWindow.ts) stays secure.
+  private var securedOnPause = false
+
   override fun onPause() {
-    if (Build.VERSION.SDK_INT < 33) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    val flags = window.attributes.flags
+    if (Build.VERSION.SDK_INT < 33 && (flags and WindowManager.LayoutParams.FLAG_SECURE) == 0) {
+      window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+      securedOnPause = true
+    }
     super.onPause()
   }
 
   override fun onResume() {
     super.onResume()
-    if (Build.VERSION.SDK_INT < 33) window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    if (securedOnPause) {
+      window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+      securedOnPause = false
+    }
   }
 `;
 
