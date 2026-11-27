@@ -53,6 +53,15 @@ export interface AssembleInput {
   externalId: string | null;
   pairKey: string | null;
   conversion: boolean;
+  /**
+   * 10-review (D-2): how the fee cell is signed. 'magnitude' (Wise, Revolut): the cell is a charged fee's size.
+   * 'balance' (PayPal): the cell is the fee's own balance impact, so -1.75 is a fee charged and +0.30 a fee returned.
+   */
+  feeSign?: 'magnitude' | 'balance';
+  /** 10-review (D-3): the amount cell already includes the fee (it is the whole balance change); gross is amount + fee. */
+  feeIncluded?: boolean;
+  /** 10-review (D-2): the file's Net cell, checked against gross less fee when present. */
+  netRaw?: string;
 }
 
 /** Builds one line from raw cells: 'bad' when a needed cell is unreadable, 'skip' when nothing moves. */
@@ -60,24 +69,30 @@ export function assemble(a: AssembleInput): RowResult {
   const currency = a.currency.toUpperCase();
   if (!/^[A-Z]{3}$/.test(currency)) return 'bad';
   const localDate = parseDate(a.dateRaw, a.dateFormat);
-  const gross = parseMoney(a.amountRaw, currency);
+  const amount = parseMoney(a.amountRaw, currency);
   const feeSigned = a.feeRaw === '' ? 0 : parseMoney(a.feeRaw, currency);
-  if (localDate === null || gross === null || feeSigned === null) return 'bad';
-  const feeMinor = Math.abs(feeSigned);
-  if (gross === 0 && feeMinor === 0) return 'skip';
+  if (localDate === null || amount === null || feeSigned === null) return 'bad';
+  // 10-review (D-2): keep the sign. A fee that reduces the balance is a cost; a returned fee is a negative cost.
+  const feeMinor = a.feeSign === 'balance' ? 0 - feeSigned : Math.abs(feeSigned);
+  // 10-review (D-3): when the amount already holds the fee, the payment itself is amount + fee (no double count).
+  const grossMinor = a.feeIncluded === true ? amount + feeMinor : amount;
+  if (grossMinor === 0 && feeMinor === 0) return 'skip';
   const balance = a.balanceRaw === '' ? null : parseMoney(a.balanceRaw, currency);
-  const kind = gross === 0 ? 'fee-only' : a.conversion ? 'conversion' : 'payment';
+  const kind = grossMinor === 0 ? 'fee-only' : a.conversion ? 'conversion' : 'payment';
+  const netMinor = grossMinor - feeMinor;
+  const statedNet = a.netRaw === undefined || a.netRaw === '' ? undefined : parseMoney(a.netRaw, currency);
   return {
     currency,
     localDate,
     description: a.description.replace(/\s+/g, ' ').trim().slice(0, MAX_DESCRIPTION),
-    grossMinor: gross,
+    grossMinor,
     feeMinor,
-    netMinor: gross - feeMinor,
+    netMinor,
     externalId: a.externalId === null ? null : a.externalId.slice(0, MAX_EXTERNAL_ID),
     pairKey: a.pairKey,
     kind,
     balanceMinor: balance,
+    ...(statedNet !== undefined && statedNet !== netMinor ? { netMismatch: true as const } : {}),
   };
 }
 

@@ -1,8 +1,8 @@
 /**
  * Turns read wallet lines into one StatementDraft per currency (D-22), a fee
  * expense line per fee (D-23) and a transfer pair per currency conversion
- * (IMP-06). Rows carry gross; fees are separate, so each currency's balance
- * moves by exactly the net.
+ * (IMP-06). Rows carry gross; fees are separate (a returned fee adds back), so
+ * each currency's balance moves by exactly the net.
  */
 import { minorUnits } from '../../money';
 import type { DraftRow, StatementDraft } from '../types';
@@ -23,7 +23,7 @@ function toRow(l: WalletLine): DraftRow {
     currency: l.currency,
     externalId: l.externalId,
     trnType: l.grossMinor < 0 ? 'DEBIT' : 'CREDIT',
-    issues: l.description === '' ? ['empty-description'] : [],
+    issues: [...(l.description === '' ? (['empty-description'] as const) : []), ...(l.netMismatch ? (['net-mismatch'] as const) : [])],
   };
 }
 
@@ -45,7 +45,7 @@ function pairsOf(lines: readonly WalletLine[]): WalletTransferPair[] {
       toIndex: to.index,
       fromCurrency: from.currency,
       toCurrency: to.currency,
-      feeIndex: from.feeMinor > 0 ? from.index : to.feeMinor > 0 ? to.index : null,
+      feeIndex: from.feeMinor !== 0 ? from.index : to.feeMinor !== 0 ? to.index : null,
     });
   }
   return pairs;
@@ -73,8 +73,9 @@ export function walletToDrafts(read: Extract<WalletRead, { ok: true }>): WalletD
       warnings: [],
     };
   });
+  // 10-review (D-2): a returned fee (feeMinor < 0) is its own line that adds money back, so the balance still moves by net.
   const feeLines: WalletFeeLine[] = read.lines
-    .filter((l) => l.feeMinor > 0)
-    .map((l) => ({ forIndex: l.index, currency: l.currency, localDate: l.localDate, magnitude: l.feeMinor }));
+    .filter((l) => l.feeMinor !== 0)
+    .map((l) => ({ forIndex: l.index, currency: l.currency, localDate: l.localDate, magnitude: Math.abs(l.feeMinor), returned: l.feeMinor < 0 }));
   return { wallet: read.wallet, drafts, feeLines, transferPairs: pairsOf(read.lines), currencies };
 }
