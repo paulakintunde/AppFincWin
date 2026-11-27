@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { supabase } from '@/services/supabase';
+import { withExternalActivity } from '@/services/lock/externalActivity';
 import { ensureAlertChannels } from './channels';
 
 export type PushPermission = 'granted' | 'denied' | 'undetermined';
@@ -36,7 +37,7 @@ export async function requestPushPermissionAndRegister(): Promise<'granted' | 'd
   let current: OsPermission = await Notifications.getPermissionsAsync();
   const first = toPermission(current);
   if (first === 'undetermined' || (first === 'denied' && current.canAskAgain === true)) {
-    current = await Notifications.requestPermissionsAsync();
+    current = await withExternalActivity(() => Notifications.requestPermissionsAsync()); // 10-review (L-6)
   }
   if (toPermission(current) !== 'granted') return 'denied';
 

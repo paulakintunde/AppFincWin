@@ -55,6 +55,8 @@ export const appLock = {
   tenBody: 'For your safety, FincWin needs you to sign in again with Apple or Google. Your records in your account are not touched.',
   tenButton: 'Sign in again',
   tenFooter: 'Nothing in your account is deleted by wrong PINs.',
+  // 10-review (L-2): shown when the phone's own lock did not open after signing in again.
+  reauthDeviceNeeded: 'Open your phone’s lock to confirm it is you, then set a new PIN.',
   signOutSheetTitle: 'Sign out?',
   signOutSheetBody: 'Your records stay safe in your account. This phone’s copy is cleared.',
   signOutSheetConfirm: 'Sign out',

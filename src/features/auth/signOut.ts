@@ -34,6 +34,22 @@ export interface SignOutDeps {
   resetTheme(): void;
 }
 
+// 10-review (L-9): the live theme's reset, registered from inside the ThemeProvider (LockGate), so a sign-out started
+// outside it (the remote sign-out in AuthProvider) still resets the theme like every other sign-out path.
+let registeredResetTheme: (() => void) | null = null;
+
+export function registerThemeReset(reset: () => void): () => void {
+  registeredResetTheme = reset;
+  return () => {
+    if (registeredResetTheme === reset) registeredResetTheme = null;
+  };
+}
+
+/** The registered theme reset, or a no-op before one is registered. */
+export function registeredThemeReset(): () => void {
+  return () => registeredResetTheme?.();
+}
+
 async function resolveDeps(overrides?: Partial<SignOutDeps>): Promise<SignOutDeps> {
   return {
     getPendingWriteCount: overrides?.getPendingWriteCount ?? realGetPendingWriteCount,

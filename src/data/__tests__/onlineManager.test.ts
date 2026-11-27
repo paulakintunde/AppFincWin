@@ -7,6 +7,7 @@ import { onlineManager, QueryClient, QueryObserver } from '@tanstack/react-query
 import { getEnv } from '@/config/env';
 import { afterCacheRestore, reachabilityTest, resetOnlineManagerForTests, startOnlineManager } from '../onlineManager';
 import { netClass, UNREACHABLE_GRACE_MS } from '../sync/connectivity';
+import { holdWrites, releaseWrites } from '../sync/writeHold';
 
 jest.mock('@/config/env', () => ({ getEnv: () => ({ supabaseUrl: 'https://abc.supabase.co/' }) }));
 
@@ -235,5 +236,30 @@ describe('startOnlineManager reachability grace', () => {
     resetOnlineManagerForTests();
     jest.advanceTimersByTime(20_000);
     expect(onlineManager.isOnline()).toBe(true);
+  });
+});
+
+describe('10-review (L-7): the lock screen hold on the write queue', () => {
+  it('while held, a reachable connection resumes nothing; the release re-checks and resumes', async () => {
+    const qc5 = new QueryClient();
+    const resume = jest.spyOn(qc5, 'resumePausedMutations').mockResolvedValue(undefined);
+    jest.spyOn(qc5, 'refetchQueries').mockResolvedValue(undefined);
+    resetOnlineManagerForTests();
+    startOnlineManager(qc5);
+    const calls = (NetInfo.addEventListener as jest.Mock).mock.calls;
+    const net = calls[calls.length - 1][0] as (s: { isConnected: boolean | null; isInternetReachable: boolean | null }) => void;
+
+    holdWrites();
+    expect(onlineManager.isOnline()).toBe(false);
+    net({ isConnected: true, isInternetReachable: true });
+    expect(onlineManager.isOnline()).toBe(false);
+    expect(resume).not.toHaveBeenCalled();
+
+    (NetInfo.refresh as jest.Mock).mockResolvedValueOnce({ isConnected: true, isInternetReachable: true });
+    releaseWrites();
+    await new Promise((r) => setImmediate(r));
+    expect(onlineManager.isOnline()).toBe(true);
+    expect(resume).toHaveBeenCalledTimes(1);
+    resetOnlineManagerForTests();
   });
 });
