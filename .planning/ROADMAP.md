@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 7: Insights** - Net worth, cash flow, category breakdowns, health score, remaining Activity views (runs after 08.1 and may run in parallel with Phase 10; its health score is signed off in Phase 11) (completed 2026-11-23)
 - [x] **Phase 8: Household** - Invites, members, split rules, settlements, Realtime sync
 - [x] **Phase 08.1: Decide rebuild on real data** (INSERTED, completed 2026-11-22) - Screens moved to 06.1 (2026-11-06); keeps household data in Decide and ends with the schema push and tester build (2026-11-19: reading test round 2, freeze and compliance gate moved to 08.2). Was: Decide reads real goals, debts and household data; full cost with running costs; design: Variant C chosen 2026-11-01, reading-test round 1 on Variant C finds fixes before the freeze; short setup; public switch-on last
-- [ ] **Phase 08.12: Joint spending agreements** (INSERTED; **v1, before launch**, after 10.2, owner 2026-11-24) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
+- [ ] **Phase 08.12: Joint spending agreements** (INSERTED; **v1, before launch**, after 10.2, owner 2026-11-24; **31 plans, planned 2026-11-28**) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
 - [ ] **Phase 08.13: Private rooms in a household** (INSERTED; **v1, before launch**, after 08.12, owner 2026-11-24) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
 - [x] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion (completed 2026-11-27; Android verified on Pixel 9; iPhone XR step 16 waits on 00-20)
@@ -1572,7 +1572,7 @@ Plans:
 **Release:** v1, before launch (owner 2026-11-24, reversing the 2026-11-22 Path to Launch v2 placement). Runs after Phase 10.2 and before Phase 11; Phase 08.13 follows it. Its round 4 items placed elsewhere stay there (price-rise notices in Phase 10, subscriptions list in Phase 7, receipt split by item in Phase 10.1, closure notice in Phase 11).
 
 **Goal:** Groups can agree how shared money is spent, and Decide shows the agreement in its answers. On an equal-access joint account, the group can set a spend limit: spends over it need another member's OK, or the group can choose "no approval needed". The phase also covers one-earner households, where one person is the main earner and the other partner is at home or not working. That partner may be paid an allowance by the main earner, be given a set sum, spend from the same account, or a mix of these. FincWin only records what the group agreed. It holds no money and cannot block a card payment.
-**Requirements**: TBD (from research and the owner's questions)
+**Requirements**: JSA-01..JSA-27 (defined in `08.12-RESEARCH.md`)
 **Depends on:** Phase 08.1 (the spending rule, joint account purposes and joint money counted once, from plans 22 and 23)
 **Source:** owner 2026-11-21. Research into how real one-earner and shared-money households work comes first: `.planning/phases/08.12-joint-spending-agreements/08.12-RESEARCH-ARRANGEMENTS.md`.
 **Success Criteria** (draft, to be confirmed with the owner):
@@ -1580,7 +1580,14 @@ Plans:
   2. One-earner setups (allowance paid by the earner, a set sum, a shared account, or a mix) each give the non-earning partner a correct and fair "Just me" answer, with each dollar counted once. Every setup has right-answer cases.
   3. Approval and allowance wording is declarative, never "advice" or "you should", and it never suggests that FincWin controls the money.
   4. The non-earning partner's own money and privacy are respected: nothing they keep private is shown to the earner.
-**Plans:** 0 plans (questions before build)
+**Plans:** 31 plans in five waves (D-13); owner decisions D-00a..D-30 in `08.12-CONTEXT.md`
+
+Plans:
+- [ ] Wave 1, the pool fix and fresher figures: 08.12-01 engine hold-back + never-twice property; 02 P1 characterisation + 12-month shared lines (D-25); 03 `household_pool()`, publish guard, `joint_account_ahead()` [push]; 04 pool read path + Home/Overview hold-back; 05 published figure without hold-back, publish after record; 06 PoolLine and "as of" lines; 07 fixture + cases HH-43..46
+- [ ] Wave 2, free access, Used by both, Personal money, one-earner: 08 rooms floor + `shared` rule; 09 `household_agreements`, server switch helper, personal money RPCs [push]; 10 engine `shared`/`whole`; 11 data layer + export + cache; 12 fifth sharing choice; 13 Used by both, Personal money, Record a payment, notices with Undo; 14 cases OE/FA
+- [ ] Wave 3, spend limit, OK requests, Talk it over: 15 push kinds; 16 `household_asks` + RPCs + no-trace sweep [push]; 17 engine limit/OK; 18 request hooks; 19 limit UI + AskCard + Record it anyway; 20 Notices requests + Talk it over
+- [ ] Wave 4, short money: 21 engine gap/cover/plans + cases TB/IN; 22 Paid from, top-up, nothing owed (D-26) [push if needed]; 23 short-money screens
+- [ ] Wave 5, finish and release: 24 Money and safety page; 25 review date; 26 "Who's in it?" + region word; 27 server switch app side; 28 one-time pool notice; 29 wording sign-off page; 30 case approval page; 31 full gate, push, preview update, two-phone check, store build
 
 ### Phase 08.13: Private rooms in a household (INSERTED)
 
