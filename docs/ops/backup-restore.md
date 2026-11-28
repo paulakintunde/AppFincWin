@@ -36,8 +36,8 @@ Run once by hand (plan 10-29), then after any change to the dump flags. Uses the
 1. Download the newest `daily/` pair from R2 with the restore token (S3 API, endpoint from `R2_ENDPOINT`, region `auto`).
 2. Decrypt: `docker run --rm -v "$PWD:/w" -w /w alpine sh -c "apk add --no-cache age >/dev/null && age -d -i age.key -o db.tgz fincwin-DATE.dump.age"`, then `tar -xzf db.tgz`.
 3. In a clean checkout run `npx supabase db start` (local stack, migrations from git applied).
-4. Load the data as `scripts/ops/backup/restore-check.sh` does: in one transaction set `session_replication_role = replica`, truncate the `public`, `auth` and `storage` tables, run `data.sql`, commit.
-5. Run `scripts/ops/backup/apply-deletion-log.sql` (triggers on). Never skip this (D-19).
+4. Load the data as `scripts/ops/backup/restore-check.sh` does: in one transaction set `session_replication_role = replica`, run `scripts/ops/backup/prepare-restore.sql` (truncates the `public`, `auth` and `storage` tables), run `data.sql`, commit.
+5. Run `scripts/ops/backup/apply-deletion-log.sql` (triggers on) inside `begin; ... commit;`. Never skip this (D-19). It raises, and so stops, if the log table is missing or any logged person is still there afterwards.
 6. Run `scripts/ops/backup/counts.sql` and compare with `counts.json`. Tables may only be lower where a logged deletion cascaded.
 7. Spot-check three figures by hand (for example one account balance, one goal, one month total) against the app.
 8. Confirm the server major with `select version()` on production and record it; the CLI's dump image must match.
@@ -51,17 +51,27 @@ Run once by hand (plan 10-29), then after any change to the dump flags. Uses the
 
 Only after a real loss. Backups are never edited in place; the restore is a copy.
 
+A backup taken before someone deleted their account still holds that person. Loading it on its own would bring them back, so the data is never loaded by hand: `scripts/ops/backup/restore.sh` loads it and re-applies the deletion log in **one transaction** (10-review L-3). If the log cannot be read or applied, or any deleted person is still there afterwards, nothing is committed and the script exits with `FAIL ... Do NOT reopen the app`.
+
 1. Create a new Supabase project (or reset the existing one). Update `supabase/config.toml`'s `project_id` and `SUPABASE_PROD_PROJECT_REF` in `.env.local`.
 2. Apply migrations from git (`npm run supabase:db:push`, which runs the preflight).
-3. Decrypt the chosen backup (see rehearsal steps 1 and 2) and load `data.sql` as in rehearsal step 4, against the new project's database URL.
-4. Run `scripts/ops/backup/apply-deletion-log.sql` against it **before re-opening the app**. Deleted people must not come back (D-19).
-5. Re-create the Vault secrets `alerts_deliver_url` and `alerts_deliver_secret`, and the function secrets (`EXPO_ACCESS_TOKEN`, `ALERTS_DELIVER_SECRET`, and the rest of the owner-setup list).
-6. Re-enable the auth providers and the `before_user_created` hook. Cron jobs come back with the migrations.
-7. Point the app's `SUPABASE_URL` and publishable key at the new project (OTA or rebuild), and refresh the GitHub secrets `SUPABASE_DB_URL_POOLER`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+3. Download the backup to restore and **every newer backup** still in R2 (rehearsal step 1). The newer ones are read only for their deletion logs, so a person who deleted after the chosen backup stays deleted.
+4. Run the restore against the new project's database URL (direct or session pooler, as the `postgres` role):
+
+   ```bash
+   TARGET_DB_URL='postgresql://...' AGE_KEY_FILE=age.key CONFIRM_RESTORE=replace-all-data \
+     bash scripts/ops/backup/restore.sh fincwin-DATE.dump.age fincwin-NEWER1.dump.age fincwin-NEWER2.dump.age
+   ```
+
+   If the old production database still answers, also set `DELETION_LOG_DB_URL` to it: its live `account_deletion_log` then covers deletions made after the newest backup too. With no newer backup and no `DELETION_LOG_DB_URL` the script stops; set `ONLY_BACKUP_LOG=yes` only when there is truly no other source, and then follow the residual-gap step below.
+5. It must end with `restore ok: N users, M deletions in the log, none present`. Any `FAIL` line means the target holds no restored data; fix the cause and run it again. Never load `data.sql` by hand to get around it.
+6. Re-create the Vault secrets `alerts_deliver_url` and `alerts_deliver_secret`, and the function secrets (`EXPO_ACCESS_TOKEN`, `ALERTS_DELIVER_SECRET`, and the rest of the owner-setup list).
+7. Re-enable the auth providers and the `before_user_created` hook. Cron jobs come back with the migrations.
+8. Point the app's `SUPABASE_URL` and publishable key at the new project (OTA or rebuild), and refresh the GitHub secrets `SUPABASE_DB_URL_POOLER`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
 
 ## Residual gap
 
-A deletion made after the newest dump is in the live `account_deletion_log`, not in the backup. After a restore from that backup the person exists again until someone re-deletes them. The log is kept 35 days and each backup 30 days, so any deletion still covered by a backup is also in the log of the dump taken after it, but a loss of production itself loses the live log. The restore re-applies only what the dump contains. Mitigation: after a production restore, check for support requests and re-delete anyone who deleted within the last day.
+A deletion made after the newest dump is only in the live `account_deletion_log`. `restore.sh` reads that live log when `DELETION_LOG_DB_URL` still reaches the old database, and the logs of every newer backup passed to it, so a restore from an older backup does not bring back anyone deleted since (10-review L-3). What stays open: if production itself is lost, deletions made after the newest dump are lost with it. Mitigation: after a production restore, check for support requests and re-delete anyone who deleted within the last day.
 
 ## Privacy copy note
 

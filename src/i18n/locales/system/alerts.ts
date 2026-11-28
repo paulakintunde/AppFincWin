@@ -52,7 +52,9 @@ export const alerts = {
   quietMeta: 'Alerts raised in quiet hours arrive when quiet hours end.',
   // partner
   partnerToggle: 'Partner alerts',
-  partnerSub: 'When someone in your home makes a large expense. Your own large amount decides.',
+  // Owner decision 2026-11-27 (10-review B): partner alerts keep their own switch. They arrive even when the person's own
+  // Large transaction alert is off; their large amount only sets the size. The copy says so plainly.
+  partnerSub: 'When someone in your home makes a large expense. Your large amount sets the size, even when your own large alert is off.',
   logRow: 'Alert log',
   logRowSub: 'Last 30 days',
   footerMeta: 'Alerts report what is in your records. They do not move money.',

@@ -19,8 +19,8 @@ run('hidden names read A household member', () => {
   assertEquals(pushText('partner_large', { who: 'Sam', hidden: true, category: 'Home', amount_minor: 32000, currency: 'USD' }), 'A household member spent $320 on Home');
 });
 
-run('private category reads Someone spent', () => {
-  assertEquals(pushText('partner_large', { who: 'Sam', hidden: false, category: null, amount_minor: 32000, currency: 'USD' }), 'Someone spent $320.');
+run('private category reads A household member spent, with no category (owner wording 2026-11-27)', () => {
+  assertEquals(pushText('partner_large', { who: 'Sam', hidden: false, category: null, amount_minor: 32000, currency: 'USD' }), 'A household member spent $320.');
 });
 
 run('the other kinds match UI-SPEC 5c', () => {

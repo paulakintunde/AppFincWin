@@ -27,7 +27,9 @@ export type WriteEntity =
   | 'income_payer_prompts'
   | 'holdings'
   | 'holding_lots'
-  | 'decide_check_history';
+  | 'decide_check_history'
+  | 'alert_settings'
+  | 'alert_prefs';
 
 /**
  * A PostgREST/Postgres error normalized into a typed shape. `code` is the Postgres or

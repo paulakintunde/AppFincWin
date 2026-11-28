@@ -75,7 +75,7 @@ describe('alertText', () => {
   const t = (key: string, o?: Record<string, string | number>) =>
     ({
       'system.push.partnerLargeHidden': 'A household member spent {amount} on {category}',
-      'system.push.partnerLargePrivate': 'Someone spent {amount}.',
+      'system.push.partnerLargePrivate': 'A household member spent {amount}.',
       'system.push.partnerLarge': '{who} spent {amount} on {category}',
     })[key]?.replace(/\{(\w+)\}/g, (_, k: string) => String(o?.[k])) ?? key;
   const fmt = (m: { amount: number }) => `$${m.amount / 100}`;
@@ -84,7 +84,7 @@ describe('alertText', () => {
     expect(alertText({ kind: 'partner_large', params: { ...base, who: 'Sam', hidden: true, category: 'Home' } }, t, fmt as never)).toBe(
       'A household member spent $320 on Home'
     );
-    expect(alertText({ kind: 'partner_large', params: { ...base, who: null, hidden: true, category: null } }, t, fmt as never)).toBe('Someone spent $320.');
+    expect(alertText({ kind: 'partner_large', params: { ...base, who: null, hidden: true, category: null } }, t, fmt as never)).toBe('A household member spent $320.');
     const out = alertText({ kind: 'partner_large', params: { ...base, who: 'Sam', hidden: false, category: 'Home' } }, t, fmt as never);
     expect(out).not.toMatch(/secret|Bob/);
   });

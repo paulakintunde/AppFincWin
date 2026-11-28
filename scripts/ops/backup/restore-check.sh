@@ -57,23 +57,10 @@ if printf '%s' "$auth_version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
   echo "auth image: $auth_version"
 fi
 supabase db start
-cat > "$WORK/prepare.sql" <<'SQL'
-do $$
-declare r record;
-begin
-  -- 10-29: skip tables postgres may not truncate (auth.schema_migrations is owned by supabase_auth_admin; it is
-  -- migration bookkeeping, not data, and the fresh local stack already has it right).
-  for r in select format('%I.%I', schemaname, tablename) as t from pg_tables
-           where schemaname in ('public', 'auth', 'storage')
-             and has_table_privilege(format('%I.%I', schemaname, tablename), 'TRUNCATE') loop
-    execute 'truncate table ' || r.t || ' cascade';
-  end loop;
-end $$;
-SQL
 {
   echo "begin;"
   echo "set session_replication_role = replica;"
-  cat "$WORK/prepare.sql"
+  cat "$HERE/prepare-restore.sql"
   cat "$WORK/data.sql"
   echo "commit;"
 } | psql "$LOCAL_DB" -X -q -v ON_ERROR_STOP=1 -o /dev/null
@@ -107,8 +94,12 @@ if (Number(raw.auth_users) === 0) problems.push("auth_users is 0 after restore")
 if (problems.length) { console.error("FAIL (before the deletion log):\n" + problems.join("\n")); process.exit(1); }
 ' "$WORK/counts.json" "$WORK/restored-raw.json"
 
-# 6. D-19: re-apply deletions BEFORE any later check (triggers on).
-psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1 -f "$HERE/apply-deletion-log.sql"
+# 6. D-19: re-apply deletions BEFORE any later check (triggers on). 10-review L-3: the SQL raises if the log is missing or
+# any logged user survives, and the check fails with it.
+if ! { echo "begin;"; cat "$HERE/apply-deletion-log.sql"; echo "commit;"; } | psql "$LOCAL_DB" -X -At -v ON_ERROR_STOP=1; then
+  echo "FAIL: the deletion log could not be re-applied to the restored copy" >&2
+  exit 1
+fi
 
 # 7. Counts after the log. Only the logged users' rows may be gone: auth.users drops by exactly the logged users that were
 # present, and with none present every table and the amount checksum must be unchanged.

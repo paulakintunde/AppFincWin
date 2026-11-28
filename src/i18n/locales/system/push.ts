@@ -8,7 +8,8 @@ export const push = {
   lowBalance: '{{account}} is below {{amount}}.',
   partnerLarge: '{{who}} spent {{amount}} on {{category}}',
   partnerLargeHidden: 'A household member spent {{amount}} on {{category}}',
-  partnerLargePrivate: 'Someone spent {{amount}}.',
+  // Owner decision 2026-11-27 (10-review A): the private-category form names the role, not "Someone".
+  partnerLargePrivate: 'A household member spent {{amount}}.',
   digest: 'Today: {{parts}}.',
   whenToday: 'today',
   whenTomorrow: 'tomorrow',
