@@ -51,6 +51,8 @@ jobs:
         run: npm run check:icons
       - name: Mutation part plan and merged-score gate (05.4-43, D-172)
         run: node --test scripts/__tests__/mutation-shards.test.mjs scripts/__tests__/mutation-merge.test.mjs
+      - name: Backup and restore scripts re-apply the deletion log (10-20, 10-review L-3)
+        run: node --test scripts/ops/backup/backupScripts.test.mjs
       - name: Service-role key never referenced by client code (ENV-04)
         run: "! grep -rnE 'SERVICE_ROLE|service_role|sb_secret_' src app"
   # 05.4-43 (D-175): the per-push mutation check moved to mutation-changed.yml, outside this workflow's
