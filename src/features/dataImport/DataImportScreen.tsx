@@ -3,6 +3,8 @@
  * works as it is; the template carries the export columns and one example row. Nothing is written before the preview.
  * Every accepted row goes through the existing queued create mutations, so it works offline; an import that would pass the
  * 500-change queue cap is refused up front with the QueueNote.
+ * 10-review-2 (D-1, D-2; owner 2026-11-28): amounts are read flexibly (engine/dataCsv amount.ts) with the person's custom
+ * currencies and the device's decimal mark as inputs; the person is never asked which unit a file uses.
  */
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -16,7 +18,18 @@ import { useSaveGoalPlan } from '@/data/mutations/growGoals';
 import { useSaveGrowDebt } from '@/data/mutations/growDebts';
 import { useAddHolding } from '@/data/mutations/growHoldings';
 import { useQueueGuard } from '@/data/sync/useQueueGuard';
-import { classifyRows, DATA_CSV_SCHEMAS, parseDataCsv, type DataCsvRow, type DataTable, type RowMatch } from '@/engine/dataCsv';
+import { useCustomCurrencies } from '@/data/queries/customCurrencies';
+import {
+  classifyRows,
+  DATA_CSV_SCHEMAS,
+  exponentWith,
+  parseDataCsv,
+  type DataCsvRow,
+  type DataTable,
+  type RowMatch,
+  type UnitReason,
+} from '@/engine/dataCsv';
+import { getDeviceSeparators } from '@/services/locale/deviceLocale';
 import { useRecordContext } from '@/features/record/useRecordContext';
 import { QueueNote } from '@/features/record/entry/QueueNote';
 import { BackButton } from '@/shell/header/BackButton';
@@ -47,6 +60,7 @@ interface Loaded {
   table: DataTable;
   rows: DataCsvRow[];
   matches: RowMatch[];
+  unitReason: UnitReason;
 }
 
 export function DataImportScreen() {
@@ -67,6 +81,8 @@ export function DataImportScreen() {
   const goals = useSavingsGoalRows(userId, householdId).data;
   const debts = useDebts(householdId).data;
   const holdings = useHoldingRows(userId, householdId).data;
+  const customs = useCustomCurrencies(userId).data;
+  const exponentOf = useMemo(() => exponentWith((customs ?? []).map((c) => ({ code: c.code, decimals: c.decimals }))), [customs]);
   // 10-review (D-5): the same-name check needs all four lists; a list still loading would read as empty.
   const listsReady = accounts !== undefined && goals !== undefined && debts !== undefined && holdings !== undefined;
   const addAccount = useAddAccount();
@@ -111,20 +127,20 @@ export function DataImportScreen() {
       setUnreadable(true);
       return;
     }
-    const parsed = parseDataCsv(table, picked.text);
+    const parsed = parseDataCsv(table, picked.text, { exponentOf, deviceDecimal: getDeviceSeparators(rc.region)?.decimal });
     if (!parsed.ok) {
       setLoaded(null);
       setUnreadable(true);
       return;
     }
     setUnreadable(false);
-    setLoaded({ table, rows: parsed.rows, matches: classifyRows(parsed.rows, existing(table)) });
+    setLoaded({ table, rows: parsed.rows, matches: classifyRows(parsed.rows, existing(table)), unitReason: parsed.unitReason });
   };
 
   const saveTemplate = async (): Promise<void> => {
     hapticTap();
     try {
-      const result = await saveTemplateFile(TEMPLATE_FILE[table], buildTemplate(table, rc.homeCurrency));
+      const result = await saveTemplateFile(TEMPLATE_FILE[table], buildTemplate(table, rc.homeCurrency, exponentOf));
       if (result !== 'cancelled') showToast({ kind: 'info', text: { key: 'system.ownData.dataImport.templateSaved' } });
     } catch {
       showToast({ kind: 'info', text: { key: 'sync.exportFailed' } });
@@ -199,6 +215,7 @@ export function DataImportScreen() {
             <DataImportPreview
               table={loaded.table}
               reports={reports}
+              oldExport={loaded.unitReason === 'old-export'}
               overrides={overrides}
               onToggle={(index, on) =>
                 setOverrides((prev) => {

@@ -22,6 +22,9 @@ export interface ProgressBarProps {
   accessibilityLabel?: string;
   /** Optional tick (0..100), e.g. the 36 rule on the debt-payments bar. */
   tickPercent?: number;
+  /** 10-review-2 (D-4): a step count to speak instead of the percent (export: 5 of 14). */
+  accessibilityValue?: { min: number; max: number; now: number };
+  testID?: string;
 }
 
 export const PROGRESS_HEIGHT = { thin: 4, thick: 8 } as const;
@@ -31,7 +34,7 @@ export function clampPercent(percent: number): number {
   return Math.min(100, Math.max(0, Math.round(percent)));
 }
 
-export function ProgressBar({ percent, variant = 'thin', tone = 'accent', chartColor, animate = true, accessibilityLabel, tickPercent }: ProgressBarProps) {
+export function ProgressBar({ percent, variant = 'thin', tone = 'accent', chartColor, animate = true, accessibilityLabel, tickPercent, accessibilityValue, testID = 'grow-progress' }: ProgressBarProps) {
   const { colors } = useTheme();
   const reduced = useReduceMotion();
   const now = clampPercent(percent);
@@ -44,11 +47,11 @@ export function ProgressBar({ percent, variant = 'thin', tone = 'accent', chartC
   const fill = chartColor ?? (tone === 'blue' ? categorySwatch.blue.color : tone === 'ink' ? colors.ink : colors.accent);
   return (
     <View
-      testID="grow-progress"
+      testID={testID}
       accessible
       accessibilityRole="progressbar"
       accessibilityLabel={accessibilityLabel}
-      accessibilityValue={{ min: 0, max: 100, now }}
+      accessibilityValue={accessibilityValue ?? { min: 0, max: 100, now }}
       style={[styles.track, { height, borderRadius: height / 2, backgroundColor: colors.fill1 }]}
     >
       <Animated.View testID="grow-progress-fill" style={[styles.fill, { height, borderRadius: height / 2, backgroundColor: fill }, fillStyle]} />

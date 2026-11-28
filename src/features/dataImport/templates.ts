@@ -1,8 +1,10 @@
 /**
  * 10-18 (DAT-03): the import template for each table is the export's column list with one example row, so a file saved by
- * Export and the template read the same way. Pure. Amounts are integer minor units, as Export writes them.
+ * Export and the template read the same way. Pure.
+ * 10-review-2 (D-1, owner 2026-11-28; supersedes 10-review D-1): amounts are normal amounts in the row's currency (25.00),
+ * written by the same toExportRow as Export, and the amount_format = 'decimal' marker is the last column.
  */
-import { DATA_CSV_SCHEMAS, type DataTable } from '@/engine/dataCsv';
+import { AMOUNT_FORMAT_COLUMN, DATA_CSV_SCHEMAS, exponentWith, toExportRow, type DataTable } from '@/engine/dataCsv';
 import { toCsv } from '@/features/export/csvSerialize';
 
 // Server bookkeeping the importer ignores; not part of a template.
@@ -17,9 +19,9 @@ export const TEMPLATE_FILE: Readonly<Record<DataTable, string>> = {
   holdings: 'fincwin-investments-template.csv',
 };
 
-/** The columns a template carries: the export order, without server bookkeeping. */
+/** The columns a template carries: the export order, without server bookkeeping, then the format marker. */
 export function templateColumns(table: DataTable): string[] {
-  return DATA_CSV_SCHEMAS[table].allowed.filter((c) => !BOOKKEEPING.has(c));
+  return [...DATA_CSV_SCHEMAS[table].allowed.filter((c) => !BOOKKEEPING.has(c)), AMOUNT_FORMAT_COLUMN];
 }
 
 function example(table: DataTable, currency: string): Record<string, string> {
@@ -35,8 +37,8 @@ function example(table: DataTable, currency: string): Record<string, string> {
   }
 }
 
-/** CSV text: the header, then one example row. */
-export function buildTemplate(table: DataTable, currency = 'USD'): string {
+/** CSV text: the header, then one example row (examples are minor units here, written as normal amounts). */
+export function buildTemplate(table: DataTable, currency = 'USD', exponentOf: (code: string) => number = exponentWith()): string {
   const cols = templateColumns(table);
-  return toCsv(cols, [example(table, currency)]);
+  return toCsv(cols, [toExportRow(table, example(table, currency), exponentOf)]);
 }

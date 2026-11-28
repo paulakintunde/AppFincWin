@@ -19,7 +19,8 @@ import { useMemberLabel } from '@/features/household/useMemberLabel';
 import { WarningCard } from '@/ui/WarningCard';
 import { IconTile } from '@/ui/icons/IconTile';
 import { hapticFailed } from '@/ui/haptics';
-import { exportCsv } from '@/features/export/csvExport';
+import { exportCsv, type ExportProgress } from '@/features/export/csvExport';
+import { ExportProgressView } from '@/features/export/ExportProgressView';
 import { supabase } from '@/services/supabase';
 import { PlanLink } from '@/features/plans/components/NoticeCard';
 import { usePlanState } from '@/features/plans/usePlanState';
@@ -39,6 +40,8 @@ export function DeleteAccountScreen() {
   const [failed, setFailed] = useState(false);
   // 10-14 (D-17): the optional copy. Its state never feeds `ready`, so a failed or skipped copy cannot block deletion.
   const [copy, setCopy] = useState<'idle' | 'preparing' | 'saved' | 'failed'>('idle');
+  // 10-review-2 (D-4): the same progress as the Export screen (folder first on Android, then the steps).
+  const [progress, setProgress] = useState<ExportProgress | null>(null);
 
   const word = t('household.account.confirmWord');
   const matches = typed.trim().toUpperCase() === word.toUpperCase();
@@ -55,11 +58,13 @@ export function DeleteAccountScreen() {
     if (copy === 'preparing') return;
     setCopy('preparing');
     try {
-      const result = await exportCsv(supabase);
+      const result = await exportCsv(supabase, { onProgress: setProgress });
       setCopy(result === 'cancelled' ? 'idle' : 'saved');
     } catch {
       hapticFailed();
       setCopy('failed');
+    } finally {
+      setProgress(null);
     }
   }
 
@@ -129,6 +134,7 @@ export function DeleteAccountScreen() {
             void onSaveCopy();
           }}
         />
+        {copy === 'preparing' && progress ? <ExportProgressView progress={progress} /> : null}
         {copy === 'saved' ? (
           <Text testID="delete-copy-saved" accessibilityLiveRegion="polite" style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>
             {t('system.ownData.saved')}

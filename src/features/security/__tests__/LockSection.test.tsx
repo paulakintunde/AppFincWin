@@ -2,6 +2,7 @@
 // 10-21 (ACC-08, ACC-09, UI-SPEC 2, D-02, D-33): the Phone lock group. Device mode by default, timing saves at once, the
 // extra PIN row and Change PIN exist only where they apply, and turning the lock off asks first.
 import React from 'react';
+import { Platform } from 'react-native';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { LockSection } from '../LockSection';
@@ -161,5 +162,19 @@ describe('LockSection', () => {
   it('shows the app-switcher meta line', async () => {
     const r = await show();
     await waitFor(() => expect(r.getByText('FincWin always shows a plain screen in the app switcher, even with the lock off.')).toBeTruthy());
+  });
+
+  it('10-review-2 (D-3): on Android the line says the card is blank only while the lock is on', async () => {
+    const original = Platform.OS;
+    Object.defineProperty(Platform, 'OS', { configurable: true, get: () => 'android' });
+    try {
+      const r = await show();
+      await waitFor(() =>
+        expect(r.getByText('With the lock on, FincWin shows a blank card in the app switcher and blocks screenshots.')).toBeTruthy(),
+      );
+      expect(r.queryByText('FincWin always shows a plain screen in the app switcher, even with the lock off.')).toBeNull();
+    } finally {
+      Object.defineProperty(Platform, 'OS', { configurable: true, get: () => original });
+    }
   });
 });

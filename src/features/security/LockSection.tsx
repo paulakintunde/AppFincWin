@@ -5,7 +5,7 @@
 //  - "Ask for it": right away, 1, 5 or 15 minutes (default 1), saved at once with a tick.
 //  - "Extra FincWin PIN": the optional separate 6-digit PIN. Change PIN and the Face ID toggle show only in this mode.
 import React, { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useT } from '@/i18n';
 import { PinCheckSheet } from '@/features/lock/PinCheckSheet';
 import { LockSetupSheet } from '@/features/lock/LockSetupSheet';
@@ -36,10 +36,13 @@ const DEFAULT_TIMING: LockTiming = 'oneMinute';
 
 type Pending = null | 'turnOff' | 'extraOff' | 'changePin';
 
+// 10-review-2 (D-3, owner 2026-11-28): the line matches the platform. iOS: the JS AppCover always covers the snapshot.
+// Android: the secure window (src/services/lock/secureWindow.ts) is on only while the lock is on (10-30, amends D-04).
 export function SwitcherMetaLine(): React.JSX.Element {
   const t = useT();
   const { colors, pairing } = useTheme();
-  return <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t('system.security.switcherMeta')}</Text>;
+  const key = Platform.OS === 'android' ? 'system.security.switcherMetaAndroid' : 'system.security.switcherMeta';
+  return <Text style={{ ...textRole(pairing, 'label'), color: colors.inkMuted }}>{t(key)}</Text>;
 }
 
 export function LockSection({ showSwitcherMeta = true }: { showSwitcherMeta?: boolean }): React.JSX.Element | null {

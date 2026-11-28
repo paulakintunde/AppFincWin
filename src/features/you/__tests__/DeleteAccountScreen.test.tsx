@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { DeleteAccountScreen } from '../DeleteAccountScreen';
 
@@ -124,6 +124,25 @@ describe('DeleteAccountScreen', () => {
       await fireEvent.press(screen.getByRole('button', { name: SAVE }));
       await waitFor(() => expect(screen.getByText('Copy saved. You can still delete your account now.')).toBeTruthy());
       expect(mockFailed).not.toHaveBeenCalled();
+    });
+
+    it('10-review-2 (D-4): shows the same export progress while the copy is made', async () => {
+      let report: (p: unknown) => void = () => {};
+      let finish: (v: string) => void = () => {};
+      mockExport.mockImplementationOnce((_c: unknown, opts: { onProgress: (p: unknown) => void }) => {
+        report = opts.onProgress;
+        return new Promise((resolve) => {
+          finish = resolve;
+        });
+      });
+      await renderScreen();
+      await fireEvent.press(screen.getByRole('button', { name: SAVE }));
+      await waitFor(() => expect(mockExport).toHaveBeenCalledTimes(1));
+      await act(async () => report({ phase: 'gathering', done: 3, total: 14 }));
+      expect(screen.getByTestId('export-progress-line').props.children).toBe('Gathering your records · 3 of 14');
+      await act(async () => finish('saved'));
+      await waitFor(() => expect(screen.queryByTestId('export-progress')).toBeNull());
+      expect(screen.getByTestId('delete-copy-saved')).toBeTruthy();
     });
 
     it('returns to idle on cancel', async () => {

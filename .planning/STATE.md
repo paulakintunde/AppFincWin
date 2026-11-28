@@ -231,6 +231,7 @@ Recent decisions affecting current work:
 | 261122-m82 | Merge Phase 08.2 (Decide re-audit) into Phase 11 as its final audit; Insights and System run in parallel after 08.1 | 2026-11-22 | (this PR) | [261122-m82-merge-08-2-into-phase-11](./quick/261122-m82-merge-08-2-into-phase-11/) |
 | 261124-2bs | Phase 9 code gaps (09-HUMAN-UAT C2 rows 1-5): plan_state returns left_at/left_home_name (migration 20261125001200, pgTAP 120; production push after owner approval); sample answer gets the stage word and "Based on sample figures"; trial reminder tap routes on a cold start; invite waiting screen re-checks and shows the expired line; B7 marked pass | 2026-11-24 | 723599cf | [261124-2bs-phase-9-code-gaps](./quick/261124-2bs-phase-9-code-gaps/) |
 | 261127-p10 | Phase 10 paperwork: ROADMAP (Phase 10 and 10-30 ticked, status line), STATE, REQUIREMENTS (24 rows Complete, ENV-19 Pending), 10-01 SUMMARY closed, 10-07-PLAN superseded note, 10-VERIFICATION.md (human_needed) | 2026-11-27 | (this PR) | [261127-p10-phase-10-paperwork](./quick/261127-p10-phase-10-paperwork/) |
+| 261128-csv | CSV amounts as normal money with an amount_format marker and flexible separator reading (supersedes 10-review D-1); export picks the folder first then shows progress; Android switcher line | 2026-11-28 | (this PR) | [261128-csv-csv-amounts-export-progress](./quick/261128-csv-csv-amounts-export-progress/) |
 
 ## Deferred Items
 
