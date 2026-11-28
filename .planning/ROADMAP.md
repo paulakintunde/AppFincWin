@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 08.12: Joint spending agreements** (INSERTED; **v1, before launch**, after 10.2, owner 2026-11-24) - Partner approval and spend limits on equal-access joint accounts, plus one-earner households (a partner at home or not working, paid by the main earner, given a set sum, or spending from the same account, or a mix); recorded agreements only, FincWin blocks no payment (owner 2026-11-21). First item (owner 2026-11-22, 08.1 review A-CR-02): pooled money is held back from the member's own Just me answers so the same money is never told Fits twice; settle the hold-back reading, fresher partner figures, and whether pooling needs every pair to opt in
 - [ ] **Phase 08.13: Private rooms in a household** (INSERTED; **v1, before launch**, after 08.12, owner 2026-11-24) - Smaller private rooms inside a household (parents' room, a family pot, roommate pairs). The household becomes one "everyone" room. Each account or line sits in exactly one room, so money is counted once. Each room has its own rules, settle-up and Decide choice (owner 2026-11-21)
 - [x] **Phase 9: Tiers & Onboarding** - Question flow, feature levels, contextual offers, RevenueCat entitlements (completed 2026-11-20)
-- [ ] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion
+- [x] **Phase 10: System** - Session management, biometrics/PIN, offline queue hardening, extended import, archive, export, account deletion (completed 2026-11-27; Android verified on Pixel 9; iPhone XR step 16 waits on 00-20)
 - [ ] **Phase 10.1: Split and receipts** (INSERTED) - Split one transaction across categories (was 999.1), receipt photo on a transaction (was 999.2), and receipt scan with a split by item (08.12 round 4: before launch); owner 2026-11-24
 - [ ] **Phase 10.2: Envelope rollover** (INSERTED) - Unspent category limits roll into next month (was 999.3); owner 2026-11-24
 - [ ] **Phase 11: Compliance & Release** - Privacy manifests, store declarations, policy pages, store assets, TestFlight/internal testing, submission
@@ -1664,7 +1664,8 @@ Plans:
   4. A user can enable alerts for bills due, over cap, goal reached, large transactions and low balance, with a threshold per kind, instant or digest delivery, quiet hours, and a log of alerts already raised.
   5. A user can archive a month and restore it, export their data as CSV, import goals/debts/investments/accounts from CSV, and delete their account in-app in a way that actually purges their data from Supabase, with a clear choice about any locally cached data.
   6. A household member's large expense arrives on another member's phone as a push notification; balances are hidden in the app switcher; a backup has been restored into a non-production project and verified; and a store reviewer can sign in through an allow-listed account.
-**Plans**: 30 plans in 6 waves
+**Plans**: 30/30 plans complete (6 waves)
+**Status (2026-11-27):** Complete. PR #193 merged 2026-11-26 (production rollout the same day: migrations 20261126000100..0800, six Edge Functions deployed, auth hook, reviewer accounts, first backup and restore check). Device gate PR #197 (2026-11-27): Pixel 9 checks 1-15 pass; four device gaps fixed (migrations 20261127090000/0100 pushed to production). Owner decision 2026-11-27 (amends D-04 on Android): FLAG_SECURE only while the lock is on. Code review fixes merged 2026-11-27: #198 (backup/restore-check apt source), #199 (server hardening, migrations 20261127090200..0500; alerts-deliver and reviewer-signin redeployed), #200 (app lock), #201 (data import: whole minor units only, decimals flagged `decimal-amount`), #202 (nightly invariant tests). Three LOW review findings and two owner wording decisions are in progress on branch fix/10-review-low. 10-VERIFICATION.md: status human_needed. Open: iPhone XR step 16 (waits on 00-20); new app build and Pixel recheck of the lock flow (EAS Android quota resets 2026-12-01); first monthly restore check needs a daily backup made after #199; real wallet CSV check (10-28 used public sample formats only).
 Plans:
 **Wave 1**
 - [x] 10-01-PLAN.md — Owner setup runbook and one owner sitting (R2, age key, GitHub secrets, Firebase/FCM, Expo token, wallet files, reviewer credentials)
@@ -1706,7 +1707,7 @@ Plans:
 - [x] 10-29-PLAN.md — [BLOCKING] Production rollout (schema push, functions, secrets, hook, reviewer accounts, first backup + rehearsal)
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 10-30-PLAN.md — Phase gate: full suite, new builds, owner device session, validation sign-off
+- [x] 10-30-PLAN.md — Phase gate: full suite, new builds, owner device session, validation sign-off (2026-11-27, PR #197: Pixel 9 steps 1-15 pass, validation signed; step 16 iPhone XR open, waits on 00-20)
 **UI hint**: no (not in the flagged UI-heavy set; ships mostly settings/security surfaces on top of existing shell patterns)
 
 ### Phase 10.1: Split and receipts (INSERTED)
@@ -1850,7 +1851,7 @@ The Decide fix plan (approved 2026-11-01) set the order from 05.4 on: Insights (
 | 08.12 Joint spending agreements | 0/TBD | Not started | - |
 | 08.13 Private rooms in a household | 0/TBD | Not started | - |
 | 9. Tiers & Onboarding | 26/26 | Complete (PR #170, merged 2026-11-20; device pass 2026-11-19). Open: RevenueCat setup (ENV-12), owner review list, app name, First read tag (now unblocked: 08.1-19/20 built on the 08.1 branch) | 2026-11-20 |
-| 10. System | 29/30 | In Progress (10-30 device checks next) |  |
+| 10. System | 30/30 | Complete (PR #193; device gate PR #197, Pixel 9 verified; review fixes #198-#202). Open: iPhone XR step 16 (00-20), lock-flow Pixel recheck on the next build, restore check after a post-#199 backup, real wallet CSV check | 2026-11-27 |
 | 10.1 Split and receipts | 0/30 | Planned | - |
 | 10.2 Envelope rollover | 0/10 | Planned | - |
 | 11. Compliance & Release | 0/TBD | Not started | - |
