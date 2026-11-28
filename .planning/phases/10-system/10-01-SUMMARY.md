@@ -1,7 +1,8 @@
 ---
 phase: 10-system
 plan: 01
-status: checkpoint
+status: complete
+completed: 2026-11-26
 subsystem: ops
 tags: [owner-setup, backups, r2, fcm, runbook]
 requires: []
@@ -17,7 +18,7 @@ requirements: [ENV-19, ENV-16, DAT-05, IMP-06, ACC-11]
 
 # Phase 10 Plan 01: Owner setup runbook Summary
 
-Status: checkpoint. Task 1 done and committed. Task 2 (owner does the setup in one sitting) is pending the owner.
+Status: complete (closed 2026-11-26, commit 3df2da11). Task 1 done and committed; Task 2, the owner sitting, done on 2026-11-26 with the runbook's Done table filled (8 of 9 steps yes; step 8, the wallet exports, no).
 
 ## Task 1 (done) - c79165e4
 
@@ -28,7 +29,15 @@ Status: checkpoint. Task 1 done and committed. Task 2 (owner does the setup in o
 - `.env.example`: REVIEWER_EMAIL, REVIEWER_PARTNER_EMAIL, REVIEWER_PASSWORD, EXPO_ACCESS_TOKEN (empty).
 - Verification: runbook keyword check passed; register has R2 and Firebase rows; no `age1...` or `AIza` strings.
 
-## Task 2 (pending owner)
+## Task 2 (done 2026-11-26, owner)
+
+Recorded in the Done table of `docs/ops/phase-10-owner-setup.md` (commit 3df2da11):
+
+- Steps 1-7 and 9 done: R2 bucket `fincwin-backups` (us, 30 days, two tokens); age keypair (the first pair was rotated after the private key reached chat through an IDE selection, and the new pair was checked against GitHub); Session pooler URI and keys; GitHub secrets on Path A (restore environment); Firebase project and google-services.json; gitleaks exact-path allow-list (10-27, c8c00062); Expo robot token `fincwin-push`; reviewer credentials in `.env.local` (checked by name only).
+- Step 8 not done: no real PayPal, Wise or Revolut exports. The readers stay on public sample formats (10-28), and a real-file check is an open owner item.
+- Step 5 later finding (10-30, 2026-11-27): the FCM V1 key was in the Expo account but not attached to the app, so pushes failed with InvalidCredentials. The owner attached it with `eas credentials` and a test push returned an ok receipt.
+
+Original plan for this task, kept for reference:
 
 Owner follows the runbook steps 1-9. Then Claude runs the name-only checks (`gh secret list`, `gh variable list`, `gh secret list --env restore` for Path A, `ls` of the wallet folder, `test -f google-services.json`, `grep -c` of the REVIEWER_ names) and records the answers in the runbook Done table. The gitleaks exact-path yes/no is also needed.
 
