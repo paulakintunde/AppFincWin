@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 08.12 UI-SPEC approved
-last_updated: "2026-11-28T14:48:41.284Z"
+stopped_at: Phase 08.12 planned (31 plans)
+last_updated: "2026-11-28T23:00:00.000Z"
 last_activity: "2026-11-27 -- Phase 10 closed (30/30); review fixes #198-#202 merged; paperwork updated (quick 261127-p10)"
 progress:
   total_phases: 33
@@ -243,5 +243,5 @@ Items acknowledged and carried forward from previous milestone close:
 ## Session Continuity
 
 Last session: 2026-11-28T14:48:41.217Z
-Stopped at: Phase 08.12 UI-SPEC approved
-Resume file: .planning/phases/08.12-joint-spending-agreements/08.12-UI-SPEC.md
+Stopped at: Phase 08.12 planned (31 plans, checked)
+Resume file: .planning/phases/08.12-joint-spending-agreements/08.12-01-PLAN.md
