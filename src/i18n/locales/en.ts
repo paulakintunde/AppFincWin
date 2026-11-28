@@ -313,6 +313,9 @@ const en = {
         holdings: 'Holding',
         holding_lots: 'Holding entry',
         decide_check_history: 'Decide history',
+        // 10-review L-1: an alert save that lost to a newer one shows here.
+        alert_settings: 'Alert setting',
+        alert_prefs: 'Alert delivery setting',
         unknown: 'Change',
       },
       reason: {

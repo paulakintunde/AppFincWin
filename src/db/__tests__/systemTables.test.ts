@@ -6,8 +6,10 @@ import {
   DEFAULT_ALERT_PREFS,
   fetchAlertPrefs,
   fetchAlertSettings,
+  upsertAlertPrefs,
   upsertAlertSetting,
 } from '../alerts';
+import { VersionConflictError } from '../errors';
 import { deleteArchivedMonth, fetchArchivedMonths, insertArchivedMonth } from '../archivedMonths';
 import { listMyDevices, revokeMySession } from '../devices';
 
@@ -50,14 +52,66 @@ describe('alerts', () => {
 
   it('sends the threshold as an integer and refuses a fraction', async () => {
     const fake = createFakeSupabase();
-    fake.respondWith(ok({ kind: 'large_txn', enabled: true, threshold_minor: 5000, threshold_currency: 'USD', lead_days: null, version: 2 }));
+    fake.respondWith(ok([{ kind: 'large_txn', enabled: true, threshold_minor: 5000, threshold_currency: 'USD', lead_days: null, version: 2 }]));
     const base = { kind: 'large_txn' as const, enabled: true, thresholdMinor: 5000, thresholdCurrency: 'USD', leadDays: null, version: 1 };
-    await upsertAlertSetting(fake, 'u1', base, 2);
-    const call = fake.calls.find((c) => c.method === 'upsert');
+    await upsertAlertSetting(fake, 'u1', base, 1);
+    const call = fake.calls.find((c) => c.method === 'update');
     const row = call?.args[0] as { threshold_minor: number; version: number };
     expect(Number.isSafeInteger(row.threshold_minor)).toBe(true);
     expect(row.version).toBe(2);
-    await expect(upsertAlertSetting(fake, 'u1', { ...base, thresholdMinor: 50.5 }, 2)).rejects.toBeInstanceOf(AlertInputError);
+    await expect(upsertAlertSetting(fake, 'u1', { ...base, thresholdMinor: 50.5 }, 1)).rejects.toBeInstanceOf(AlertInputError);
+  });
+
+  // 10-review L-1 (alert version concurrency): compare-and-set on version, server copy wins.
+  const setting = { kind: 'large_txn' as const, enabled: true, thresholdMinor: 5000, thresholdCurrency: 'USD', leadDays: null, version: 3 };
+  const serverSetting = { kind: 'large_txn', enabled: false, threshold_minor: 9000, threshold_currency: 'EUR', lead_days: null, version: 4 };
+
+  it('updates a known setting only while its version still matches', async () => {
+    const fake = createFakeSupabase();
+    fake.respondWith(ok([{ ...serverSetting, enabled: true, threshold_minor: 5000, threshold_currency: 'USD' }]));
+    const out = await upsertAlertSetting(fake, 'u1', setting, 3);
+    expect(out).toMatchObject({ enabled: true, version: 4 });
+    expect(fake.calls.filter((c) => c.method === 'eq').map((c) => c.args)).toEqual([
+      ['user_id', 'u1'],
+      ['kind', 'large_txn'],
+      ['version', 3],
+    ]);
+    expect(fake.calls.some((c) => c.method === 'upsert')).toBe(false);
+  });
+
+  it('throws a version conflict carrying the server row when another save landed first', async () => {
+    const fake = createFakeSupabase();
+    fake.respondWith(ok([])).respondWith(ok(serverSetting));
+    const err = await upsertAlertSetting(fake, 'u1', setting, 3).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(VersionConflictError);
+    expect((err as VersionConflictError).entity).toBe('alert_settings');
+    expect((err as VersionConflictError).serverRow).toMatchObject({ kind: 'large_txn', enabled: false, thresholdMinor: 9000, version: 4 });
+  });
+
+  it('inserts a first save and turns a duplicate first save into a conflict', async () => {
+    const fake = createFakeSupabase();
+    fake.respondWith(ok({ ...serverSetting, version: 1 }));
+    await upsertAlertSetting(fake, 'u1', { ...setting, version: 0 }, 0);
+    expect((fake.calls.find((c) => c.method === 'insert')?.args[0] as { version: number }).version).toBe(1);
+
+    const raced = createFakeSupabase();
+    raced.respondWith({ data: null, error: { message: 'duplicate key', code: '23505' }, status: 409 }).respondWith(ok(serverSetting));
+    await expect(upsertAlertSetting(raced, 'u1', { ...setting, version: 0 }, 0)).rejects.toBeInstanceOf(VersionConflictError);
+  });
+
+  it('prefs: a stale version conflicts with the server prefs, a first save inserts', async () => {
+    const fake = createFakeSupabase();
+    const serverPrefs = { mode: 'digest', quiet_enabled: false, quiet_start: '22:00:00', quiet_end: '07:00:00', time_zone: 'Europe/London', partner_alerts: true, version: 5 };
+    fake.respondWith(ok([])).respondWith(ok(serverPrefs));
+    const err = await upsertAlertPrefs(fake, 'u1', { ...DEFAULT_ALERT_PREFS, version: 4 }, 4).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(VersionConflictError);
+    expect((err as VersionConflictError).serverRow).toMatchObject({ mode: 'digest', quietEnabled: false, version: 5 });
+    expect(fake.calls.find((c) => c.method === 'eq' && c.args[0] === 'version')?.args).toEqual(['version', 4]);
+
+    const first = createFakeSupabase();
+    first.respondWith(ok({ ...serverPrefs, version: 1 }));
+    await expect(upsertAlertPrefs(first, 'u1', DEFAULT_ALERT_PREFS, 0)).resolves.toMatchObject({ version: 1 });
+    expect(first.calls.some((c) => c.method === 'insert')).toBe(true);
   });
 });
 

@@ -159,15 +159,59 @@ describe('alert settings and prefs', () => {
     const replay = createFakeSupabase() as FakeSupabase & DbClient;
     mockActiveClient = replay;
     replay.respondWith({
-      data: { kind: 'large_txn', enabled: true, threshold_minor: 100000, threshold_currency: 'USD', lead_days: null, version: 3 },
+      data: [{ kind: 'large_txn', enabled: true, threshold_minor: 100000, threshold_currency: 'USD', lead_days: null, version: 3 }],
       error: null,
       status: 200,
     });
     onlineManager.setOnline(true);
-    await waitFor(() => expect(replay.calls.some((c) => c.method === 'upsert')).toBe(true));
-    const row = replay.calls.find((c) => c.method === 'upsert')?.args[0] as { version: number; threshold_minor: number };
+    await waitFor(() => expect(replay.calls.some((c) => c.method === 'update')).toBe(true));
+    const row = replay.calls.find((c) => c.method === 'update')?.args[0] as { version: number; threshold_minor: number };
     expect(row.version).toBe(3);
     expect(row.threshold_minor).toBe(100000);
+    // 10-review L-1: only while the server row is still at the version the edit started from.
+    expect(replay.calls.find((c) => c.method === 'eq' && c.args[0] === 'version')?.args).toEqual(['version', 2]);
+  });
+
+  it('10-review L-1: a save that lost the race shows the server row, refetches and records the conflict', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const qc = newClient();
+    const list: AlertSetting[] = (['bills_due', 'over_cap', 'goal_reached', 'large_txn', 'low_balance'] as const).map((kind) => ({
+      kind, enabled: false, thresholdMinor: null, thresholdCurrency: null, leadDays: null, version: 2,
+    }));
+    qc.setQueryData(queryKeys.alertSettings(U), list);
+    const invalidate = jest.spyOn(qc, 'invalidateQueries');
+    // The update matches no row (version moved on), then the read-back returns the other device's save.
+    const server = { kind: 'large_txn', enabled: true, threshold_minor: 70000, threshold_currency: 'EUR', lead_days: null, version: 3 };
+    fake.respondWith({ data: [], error: null, status: 200 }).respondWith({ data: server, error: null, status: 200 });
+    fake.respondWith({ data: [], error: null, status: 200 }); // the refetch after invalidation, if it runs
+    const hook = await renderHook(() => useSaveAlertSetting(), { wrapper: wrapper(qc) });
+    hook.result.current.saveAlertSetting({
+      userId: U,
+      setting: { kind: 'large_txn', enabled: true, thresholdMinor: 100000, thresholdCurrency: 'USD', leadDays: null },
+      baseVersion: 2,
+    });
+    await waitFor(() => {
+      const got = qc.getQueryData<AlertSetting[]>(queryKeys.alertSettings(U));
+      expect(got?.find((s) => s.kind === 'large_txn')).toMatchObject({ thresholdMinor: 70000, thresholdCurrency: 'EUR', version: 3 });
+    });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: queryKeys.alertSettings(U) });
+    const { recordFailedWrite } = jest.requireMock('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
+    expect(recordFailedWrite).toHaveBeenCalledWith(expect.objectContaining({ entity: 'alert_settings', kind: 'conflict' }));
+  });
+
+  it('10-review L-1: a replayed save that already landed is taken as success, not a conflict', async () => {
+    const fake = createFakeSupabase() as FakeSupabase & DbClient;
+    mockActiveClient = fake;
+    const qc = newClient();
+    qc.setQueryData<AlertPrefs>(queryKeys.alertPrefs(U), { ...DEFAULT_ALERT_PREFS, version: 1 });
+    const landed = { mode: 'digest', quiet_enabled: true, quiet_start: '22:00:00', quiet_end: '07:00:00', time_zone: 'UTC', partner_alerts: true, version: 2 };
+    fake.respondWith({ data: [], error: null, status: 200 }).respondWith({ data: landed, error: null, status: 200 });
+    const hook = await renderHook(() => useSaveAlertPrefs(), { wrapper: wrapper(qc) });
+    hook.result.current.saveAlertPrefs({ userId: U, patch: { mode: 'digest' }, baseVersion: 1 });
+    await waitFor(() => expect(qc.getQueryData<AlertPrefs>(queryKeys.alertPrefs(U))).toMatchObject({ mode: 'digest', version: 2 }));
+    const { recordFailedWrite } = jest.requireMock('@/data/sync/failedWrites') as { recordFailedWrite: jest.Mock };
+    expect(recordFailedWrite).not.toHaveBeenCalledWith(expect.objectContaining({ entity: 'alert_prefs' }));
   });
 
   it('merges a prefs patch into the cached prefs', async () => {

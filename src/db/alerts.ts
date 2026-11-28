@@ -1,6 +1,6 @@
 // 10-03 (ALR-01..05): alert switches, delivery preferences and the alert log. Own rows only (RLS); settings, not lock-gated.
 // Money thresholds are integer minor units. alert_log is written by the server only; the client reads it.
-import { toDbError } from './errors';
+import { VersionConflictError, toDbError } from './errors';
 import type { DbClient } from './rows';
 
 export type AlertKind = 'bills_due' | 'over_cap' | 'goal_reached' | 'large_txn' | 'low_balance';
@@ -144,32 +144,64 @@ export async function fetchAlertSettings(client: DbClient, userId: string): Prom
   return ALERT_KINDS.map((k) => byKind.get(k) ?? DEFAULT_ALERT_SETTINGS[k]);
 }
 
+// 10-review L-1 (alert version concurrency): a save is a compare-and-set on `version`, like categories (D-18). The old
+// PostgREST upsert wrote whatever it was sent, so two saves of one setting at the same moment overwrote each other with
+// no sign. Now: no row known (version 0) inserts, and a row that already exists answers 23505; a known row updates only
+// while its version still equals the one the edit started from. Either way a lost race throws VersionConflictError
+// carrying the server's current row (app shape), and the caller shows that row instead of its own.
+const UNIQUE_VIOLATION = '23505';
+
+async function fetchAlertSettingRow(client: DbClient, userId: string, kind: AlertKind): Promise<AlertSetting> {
+  const { data, error, status } = await client
+    .from('alert_settings')
+    .select(ALERT_SETTINGS_COLUMNS)
+    .eq('user_id', userId)
+    .eq('kind', kind)
+    .maybeSingle();
+  if (error) throw toDbError(error, status);
+  return data ? settingFromDb(data as AlertSettingDb) : DEFAULT_ALERT_SETTINGS[kind];
+}
+
+/** Saves one kind if the server row is still at `expectedVersion` (0 = no row yet); the saved row comes back at +1. */
 export async function upsertAlertSetting(
   client: DbClient,
   userId: string,
   setting: AlertSetting,
-  nextVersion: number
+  expectedVersion: number
 ): Promise<AlertSetting> {
   if (setting.thresholdMinor !== null && !Number.isSafeInteger(setting.thresholdMinor)) {
     throw new AlertInputError('alert_settings: threshold must be a whole number of minor units');
   }
-  const row = {
-    user_id: userId,
-    kind: setting.kind,
+  const fields = {
     enabled: setting.enabled,
     threshold_minor: setting.thresholdMinor,
     threshold_currency: setting.thresholdCurrency,
     lead_days: setting.leadDays,
-    version: nextVersion,
+    version: Math.max(expectedVersion, 0) + 1,
     updated_at: new Date().toISOString(),
   };
-  const { data, error, status } = await client
-    .from('alert_settings')
-    .upsert(row, { onConflict: 'user_id,kind' })
-    .select(ALERT_SETTINGS_COLUMNS)
-    .single();
-  if (error) throw toDbError(error, status);
-  return settingFromDb(data as AlertSettingDb);
+  if (expectedVersion <= 0) {
+    const { data, error, status } = await client
+      .from('alert_settings')
+      .insert({ user_id: userId, kind: setting.kind, ...fields })
+      .select(ALERT_SETTINGS_COLUMNS)
+      .single();
+    if (!error) return settingFromDb(data as AlertSettingDb);
+    if (error.code !== UNIQUE_VIOLATION) throw toDbError(error, status);
+  } else {
+    const { data, error, status } = await client
+      .from('alert_settings')
+      .update(fields)
+      .eq('user_id', userId)
+      .eq('kind', setting.kind)
+      .eq('version', expectedVersion)
+      .select(ALERT_SETTINGS_COLUMNS);
+    if (error) throw toDbError(error, status);
+    const rows = (data as AlertSettingDb[] | null) ?? [];
+    if (rows.length === 1) return settingFromDb(rows[0] as AlertSettingDb);
+  }
+  // Lost the race (or the row is gone): the server copy wins and goes back to the caller to show.
+  throw new VersionConflictError('alert_settings', setting.kind, await fetchAlertSettingRow(client, userId, setting.kind));
 }
 
 export async function fetchAlertPrefs(client: DbClient, userId: string): Promise<AlertPrefs> {
@@ -178,30 +210,43 @@ export async function fetchAlertPrefs(client: DbClient, userId: string): Promise
   return data ? prefsFromDb(data as AlertPrefsDb) : { ...DEFAULT_ALERT_PREFS };
 }
 
+/** Saves the prefs row if it is still at `expectedVersion` (0 = no row yet); the saved row comes back at +1. */
 export async function upsertAlertPrefs(
   client: DbClient,
   userId: string,
   prefs: AlertPrefs,
-  nextVersion: number
+  expectedVersion: number
 ): Promise<AlertPrefs> {
-  const row = {
-    user_id: userId,
+  const fields = {
     mode: prefs.mode,
     quiet_enabled: prefs.quietEnabled,
     quiet_start: prefs.quietStart,
     quiet_end: prefs.quietEnd,
     time_zone: prefs.timeZone,
     partner_alerts: prefs.partnerAlerts,
-    version: nextVersion,
+    version: Math.max(expectedVersion, 0) + 1,
     updated_at: new Date().toISOString(),
   };
-  const { data, error, status } = await client
-    .from('alert_prefs')
-    .upsert(row, { onConflict: 'user_id' })
-    .select(ALERT_PREFS_COLUMNS)
-    .single();
-  if (error) throw toDbError(error, status);
-  return prefsFromDb(data as AlertPrefsDb);
+  if (expectedVersion <= 0) {
+    const { data, error, status } = await client
+      .from('alert_prefs')
+      .insert({ user_id: userId, ...fields })
+      .select(ALERT_PREFS_COLUMNS)
+      .single();
+    if (!error) return prefsFromDb(data as AlertPrefsDb);
+    if (error.code !== UNIQUE_VIOLATION) throw toDbError(error, status);
+  } else {
+    const { data, error, status } = await client
+      .from('alert_prefs')
+      .update(fields)
+      .eq('user_id', userId)
+      .eq('version', expectedVersion)
+      .select(ALERT_PREFS_COLUMNS);
+    if (error) throw toDbError(error, status);
+    const rows = (data as AlertPrefsDb[] | null) ?? [];
+    if (rows.length === 1) return prefsFromDb(rows[0] as AlertPrefsDb);
+  }
+  throw new VersionConflictError('alert_prefs', userId, await fetchAlertPrefs(client, userId));
 }
 
 export async function fetchAlertLog(client: DbClient, userId: string, sinceIso: string): Promise<AlertLogEntry[]> {
