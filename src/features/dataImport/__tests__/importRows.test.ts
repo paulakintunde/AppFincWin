@@ -13,8 +13,8 @@ function parse(table: DataTable, csv: string) {
 }
 
 describe('toCreateInputs', () => {
-  it('maps accounts as integer minor units and never reuses a file id', () => {
-    const rows = parse('accounts', `id,name,kind,currency,opening_balance,overdraft_limit\n${ID},Everyday,checking,USD,150000,50000\n`);
+  it('maps accounts to integer minor units and never reuses a file id', () => {
+    const rows = parse('accounts', `id,name,kind,currency,opening_balance,overdraft_limit\n${ID},Everyday,checking,USD,1500.00,500\n`);
     const out = toCreateInputs('accounts', rows, ['new'], ctx);
     expect(out).toHaveLength(1);
     const first = out[0]!;
@@ -26,14 +26,14 @@ describe('toCreateInputs', () => {
   });
 
   it('maps goals, debts and holdings', () => {
-    const goals = toCreateInputs('savings_goals', parse('savings_goals', 'name,currency,target,monthly_amount,ready_by,locked\nTrip,EUR,200000,20000,2027-06-01,true\n'), ['new'], ctx);
+    const goals = toCreateInputs('savings_goals', parse('savings_goals', 'name,currency,target,monthly_amount,ready_by,locked\nTrip,EUR,"2.000,00","200,00",2027-06-01,true\n'), ['new'], ctx);
     expect(goals[0]).toMatchObject({
       table: 'savings_goals',
       input: { householdId: 'hh', ownerId: 'me', fields: { name: 'Trip', currency: 'EUR', target: 200000, monthly_amount: 20000, ready_by: '2027-06-01', locked: true, opening_saved: 0 } },
     });
-    const debts = toCreateInputs('debts', parse('debts', 'name,kind,currency,balance,apr,minimum_payment,due_day\nCar,loan,USD,800000,6.5,25000,15\n'), ['new'], ctx);
+    const debts = toCreateInputs('debts', parse('debts', 'name,kind,currency,balance,apr,minimum_payment,due_day\nCar,loan,USD,8000,6.5,250.00,15\n'), ['new'], ctx);
     expect(debts[0]).toMatchObject({ table: 'debts', input: { fields: { name: 'Car', kind: 'loan', balance: 800000, apr: '6.5', minimum_payment: 25000, due_day: 15 } } });
-    const holds = toCreateInputs('holdings', parse('holdings', 'name,type,currency,value,value_as_of,opening_put_in\nFund,brokerage,USD,500000,2026-01-01,450000\n'), ['new'], ctx);
+    const holds = toCreateInputs('holdings', parse('holdings', 'name,type,currency,value,value_as_of,opening_put_in\nFund,brokerage,USD,"$5,000.00",2026-01-01,4500\n'), ['new'], ctx);
     expect(holds[0]).toMatchObject({ table: 'holdings', input: { name: 'Fund', type: 'brokerage', value: 500000, openingPutIn: 450000, valueAsOf: '2026-01-01', ownerId: 'me', householdId: 'hh' } });
   });
 
@@ -43,7 +43,7 @@ describe('toCreateInputs', () => {
   });
 
   it('leaves out rows with issues and rows that already exist, unless overridden', () => {
-    const rows = parse('accounts', 'name,kind,currency,opening_balance\nA,cash,USD,1\n,cash,USD,1\nC,cash,,1\nD,cash,USD,1.234\nE,cash,USD,5\n');
+    const rows = parse('accounts', 'name,kind,currency,opening_balance\nA,cash,USD,1\n,cash,USD,1\nC,cash,,1\nD,cash,USD,1.2345\nE,cash,USD,5\n');
     const matches = classifyRows(rows, [{ id: 'x', name: 'E' }]);
     expect(matches).toEqual(['new', 'new', 'new', 'new', 'same-name']);
     const plain = toCreateInputs('accounts', rows, matches, ctx);
@@ -80,7 +80,8 @@ describe('toCreateInputs', () => {
     const rows = parse('savings_goals', toCsv(cols, [row]));
     const out = toCreateInputs('savings_goals', rows, ['new'], ctx);
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ input: { fields: { name: '=Trip', protect: true } } });
+    // 10-review-2 (D-1): an older export (UUID ids, bookkeeping columns, whole numbers) still reads as minor units
+    expect(out[0]).toMatchObject({ input: { fields: { name: '=Trip', protect: true, target: 100000 } } });
   });
 });
 
@@ -97,4 +98,11 @@ describe('buildTemplate', () => {
     expect(rows[0]!.issues).toEqual([]);
     expect(toCreateInputs(table, rows, ['new'], ctx)).toHaveLength(1);
   });
-});
+  it('10-review-2 (D-1): amounts are normal amounts with the marker, in the currency own decimals', () => {
+    const row = (currency: string) => buildTemplate('accounts', currency).trimEnd().split('\r\n')[1];
+    expect(row('USD')).toMatch(/,1500\.00,.*,decimal$/);
+    expect(row('JPY')).toMatch(/,150000,.*,decimal$/);
+    expect(row('KWD')).toMatch(/,150\.000,.*,decimal$/);
+    const usd = parse('accounts', buildTemplate('accounts', 'USD'));
+    expect(usd[0]!.money.opening_balance).toBe(150000);
+  });});

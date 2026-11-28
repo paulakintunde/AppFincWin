@@ -33,7 +33,7 @@ describe('header', () => {
     const r = ok('savings_goals', ' Target , NAME,currency\r\n1000,Trip,USD\r\n');
     expect(r.columns).toEqual(['target', 'name', 'currency']);
     expect(r.rows[0]!.values.name).toBe('Trip');
-    expect(r.rows[0]!.money.target).toBe(1000);
+    expect(r.rows[0]!.money.target).toBe(100000);
   });
   it('reports a missing required column', () => {
     expect(parseDataCsv('savings_goals', 'name,currency\nA,USD')).toEqual({
@@ -70,25 +70,28 @@ describe('header', () => {
 describe('cells', () => {
   const head = 'name,currency,target\n';
   const one = (t: string, cur = 'USD') => ok('savings_goals', `${head}A,${cur},${t}\n`).rows[0]!;
-  it('reads money as minor units', () => {
-    expect(one('250000').money.target).toBe(250000);
-    expect(one('-1200').money.target).toBe(-1200);
+  it('10-review-2 (D-1): reads money as normal amounts in the row currency', () => {
+    expect(one('2500').money.target).toBe(250000);
+    expect(one('-12').money.target).toBe(-1200);
     expect(one('2500', 'JPY').money.target).toBe(2500);
+    expect(one('2500.00').money.target).toBe(250000);
+    expect(one('0.05').money.target).toBe(5);
+    expect(one('2500.5', 'KWD').money.target).toBe(2500500);
   });
-  it('10-review (D-1): a decimal is flagged, never re-scaled to minor units', () => {
-    for (const cell of ['2500.00', '2500.5', '-2.5', '0.05', '.5', '150000.00', '2500.001', '7.']) {
+  it('10-review-2 (D-1): more decimals than the currency has is flagged on the row, never rounded', () => {
+    for (const cell of ['2500.001', '0.555']) {
       const row = one(cell);
-      expect(row.issues).toEqual(['decimal-amount']);
+      expect(row.issues).toEqual(['extra-decimals']);
       expect(row.money.target).toBeNull();
     }
-    expect(one('2500.5', 'JPY').issues).toEqual(['decimal-amount']);
+    expect(one('2500.5', 'JPY').issues).toEqual(['extra-decimals']);
   });
   it('flags bad amounts and empties', () => {
     expect(one('abc').issues).toEqual(['bad-amount']);
     expect(one('1e5').issues).toEqual(['bad-amount']);
     expect(one('.').issues).toEqual(['bad-amount']);
     expect(one('1.2.3').issues).toEqual(['bad-amount']);
-    expect(one('99999999999999999').issues).toEqual(['bad-amount']);
+    expect(one('999999999999999').issues).toEqual(['bad-amount']);
     expect(one('').issues).toEqual(['bad-amount']);
     // one issue is listed once, even when two cells raise it
     expect(ok('savings_goals', 'name,currency,target,opening_saved\nA,USD,x,y\n').rows[0]!.issues).toEqual(['bad-amount']);
@@ -106,7 +109,7 @@ describe('cells', () => {
   it('unescapes text', () => {
     const r = ok('savings_goals', "name,currency,target\n'=X,USD,150\n").rows[0]!;
     expect(r.values.name).toBe('=X');
-    expect(r.money.target).toBe(150);
+    expect(r.money.target).toBe(15000);
   });
   it('checks enums', () => {
     expect(ok('accounts', 'name,kind,currency\nA,piggy,USD').rows[0]!.issues).toEqual(['bad-choice']);
@@ -135,7 +138,7 @@ describe('cells', () => {
   it('a blank currency is flagged and the amount still reads', () => {
     const r = ok('debts', 'name,kind,currency,balance\nA,loan,,1050').rows[0]!;
     expect(r.issues).toContain('currency-missing');
-    expect(r.money.balance).toBe(1050);
+    expect(r.money.balance).toBe(105000);
   });
 });
 
@@ -156,5 +159,54 @@ describe('classifyRows', () => {
   it('a row without a name is new', () => {
     const r = ok('accounts', 'name,kind,currency\n,cash,USD\n');
     expect(classifyRows(r.rows, [{ id: 'x', name: '' }])).toEqual(['new']);
+  });
+});
+
+describe('10-review-2 (D-1): the unit is decided once per file', () => {
+  const ID2 = '223e4567-e89b-42d3-a456-426614174000';
+  const OLD_HEAD = 'id,household_id,name,currency,target,created_at,updated_at\n';
+  const oldRow = (id: string, target: string) => `${id},h,A,USD,${target},2026-01-01,2026-01-02\n`;
+
+  it('an older FincWin export reads whole minor units, exactly as before', () => {
+    const r = ok('savings_goals', OLD_HEAD + oldRow(ID, '250000') + oldRow(ID2, '-1200'));
+    expect(r.unit).toBe('minor');
+    expect(r.unitReason).toBe('old-export');
+    expect(r.rows.map((x) => x.money.target)).toEqual([250000, -1200]);
+    expect(r.rows[0]!.values.household_id).toBeUndefined();
+  });
+  it('an export-like file with a blank or bad id, or a decimal amount, is read as normal amounts', () => {
+    expect(ok('savings_goals', OLD_HEAD + oldRow('', '2500')).unit).toBe('decimal');
+    expect(ok('savings_goals', OLD_HEAD + oldRow('x', '2500')).unit).toBe('decimal');
+    const dec = ok('savings_goals', OLD_HEAD + oldRow(ID, '2500') + oldRow(ID2, '25.00'));
+    expect(dec.unitReason).toBe('default');
+    expect(dec.rows.map((x) => x.money.target)).toEqual([250000, 2500]);
+    // without the bookkeeping columns it is not an export, whatever the ids
+    expect(ok('savings_goals', `id,name,currency,target\n${ID},A,USD,2500\n`).unit).toBe('decimal');
+    expect(ok('savings_goals', OLD_HEAD).unit).toBe('decimal');
+    // an empty amount does not stop the export reading
+    const empty = ok('savings_goals', `id,household_id,name,currency,target,opening_saved,created_at,updated_at\n${ID},h,A,USD,5,,t,t\n`);
+    expect(empty.unit).toBe('minor');
+  });
+  it('the amount_format marker wins: decimal, minor; blank and unknown read as normal amounts', () => {
+    const marked = (v: string) => ok('savings_goals', `name,currency,target,amount_format\nA,KWD,1.250,${v}\n`);
+    expect(marked('decimal')).toMatchObject({ unit: 'decimal', unitReason: 'marker' });
+    // a marked file defaults to the dot: KWD 1.250 is 1.25, not 1250
+    expect(marked('decimal').rows[0]!.money.target).toBe(1250);
+    expect(marked('decimal').rows[0]!.values.amount_format).toBeUndefined();
+    expect(marked('DECIMAL').unit).toBe('decimal');
+    expect(marked('minor')).toMatchObject({ unit: 'minor', unitReason: 'marker' });
+    expect(marked('minor').rows[0]!.issues).toEqual(['bad-amount']);
+    expect(marked('')).toMatchObject({ unit: 'decimal', unitReason: 'default' });
+    expect(marked('cents').unitReason).toBe('default');
+    expect(ok('savings_goals', 'name,currency,target,amount_format\nA,USD,5,minor\n').rows[0]!.money.target).toBe(5);
+    expect(ok('savings_goals', 'name,currency,target,amount_format\nA,USD,99999999999999999,minor\n').rows[0]!.issues).toEqual(['bad-amount']);
+    // a short row: the missing cells read as empty
+    expect(ok('savings_goals', 'name,currency,target,opening_saved,amount_format\nA,USD,5\n').rows[0]!.money.opening_saved).toBeNull();
+  });
+  it('the custom exponent lookup is used', () => {
+    const r = ok('savings_goals', 'name,currency,target\nA,GLD1,1.2345\n');
+    expect(r.rows[0]!.issues).toEqual(['extra-decimals']);
+    const c = parseDataCsv('savings_goals', 'name,currency,target\nA,GLD1,1.2345\n', { exponentOf: () => 4 });
+    expect(c.ok && c.rows[0]!.money.target).toBe(12345);
   });
 });

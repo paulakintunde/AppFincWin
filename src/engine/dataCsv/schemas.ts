@@ -6,6 +6,15 @@
 
 export type DataTable = 'accounts' | 'savings_goals' | 'debts' | 'holdings';
 
+/**
+ * 10-review-2 (D-1, owner 2026-11-28): the format marker. Export and the template add this as the LAST column, value
+ * 'decimal' on every row, so a file whose spreadsheet re-saved 25.00 as 25 is still read as normal amounts. A trailing
+ * column survives Excel and Sheets round-trips and keeps the file a plain CSV. 'minor' is also understood (whole
+ * minor units). It is not a table column, so it stays out of `allowed` (the manifest guard test).
+ */
+export const AMOUNT_FORMAT_COLUMN = 'amount_format';
+export const AMOUNT_FORMAT_DECIMAL = 'decimal';
+
 export interface DataCsvSchema {
   table: DataTable;
   required: readonly string[];
@@ -42,6 +51,8 @@ const DEBTS_COLS = [
   'id', 'account_id', 'name', 'kind', 'currency', 'balance', 'apr', 'minimum_payment', 'secured', 'term_months',
   'start_date', 'min_percent', 'min_interest_added', 'min_floor', 'paid_in_full', 'is_housing', 'pays_in_full',
   'paid_off_on', 'due_day', 'started_balance', 'payoff_order', 'payoff_extra',
+  // 10-review-2: exported since 261123 (DD-03); without them an exported debts.csv failed the header check
+  'credit_limit', 'revolving',
 ] as const;
 
 const HOLDINGS_COLS = [
@@ -75,7 +86,7 @@ export const DATA_CSV_SCHEMAS: Readonly<Record<DataTable, DataCsvSchema>> = {
     table: 'debts',
     required: ['name', 'kind', 'currency', 'balance'],
     allowed: [...DEBTS_COLS, ...IGNORED.debts],
-    money: ['balance', 'minimum_payment', 'min_floor', 'started_balance', 'payoff_extra'],
+    money: ['balance', 'minimum_payment', 'min_floor', 'started_balance', 'payoff_extra', 'credit_limit'],
     enums: { kind: ['loan', 'card', 'other'] },
     dates: ['start_date', 'paid_off_on'],
     currencyColumn: 'currency',

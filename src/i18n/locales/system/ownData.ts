@@ -44,7 +44,8 @@ export const ownData = {
   dataImport: {
     title: 'Import from CSV',
     rowSub: 'Goals, debts, investments, accounts',
-    intro: 'Bring in goals, debts, investments and accounts from a CSV. A file saved from FincWin Export works as it is.',
+    // 10-review-2 (D-1, owner 2026-11-28): amounts are normal money amounts now, not whole cents
+    intro: 'Bring in goals, debts, investments and accounts from a CSV. A file saved from FincWin Export works as it is. Write amounts like 25.00.',
     segmentAccounts: 'Accounts',
     segmentGoals: 'Goals',
     segmentDebts: 'Debts',
@@ -57,8 +58,13 @@ export const ownData = {
     currencyMissing: 'Currency missing',
     alreadyExists: 'Already exists',
     importAnyway: 'Import anyway',
-    // 10-review (D-1): amounts in an import file are whole numbers in the smallest unit, as Export writes them
-    decimalAmount: 'Amounts are in the smallest unit, such as cents, with no decimal point, as Export writes them: 25.00 is 2500',
+    // 10-review-2 (D-1, D-2; owner 2026-11-28; replaces the long 10-review D-1 line): short per-row reasons, and the longer
+    // explanation once above the rows
+    extraDecimals: 'More decimals than {{currency}} has',
+    mixedFormat: 'Written unlike the other amounts',
+    readAs: 'Read as {{amount}}',
+    amountsNote: 'Rows marked Check have an amount to fix in the file. Fix it, then choose the file again.',
+    oldExportNote: 'This is an older FincWin export, so amounts are read in the smallest unit, such as cents.',
     importRows: 'Import {{count}} rows',
     addedToast: '{{count}} {{kind}} added',
     unreadable: 'This file could not be read. Check that it is a CSV saved from FincWin or the template.',
@@ -82,6 +88,12 @@ export const ownData = {
     intro: 'These files are written, one per kind of record.',
     serverRecords: 'Records held on our server, such as your plan and Decide test results',
     importLink: 'Import from CSV',
+  },
+  // 10-review-2 (D-4, owner 2026-11-28): export progress, after the folder is chosen
+  exportProgress: {
+    gathering: 'Gathering your records · {{done}} of {{total}}',
+    gatheringA11y: 'Gathering your records, {{done}} of {{total}}',
+    writing: 'Writing files',
   },
   // 10 diagnostic export
   diagnostic: {

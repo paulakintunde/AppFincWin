@@ -12,8 +12,40 @@ describe('buildCsvFiles', () => {
     expect(files.map((f) => f.name)).toEqual(tables.map((t) => `${t}.csv`));
     for (const t of tables) {
       const f = files.find((x) => x.name === `${t}.csv`)!;
-      expect(f.text).toBe(`${EXPORT_MANIFEST[t]!.join(',')}\r\n`);
+      // 10-review-2 (D-1): the four importable tables carry the amount_format marker last
+      const marker = ['accounts', 'savings_goals', 'debts', 'holdings'].includes(t) ? ',amount_format' : '';
+      expect(f.text).toBe(`${EXPORT_MANIFEST[t]!.join(',')}${marker}\r\n`);
     }
+  });
+
+  it('10-review-2 (D-1): writes data-table amounts in each currency own decimals, custom ones included', async () => {
+    const files = await buildCsvFiles({
+      lockedWrites: [],
+      fetchPage: async (table) => {
+        if (table === 'custom_currencies') return [{ code: 'GLD1', decimals: 4 }, { code: 3 }];
+        if (table === 'accounts') return [{ name: 'A', currency: 'KWD', opening_balance: 1250 }, { name: 'B', currency: 'GLD1', opening_balance: -5 }];
+        if (table === 'transactions') return [{ id: 't', original_amount: 2500, original_currency: 'USD' }];
+        return [];
+      },
+    });
+    const lines = files.find((f) => f.name === 'accounts.csv')!.text.split('\r\n');
+    expect(lines[1]).toContain(',1.250,');
+    expect(lines[1]!.endsWith(',decimal')).toBe(true);
+    expect(lines[2]).toContain(',-0.0005,');
+    // other tables keep minor units as stored
+    expect(files.find((f) => f.name === 'transactions.csv')!.text.split('\r\n')[1]).toContain(',2500,');
+  });
+
+  it('10-review-2 (D-4): reports progress from 0 to one step per table, plus server records', async () => {
+    const seen: [number, number][] = [];
+    await buildCsvFiles({ fetchPage: async () => [], lockedWrites: [], fetchServerRecords: async () => [], onProgress: (d, t) => seen.push([d, t]) });
+    const total = tables.length + 1;
+    expect(seen[0]).toEqual([0, total]);
+    expect(seen[seen.length - 1]).toEqual([total, total]);
+    expect(seen).toHaveLength(total + 1);
+    const archive: [number, number][] = [];
+    await buildCsvFiles({ months: ['2026-08'], fetchPage: async () => [], lockedWrites: [], onProgress: (d, t) => archive.push([d, t]) });
+    expect(archive.map(([d]) => d)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
   it('pages by 1000 until a short page', async () => {

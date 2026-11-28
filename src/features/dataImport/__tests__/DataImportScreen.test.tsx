@@ -27,6 +27,12 @@ jest.mock('@/data/queries/accounts', () => ({
   useAccounts: () => ({ data: mockAccountsData }),
 }));
 jest.mock('@/data/queries/decide', () => ({ useDebts: () => ({ data: [] }) }));
+jest.mock('@/data/queries/customCurrencies', () => ({ useCustomCurrencies: () => ({ data: [] }) }));
+let mockDecimal: string | undefined = '.';
+jest.mock('@/services/locale/deviceLocale', () => ({
+  ...jest.requireActual('@/services/locale/deviceLocale'),
+  getDeviceSeparators: () => ({ decimal: mockDecimal, group: ',' }),
+}));
 jest.mock('@/data/queries/growGoals', () => ({ useSavingsGoalRows: () => ({ data: [{ id: 'g-1', name: 'Holiday' }] }) }));
 jest.mock('@/data/queries/growHoldings', () => ({ useHoldingRows: () => ({ data: [] }) }));
 const mockAddAccount = jest.fn();
@@ -57,6 +63,7 @@ describe('DataImportScreen (10-18)', () => {
     jest.clearAllMocks();
     setMockQueued(0);
     mockAccountsData = [{ id: 'a-1', name: 'Savings' }];
+    mockDecimal = '.';
   });
 
   it('10-review (D-5): choosing a file waits until the existing lists have loaded', async () => {
@@ -66,15 +73,38 @@ describe('DataImportScreen (10-18)', () => {
     expect(mockPick).not.toHaveBeenCalled();
   });
 
-  it('10-review (D-1): shows amounts as money and flags a decimal amount instead of re-scaling it', async () => {
-    pickText('name,kind,currency,opening_balance\nEveryday,checking,USD,150000\nSpare,cash,USD,1500.00\n');
-    const { getByText, findByTestId, getByTestId, queryByTestId } = await render(wrap());
+  it('10-review-2 (D-1, D-2): reads normal amounts in any common writing; a short reason per row, the longer note once', async () => {
+    pickText('name,kind,currency,opening_balance\nEveryday,checking,USD,1500\nSpare,cash,USD,"1.234,56"\nOdd,cash,USD,"1,2345"\nTwo,cash,USD,"9,9999"\n');
+    const { getByText, getAllByText, findByTestId, getByTestId, queryByTestId } = await render(wrap());
     await fireEvent.press(getByText('Choose a file'));
-    expect((await findByTestId('import-summary')).props.children).toBe('1 rows ready, 1 need a look');
+    expect((await findByTestId('import-summary')).props.children).toBe('2 rows ready, 2 need a look');
     expect(getByTestId('import-row-0-amount').props.children).toBe('$1,500');
-    expect(queryByTestId('import-row-1-amount')).toBeNull();
-    expect(getByTestId('import-row-1-check')).toBeTruthy();
-    expect(getByText('Amounts are in the smallest unit, such as cents, with no decimal point, as Export writes them: 25.00 is 2500')).toBeTruthy();
+    expect(getByTestId('import-row-1-amount').props.children).toBe('$1,234.56');
+    expect(queryByTestId('import-row-2-amount')).toBeNull();
+    expect(getByTestId('import-row-2-check')).toBeTruthy();
+    expect(getAllByText('More decimals than USD has')).toHaveLength(2);
+    expect(getAllByText('Rows marked Check have an amount to fix in the file. Fix it, then choose the file again.')).toHaveLength(1);
+    expect(queryByTestId('import-old-export')).toBeNull();
+  });
+
+  it('10-review-2 (D-1): an older FincWin export reads cents and says so once', async () => {
+    const id = '123e4567-e89b-42d3-a456-426614174000';
+    pickText(`id,household_id,name,kind,currency,opening_balance,created_at,updated_at\n${id},h,Everyday,checking,USD,150000,t,t\n`);
+    const { getByText, findByTestId, getByTestId } = await render(wrap());
+    await fireEvent.press(getByText('Choose a file'));
+    await findByTestId('import-summary');
+    expect(getByTestId('import-row-0-amount').props.children).toBe('$1,500');
+    expect(getByTestId('import-old-export').props.children).toBe('This is an older FincWin export, so amounts are read in the smallest unit, such as cents.');
+  });
+
+  it('10-review-2 (D-2): a "1,234" nothing can settle stays ready with a Read as note', async () => {
+    mockDecimal = '٫';
+    pickText('name,kind,currency,opening_balance\nEveryday,checking,KWD,"1,234"\n');
+    const { getByText, findByTestId, getByTestId } = await render(wrap());
+    await fireEvent.press(getByText('Choose a file'));
+    expect((await findByTestId('import-summary')).props.children).toBe('1 rows ready, 0 need a look');
+    expect(getByTestId('import-row-0-read-as')).toBeTruthy();
+    expect(getByText(/^Read as /)).toBeTruthy();
   });
 
   it('shows the template card and saves a template named for the segment', async () => {
@@ -99,7 +129,7 @@ describe('DataImportScreen (10-18)', () => {
 
     await fireEvent.press(getByText('Import 1 rows'));
     expect(mockAddAccount).toHaveBeenCalledTimes(1);
-    expect(mockAddAccount.mock.calls[0]![0]).toMatchObject({ name: 'Checking', opening_balance: 1000 });
+    expect(mockAddAccount.mock.calls[0]![0]).toMatchObject({ name: 'Checking', opening_balance: 100000 });
     expect(mockHaptic).toHaveBeenCalledTimes(1);
     expect(mockToast).toHaveBeenCalledWith(
       expect.objectContaining({ text: { key: 'system.ownData.dataImport.addedToast', params: { count: 1, kind: 'accounts' } } }),
@@ -118,7 +148,7 @@ describe('DataImportScreen (10-18)', () => {
   });
 
   it('imports goals as saved plans with no series, and shows the goals toast word', async () => {
-    pickText('name,currency,target\nTrip,USD,200000\nHoliday,USD,100\n');
+    pickText('name,currency,target\nTrip,USD,2000\nHoliday,USD,100\n');
     const { getByText, findByTestId } = await render(wrap());
     await fireEvent.press(getByText('Goals'));
     await fireEvent.press(getByText('Choose a file'));

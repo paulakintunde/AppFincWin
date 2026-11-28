@@ -4,6 +4,9 @@
  *
  * 10-17 (DAT-02): lists every file that will be written and links to Import from CSV. Opened with `months` (the Archive
  * list's "Export the archive"), it exports only those months and says so.
+ * 10-review-2 (D-4, owner 2026-11-28): on Android the folder picker opens on tap; then the screen shows a progress bar,
+ * "Gathering your records · 5 of 14", then "Writing files", then the saved toast. On iOS the same progress shows first and
+ * the share sheet comes last.
  */
 import React, { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -23,7 +26,8 @@ import { hapticTap } from '@/ui/haptics';
 import { useTheme } from '@/theme/ThemeProvider';
 import { space } from '@/theme/layout';
 import { textRole } from '@/theme/typography';
-import { exportCsv } from './csvExport';
+import { exportCsv, type ExportProgress } from './csvExport';
+import { ExportProgressView } from './ExportProgressView';
 import { exportFileNames, SERVER_RECORDS_FILE } from './exportFiles';
 
 // Cast because Expo Router's generated route types may not know the route yet (built in 10-18).
@@ -50,6 +54,7 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
   const plan = usePlanState();
   const kept = useLockedWrites().length;
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<ExportProgress | null>(null);
   const [open, setOpen] = useState(false);
   const filtered = months !== undefined && months.length > 0;
   const files = useMemo(() => exportFileNames(months), [months]);
@@ -59,7 +64,7 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
     hapticTap();
     setBusy(true);
     try {
-      const result = await (filtered ? exportCsv(supabase, { months }) : exportCsv(supabase));
+      const result = await exportCsv(supabase, filtered ? { months, onProgress: setProgress } : { onProgress: setProgress });
       if (result !== 'cancelled') {
         getAnalytics().track('csv_exported', { locked: !plan.writable });
         showToast({ kind: 'info', text: { key: 'plans.export.done' } });
@@ -68,6 +73,7 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
       showToast({ kind: 'info', text: { key: 'sync.exportFailed' } });
     } finally {
       setBusy(false);
+      setProgress(null);
     }
   };
 
@@ -112,6 +118,7 @@ export function ExportScreen({ months }: ExportScreenProps = {}) {
           </View>
         ) : null}
         <Pill label={t('plans.export.button')} variant="primary" onPress={() => void run()} pending={busy} />
+        {busy && progress ? <ExportProgressView progress={progress} /> : null}
         <Pressable accessibilityRole="link" onPress={() => router.push(DATA_IMPORT_HREF)} testID="export-import-link">
           <Text style={{ ...textRole(pairing, 'label'), color: colors.accent }}>{t('system.ownData.exportFiles.importLink')}</Text>
         </Pressable>

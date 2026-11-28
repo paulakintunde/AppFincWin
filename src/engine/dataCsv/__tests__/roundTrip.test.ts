@@ -1,4 +1,5 @@
 import fc from 'fast-check';
+import { formatExportAmount } from '../amount';
 import { parseDataCsv } from '../parse';
 
 // Local copy of src/features/export/csvSerialize.ts rules (engine tests may not import src/features).
@@ -26,12 +27,12 @@ const nameArb = fc
   .filter((s) => s.trim() !== '' && (s === s.trim() || /^'?[\t\r]/.test(s)) && !/[\u0000-\u0008]/.test(s) && !/\r(?!cr)/.test(s));
 
 describe('export then import is exact', () => {
-  it('goals: names and negative integer minor units survive', () => {
+  it('goals: names and negative amounts survive (10-review-2 D-1: normal amounts plus the marker)', () => {
     fc.assert(
       fc.property(
         fc.array(fc.record({ name: nameArb, target: fc.integer({ min: -1_000_000, max: 1_000_000 }) }), { minLength: 1, maxLength: 8 }),
         (rows) => {
-          const csv = toCsvLike(['name', 'currency', 'target'], rows.map((r) => ({ ...r, currency: 'USD' })));
+          const csv = toCsvLike(['name', 'currency', 'target', 'amount_format'], rows.map((r) => ({ ...r, currency: 'USD', target: formatExportAmount(r.target, 2), amount_format: 'decimal' })));
           const res = parseDataCsv('savings_goals', csv);
           if (!res.ok) return false;
           return (

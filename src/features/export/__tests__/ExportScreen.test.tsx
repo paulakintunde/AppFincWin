@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ExportScreen } from '../ExportScreen';
 import { parseMonthsParam } from '../parseMonthsParam';
@@ -42,11 +42,37 @@ describe('ExportScreen (10-17)', () => {
     expect(mockPush).toHaveBeenCalledWith('/data-import');
   });
 
-  it('full export calls exportCsv with the client only', async () => {
+  it('full export calls exportCsv with the client and a progress callback', async () => {
     const { getByText } = await render(wrap(<ExportScreen />));
     await fireEvent.press(getByText('Export'));
     await waitFor(() => expect(mockExport).toHaveBeenCalledTimes(1));
-    expect(mockExport.mock.calls[0]).toEqual([{ tag: 'client' }]);
+    expect(mockExport.mock.calls[0]).toEqual([{ tag: 'client' }, { onProgress: expect.any(Function) }]);
+  });
+
+  it('10-review-2 (D-4): shows the gathering steps as an accessible progress bar, then Writing files', async () => {
+    let report: (p: unknown) => void = () => {};
+    let finish: (v: string) => void = () => {};
+    mockExport.mockImplementationOnce(async (..._a: unknown[]) => {
+      report = (_a[1] as { onProgress: (p: unknown) => void }).onProgress;
+      return new Promise<string>((resolve) => {
+        finish = resolve;
+      });
+    });
+    const { getByText, findByTestId, getByTestId, queryByTestId } = await render(wrap(<ExportScreen />));
+    await fireEvent.press(getByText('Export'));
+    await waitFor(() => expect(mockExport).toHaveBeenCalledTimes(1));
+    // Android: nothing shows while the folder picker is open
+    expect(queryByTestId('export-progress')).toBeNull();
+    await act(async () => report({ phase: 'gathering', done: 5, total: 14 }));
+    expect((await findByTestId('export-progress-line')).props.children).toBe('Gathering your records · 5 of 14');
+    const bar = getByTestId('export-progress-bar');
+    expect(bar.props.accessibilityRole).toBe('progressbar');
+    expect(bar.props.accessibilityValue).toEqual({ min: 0, max: 14, now: 5 });
+    expect(bar.props.accessibilityLabel).toBe('Gathering your records, 5 of 14');
+    await act(async () => report({ phase: 'writing' }));
+    expect(getByTestId('export-progress-line').props.children).toBe('Writing files');
+    await act(async () => finish('saved'));
+    await waitFor(() => expect(queryByTestId('export-progress')).toBeNull());
   });
 
   it('with months: heading, filtered file list, and exportCsv gets the months', async () => {
@@ -59,7 +85,7 @@ describe('ExportScreen (10-17)', () => {
     expect(queryByText(/server-records/)).toBeNull();
     await fireEvent.press(getByText('Export'));
     await waitFor(() => expect(mockExport).toHaveBeenCalledTimes(1));
-    expect(mockExport.mock.calls[0]).toEqual([{ tag: 'client' }, { months: ['2026-08', '2026-09'] }]);
+    expect(mockExport.mock.calls[0]).toEqual([{ tag: 'client' }, { months: ['2026-08', '2026-09'], onProgress: expect.any(Function) }]);
   });
 });
 
