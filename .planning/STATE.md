@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 10 UI-SPEC approved
-last_updated: "2026-11-23T05:47:10.166Z"
-last_activity: 2026-11-25 -- Phase 10 resumed; main merged into feat/10-build (27/30 plans)
+stopped_at: Phase 10 complete; verification human_needed (iPhone XR step 16)
+last_updated: "2026-11-27T22:00:00.000Z"
+last_activity: "2026-11-27 -- Phase 10 closed (30/30); review fixes PR 198-202 merged; 10-VERIFICATION.md written"
 progress:
   total_phases: 33
-  completed_phases: 20
-  total_plans: 865
-  completed_plans: 832
+  completed_phases: 21
+  total_plans: 895
+  completed_plans: 862
   percent: 96
 ---
 
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-09-21)
 
 **Core value:** The Decide tab must give a trustworthy answer — a verdict computed from the user's own logged months, not a survey.
-**Current focus:** Phase 10 — System
+**Current focus:** Phase 10 (System) closed 2026-11-27; its open items are below. Phase 10.1 runs in another session on its own branch (feat/10.1-build) and is not tracked here.
 
 ## Current Position
 
-Checked against code on 2026-11-20 (main e50382bd after PR #170: 809 plans, 789 with summaries; the 08.1 branch adds 15 more summaries).
+Phase 10 lines checked against origin/main f78704ae on 2026-11-27 (895 PLAN files, 862 SUMMARY files across phase folders). Other lines below are from 2026-11-20 unless dated.
 
-Phase: 10 (System) — EXECUTING
-Plan: 1 of 30
+Phase: 10 (System) — COMPLETE 2026-11-27, 30/30 plans. PR #193 merged 2026-11-26 with the production rollout the same day (10-29: migrations 20261126000100..0800, six Edge Functions, auth hook, reviewer accounts, first backup and restore check). Device gate PR #197 (10-30, 2026-11-27): Pixel 9 steps 1-15 pass; step 16 (iPhone XR: Face ID, cover, APNs push) open, waits on 00-20. Owner 2026-11-27: Android FLAG_SECURE only while the lock is on (amends D-04); ENV-19 FCM V1 done for Android. Code review (3 reviewers) fixes merged 2026-11-27: #198 backup/restore-check apt source, #199 server hardening (migrations 20261127090200..0500 on production; alerts-deliver and reviewer-signin redeployed), #200 app lock, #201 data import (whole minor units only; supersedes 10-07-PLAN lines 77/88), #202 nightly invariant tests. In progress: three LOW findings plus owner wording ("A household member spent {{amount}}."; partner alerts keep their own switch) on branch fix/10-review-low. 10-VERIFICATION.md: human_needed.
+Phase 10 open items: (1) iPhone XR step 16 after 00-20; (2) new app build and Pixel recheck of the lock flow (EAS Android quota resets 2026-12-01); (3) the monthly restore check refuses backups made before #199 until a new daily backup runs (next scheduled check 2026-12-03); (4) real wallet CSV check (10-28 used public sample formats only); (5) ENV-19 APNs.
+Phase: 7 (insights) — COMPLETE 2026-11-23 (PR #185, #186). 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
 Phase: 09 (tiers-onboarding) — COMPLETE and MERGED 2026-11-20 (PR #170, merge e50382bd). Device pass PASSED 2026-11-19. Its migrations (20261124000100..000450) and Edge Functions plan-grant / plan-webhook / plan-refresh have been live since 09-08. Open: RevenueCat setup (ENV-12), owner review list (09-HUMAN-UAT C1, 09-WORDING rows), the First read tag at the SampleAnswerIntro seam (08.1-19/20 now built on the 08.1 branch), plan_state left_at, trial reminder cold-start routing, plans.invite.waiting.expired.
 Phase: 08.25 (rename) — PAUSED: Kint dropped 2026-11-20; name research in PR #175. Not in this ROADMAP yet.
-Phase: 7, 10 — not planned; may run in parallel after 08.1 (owner 2026-11-22). 11 — not started; now also holds the final audit (former 08.2, merged 2026-11-22).
 Phase: 08 (household) — COMPLETE 2026-11-17 (PR #134). Open: iPhone XR check; DPIA retention (Phase 11); one orphan household with no members and no plan.
 Phase: 06.2 (app life) — COMPLETE 2026-11-15 (PR #122). 06.1 — COMPLETE 2026-11-14 (PR #102). 06 (grow) — COMPLETE 2026-11-11 (PR #101).
 Phase: 05.5 — COMPLETE 2026-11-16. 05.4 — COMPLETE (62 plans; QA-04 full mutation score deferred to pre-launch). 05.3 — STOPPED, branch parked. 05.2, 05.1, 05 — COMPLETE (05 screens replaced by 06.1).
@@ -39,9 +39,9 @@ Phase: 04 (decide-engine) — COMPLETE 2026-10-16; the v1 engine was deleted on 
 Phase: 03, 03.1, 02, 02.1, 02.2, 02.3, 01 — COMPLETE (iOS checks wait on Apple enrolment).
 Phase: 00 (foundation) — 18/20. 00-07: D-U-N-S issued, Apple enrolment submitted (awaiting Apple review), Google Play developer verification approved 2026-11-21 (next: register package name com.fincwin.app). 00-20: first iOS build on the iPhone XR, waits on Apple enrolment; needed before 2026-12-02.
 Decide: open to every tester since 2026-11-06 (`DECIDE_OPEN = true`).
-Open PRs: #174 enrolment status, #175 name research, #176 dependency updates.
-Status: Executing Phase 10
-Last activity: 2026-11-25 -- Phase 10 resumed; main merged into feat/10-build (27/30 plans)
+Open PRs (2026-11-27): #194 dependency updates, #184 state docs after 08.1, #178 naming round 3, plus this Phase 10 paperwork PR.
+Status: Phase 10 complete (human_needed: iPhone XR step 16)
+Last activity: 2026-11-27 -- Phase 10 closed (30/30); review fixes #198-#202 merged; paperwork updated (quick 261127-p10)
 
 ## Performance Metrics
 
@@ -180,7 +180,7 @@ Recent decisions affecting current work:
 
   Route: `/gsd-plan-phase 3` (targeted revision, following the "Plan impact" section in 03-CONTEXT.md). 03-UI-SPEC lines 112 and 222 also need the backdrop and dismissal changes.
 
-- [Phase 10] ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
+- [Phase 10] *(Resolved 2026-11-26: daily encrypted backups to R2 since 10-29, a keep-alive job, and a monthly restore check; first restore run 45853146569 passed. The next restore check needs a backup made after PR #199.)* ENV-16 moved from Phase 2 on 2026-09-25: production has **no backups** until then (method TBD, likely AWS, e.g. a daily dump to S3). Supabase Pro is no longer assumed, so a Free-plan production project also **pauses after a week with no activity**, taking the live app offline. That needs its own answer (upgrade, keep-alive, or accept) before real users arrive
 - [Phase 0] EAS provisioning and credentials from Windows are unproven for this project — trigger the first iOS EAS Build on day one so provisioning surprises surface in week one, not week ten
 - [Phase 8] The Realtime reconciliation state machine (no pending write / write still queued / own-write echo / genuine version conflict) is a synthesized design, not a documented Supabase recipe — needs a dedicated two-client offline-mid-edit spike before it is trusted
 - [Phase 8] What happens when a household settlement's expiry window lapses unresolved is undefined in the prototype and needs an explicit product decision during this phase
@@ -230,6 +230,7 @@ Recent decisions affecting current work:
 | 261120-nmr | Naming round 2 research saved: Kint dropped, 90 names screened, deep check of Domla/Plenny/Tavva/Hommi | 2026-11-20 | — | [261120-nmr-naming-research](./quick/261120-nmr-naming-research/) |
 | 261122-m82 | Merge Phase 08.2 (Decide re-audit) into Phase 11 as its final audit; Insights and System run in parallel after 08.1 | 2026-11-22 | (this PR) | [261122-m82-merge-08-2-into-phase-11](./quick/261122-m82-merge-08-2-into-phase-11/) |
 | 261124-2bs | Phase 9 code gaps (09-HUMAN-UAT C2 rows 1-5): plan_state returns left_at/left_home_name (migration 20261125001200, pgTAP 120; production push after owner approval); sample answer gets the stage word and "Based on sample figures"; trial reminder tap routes on a cold start; invite waiting screen re-checks and shows the expired line; B7 marked pass | 2026-11-24 | 723599cf | [261124-2bs-phase-9-code-gaps](./quick/261124-2bs-phase-9-code-gaps/) |
+| 261127-p10 | Phase 10 paperwork: ROADMAP (Phase 10 and 10-30 ticked, status line), STATE, REQUIREMENTS (24 rows Complete, ENV-19 Pending), 10-01 SUMMARY closed, 10-07-PLAN superseded note, 10-VERIFICATION.md (human_needed) | 2026-11-27 | (this PR) | [261127-p10-phase-10-paperwork](./quick/261127-p10-phase-10-paperwork/) |
 
 ## Deferred Items
 
@@ -241,6 +242,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-11-25T04:49:49.674Z
-Stopped at: Phase 10.2 UI-SPEC approved
-Resume file: .planning/phases/10.2-envelope-rollover/10.2-UI-SPEC.md
+Last session: 2026-11-27T22:00:00.000Z
+Stopped at: Phase 10 paperwork updated (ROADMAP, STATE, REQUIREMENTS, 10-VERIFICATION.md)
+Resume file: .planning/phases/10-system/10-VERIFICATION.md

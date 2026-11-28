@@ -41,7 +41,7 @@ Every external dependency is provisioned to a working state, or explicitly defer
 - [ ] **ENV-13**: Sentry project exists and its DSN is wired in — *deferrable; non-blocking for every other phase*
 - [x] **ENV-14**: PostHog project exists on the EU host, with its project key wired in through the environment
 - [ ] **ENV-15**: The company's D-U-N-S number is confirmed or requested on day one, since it gates both Apple and Google organisation enrolment
-- [ ] **ENV-16**: Production data is backed up daily, and a restore has been rehearsed into a non-production project, before public launch — *method TBD, likely AWS (e.g. a scheduled database dump to S3); moved from Phase 2 to Phase 10 on 2026-09-25. Supabase Pro is no longer assumed; until this lands, production runs without backups (accepted risk for dogfooding)*
+- [x] **ENV-16**: Production data is backed up daily, and a restore has been rehearsed into a non-production project, before public launch — *method TBD, likely AWS (e.g. a scheduled database dump to S3); moved from Phase 2 to Phase 10 on 2026-09-25. Supabase Pro is no longer assumed; until this lands, production runs without backups (accepted risk for dogfooding)*
 - [x] **ENV-17**: Development runs locally through the Supabase CLI plus a free cloud project for on-device testing, production is a separate Cloud Pro project, and schema changes reach any of them only through migrations tracked in git
 - [x] **ENV-18**: The Supabase region is chosen deliberately at project creation, with the reasoning recorded, since it cannot easily move later
 - [ ] **ENV-19**: Push credentials exist for APNs and FCM — *APNs blocked on ENV-10*
@@ -67,14 +67,14 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **ACC-03**: User's name and email from Sign in with Apple are captured on first authorization and persisted immediately
 - [ ] **ACC-04**: A new account is auto-provisioned with a household-of-one and its RLS policies, with no setup step visible to the user
 - [x] **ACC-05**: User stays signed in across app restarts
-- [ ] **ACC-06**: User can see every device where their account is signed in, with the current device marked
-- [ ] **ACC-07**: User can sign out of one listed device, or all devices at once
-- [ ] **ACC-08**: User can unlock the app with Face ID, Touch ID or Android biometrics
-- [ ] **ACC-09**: User can set and use a PIN as an alternative to biometrics
-- [ ] **ACC-10**: User can delete their account in-app, and doing so purges their data from Supabase *(Note, 02.3 D-20: the deletion flow must also call `forgetGoogleOnAccountDeletion(email)` — clears the remembered-account tile and runs GoogleSignin signOut/revokeAccess.)*
-- [ ] **ACC-11**: A sign-in method restricted to allow-listed store-review accounts exists, so reviewers can enter an app that otherwise offers only Apple and Google
+- [x] **ACC-06**: User can see every device where their account is signed in, with the current device marked
+- [x] **ACC-07**: User can sign out of one listed device, or all devices at once
+- [x] **ACC-08**: User can unlock the app with Face ID, Touch ID or Android biometrics
+- [x] **ACC-09**: User can set and use a PIN as an alternative to biometrics
+- [x] **ACC-10**: User can delete their account in-app, and doing so purges their data from Supabase *(Note, 02.3 D-20: the deletion flow must also call `forgetGoogleOnAccountDeletion(email)` — clears the remembered-account tile and runs GoogleSignin signOut/revokeAccess.)*
+- [x] **ACC-11**: A sign-in method restricted to allow-listed store-review accounts exists, so reviewers can enter an app that otherwise offers only Apple and Google
 - [x] **ACC-12**: The auth session is stored encrypted, with its key held in secure storage, working around secure storage's 2048-byte limit
-- [ ] **ACC-13**: Server-side functions enforce per-user rate limits
+- [x] **ACC-13**: Server-side functions enforce per-user rate limits
 - [x] **ACC-14**: The signed-out screen offers "Continue as <previous account>" or "Use a different account". Only the last account's display identity and provider are remembered, never tokens; choosing a different Google account shows the account picker Up to 3 recent accounts are remembered, each removable *(scope widened 2026-10-12, 02.3 D-21)*.
 
 ### Money & Data Integrity
@@ -100,8 +100,8 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **SYN-01**: User can browse previously loaded data with no network connection
 - [x] **SYN-02**: User can create and edit records with no network connection, and those writes flush automatically on reconnect
 - [x] **SYN-03**: A queued write that is retried does not produce a duplicate record
-- [ ] **SYN-04**: The write queue survives a force-quit and resumes on next launch
-- [ ] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
+- [x] **SYN-04**: The write queue survives a force-quit and resumes on next launch
+- [x] **SYN-05**: The write queue is bounded, and the user is told when it cannot grow further
 - [x] **SYN-06**: User sees whether the app is offline and how many changes are waiting
 - [x] **SYN-07**: The persisted offline cache is encrypted at rest, with its key held in secure storage
 
@@ -166,7 +166,7 @@ Product analytics exist to measure the two risks research flagged — manual-ent
 - [x] **IMP-03**: An uploaded statement file is deleted after a successful import unless the user chooses to keep it, a kept file is removed on account deletion, and statement content never appears in logs or error reports
 - [x] **IMP-04**: Privacy copy states plainly where a PDF statement is processed and how long the file is kept
 - [x] **IMP-05**: When a statement already gives a foreign line's converted amount, the account-currency figure is stored as the truth and never recomputed with a market rate. The original amount and the bank's implied rate (and any FX fee) are kept and shown together (e.g. "US$10.00 · charged C$13.92 at 1.392"), with an optional factual comparison to the market rate. Each line records whether its conversion came from the statement or an on-demand market rate. *(Added 2026-10-08, user decision. 2026-10-10: the market comparison is resolved as not built, and fees and display are fixed in Phase 2.1 CONTEXT D-30 to D-35; planned in 02.1-13 to 02.1-17.)*
-- [ ] **IMP-06**: Wallet and payment-app statements (PayPal, Wise, Revolut and similar) import with gross, fee and net per line. Each currency balance is its own account, and a currency conversion's paired lines are linked as a transfer, with the fee as a separate expense. *(Added 2026-10-08, user decision.)*
+- [x] **IMP-06**: Wallet and payment-app statements (PayPal, Wise, Revolut and similar) import with gross, fee and net per line. Each currency balance is its own account, and a currency conversion's paired lines are linked as a transfer, with the fee as a separate expense. *(Added 2026-10-08, user decision.)*
 
 ### Shell & Navigation
 
@@ -369,21 +369,21 @@ The Decide fix plan's IDs (FIN, ENG, APP, UX, CMP-F, ARC, QA, BO, VC) are tracke
 
 ### Alerts
 
-- [ ] **ALR-01**: User can enable alerts for bills due, over cap, goal reached, large transactions and low balance
-- [ ] **ALR-02**: User can set an amount threshold per alert kind
-- [ ] **ALR-03**: User can choose instant alerts or a digest
-- [ ] **ALR-04**: User can set quiet hours during which no alert is delivered
-- [ ] **ALR-05**: User can see a log of alerts already raised
-- [ ] **ALR-06**: Alerts caused by server-side events — another member's large expense, over cap, digests — arrive as push notifications
+- [x] **ALR-01**: User can enable alerts for bills due, over cap, goal reached, large transactions and low balance
+- [x] **ALR-02**: User can set an amount threshold per alert kind
+- [x] **ALR-03**: User can choose instant alerts or a digest
+- [x] **ALR-04**: User can set quiet hours during which no alert is delivered
+- [x] **ALR-05**: User can see a log of alerts already raised
+- [x] **ALR-06**: Alerts caused by server-side events — another member's large expense, over cap, digests — arrive as push notifications
 
 ### Data Management
 
-- [ ] **DAT-01**: User can archive a month and restore it later
-- [ ] **DAT-02**: User can export their data as CSV
-- [ ] **DAT-03**: User can import goals, debts, investments and accounts from CSV
-- [ ] **DAT-04**: Deleting the account offers a clearly-labelled choice about any locally cached data
-- [ ] **DAT-05**: A restore from backup has been rehearsed into a non-production project and the restored data verified
-- [ ] **DAT-06**: User can generate a diagnostic export and choose to send it to support, since analytics deliberately contain no amounts
+- [x] **DAT-01**: User can archive a month and restore it later
+- [x] **DAT-02**: User can export their data as CSV
+- [x] **DAT-03**: User can import goals, debts, investments and accounts from CSV
+- [x] **DAT-04**: Deleting the account offers a clearly-labelled choice about any locally cached data
+- [x] **DAT-05**: A restore from backup has been rehearsed into a non-production project and the restored data verified
+- [x] **DAT-06**: User can generate a diagnostic export and choose to send it to support, since analytics deliberately contain no amounts
 
 ### Design Fidelity
 
@@ -394,7 +394,7 @@ The Decide fix plan's IDs (FIN, ENG, APP, UX, CMP-F, ARC, QA, BO, VC) are tracke
 - [ ] **DSG-05**: No user-facing string claims data stays on the device or is not sent anywhere
 - [x] **DSG-06**: Amounts, numbers and dates are formatted for the user's locale
 - [x] **DSG-07**: Text scales with the OS text-size setting up to a defined maximum without breaking layouts
-- [ ] **DSG-08**: Balances are hidden in the app-switcher snapshot when the app goes to the background
+- [x] **DSG-08**: Balances are hidden in the app-switcher snapshot when the app goes to the background
 
 ### Compliance & Release
 
@@ -500,10 +500,10 @@ Populated during roadmap creation.
 | ENV-13 | Phase 0 - Foundation | Pending |
 | ENV-14 | Phase 0 - Foundation | Complete |
 | ENV-15 | Phase 0 - Foundation | Pending |
-| ENV-16 | Phase 10 - System | Pending |
+| ENV-16 | Phase 10 - System | Complete (10-20, 10-29: daily encrypted backup to R2; apt source fix #198) |
 | ENV-17 | Phase 0 - Foundation | Complete |
 | ENV-18 | Phase 0 - Foundation | Complete |
-| ENV-19 | Phase 10 - System | Pending |
+| ENV-19 | Phase 10 - System | Pending (FCM V1 done for Android 2026-11-27; APNs waits on 00-20 / ENV-10) |
 | ENV-20 | Phase 0 - Foundation | Pending |
 | ANL-01 | Phase 0 - Foundation | Complete |
 | ANL-02 | Phase 0 - Foundation | Complete |
@@ -518,14 +518,14 @@ Populated during roadmap creation.
 | ACC-03 | Phase 0 - Foundation | Complete |
 | ACC-04 | Phase 0 - Foundation | Pending |
 | ACC-05 | Phase 0 - Foundation | Complete |
-| ACC-06 | Phase 10 - System | Pending |
-| ACC-07 | Phase 10 - System | Pending |
-| ACC-08 | Phase 10 - System | Pending |
-| ACC-09 | Phase 10 - System | Pending |
-| ACC-10 | Phase 10 - System | Pending |
-| ACC-11 | Phase 10 - System | Pending |
+| ACC-06 | Phase 10 - System | Complete (10-12; Pixel 9 step 7) |
+| ACC-07 | Phase 10 - System | Complete (10-12; Pixel 9 step 7) |
+| ACC-08 | Phase 10 - System | Complete (10-11, 10-21; Android biometrics verified on Pixel 9; Face ID on iPhone XR is 10-30 step 16, waits on 00-20) |
+| ACC-09 | Phase 10 - System | Complete (10-11, 10-21; Pixel 9 steps 5-6; lock fixes #200 need a Pixel recheck on the next build) |
+| ACC-10 | Phase 10 - System | Complete (10-10, 10-14; deletion completeness pgTAP 122, plan_events purge in #199) |
+| ACC-11 | Phase 10 - System | Complete (10-19, 10-25; reviewer accounts sign in on production, 10-29) |
 | ACC-12 | Phase 0 - Foundation | Complete |
-| ACC-13 | Phase 10 - System | Pending |
+| ACC-13 | Phase 10 - System | Complete (10-09; reviewer-signin limit tightened in #199) |
 | ACC-14 | Phase 2.3 - Record follow-ups | Complete |
 | MON-01 | Phase 1 - Money Core | Complete |
 | MON-02 | Phase 1 - Money Core | Complete |
@@ -544,8 +544,8 @@ Populated during roadmap creation.
 | SYN-01 | Phase 1 - Money Core | Complete |
 | SYN-02 | Phase 1 - Money Core | Complete |
 | SYN-03 | Phase 10 - System | Complete |
-| SYN-04 | Phase 10 - System | Pending |
-| SYN-05 | Phase 10 - System | Pending |
+| SYN-04 | Phase 10 - System | Complete (10-13; Pixel 9 step 11) |
+| SYN-05 | Phase 10 - System | Complete (10-13: note at 400, held at 500) |
 | SYN-06 | Phase 1 - Money Core | Complete |
 | SYN-07 | Phase 1 - Money Core | Complete |
 | REC-01 | Phase 2 - Record | Complete |
@@ -601,7 +601,7 @@ Populated during roadmap creation.
 | IMP-03 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
 | IMP-04 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
 | IMP-05 | Phase 2.1 - PDF statement import | Complete (Android verified; iOS pending Apple enrolment) |
-| IMP-06 | Phase 10 - System | Pending |
+| IMP-06 | Phase 10 - System | Complete (10-08, 10-26, 10-28; fee fixes #201; verified on public sample formats only, real wallet CSV check is an open owner item) |
 | NAV-01 | Phase 3 - Shell | Complete |
 | NAV-02 | Phase 3 - Shell | Complete |
 | NAV-03 | Phase 3 - Shell | Complete |
@@ -756,18 +756,18 @@ Populated during roadmap creation.
 | TIER-08 | Phase 9 - Tiers & Onboarding | Pending |
 | TIER-09 | Phase 9 - Tiers & Onboarding | Pending |
 | TIER-10 | Phase 9 - Tiers & Onboarding | Pending |
-| ALR-01 | Phase 10 - System | Pending |
-| ALR-02 | Phase 10 - System | Pending |
-| ALR-03 | Phase 10 - System | Pending |
-| ALR-04 | Phase 10 - System | Pending |
-| ALR-05 | Phase 10 - System | Pending |
-| ALR-06 | Phase 10 - System | Pending |
-| DAT-01 | Phase 10 - System | Pending |
-| DAT-02 | Phase 10 - System | Pending |
-| DAT-03 | Phase 10 - System | Pending |
-| DAT-04 | Phase 10 - System | Pending |
-| DAT-05 | Phase 10 - System | Pending |
-| DAT-06 | Phase 10 - System | Pending |
+| ALR-01 | Phase 10 - System | Complete (10-15, 10-22; Pixel 9 step 8) |
+| ALR-02 | Phase 10 - System | Complete (10-15, 10-22; threshold currency fix #201) |
+| ALR-03 | Phase 10 - System | Complete (10-23; digest send-once fix #199) |
+| ALR-04 | Phase 10 - System | Complete (10-23; Pixel 9 step 10) |
+| ALR-05 | Phase 10 - System | Complete (10-22; Pixel 9 step 10) |
+| ALR-06 | Phase 10 - System | Complete (10-15, 10-23; Android push verified on Pixel 9 step 9; APNs waits on 00-20) |
+| DAT-01 | Phase 10 - System | Complete (10-06, 10-16, 10-24; Pixel 9 step 12) |
+| DAT-02 | Phase 10 - System | Complete (10-17) |
+| DAT-03 | Phase 10 - System | Complete (10-07, 10-18; whole minor units only since #201) |
+| DAT-04 | Phase 10 - System | Complete (10-14; Pixel 9 step 13) |
+| DAT-05 | Phase 10 - System | Complete (10-29: restore check run 45853146569 passed, counted as the rehearsal; next monthly check needs a backup made after #199) |
+| DAT-06 | Phase 10 - System | Complete (10-17) |
 | DSG-01 | Phase 11 - Compliance & Release | Pending |
 | DSG-02 | Phase 0 - Foundation | Complete |
 | DSG-03 | Phase 0 - Foundation | Complete |
@@ -775,7 +775,7 @@ Populated during roadmap creation.
 | DSG-05 | Phase 11 - Compliance & Release | Pending |
 | DSG-06 | Phase 1 - Money Core | Complete |
 | DSG-07 | Phase 3 - Shell | Complete |
-| DSG-08 | Phase 10 - System | Pending |
+| DSG-08 | Phase 10 - System | Complete (10-21, 10-30; Android: FLAG_SECURE while the lock is on, owner 2026-11-27 amends D-04; iPhone XR is step 16, waits on 00-20) |
 | CMP-01 | Phase 11 - Compliance & Release | Pending |
 | CMP-02 | Phase 11 - Compliance & Release | Pending |
 | CMP-03 | Phase 11 - Compliance & Release | Pending |
@@ -802,12 +802,13 @@ Populated during roadmap creation.
 | ROLL-11 | Phase 10.2 - Envelope rollover | Pending |
 
 **Coverage:**
-- v1 requirements: 327 total (188 ticked)
+- v1 requirements: 327 total (212 ticked; +24 for Phase 10 on 2026-11-27)
 - Mapped to phases: 327
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-09-21*
+*Updated 2026-11-27 — Phase 10 closed: 24 of 25 open System requirements ticked on 10-VERIFICATION.md evidence (PR #193, device gate #197, review fixes #198-#202); SYN-03 was already Complete; ENV-19 stays Pending until APNs credentials exist (00-20).*
 *Last updated: 2026-11-02 — Phase 05.2 closed: DSU-01..DSU-24 ticked on 05.2-VERIFICATION.md evidence (passed 2026-10-29, PR #86). Variant C notes added for ARC-26 (DSU-04, DCU-07, DCU-20, DEC-30, DCU-34, 35, 39, 40); DSU-01 and DSU-14 tightened by fix plan BO-06 and BO-08; fix-plan IDs tracked in DECIDE-FIX-PLAN.md (quick task 261101-mxs). Coverage recounted.*
 
 *2026-10-11 — Phase 2.1 closed: IMP-01..IMP-05 ticked on 02.1-VERIFICATION.md evidence (Android verified on Pixel 9; iOS walkthrough and privacy-policy publication pending, 02.1-HUMAN-UAT.md); coverage 237/237 (100 ticked).*
