@@ -19,7 +19,10 @@ export const security = {
   lockScopeMeta: 'The lock covers this phone only. It does not change who can see your records.',
   devicesGroup: 'Signed-in devices',
   devicesIntro: 'Everywhere your account is signed in.',
+  // 10-review-2 (D-3, owner 2026-11-28): one line per platform. iOS draws the plain cover lock on or off; Android hides
+  // the app-switcher card and blocks screenshots only while the lock is on (10-30, amends D-04).
   switcherMeta: 'FincWin always shows a plain screen in the app switcher, even with the lock off.',
+  switcherMetaAndroid: 'With the lock on, FincWin shows a blank card in the app switcher and blocks screenshots.',
   // devices
   unnamedDevice: 'Unnamed device',
   activeNow: 'Active now',
